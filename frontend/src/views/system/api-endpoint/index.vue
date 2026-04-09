@@ -854,9 +854,16 @@
     min-height: 34px;
   }
 
+  .api-table-card :deep(.pagination.custom-pagination) {
+    align-items: center;
+    margin-top: 6px;
+    padding: 2px 0 10px;
+  }
+
   .api-table-card :deep(.el-pagination) {
-    padding-top: 8px;
-    margin-top: 8px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
   }
 
   .category-list {

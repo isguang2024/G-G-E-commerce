@@ -53,7 +53,7 @@ function buildRuntimeMenuSpaceConfig(
       spaceKey: item.spaceKey,
       enabled: item.status !== 'disabled',
       isPrimary: Boolean(item.meta?.isPrimary || item.meta?.is_primary),
-      scheme: `${item.scheme || item.meta?.scheme || 'https'}`,
+      scheme: `${item.scheme || item.meta?.scheme || ''}`,
       routePrefix: `${item.routePrefix || item.meta?.routePrefix || item.meta?.route_prefix || ''}`,
       authMode: `${item.authMode || item.meta?.authMode || item.meta?.auth_mode || 'inherit_host'}`,
       loginHost: `${item.loginHost || item.meta?.loginHost || item.meta?.login_host || ''}`,
@@ -93,7 +93,7 @@ export const useMenuSpaceStore = defineStore(
 
     const currentHost = computed(() => {
       const host =
-        runtimeHost.value || (typeof window !== 'undefined' ? window.location.hostname : '')
+        runtimeHost.value || (typeof window !== 'undefined' ? window.location.host : '')
       return normalizeMenuHost(host)
     })
 
@@ -316,7 +316,7 @@ export const useMenuSpaceStore = defineStore(
     }
 
     const syncRuntimeHost = () => {
-      runtimeHost.value = typeof window !== 'undefined' ? window.location.hostname : ''
+      runtimeHost.value = typeof window !== 'undefined' ? window.location.host : ''
     }
 
     const shouldShowSpaceBadge = computed(
@@ -395,7 +395,11 @@ export const useMenuSpaceStore = defineStore(
     }
 
     const buildSpaceTargetUrl = (targetPath: string, spaceKey?: string) => {
-      return buildMenuSpaceTargetUrl(resolveHostBinding(spaceKey), targetPath)
+      return buildMenuSpaceTargetUrl(
+        resolveHostBinding(spaceKey),
+        targetPath,
+        typeof window !== 'undefined' ? window.location.host : runtimeHost.value
+      )
     }
 
     const resolveSpaceNavigationTarget = (targetPath: string, spaceKey?: string) => {
@@ -407,7 +411,8 @@ export const useMenuSpaceStore = defineStore(
           target: normalizedPath
         }
       }
-      const targetUrl = buildMenuSpaceTargetUrl(binding, normalizedPath)
+      const currentHost = window.location.host
+      const targetUrl = buildMenuSpaceTargetUrl(binding, normalizedPath, currentHost)
       if (typeof window === 'undefined') {
         return {
           mode: 'location' as const,
@@ -416,7 +421,7 @@ export const useMenuSpaceStore = defineStore(
       }
       const shouldUseLocationNavigation = shouldUseFullMenuSpaceNavigation(
         binding,
-        window.location.hostname,
+        currentHost,
         window.location.protocol,
         window.location.pathname
       )

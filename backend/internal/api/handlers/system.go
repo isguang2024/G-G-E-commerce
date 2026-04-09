@@ -111,7 +111,7 @@ func (h *APIHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params gen
 }
 
 func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentAppParams) (gen.AnyObject, error) {
-	resp, err := h.appSvc.GetCurrent("", optString(params.AppKey))
+	resp, err := h.appSvc.GetCurrent(requestHostFromCtx(ctx), optString(params.AppKey))
 	if err != nil {
 		h.logger.Error("get current app failed", zap.Error(err))
 		return nil, err
@@ -147,7 +147,18 @@ func (h *APIHandler) SaveMenuSpace(ctx context.Context, req gen.AnyObject) (*gen
 }
 
 func (h *APIHandler) GetCurrentMenuSpace(ctx context.Context, params gen.GetCurrentMenuSpaceParams) (gen.AnyObject, error) {
-	resp, err := h.spaceSvc.GetCurrent(optString(params.AppKey), "", optString(params.SpaceKey), nil, nil)
+	var userID *uuid.UUID
+	if uid, ok := userIDFromContext(ctx); ok {
+		userID = &uid
+	}
+	cwID, _ := collaborationWorkspaceIDFromContext(ctx)
+	resp, err := h.spaceSvc.GetCurrent(
+		optString(params.AppKey),
+		requestHostFromCtx(ctx),
+		optString(params.SpaceKey),
+		userID,
+		cwID,
+	)
 	if err != nil {
 		h.logger.Error("get current menu space failed", zap.Error(err))
 		return nil, err

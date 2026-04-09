@@ -345,6 +345,47 @@ func syncRoutesInternal(
 	logger *zap.Logger,
 	routes []gin.RouteInfo,
 ) error {
+	// ── Bulk prefetch phase: 3 queries total ────────────────────────────────
+	// 1. All existing endpoints → indexed by code and by METHOD+PATH.
+	var allEndpoints []models.APIEndpoint
+	if err := db.Find(&allEndpoints).Error; err != nil {
+		return err
+	}
+	byCode := make(map[string]*models.APIEndpoint, len(allEndpoints))
+	byMethodPath := make(map[string]*models.APIEndpoint, len(allEndpoints))
+	for i := range allEndpoints {
+		ep := &allEndpoints[i]
+		if c := strings.TrimSpace(ep.Code); c != "" {
+			byCode[c] = ep
+		}
+		key := strings.ToUpper(strings.TrimSpace(ep.Method)) + " " + strings.TrimSpace(ep.Path)
+		byMethodPath[key] = ep
+	}
+
+	// 2. All categories → categoryID by code (avoids repeated SELECT per route).
+	var allCategories []models.APIEndpointCategory
+	if err := db.Find(&allCategories).Error; err != nil {
+		return err
+	}
+	categoryIDByCode := make(map[string]uuid.UUID, len(allCategories))
+	for _, cat := range allCategories {
+		if c := strings.TrimSpace(cat.Code); c != "" {
+			categoryIDByCode[c] = cat.ID
+		}
+	}
+
+	// 3. All permission bindings → grouped by endpoint_code.
+	var allBindings []models.APIEndpointPermissionBinding
+	if err := db.Order("endpoint_code, sort_order ASC, created_at ASC").Find(&allBindings).Error; err != nil {
+		return err
+	}
+	bindingsByCode := make(map[string][]models.APIEndpointPermissionBinding, len(allBindings)/2+1)
+	for _, b := range allBindings {
+		bindingsByCode[b.EndpointCode] = append(bindingsByCode[b.EndpointCode], b)
+	}
+
+	// ── Sync phase: only writes when data actually changed ──────────────────
+	count := 0
 	for _, route := range routes {
 		if !isManagedRoute(route.Path) {
 			continue
@@ -354,7 +395,15 @@ func syncRoutesInternal(
 		if !hasMeta {
 			continue
 		}
-		categoryID := resolveCategoryID(db, meta.CategoryCode)
+
+		// Resolve category from in-memory map (was: SELECT per route).
+		var categoryID *uuid.UUID
+		if catCode := strings.TrimSpace(meta.CategoryCode); catCode != "" {
+			if id, ok := categoryIDByCode[catCode]; ok {
+				idCopy := id
+				categoryID = &idCopy
+			}
+		}
 
 		specPath := normalizeManagedRoutePath(route.Path)
 		endpointCode := ResolveRouteCode(route.Method, route.Path, &meta)
@@ -367,36 +416,36 @@ func syncRoutesInternal(
 			}
 			continue
 		}
-		existing, err := findEndpointByCode(db, endpointCode)
-		if err != nil {
-			return err
-		}
-		legacy, err := findEndpointByMethodAndPath(db, route.Method, route.Path)
-		if err != nil {
-			return err
-		}
-		if legacy == nil {
-			legacy, err = findEndpointByMethodAndPath(db, route.Method, specPath)
-			if err != nil {
-				return err
+
+		// Look up existing record from in-memory maps (was: 2-3 SELECTs per route).
+		existing := byCode[endpointCode]
+		var legacy *models.APIEndpoint
+		if existing == nil {
+			key1 := strings.ToUpper(strings.TrimSpace(route.Method)) + " " + strings.TrimSpace(route.Path)
+			legacy = byMethodPath[key1]
+			if legacy == nil {
+				key2 := strings.ToUpper(strings.TrimSpace(route.Method)) + " " + specPath
+				legacy = byMethodPath[key2]
 			}
 		}
 
 		summary := strings.TrimSpace(meta.Summary)
-
 		endpoint := &models.APIEndpoint{
 			Code:       endpointCode,
-			Method:     strings.ToUpper(route.Method),
+			Method:     strings.ToUpper(strings.TrimSpace(route.Method)),
 			Path:       specPath,
 			Handler:    route.Handler,
 			Summary:    summary,
 			CategoryID: categoryID,
 			Status:     "normal",
 		}
+
 		switch {
 		case existing != nil:
-			if err := updateManagedEndpoint(db, existing.ID, endpoint); err != nil {
-				return err
+			if endpointNeedsUpdate(existing, endpoint) {
+				if err := updateManagedEndpoint(db, existing.ID, endpoint); err != nil {
+					return err
+				}
 			}
 		case legacy != nil:
 			if shouldBackfillManagedEndpointCode(legacy) {
@@ -413,12 +462,20 @@ func syncRoutesInternal(
 			}
 		}
 
-		if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
-			return err
+		// Only replace permission bindings when they actually changed
+		// (was: always a transaction with SELECT + optional DELETE + INSERT per route).
+		existingBindings := bindingsByCode[endpointCode]
+		keys := normalizePermissionKeys(meta.PermissionKeys)
+		if !samePermissionBindings(existingBindings, keys) {
+			if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
+				return err
+			}
 		}
+
+		count++
 	}
 
-	logger.Info("API endpoints synced", zap.Int("count", len(routes)))
+	logger.Info("API endpoints synced", zap.Int("count", count))
 	return nil
 }
 
@@ -565,6 +622,28 @@ func collectRuntimeRouteCodes(method, path string, meta *RouteMeta) []string {
 	appendCode(lookupFixedRouteCode(method, path))
 	appendCode(deriveStableEndpointCode(method, normalizeManagedRoutePath(path)))
 	return result
+}
+
+// endpointNeedsUpdate returns true when any sync-managed field differs.
+func endpointNeedsUpdate(existing, incoming *models.APIEndpoint) bool {
+	if existing == nil || incoming == nil {
+		return true
+	}
+	sameCategoryID := func() bool {
+		if existing.CategoryID == nil && incoming.CategoryID == nil {
+			return true
+		}
+		if existing.CategoryID == nil || incoming.CategoryID == nil {
+			return false
+		}
+		return *existing.CategoryID == *incoming.CategoryID
+	}
+	return existing.Code != incoming.Code ||
+		existing.Method != incoming.Method ||
+		existing.Path != incoming.Path ||
+		existing.Handler != incoming.Handler ||
+		existing.Summary != incoming.Summary ||
+		!sameCategoryID()
 }
 
 func shouldBackfillManagedEndpointCode(existing *models.APIEndpoint) bool {

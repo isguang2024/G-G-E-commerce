@@ -101,6 +101,7 @@
   const tableContainerRef = ref<HTMLElement>()
   const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
   const paginationRef = ref<HTMLElement>()
+  const tableBodyGap = 10
   const tableHeaderRef = ref<HTMLElement>()
   const tableStore = useTableStore()
   const { isBorder, isZebra, tableSize, isFullScreen, isHeaderBackground } = storeToRefs(tableStore)
@@ -206,6 +207,7 @@
   // 数据是否为空
   const isEmpty = computed(() => props.data?.length === 0)
 
+  const tableContainerHeight = ref(0)
   const paginationHeight = ref(0)
   const tableHeaderHeight = ref(0)
 
@@ -239,7 +241,13 @@
     })
   }
 
-  useResizeObserver(tableContainerRef, () => {
+  useResizeObserver(tableContainerRef, (entries) => {
+    const entry = entries[0]
+    if (entry) {
+      requestAnimationFrame(() => {
+        tableContainerHeight.value = entry.contentRect.height
+      })
+    }
     syncTableLayout()
   })
 
@@ -262,6 +270,11 @@
     if (isEmpty.value && !props.loading) return props.emptyHeight
     // 使用传入的高度
     if (props.height) return props.height
+    // 分页会单独渲染在表格下方，这里要给主体表格预留空间，避免分页被挤出可视区。
+    if (showPagination.value && paginationHeight.value > 0 && tableContainerHeight.value > 0) {
+      const reservedHeight = paginationHeight.value + PAGINATION_SPACING.value + tableBodyGap
+      return Math.max(tableContainerHeight.value - reservedHeight, 160)
+    }
     // 默认占满容器高度
     return '100%'
   })

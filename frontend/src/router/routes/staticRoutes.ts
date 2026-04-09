@@ -19,15 +19,28 @@ export const staticRoutes: AppRouteRecordRaw[] = [
   //   meta: { title: 'menus.dashboard.title' }
   // },
   {
+    path: '/account/auth/login',
+    name: 'AccountLogin',
+    component: () => import('@views/auth/login/index.vue'),
+    meta: { title: 'menus.login.title', isHideTab: true }
+  },
+  {
+    path: '/account/auth/register',
+    name: 'AccountRegister',
+    component: () => import('@views/auth/register/index.vue'),
+    meta: { title: 'menus.register.title', isHideTab: true }
+  },
+  // 旧路径兼容：重定向到 account-portal 下的新入口
+  {
     path: '/auth/login',
     name: 'Login',
-    component: () => import('@views/auth/login/index.vue'),
+    redirect: '/account/auth/login',
     meta: { title: 'menus.login.title', isHideTab: true }
   },
   {
     path: '/auth/register',
     name: 'Register',
-    component: () => import('@views/auth/register/index.vue'),
+    redirect: '/account/auth/register',
     meta: { title: 'menus.register.title', isHideTab: true }
   },
   {

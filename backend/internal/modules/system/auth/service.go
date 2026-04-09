@@ -29,6 +29,10 @@ type AuthService interface {
 	Register(req *dto.RegisterRequest) (*dto.LoginResponse, error)
 	RefreshToken(refreshToken string) (*dto.TokenResponse, error)
 	GetUserInfo(userID uuid.UUID) (*user.User, error)
+	// CreateUserTx 在调用方提供的事务内创建用户（不生成 token）。
+	CreateUserTx(tx *gorm.DB, req *dto.RegisterRequest) (*user.User, error)
+	// BuildLoginResponse 为已加载的用户对象生成 token 响应。
+	BuildLoginResponse(u *user.User) (*dto.LoginResponse, error)
 }
 
 type authService struct {
@@ -231,4 +235,75 @@ func (s *authService) GetUserInfo(userID uuid.UUID) (*user.User, error) {
 		return nil, err
 	}
 	return item, nil
+}
+
+// CreateUserTx 在调用方提供的事务内创建用户，不生成 token。
+// 重复检查在事务内进行，确保原子性。
+func (s *authService) CreateUserTx(tx *gorm.DB, req *dto.RegisterRequest) (*user.User, error) {
+	var count int64
+	if err := tx.Model(&user.User{}).Where("username = ?", req.Username).Count(&count).Error; err != nil {
+		return nil, fmt.Errorf("check username: %w", err)
+	}
+	if count > 0 {
+		return nil, errors.New("用户名已存在")
+	}
+	email := strings.TrimSpace(req.Email)
+	if email != "" {
+		if err := tx.Model(&user.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
+			return nil, fmt.Errorf("check email: %w", err)
+		}
+		if count > 0 {
+			return nil, ErrEmailExists
+		}
+	}
+	hash, err := password.Hash(req.Password)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+	u := &user.User{
+		Email:        email,
+		Username:     req.Username,
+		PasswordHash: hash,
+		Nickname:     req.Nickname,
+		Status:       "active",
+		IsSuperAdmin: false,
+	}
+	if err := tx.Create(u).Error; err != nil {
+		return nil, fmt.Errorf("create user: %w", err)
+	}
+	return u, nil
+}
+
+// BuildLoginResponse 为已加载的用户对象生成访问令牌响应，不查询 DB。
+func (s *authService) BuildLoginResponse(u *user.User) (*dto.LoginResponse, error) {
+	accessToken, err := jwt.GenerateToken(
+		s.jwtCfg.Secret, u.ID.String(), "", u.Email, s.jwtCfg.AccessExpire,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("generate access token: %w", err)
+	}
+	refreshToken, err := jwt.GenerateToken(
+		s.jwtCfg.Secret, u.ID.String(), "", u.Email, s.jwtCfg.RefreshExpire,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("generate refresh token: %w", err)
+	}
+	roles := make([]map[string]interface{}, 0, len(u.Roles))
+	for _, r := range u.Roles {
+		roles = append(roles, map[string]interface{}{
+			"id": r.ID.String(), "code": r.Code, "name": r.Name, "description": r.Description,
+		})
+	}
+	userInfo := map[string]interface{}{
+		"id": u.ID.String(), "email": u.Email, "username": u.Username,
+		"nickname": u.Nickname, "avatar_url": u.AvatarURL, "phone": u.Phone,
+		"status": u.Status, "is_super_admin": u.IsSuperAdmin,
+		"roles": roles, "created_at": u.CreatedAt,
+	}
+	return &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    s.jwtCfg.AccessExpire * 60,
+		User:         userInfo,
+	}, nil
 }

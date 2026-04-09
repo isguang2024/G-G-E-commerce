@@ -51,9 +51,19 @@ type User struct {
 	IsSuperAdmin   bool           `gorm:"default:false" json:"is_super_admin"`
 	LastLoginAt    *time.Time     `json:"last_login_at"`
 	LastLoginIP    string         `gorm:"type:varchar(45)" json:"last_login_ip"`
-	RegisterSource string         `gorm:"type:varchar(20);default:'self'" json:"register_source"`
-	InvitedBy      *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
-	CreatedAt      time.Time      `json:"created_at"`
+	RegisterSource     string     `gorm:"type:varchar(20);default:'self'" json:"register_source"`
+	RegisterAppKey     string     `gorm:"type:varchar(64);not null;default:''" json:"register_app_key"`
+	RegisterEntryCode  string     `gorm:"type:varchar(64);not null;default:''" json:"register_entry_code"`
+	RegisterPolicyCode string     `gorm:"type:varchar(64);not null;default:''" json:"register_policy_code"`
+	RegisterIP         string     `gorm:"type:varchar(64);not null;default:''" json:"register_ip"`
+	RegisterUserAgent  string     `gorm:"type:varchar(512);not null;default:''" json:"register_user_agent"`
+	AgreementVersion        string     `gorm:"type:varchar(32);not null;default:''" json:"agreement_version"`
+	// 注册时刻有效策略快照（jsonb），后续策略修改不影响历史记录
+	RegisterPolicySnapshot  MetaJSON   `gorm:"type:jsonb" json:"register_policy_snapshot,omitempty"`
+	EmailVerifiedAt    *time.Time `json:"email_verified_at,omitempty"`
+	InvitationCodeID   *uuid.UUID `gorm:"type:uuid" json:"invitation_code_id,omitempty"`
+	InvitedBy          *uuid.UUID `gorm:"type:uuid" json:"invited_by"`
+	CreatedAt          time.Time  `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 

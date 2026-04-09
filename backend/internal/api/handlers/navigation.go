@@ -29,7 +29,7 @@ func (h *APIHandler) GetNavigation(ctx context.Context, params gen.GetNavigation
 		}
 	}
 
-	manifest, err := h.navSvc.Compile(appKey, "", spaceKey, userID, cwID)
+	manifest, err := h.navSvc.Compile(appKey, requestHostFromCtx(ctx), spaceKey, userID, cwID)
 	if err != nil {
 		h.logger.Error("compile navigation failed", zap.Error(err))
 		return nil, err

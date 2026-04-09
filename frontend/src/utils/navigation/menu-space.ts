@@ -22,8 +22,57 @@ export function normalizeMenuHost(host?: string): string {
   return target.split(':')[0]
 }
 
+function splitMenuHost(host?: string): { hostname: string; port: string } {
+  const target = normalizeMenuSpaceKey(host)
+  if (!target) {
+    return { hostname: '', port: '' }
+  }
+  const matched = target.match(/^\[([^\]]+)\](?::(\d+))?$/)
+  if (matched) {
+    return {
+      hostname: matched[1].trim().toLowerCase(),
+      port: `${matched[2] || ''}`.trim()
+    }
+  }
+  const lastColonIndex = target.lastIndexOf(':')
+  if (lastColonIndex > 0 && target.indexOf(':') === lastColonIndex) {
+    return {
+      hostname: target.slice(0, lastColonIndex).trim().toLowerCase(),
+      port: target.slice(lastColonIndex + 1).trim()
+    }
+  }
+  return { hostname: target.trim().toLowerCase(), port: '' }
+}
+
+function buildNavigationHost(bindingHost?: string, currentHost?: string): string {
+  const binding = splitMenuHost(bindingHost)
+  if (!binding.hostname) {
+    return ''
+  }
+  if (binding.port) {
+    return `${binding.hostname}:${binding.port}`
+  }
+  const current = splitMenuHost(currentHost)
+  if (current.hostname && current.port && current.hostname === binding.hostname) {
+    return `${binding.hostname}:${current.port}`
+  }
+  return binding.hostname
+}
+
 export function normalizeMenuSpaceScheme(value?: unknown): 'http' | 'https' {
   return `${value || ''}`.trim().toLowerCase() === 'http' ? 'http' : 'https'
+}
+
+function resolveMenuSpaceScheme(value?: unknown, currentProtocol?: string): 'http' | 'https' {
+  const target = `${value || ''}`.trim().toLowerCase()
+  if (target === 'http' || target === 'https') {
+    return target
+  }
+  const fallback = `${currentProtocol || (typeof window !== 'undefined' ? window.location.protocol : 'https:')}`
+    .replace(/:$/, '')
+    .trim()
+    .toLowerCase()
+  return fallback === 'http' ? 'http' : 'https'
 }
 
 export function normalizeMenuSpaceRoutePrefix(value?: unknown): string {
@@ -54,7 +103,8 @@ export function shouldUseFullMenuSpaceNavigation(
     return true
   }
   if (
-    normalizeMenuSpaceScheme(binding.scheme) !== normalizeMenuSpaceScheme(normalizedCurrentProtocol)
+    resolveMenuSpaceScheme(binding.scheme, normalizedCurrentProtocol) !==
+      normalizeMenuSpaceScheme(normalizedCurrentProtocol)
   ) {
     return true
   }
@@ -145,7 +195,8 @@ export function resolveMenuSpaceHostBinding(
 
 export function buildMenuSpaceTargetUrl(
   binding: MenuSpaceHostBinding | undefined,
-  targetPath: string
+  targetPath: string,
+  currentHost?: string
 ): string {
   const normalizedPath = normalizeMenuSpaceRoutePrefix(targetPath) || '/'
   if (!binding?.host) {
@@ -153,7 +204,11 @@ export function buildMenuSpaceTargetUrl(
   }
   const routePrefix = normalizeMenuSpaceRoutePrefix(binding.routePrefix)
   const basePath = routePrefix ? `${routePrefix}/` : '/'
-  return `${normalizeMenuSpaceScheme(binding.scheme)}://${normalizeMenuHost(binding.host)}${basePath}#${normalizedPath}`
+  const targetHost = buildNavigationHost(
+    binding.host,
+    currentHost || (typeof window !== 'undefined' ? window.location.host : '')
+  )
+  return `${resolveMenuSpaceScheme(binding.scheme)}://${targetHost}${basePath}#${normalizedPath}`
 }
 
 export function isMenuSpaceVisible(

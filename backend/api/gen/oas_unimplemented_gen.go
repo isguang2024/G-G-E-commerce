@@ -184,6 +184,24 @@ func (UnimplementedHandler) CreatePermissionActionGroup(ctx context.Context, req
 	return r, ht.ErrNotImplemented
 }
 
+// CreateRegisterEntry implements createRegisterEntry operation.
+//
+// 创建注册入口.
+//
+// POST /system/register-entries
+func (UnimplementedHandler) CreateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest) (r CreateRegisterEntryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateRegisterPolicy implements createRegisterPolicy operation.
+//
+// 创建注册策略.
+//
+// POST /system/register-policies
+func (UnimplementedHandler) CreateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest) (r CreateRegisterPolicyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateRole implements createRole operation.
 //
 // 创建角色.
@@ -280,6 +298,24 @@ func (UnimplementedHandler) DeletePage(ctx context.Context, params DeletePagePar
 //
 // DELETE /permission-actions/{id}
 func (UnimplementedHandler) DeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteRegisterEntry implements deleteRegisterEntry operation.
+//
+// 删除注册入口.
+//
+// DELETE /system/register-entries/{id}
+func (UnimplementedHandler) DeleteRegisterEntry(ctx context.Context, params DeleteRegisterEntryParams) (r DeleteRegisterEntryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteRegisterPolicy implements deleteRegisterPolicy operation.
+//
+// 删除注册策略.
+//
+// DELETE /system/register-policies/{code}
+func (UnimplementedHandler) DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (r DeleteRegisterPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -694,6 +730,15 @@ func (UnimplementedHandler) GetPermissionActionConsumers(ctx context.Context, pa
 //
 // GET /permission-actions/{id}/impact-preview
 func (UnimplementedHandler) GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (r AnyObject, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetRegisterContext implements getRegisterContext operation.
+//
+// 获取注册上下文（命中入口 + 有效策略合并结果）.
+//
+// GET /auth/register-context
+func (UnimplementedHandler) GetRegisterContext(ctx context.Context, params GetRegisterContextParams) (r GetRegisterContextRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1153,6 +1198,33 @@ func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params Li
 //
 // GET /pages/runtime/public
 func (UnimplementedHandler) ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (r *AnyListResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListRegisterEntries implements listRegisterEntries operation.
+//
+// 注册入口列表.
+//
+// GET /system/register-entries
+func (UnimplementedHandler) ListRegisterEntries(ctx context.Context) (r ListRegisterEntriesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListRegisterLogs implements listRegisterLogs operation.
+//
+// 注册记录列表.
+//
+// GET /system/users/register-logs
+func (UnimplementedHandler) ListRegisterLogs(ctx context.Context, params ListRegisterLogsParams) (r ListRegisterLogsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListRegisterPolicies implements listRegisterPolicies operation.
+//
+// 注册策略列表.
+//
+// GET /system/register-policies
+func (UnimplementedHandler) ListRegisterPolicies(ctx context.Context) (r ListRegisterPoliciesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1702,6 +1774,24 @@ func (UnimplementedHandler) UpdatePermissionAction(ctx context.Context, req *Per
 //
 // PUT /permission-actions/groups/{id}
 func (UnimplementedHandler) UpdatePermissionActionGroup(ctx context.Context, req AnyObject, params UpdatePermissionActionGroupParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateRegisterEntry implements updateRegisterEntry operation.
+//
+// 更新注册入口.
+//
+// PUT /system/register-entries/{id}
+func (UnimplementedHandler) UpdateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest, params UpdateRegisterEntryParams) (r UpdateRegisterEntryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateRegisterPolicy implements updateRegisterPolicy operation.
+//
+// 更新注册策略.
+//
+// PUT /system/register-policies/{code}
+func (UnimplementedHandler) UpdateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (r UpdateRegisterPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

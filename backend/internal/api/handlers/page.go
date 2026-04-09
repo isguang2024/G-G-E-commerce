@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/gg-ecommerce/backend/api/gen"
@@ -47,9 +48,18 @@ func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPag
 }
 
 func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntimePagesParams) (*gen.AnyListResponse, error) {
-	uid, _ := userIDFromContext(ctx)
-	userID := &uid
-	list, err := h.pageSvc.ListRuntime(optString(params.AppKey), "", optString(params.SpaceKey), userID, nil)
+	var userID *uuid.UUID
+	if uid, ok := userIDFromContext(ctx); ok {
+		userID = &uid
+	}
+	cwID, _ := collaborationWorkspaceIDFromContext(ctx)
+	list, err := h.pageSvc.ListRuntime(
+		optString(params.AppKey),
+		requestHostFromCtx(ctx),
+		optString(params.SpaceKey),
+		userID,
+		cwID,
+	)
 	if err != nil {
 		h.logger.Error("list runtime pages failed", zap.Error(err))
 		return nil, err
@@ -58,7 +68,13 @@ func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntim
 }
 
 func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.ListPublicRuntimePagesParams) (*gen.AnyListResponse, error) {
-	list, err := h.pageSvc.ListRuntimePublic(optString(params.AppKey), "", optString(params.SpaceKey), nil, nil)
+	list, err := h.pageSvc.ListRuntimePublic(
+		optString(params.AppKey),
+		requestHostFromCtx(ctx),
+		optString(params.SpaceKey),
+		nil,
+		nil,
+	)
 	if err != nil {
 		h.logger.Error("list public runtime pages failed", zap.Error(err))
 		return nil, err

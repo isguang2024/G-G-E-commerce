@@ -319,3 +319,29 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - Menu.Meta JSONB 普遍不含 title key，应在 Create/Update 时同步写入 meta.title，减少 normalizer 的 fallback 链依赖。
 - 删除备份测试后 menu/service_test.go 覆盖偏少，可补 GetTree 和 countAffectedMenuRelations 单测。
+
+### 2026-04-09 注册体系审计修复（S7 Bug Fix）
+
+**本次改动**
+- **P1-1 事务化**：`auth/service.go` 新增 `CreateUserTx` / `BuildLoginResponse`；`register/service.go` 将用户创建、审计字段回写、角色绑定（含 workspace binding snapshot）、功能包绑定全部合入单一 `db.Transaction`，任一步失败整体回滚，彻底消除半成品账号问题；移除多余的 `userRoleRepo` 依赖。
+- **P1-2 路由**：`router.go` 补全 `/auth/register-context`（公开）+ 9 条治理 CRUD 路由，注册体系端点由 404 变为可达。
+- **P1-3 策略子表**：`system_register.go` 新增 `upsertPolicySubTables` + `policySubTables`；创建/更新策略时在 tx 内删旧写新 `register_policy_roles` / `register_policy_feature_packages`；列表接口也返回子表内容。OpenAPI schema 同步新增 `role_codes` / `feature_package_keys` 字段。
+- **P1-4 前端 auto_login**：`register/index.vue` 注册成功后若有 `access_token` 则 `setToken + setLoginStatus`，直接 push landing；`pending=true` 时跳登录页携带 `registered=1`。
+- **P2-5 契约**：`LoginResponse` token 字段改 `nullable: true` 并移出 `required`，新增 `pending` 字段；`auth.go Register` 按 auto_login 分支赋值；ogen + 前端 TS 类型重新生成。go build + vue-tsc 均通过。
+
+**下次方向**
+- 策略版本快照：当前注册时使用实时 policy，历史用户的授权状态随策略修改漂移；可在 user 表加 `register_policy_snapshot jsonb` 冻结注册时刻的有效策略。
+- 删除策略时未校验是否有入口仍在引用（`register_entries.policy_code`），可加守卫或级联禁用提示。
+- `RegisterContext` 未包含 `field_schema` / `brand_info` / `captcha.site_key`，开启 RequireCaptcha / RequireInvite 后前端没有能力采集必填字段，需要一轮动态表单支撑。
+
+### 2026-04-09 注册体系守卫 + 动态表单支撑（S7 续）
+
+**本次改动**
+- **删策略守卫**：`DeleteRegisterPolicy` 删除前检查 `register_entries.policy_code` 引用计数，有引用则返回 400 并提示数量，防止悬挂入口。
+- **captcha 配置列**：migration `00007_register_captcha_config.sql` 给 `register_policies` 追加 `captcha_provider`（none/recaptcha/hcaptcha/turnstile）和 `captcha_site_key`，全链路贯通至 `EffectiveRegisterContext`、`RegisterContext` OpenAPI schema、策略 CRUD handler；重新生成 ogen + 前端 TS 类型。
+- **前端动态表单**：`register/index.vue` 按 `ctx.require_email_verify / require_invite / require_captcha` 条件渲染邮箱、邀请码、验证码输入框，对应字段加入校验规则并随 `fetchRegister` 请求体携带；captcha_provider 非 none 时降级提示。
+- **策略管理页**：`register-policy/index.vue` 补 captcha_provider 下拉、captcha_site_key 输入、role_codes / feature_package_keys 多选标签；go build + vue-tsc + migrate 全通过。
+
+**下次方向**
+- 接入真实 captcha widget（Turnstile/hCaptcha）：前端 `require_captcha=true && captcha_provider≠none` 时动态加载 widget SDK，回调写入 `captchaToken`，并在后端 `service.Register` 中接入对应 provider 的服务端验证 API。
+- 策略版本快照：`users.register_policy_snapshot jsonb` 冻结注册时刻有效策略，防止策略变更后历史用户权限漂移。

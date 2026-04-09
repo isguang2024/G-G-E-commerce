@@ -4967,16 +4967,28 @@ func (s *LoginResponse) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *LoginResponse) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("access_token")
-		e.Str(s.AccessToken)
+		if s.AccessToken.Set {
+			e.FieldStart("access_token")
+			s.AccessToken.Encode(e)
+		}
 	}
 	{
-		e.FieldStart("refresh_token")
-		e.Str(s.RefreshToken)
+		if s.RefreshToken.Set {
+			e.FieldStart("refresh_token")
+			s.RefreshToken.Encode(e)
+		}
 	}
 	{
-		e.FieldStart("expires_in")
-		e.Int(s.ExpiresIn)
+		if s.ExpiresIn.Set {
+			e.FieldStart("expires_in")
+			s.ExpiresIn.Encode(e)
+		}
+	}
+	{
+		if s.Pending.Set {
+			e.FieldStart("pending")
+			s.Pending.Encode(e)
+		}
 	}
 	{
 		if s.User.Set {
@@ -4984,13 +4996,21 @@ func (s *LoginResponse) encodeFields(e *jx.Encoder) {
 			s.User.Encode(e)
 		}
 	}
+	{
+		if s.Landing.Set {
+			e.FieldStart("landing")
+			s.Landing.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfLoginResponse = [4]string{
+var jsonFieldsNameOfLoginResponse = [6]string{
 	0: "access_token",
 	1: "refresh_token",
 	2: "expires_in",
-	3: "user",
+	3: "pending",
+	4: "user",
+	5: "landing",
 }
 
 // Decode decodes LoginResponse from json.
@@ -4998,16 +5018,13 @@ func (s *LoginResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode LoginResponse to nil")
 	}
-	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
 		case "access_token":
-			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.AccessToken = string(v)
-				if err != nil {
+				s.AccessToken.Reset()
+				if err := s.AccessToken.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -5015,11 +5032,9 @@ func (s *LoginResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"access_token\"")
 			}
 		case "refresh_token":
-			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := d.Str()
-				s.RefreshToken = string(v)
-				if err != nil {
+				s.RefreshToken.Reset()
+				if err := s.RefreshToken.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -5027,16 +5042,24 @@ func (s *LoginResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"refresh_token\"")
 			}
 		case "expires_in":
-			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				v, err := d.Int()
-				s.ExpiresIn = int(v)
-				if err != nil {
+				s.ExpiresIn.Reset()
+				if err := s.ExpiresIn.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"expires_in\"")
+			}
+		case "pending":
+			if err := func() error {
+				s.Pending.Reset()
+				if err := s.Pending.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"pending\"")
 			}
 		case "user":
 			if err := func() error {
@@ -5048,44 +5071,22 @@ func (s *LoginResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"user\"")
 			}
+		case "landing":
+			if err := func() error {
+				s.Landing.Reset()
+				if err := s.Landing.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"landing\"")
+			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode LoginResponse")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfLoginResponse) {
-					name = jsonFieldsNameOfLoginResponse[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -5100,6 +5101,103 @@ func (s *LoginResponse) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *LoginResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *LoginResponseLanding) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LoginResponseLanding) encodeFields(e *jx.Encoder) {
+	{
+		if s.AppKey.Set {
+			e.FieldStart("app_key")
+			s.AppKey.Encode(e)
+		}
+	}
+	{
+		if s.NavigationSpaceKey.Set {
+			e.FieldStart("navigation_space_key")
+			s.NavigationSpaceKey.Encode(e)
+		}
+	}
+	{
+		if s.HomePath.Set {
+			e.FieldStart("home_path")
+			s.HomePath.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfLoginResponseLanding = [3]string{
+	0: "app_key",
+	1: "navigation_space_key",
+	2: "home_path",
+}
+
+// Decode decodes LoginResponseLanding from json.
+func (s *LoginResponseLanding) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginResponseLanding to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "app_key":
+			if err := func() error {
+				s.AppKey.Reset()
+				if err := s.AppKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "navigation_space_key":
+			if err := func() error {
+				s.NavigationSpaceKey.Reset()
+				if err := s.NavigationSpaceKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"navigation_space_key\"")
+			}
+		case "home_path":
+			if err := func() error {
+				s.HomePath.Reset()
+				if err := s.HomePath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"home_path\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginResponseLanding")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LoginResponseLanding) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginResponseLanding) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -6255,6 +6353,57 @@ func (s *OptInt64) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes bool as json.
+func (o OptNilBool) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Bool(bool(o.Value))
+}
+
+// Decode decodes bool from json.
+func (o *OptNilBool) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilBool to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v bool
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := d.Bool()
+	if err != nil {
+		return err
+	}
+	o.Value = bool(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilBool) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilBool) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ErrorDetails as json.
 func (o OptNilErrorDetails) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -6305,6 +6454,106 @@ func (s *OptNilErrorDetails) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes int as json.
+func (o OptNilInt) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Int(int(o.Value))
+}
+
+// Decode decodes int from json.
+func (o *OptNilInt) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilInt to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v int
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := d.Int()
+	if err != nil {
+		return err
+	}
+	o.Value = int(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilInt) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilInt) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LoginResponseLanding as json.
+func (o OptNilLoginResponseLanding) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes LoginResponseLanding from json.
+func (o *OptNilLoginResponseLanding) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilLoginResponseLanding to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v LoginResponseLanding
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilLoginResponseLanding) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilLoginResponseLanding) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes LoginResponseUser as json.
 func (o OptNilLoginResponseUser) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -6351,6 +6600,56 @@ func (s OptNilLoginResponseUser) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilLoginResponseUser) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RegisterLogItemPolicySnapshot as json.
+func (o OptNilRegisterLogItemPolicySnapshot) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes RegisterLogItemPolicySnapshot from json.
+func (o *OptNilRegisterLogItemPolicySnapshot) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilRegisterLogItemPolicySnapshot to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v RegisterLogItemPolicySnapshot
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	o.Value = make(RegisterLogItemPolicySnapshot)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilRegisterLogItemPolicySnapshot) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilRegisterLogItemPolicySnapshot) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -8273,6 +8572,2617 @@ func (s *RefreshTokenRequest) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *RegisterContext) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterContext) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("entry_code")
+		e.Str(s.EntryCode)
+	}
+	{
+		if s.EntryName.Set {
+			e.FieldStart("entry_name")
+			s.EntryName.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("entry_app_key")
+		e.Str(s.EntryAppKey)
+	}
+	{
+		if s.RegisterSource.Set {
+			e.FieldStart("register_source")
+			s.RegisterSource.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("policy_code")
+		e.Str(s.PolicyCode)
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		e.FieldStart("target_navigation_space_key")
+		e.Str(s.TargetNavigationSpaceKey)
+	}
+	{
+		e.FieldStart("target_home_path")
+		e.Str(s.TargetHomePath)
+	}
+	{
+		if s.DefaultWorkspaceType.Set {
+			e.FieldStart("default_workspace_type")
+			s.DefaultWorkspaceType.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("allow_public_register")
+		e.Bool(s.AllowPublicRegister)
+	}
+	{
+		e.FieldStart("require_invite")
+		e.Bool(s.RequireInvite)
+	}
+	{
+		e.FieldStart("require_email_verify")
+		e.Bool(s.RequireEmailVerify)
+	}
+	{
+		e.FieldStart("require_captcha")
+		e.Bool(s.RequireCaptcha)
+	}
+	{
+		e.FieldStart("auto_login")
+		e.Bool(s.AutoLogin)
+	}
+	{
+		if s.AgreementVersion.Set {
+			e.FieldStart("agreement_version")
+			s.AgreementVersion.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaProvider.Set {
+			e.FieldStart("captcha_provider")
+			s.CaptchaProvider.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaSiteKey.Set {
+			e.FieldStart("captcha_site_key")
+			s.CaptchaSiteKey.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterContext = [17]string{
+	0:  "entry_code",
+	1:  "entry_name",
+	2:  "entry_app_key",
+	3:  "register_source",
+	4:  "policy_code",
+	5:  "target_app_key",
+	6:  "target_navigation_space_key",
+	7:  "target_home_path",
+	8:  "default_workspace_type",
+	9:  "allow_public_register",
+	10: "require_invite",
+	11: "require_email_verify",
+	12: "require_captcha",
+	13: "auto_login",
+	14: "agreement_version",
+	15: "captcha_provider",
+	16: "captcha_site_key",
+}
+
+// Decode decodes RegisterContext from json.
+func (s *RegisterContext) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterContext to nil")
+	}
+	var requiredBitSet [3]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "entry_code":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.EntryCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_code\"")
+			}
+		case "entry_name":
+			if err := func() error {
+				s.EntryName.Reset()
+				if err := s.EntryName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_name\"")
+			}
+		case "entry_app_key":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.EntryAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_app_key\"")
+			}
+		case "register_source":
+			if err := func() error {
+				s.RegisterSource.Reset()
+				if err := s.RegisterSource.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_source\"")
+			}
+		case "policy_code":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.PolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "target_navigation_space_key":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetNavigationSpaceKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_navigation_space_key\"")
+			}
+		case "target_home_path":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetHomePath = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_home_path\"")
+			}
+		case "default_workspace_type":
+			if err := func() error {
+				s.DefaultWorkspaceType.Reset()
+				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"default_workspace_type\"")
+			}
+		case "allow_public_register":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.AllowPublicRegister = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allow_public_register\"")
+			}
+		case "require_invite":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := d.Bool()
+				s.RequireInvite = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_invite\"")
+			}
+		case "require_email_verify":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.RequireEmailVerify = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_email_verify\"")
+			}
+		case "require_captcha":
+			requiredBitSet[1] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.RequireCaptcha = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_captcha\"")
+			}
+		case "auto_login":
+			requiredBitSet[1] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.AutoLogin = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auto_login\"")
+			}
+		case "agreement_version":
+			if err := func() error {
+				s.AgreementVersion.Reset()
+				if err := s.AgreementVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"agreement_version\"")
+			}
+		case "captcha_provider":
+			if err := func() error {
+				s.CaptchaProvider.Reset()
+				if err := s.CaptchaProvider.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_provider\"")
+			}
+		case "captcha_site_key":
+			if err := func() error {
+				s.CaptchaSiteKey.Reset()
+				if err := s.CaptchaSiteKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_site_key\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterContext")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [3]uint8{
+		0b11110101,
+		0b00111110,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterContext) {
+					name = jsonFieldsNameOfRegisterContext[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterContext) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterContext) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterEntryItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterEntryItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		json.EncodeUUID(e, s.ID)
+	}
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("entry_code")
+		e.Str(s.EntryCode)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Host.Set {
+			e.FieldStart("host")
+			s.Host.Encode(e)
+		}
+	}
+	{
+		if s.PathPrefix.Set {
+			e.FieldStart("path_prefix")
+			s.PathPrefix.Encode(e)
+		}
+	}
+	{
+		if s.RegisterSource.Set {
+			e.FieldStart("register_source")
+			s.RegisterSource.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("policy_code")
+		e.Str(s.PolicyCode)
+	}
+	{
+		e.FieldStart("status")
+		e.Str(s.Status)
+	}
+	{
+		if s.AllowPublicRegister.Set {
+			e.FieldStart("allow_public_register")
+			s.AllowPublicRegister.Encode(e)
+		}
+	}
+	{
+		if s.RequireInvite.Set {
+			e.FieldStart("require_invite")
+			s.RequireInvite.Encode(e)
+		}
+	}
+	{
+		if s.RequireEmailVerify.Set {
+			e.FieldStart("require_email_verify")
+			s.RequireEmailVerify.Encode(e)
+		}
+	}
+	{
+		if s.RequireCaptcha.Set {
+			e.FieldStart("require_captcha")
+			s.RequireCaptcha.Encode(e)
+		}
+	}
+	{
+		if s.AutoLogin.Set {
+			e.FieldStart("auto_login")
+			s.AutoLogin.Encode(e)
+		}
+	}
+	{
+		if s.SortOrder.Set {
+			e.FieldStart("sort_order")
+			s.SortOrder.Encode(e)
+		}
+	}
+	{
+		if s.Remark.Set {
+			e.FieldStart("remark")
+			s.Remark.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterEntryItem = [16]string{
+	0:  "id",
+	1:  "app_key",
+	2:  "entry_code",
+	3:  "name",
+	4:  "host",
+	5:  "path_prefix",
+	6:  "register_source",
+	7:  "policy_code",
+	8:  "status",
+	9:  "allow_public_register",
+	10: "require_invite",
+	11: "require_email_verify",
+	12: "require_captcha",
+	13: "auto_login",
+	14: "sort_order",
+	15: "remark",
+}
+
+// Decode decodes RegisterEntryItem from json.
+func (s *RegisterEntryItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterEntryItem to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeUUID(d)
+				s.ID = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "app_key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "entry_code":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.EntryCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_code\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "host":
+			if err := func() error {
+				s.Host.Reset()
+				if err := s.Host.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"host\"")
+			}
+		case "path_prefix":
+			if err := func() error {
+				s.PathPrefix.Reset()
+				if err := s.PathPrefix.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"path_prefix\"")
+			}
+		case "register_source":
+			if err := func() error {
+				s.RegisterSource.Reset()
+				if err := s.RegisterSource.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_source\"")
+			}
+		case "policy_code":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Str()
+				s.PolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "status":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Status = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "allow_public_register":
+			if err := func() error {
+				s.AllowPublicRegister.Reset()
+				if err := s.AllowPublicRegister.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allow_public_register\"")
+			}
+		case "require_invite":
+			if err := func() error {
+				s.RequireInvite.Reset()
+				if err := s.RequireInvite.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_invite\"")
+			}
+		case "require_email_verify":
+			if err := func() error {
+				s.RequireEmailVerify.Reset()
+				if err := s.RequireEmailVerify.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_email_verify\"")
+			}
+		case "require_captcha":
+			if err := func() error {
+				s.RequireCaptcha.Reset()
+				if err := s.RequireCaptcha.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_captcha\"")
+			}
+		case "auto_login":
+			if err := func() error {
+				s.AutoLogin.Reset()
+				if err := s.AutoLogin.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auto_login\"")
+			}
+		case "sort_order":
+			if err := func() error {
+				s.SortOrder.Reset()
+				if err := s.SortOrder.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sort_order\"")
+			}
+		case "remark":
+			if err := func() error {
+				s.Remark.Reset()
+				if err := s.Remark.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remark\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterEntryItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b10001111,
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterEntryItem) {
+					name = jsonFieldsNameOfRegisterEntryItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterEntryItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterEntryItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterEntryList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterEntryList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int(s.Total)
+	}
+}
+
+var jsonFieldsNameOfRegisterEntryList = [2]string{
+	0: "records",
+	1: "total",
+}
+
+// Decode decodes RegisterEntryList from json.
+func (s *RegisterEntryList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterEntryList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]RegisterEntryItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem RegisterEntryItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int()
+				s.Total = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterEntryList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterEntryList) {
+					name = jsonFieldsNameOfRegisterEntryList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterEntryList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterEntryList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterEntryUpsertRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterEntryUpsertRequest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("entry_code")
+		e.Str(s.EntryCode)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Host.Set {
+			e.FieldStart("host")
+			s.Host.Encode(e)
+		}
+	}
+	{
+		if s.PathPrefix.Set {
+			e.FieldStart("path_prefix")
+			s.PathPrefix.Encode(e)
+		}
+	}
+	{
+		if s.RegisterSource.Set {
+			e.FieldStart("register_source")
+			s.RegisterSource.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("policy_code")
+		e.Str(s.PolicyCode)
+	}
+	{
+		if s.Status.Set {
+			e.FieldStart("status")
+			s.Status.Encode(e)
+		}
+	}
+	{
+		if s.AllowPublicRegister.Set {
+			e.FieldStart("allow_public_register")
+			s.AllowPublicRegister.Encode(e)
+		}
+	}
+	{
+		if s.RequireInvite.Set {
+			e.FieldStart("require_invite")
+			s.RequireInvite.Encode(e)
+		}
+	}
+	{
+		if s.RequireEmailVerify.Set {
+			e.FieldStart("require_email_verify")
+			s.RequireEmailVerify.Encode(e)
+		}
+	}
+	{
+		if s.RequireCaptcha.Set {
+			e.FieldStart("require_captcha")
+			s.RequireCaptcha.Encode(e)
+		}
+	}
+	{
+		if s.AutoLogin.Set {
+			e.FieldStart("auto_login")
+			s.AutoLogin.Encode(e)
+		}
+	}
+	{
+		if s.SortOrder.Set {
+			e.FieldStart("sort_order")
+			s.SortOrder.Encode(e)
+		}
+	}
+	{
+		if s.Remark.Set {
+			e.FieldStart("remark")
+			s.Remark.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterEntryUpsertRequest = [15]string{
+	0:  "app_key",
+	1:  "entry_code",
+	2:  "name",
+	3:  "host",
+	4:  "path_prefix",
+	5:  "register_source",
+	6:  "policy_code",
+	7:  "status",
+	8:  "allow_public_register",
+	9:  "require_invite",
+	10: "require_email_verify",
+	11: "require_captcha",
+	12: "auto_login",
+	13: "sort_order",
+	14: "remark",
+}
+
+// Decode decodes RegisterEntryUpsertRequest from json.
+func (s *RegisterEntryUpsertRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterEntryUpsertRequest to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "app_key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "entry_code":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.EntryCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_code\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "host":
+			if err := func() error {
+				s.Host.Reset()
+				if err := s.Host.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"host\"")
+			}
+		case "path_prefix":
+			if err := func() error {
+				s.PathPrefix.Reset()
+				if err := s.PathPrefix.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"path_prefix\"")
+			}
+		case "register_source":
+			if err := func() error {
+				s.RegisterSource.Reset()
+				if err := s.RegisterSource.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_source\"")
+			}
+		case "policy_code":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.PolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "status":
+			if err := func() error {
+				s.Status.Reset()
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "allow_public_register":
+			if err := func() error {
+				s.AllowPublicRegister.Reset()
+				if err := s.AllowPublicRegister.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allow_public_register\"")
+			}
+		case "require_invite":
+			if err := func() error {
+				s.RequireInvite.Reset()
+				if err := s.RequireInvite.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_invite\"")
+			}
+		case "require_email_verify":
+			if err := func() error {
+				s.RequireEmailVerify.Reset()
+				if err := s.RequireEmailVerify.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_email_verify\"")
+			}
+		case "require_captcha":
+			if err := func() error {
+				s.RequireCaptcha.Reset()
+				if err := s.RequireCaptcha.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_captcha\"")
+			}
+		case "auto_login":
+			if err := func() error {
+				s.AutoLogin.Reset()
+				if err := s.AutoLogin.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auto_login\"")
+			}
+		case "sort_order":
+			if err := func() error {
+				s.SortOrder.Reset()
+				if err := s.SortOrder.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sort_order\"")
+			}
+		case "remark":
+			if err := func() error {
+				s.Remark.Reset()
+				if err := s.Remark.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remark\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterEntryUpsertRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b01000111,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterEntryUpsertRequest) {
+					name = jsonFieldsNameOfRegisterEntryUpsertRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterEntryUpsertRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterEntryUpsertRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterLogItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterLogItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("user_id")
+		json.EncodeUUID(e, s.UserID)
+	}
+	{
+		e.FieldStart("username")
+		e.Str(s.Username)
+	}
+	{
+		if s.Email.Set {
+			e.FieldStart("email")
+			s.Email.Encode(e)
+		}
+	}
+	{
+		if s.RegisterAppKey.Set {
+			e.FieldStart("register_app_key")
+			s.RegisterAppKey.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("register_entry_code")
+		e.Str(s.RegisterEntryCode)
+	}
+	{
+		e.FieldStart("register_policy_code")
+		e.Str(s.RegisterPolicyCode)
+	}
+	{
+		e.FieldStart("register_source")
+		e.Str(s.RegisterSource)
+	}
+	{
+		if s.RegisterIP.Set {
+			e.FieldStart("register_ip")
+			s.RegisterIP.Encode(e)
+		}
+	}
+	{
+		if s.RegisterUserAgent.Set {
+			e.FieldStart("register_user_agent")
+			s.RegisterUserAgent.Encode(e)
+		}
+	}
+	{
+		if s.AgreementVersion.Set {
+			e.FieldStart("agreement_version")
+			s.AgreementVersion.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("created_at")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
+		if s.PolicySnapshot.Set {
+			e.FieldStart("policy_snapshot")
+			s.PolicySnapshot.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterLogItem = [12]string{
+	0:  "user_id",
+	1:  "username",
+	2:  "email",
+	3:  "register_app_key",
+	4:  "register_entry_code",
+	5:  "register_policy_code",
+	6:  "register_source",
+	7:  "register_ip",
+	8:  "register_user_agent",
+	9:  "agreement_version",
+	10: "created_at",
+	11: "policy_snapshot",
+}
+
+// Decode decodes RegisterLogItem from json.
+func (s *RegisterLogItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterLogItem to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "user_id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeUUID(d)
+				s.UserID = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"user_id\"")
+			}
+		case "username":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Username = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"username\"")
+			}
+		case "email":
+			if err := func() error {
+				s.Email.Reset()
+				if err := s.Email.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"email\"")
+			}
+		case "register_app_key":
+			if err := func() error {
+				s.RegisterAppKey.Reset()
+				if err := s.RegisterAppKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_app_key\"")
+			}
+		case "register_entry_code":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.RegisterEntryCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_entry_code\"")
+			}
+		case "register_policy_code":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.RegisterPolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_policy_code\"")
+			}
+		case "register_source":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.RegisterSource = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_source\"")
+			}
+		case "register_ip":
+			if err := func() error {
+				s.RegisterIP.Reset()
+				if err := s.RegisterIP.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_ip\"")
+			}
+		case "register_user_agent":
+			if err := func() error {
+				s.RegisterUserAgent.Reset()
+				if err := s.RegisterUserAgent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_user_agent\"")
+			}
+		case "agreement_version":
+			if err := func() error {
+				s.AgreementVersion.Reset()
+				if err := s.AgreementVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"agreement_version\"")
+			}
+		case "created_at":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"created_at\"")
+			}
+		case "policy_snapshot":
+			if err := func() error {
+				s.PolicySnapshot.Reset()
+				if err := s.PolicySnapshot.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_snapshot\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterLogItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b01110011,
+		0b00000100,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterLogItem) {
+					name = jsonFieldsNameOfRegisterLogItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterLogItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterLogItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s RegisterLogItemPolicySnapshot) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s RegisterLogItemPolicySnapshot) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes RegisterLogItemPolicySnapshot from json.
+func (s *RegisterLogItemPolicySnapshot) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterLogItemPolicySnapshot to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterLogItemPolicySnapshot")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RegisterLogItemPolicySnapshot) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterLogItemPolicySnapshot) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterLogList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterLogList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int(s.Total)
+	}
+}
+
+var jsonFieldsNameOfRegisterLogList = [2]string{
+	0: "records",
+	1: "total",
+}
+
+// Decode decodes RegisterLogList from json.
+func (s *RegisterLogList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterLogList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]RegisterLogItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem RegisterLogItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int()
+				s.Total = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterLogList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterLogList) {
+					name = jsonFieldsNameOfRegisterLogList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterLogList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterLogList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterPolicyItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterPolicyItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		json.EncodeUUID(e, s.ID)
+	}
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("policy_code")
+		e.Str(s.PolicyCode)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Description.Set {
+			e.FieldStart("description")
+			s.Description.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		e.FieldStart("target_navigation_space_key")
+		e.Str(s.TargetNavigationSpaceKey)
+	}
+	{
+		if s.TargetHomePath.Set {
+			e.FieldStart("target_home_path")
+			s.TargetHomePath.Encode(e)
+		}
+	}
+	{
+		if s.DefaultWorkspaceType.Set {
+			e.FieldStart("default_workspace_type")
+			s.DefaultWorkspaceType.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("status")
+		e.Str(s.Status)
+	}
+	{
+		if s.AllowPublicRegister.Set {
+			e.FieldStart("allow_public_register")
+			s.AllowPublicRegister.Encode(e)
+		}
+	}
+	{
+		if s.RequireInvite.Set {
+			e.FieldStart("require_invite")
+			s.RequireInvite.Encode(e)
+		}
+	}
+	{
+		if s.RequireEmailVerify.Set {
+			e.FieldStart("require_email_verify")
+			s.RequireEmailVerify.Encode(e)
+		}
+	}
+	{
+		if s.RequireCaptcha.Set {
+			e.FieldStart("require_captcha")
+			s.RequireCaptcha.Encode(e)
+		}
+	}
+	{
+		if s.AutoLogin.Set {
+			e.FieldStart("auto_login")
+			s.AutoLogin.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaProvider.Set {
+			e.FieldStart("captcha_provider")
+			s.CaptchaProvider.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaSiteKey.Set {
+			e.FieldStart("captcha_site_key")
+			s.CaptchaSiteKey.Encode(e)
+		}
+	}
+	{
+		if s.RoleCodes != nil {
+			e.FieldStart("role_codes")
+			e.ArrStart()
+			for _, elem := range s.RoleCodes {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.FeaturePackageKeys != nil {
+			e.FieldStart("feature_package_keys")
+			e.ArrStart()
+			for _, elem := range s.FeaturePackageKeys {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterPolicyItem = [19]string{
+	0:  "id",
+	1:  "app_key",
+	2:  "policy_code",
+	3:  "name",
+	4:  "description",
+	5:  "target_app_key",
+	6:  "target_navigation_space_key",
+	7:  "target_home_path",
+	8:  "default_workspace_type",
+	9:  "status",
+	10: "allow_public_register",
+	11: "require_invite",
+	12: "require_email_verify",
+	13: "require_captcha",
+	14: "auto_login",
+	15: "captcha_provider",
+	16: "captcha_site_key",
+	17: "role_codes",
+	18: "feature_package_keys",
+}
+
+// Decode decodes RegisterPolicyItem from json.
+func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterPolicyItem to nil")
+	}
+	var requiredBitSet [3]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeUUID(d)
+				s.ID = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "app_key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "policy_code":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.PolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "description":
+			if err := func() error {
+				s.Description.Reset()
+				if err := s.Description.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"description\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "target_navigation_space_key":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetNavigationSpaceKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_navigation_space_key\"")
+			}
+		case "target_home_path":
+			if err := func() error {
+				s.TargetHomePath.Reset()
+				if err := s.TargetHomePath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_home_path\"")
+			}
+		case "default_workspace_type":
+			if err := func() error {
+				s.DefaultWorkspaceType.Reset()
+				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"default_workspace_type\"")
+			}
+		case "status":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Status = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "allow_public_register":
+			if err := func() error {
+				s.AllowPublicRegister.Reset()
+				if err := s.AllowPublicRegister.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allow_public_register\"")
+			}
+		case "require_invite":
+			if err := func() error {
+				s.RequireInvite.Reset()
+				if err := s.RequireInvite.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_invite\"")
+			}
+		case "require_email_verify":
+			if err := func() error {
+				s.RequireEmailVerify.Reset()
+				if err := s.RequireEmailVerify.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_email_verify\"")
+			}
+		case "require_captcha":
+			if err := func() error {
+				s.RequireCaptcha.Reset()
+				if err := s.RequireCaptcha.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_captcha\"")
+			}
+		case "auto_login":
+			if err := func() error {
+				s.AutoLogin.Reset()
+				if err := s.AutoLogin.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auto_login\"")
+			}
+		case "captcha_provider":
+			if err := func() error {
+				s.CaptchaProvider.Reset()
+				if err := s.CaptchaProvider.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_provider\"")
+			}
+		case "captcha_site_key":
+			if err := func() error {
+				s.CaptchaSiteKey.Reset()
+				if err := s.CaptchaSiteKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_site_key\"")
+			}
+		case "role_codes":
+			if err := func() error {
+				s.RoleCodes = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.RoleCodes = append(s.RoleCodes, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"role_codes\"")
+			}
+		case "feature_package_keys":
+			if err := func() error {
+				s.FeaturePackageKeys = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.FeaturePackageKeys = append(s.FeaturePackageKeys, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"feature_package_keys\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterPolicyItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [3]uint8{
+		0b01101111,
+		0b00000010,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterPolicyItem) {
+					name = jsonFieldsNameOfRegisterPolicyItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterPolicyItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterPolicyItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterPolicyList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterPolicyList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int(s.Total)
+	}
+}
+
+var jsonFieldsNameOfRegisterPolicyList = [2]string{
+	0: "records",
+	1: "total",
+}
+
+// Decode decodes RegisterPolicyList from json.
+func (s *RegisterPolicyList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterPolicyList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]RegisterPolicyItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem RegisterPolicyItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int()
+				s.Total = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterPolicyList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterPolicyList) {
+					name = jsonFieldsNameOfRegisterPolicyList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterPolicyList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterPolicyList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RegisterPolicyUpsertRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RegisterPolicyUpsertRequest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("policy_code")
+		e.Str(s.PolicyCode)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Description.Set {
+			e.FieldStart("description")
+			s.Description.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		e.FieldStart("target_navigation_space_key")
+		e.Str(s.TargetNavigationSpaceKey)
+	}
+	{
+		if s.TargetHomePath.Set {
+			e.FieldStart("target_home_path")
+			s.TargetHomePath.Encode(e)
+		}
+	}
+	{
+		if s.DefaultWorkspaceType.Set {
+			e.FieldStart("default_workspace_type")
+			s.DefaultWorkspaceType.Encode(e)
+		}
+	}
+	{
+		if s.Status.Set {
+			e.FieldStart("status")
+			s.Status.Encode(e)
+		}
+	}
+	{
+		if s.AllowPublicRegister.Set {
+			e.FieldStart("allow_public_register")
+			s.AllowPublicRegister.Encode(e)
+		}
+	}
+	{
+		if s.RequireInvite.Set {
+			e.FieldStart("require_invite")
+			s.RequireInvite.Encode(e)
+		}
+	}
+	{
+		if s.RequireEmailVerify.Set {
+			e.FieldStart("require_email_verify")
+			s.RequireEmailVerify.Encode(e)
+		}
+	}
+	{
+		if s.RequireCaptcha.Set {
+			e.FieldStart("require_captcha")
+			s.RequireCaptcha.Encode(e)
+		}
+	}
+	{
+		if s.AutoLogin.Set {
+			e.FieldStart("auto_login")
+			s.AutoLogin.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaProvider.Set {
+			e.FieldStart("captcha_provider")
+			s.CaptchaProvider.Encode(e)
+		}
+	}
+	{
+		if s.CaptchaSiteKey.Set {
+			e.FieldStart("captcha_site_key")
+			s.CaptchaSiteKey.Encode(e)
+		}
+	}
+	{
+		if s.RoleCodes != nil {
+			e.FieldStart("role_codes")
+			e.ArrStart()
+			for _, elem := range s.RoleCodes {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.FeaturePackageKeys != nil {
+			e.FieldStart("feature_package_keys")
+			e.ArrStart()
+			for _, elem := range s.FeaturePackageKeys {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+}
+
+var jsonFieldsNameOfRegisterPolicyUpsertRequest = [18]string{
+	0:  "app_key",
+	1:  "policy_code",
+	2:  "name",
+	3:  "description",
+	4:  "target_app_key",
+	5:  "target_navigation_space_key",
+	6:  "target_home_path",
+	7:  "default_workspace_type",
+	8:  "status",
+	9:  "allow_public_register",
+	10: "require_invite",
+	11: "require_email_verify",
+	12: "require_captcha",
+	13: "auto_login",
+	14: "captcha_provider",
+	15: "captcha_site_key",
+	16: "role_codes",
+	17: "feature_package_keys",
+}
+
+// Decode decodes RegisterPolicyUpsertRequest from json.
+func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RegisterPolicyUpsertRequest to nil")
+	}
+	var requiredBitSet [3]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "app_key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "policy_code":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.PolicyCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "description":
+			if err := func() error {
+				s.Description.Reset()
+				if err := s.Description.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"description\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "target_navigation_space_key":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetNavigationSpaceKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_navigation_space_key\"")
+			}
+		case "target_home_path":
+			if err := func() error {
+				s.TargetHomePath.Reset()
+				if err := s.TargetHomePath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_home_path\"")
+			}
+		case "default_workspace_type":
+			if err := func() error {
+				s.DefaultWorkspaceType.Reset()
+				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"default_workspace_type\"")
+			}
+		case "status":
+			if err := func() error {
+				s.Status.Reset()
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "allow_public_register":
+			if err := func() error {
+				s.AllowPublicRegister.Reset()
+				if err := s.AllowPublicRegister.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allow_public_register\"")
+			}
+		case "require_invite":
+			if err := func() error {
+				s.RequireInvite.Reset()
+				if err := s.RequireInvite.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_invite\"")
+			}
+		case "require_email_verify":
+			if err := func() error {
+				s.RequireEmailVerify.Reset()
+				if err := s.RequireEmailVerify.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_email_verify\"")
+			}
+		case "require_captcha":
+			if err := func() error {
+				s.RequireCaptcha.Reset()
+				if err := s.RequireCaptcha.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"require_captcha\"")
+			}
+		case "auto_login":
+			if err := func() error {
+				s.AutoLogin.Reset()
+				if err := s.AutoLogin.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auto_login\"")
+			}
+		case "captcha_provider":
+			if err := func() error {
+				s.CaptchaProvider.Reset()
+				if err := s.CaptchaProvider.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_provider\"")
+			}
+		case "captcha_site_key":
+			if err := func() error {
+				s.CaptchaSiteKey.Reset()
+				if err := s.CaptchaSiteKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_site_key\"")
+			}
+		case "role_codes":
+			if err := func() error {
+				s.RoleCodes = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.RoleCodes = append(s.RoleCodes, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"role_codes\"")
+			}
+		case "feature_package_keys":
+			if err := func() error {
+				s.FeaturePackageKeys = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.FeaturePackageKeys = append(s.FeaturePackageKeys, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"feature_package_keys\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RegisterPolicyUpsertRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [3]uint8{
+		0b00110111,
+		0b00000000,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRegisterPolicyUpsertRequest) {
+					name = jsonFieldsNameOfRegisterPolicyUpsertRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RegisterPolicyUpsertRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RegisterPolicyUpsertRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *RegisterRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -8290,6 +11200,12 @@ func (s *RegisterRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.Password)
 	}
 	{
+		if s.ConfirmPassword.Set {
+			e.FieldStart("confirm_password")
+			s.ConfirmPassword.Encode(e)
+		}
+	}
+	{
 		if s.Email.Set {
 			e.FieldStart("email")
 			s.Email.Encode(e)
@@ -8301,13 +11217,35 @@ func (s *RegisterRequest) encodeFields(e *jx.Encoder) {
 			s.Nickname.Encode(e)
 		}
 	}
+	{
+		if s.CaptchaToken.Set {
+			e.FieldStart("captcha_token")
+			s.CaptchaToken.Encode(e)
+		}
+	}
+	{
+		if s.InvitationCode.Set {
+			e.FieldStart("invitation_code")
+			s.InvitationCode.Encode(e)
+		}
+	}
+	{
+		if s.AgreementVersion.Set {
+			e.FieldStart("agreement_version")
+			s.AgreementVersion.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfRegisterRequest = [4]string{
+var jsonFieldsNameOfRegisterRequest = [8]string{
 	0: "username",
 	1: "password",
-	2: "email",
-	3: "nickname",
+	2: "confirm_password",
+	3: "email",
+	4: "nickname",
+	5: "captcha_token",
+	6: "invitation_code",
+	7: "agreement_version",
 }
 
 // Decode decodes RegisterRequest from json.
@@ -8343,6 +11281,16 @@ func (s *RegisterRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
+		case "confirm_password":
+			if err := func() error {
+				s.ConfirmPassword.Reset()
+				if err := s.ConfirmPassword.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"confirm_password\"")
+			}
 		case "email":
 			if err := func() error {
 				s.Email.Reset()
@@ -8362,6 +11310,36 @@ func (s *RegisterRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"nickname\"")
+			}
+		case "captcha_token":
+			if err := func() error {
+				s.CaptchaToken.Reset()
+				if err := s.CaptchaToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captcha_token\"")
+			}
+		case "invitation_code":
+			if err := func() error {
+				s.InvitationCode.Reset()
+				if err := s.InvitationCode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"invitation_code\"")
+			}
+		case "agreement_version":
+			if err := func() error {
+				s.AgreementVersion.Reset()
+				if err := s.AgreementVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"agreement_version\"")
 			}
 		default:
 			return d.Skip()

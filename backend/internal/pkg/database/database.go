@@ -173,6 +173,11 @@ func AutoMigrate() error {
 		&models.RiskOperationAudit{},
 		&models.FeaturePackageVersion{},
 		&models.PermissionBatchTemplate{},
+		// 注册体系（v5.x register slice）
+		&models.RegisterEntry{},
+		&models.RegisterPolicy{},
+		&models.RegisterPolicyFeaturePackage{},
+		&models.RegisterPolicyRole{},
 	)
 
 	if err != nil {

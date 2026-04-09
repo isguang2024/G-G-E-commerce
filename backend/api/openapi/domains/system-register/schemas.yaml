@@ -1,0 +1,138 @@
+components:
+  schemas:
+    RegisterEntryItem:
+      type: object
+      required: [id, app_key, entry_code, name, policy_code, status]
+      properties:
+        id: {type: string, format: uuid}
+        app_key: {type: string}
+        entry_code: {type: string}
+        name: {type: string}
+        host: {type: string}
+        path_prefix: {type: string}
+        register_source: {type: string}
+        policy_code: {type: string}
+        status: {type: string}
+        allow_public_register: {type: boolean, nullable: true}
+        require_invite: {type: boolean, nullable: true}
+        require_email_verify: {type: boolean, nullable: true}
+        require_captcha: {type: boolean, nullable: true}
+        auto_login: {type: boolean, nullable: true}
+        sort_order: {type: integer}
+        remark: {type: string}
+    RegisterEntryList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/RegisterEntryItem'}
+        total: {type: integer}
+    RegisterEntryUpsertRequest:
+      type: object
+      required: [app_key, entry_code, name, policy_code]
+      properties:
+        app_key: {type: string}
+        entry_code: {type: string}
+        name: {type: string}
+        host: {type: string}
+        path_prefix: {type: string}
+        register_source: {type: string}
+        policy_code: {type: string}
+        status: {type: string}
+        allow_public_register: {type: boolean, nullable: true}
+        require_invite: {type: boolean, nullable: true}
+        require_email_verify: {type: boolean, nullable: true}
+        require_captcha: {type: boolean, nullable: true}
+        auto_login: {type: boolean, nullable: true}
+        sort_order: {type: integer}
+        remark: {type: string}
+    RegisterPolicyItem:
+      type: object
+      required: [id, app_key, policy_code, name, target_app_key, target_navigation_space_key, status]
+      properties:
+        id: {type: string, format: uuid}
+        app_key: {type: string}
+        policy_code: {type: string}
+        name: {type: string}
+        description: {type: string}
+        target_app_key: {type: string}
+        target_navigation_space_key: {type: string}
+        target_home_path: {type: string}
+        default_workspace_type: {type: string}
+        status: {type: string}
+        allow_public_register: {type: boolean}
+        require_invite: {type: boolean}
+        require_email_verify: {type: boolean}
+        require_captcha: {type: boolean}
+        auto_login: {type: boolean}
+        captcha_provider: {type: string}
+        captcha_site_key: {type: string}
+        role_codes:
+          type: array
+          items: {type: string}
+        feature_package_keys:
+          type: array
+          items: {type: string}
+    RegisterPolicyList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/RegisterPolicyItem'}
+        total: {type: integer}
+    RegisterPolicyUpsertRequest:
+      type: object
+      required: [app_key, policy_code, name, target_app_key, target_navigation_space_key]
+      properties:
+        app_key: {type: string}
+        policy_code: {type: string}
+        name: {type: string}
+        description: {type: string}
+        target_app_key: {type: string}
+        target_navigation_space_key: {type: string}
+        target_home_path: {type: string}
+        default_workspace_type: {type: string}
+        status: {type: string}
+        allow_public_register: {type: boolean}
+        require_invite: {type: boolean}
+        require_email_verify: {type: boolean}
+        require_captcha: {type: boolean}
+        auto_login: {type: boolean}
+        captcha_provider: {type: string}
+        captcha_site_key: {type: string}
+        role_codes:
+          type: array
+          items: {type: string}
+        feature_package_keys:
+          type: array
+          items: {type: string}
+    RegisterLogItem:
+      type: object
+      required: [user_id, username, register_source, register_entry_code, register_policy_code, created_at]
+      properties:
+        user_id: {type: string, format: uuid}
+        username: {type: string}
+        email: {type: string}
+        register_app_key: {type: string}
+        register_entry_code: {type: string}
+        register_policy_code: {type: string}
+        register_source: {type: string}
+        register_ip: {type: string}
+        register_user_agent: {type: string}
+        agreement_version: {type: string}
+        created_at: {type: string, format: date-time}
+        policy_snapshot:
+          type: object
+          nullable: true
+          additionalProperties: {}
+          description: 注册时刻冻结的有效策略快照（含布尔开关、角色 codes、功能包 keys）
+    RegisterLogList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/RegisterLogItem'}
+        total: {type: integer}

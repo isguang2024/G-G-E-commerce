@@ -122,6 +122,18 @@ type Handler interface {
 	//
 	// POST /permission-actions/groups
 	CreatePermissionActionGroup(ctx context.Context, req AnyObject) (*MutationResult, error)
+	// CreateRegisterEntry implements createRegisterEntry operation.
+	//
+	// 创建注册入口.
+	//
+	// POST /system/register-entries
+	CreateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest) (CreateRegisterEntryRes, error)
+	// CreateRegisterPolicy implements createRegisterPolicy operation.
+	//
+	// 创建注册策略.
+	//
+	// POST /system/register-policies
+	CreateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest) (CreateRegisterPolicyRes, error)
 	// CreateRole implements createRole operation.
 	//
 	// 创建角色.
@@ -188,6 +200,18 @@ type Handler interface {
 	//
 	// DELETE /permission-actions/{id}
 	DeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (*MutationResult, error)
+	// DeleteRegisterEntry implements deleteRegisterEntry operation.
+	//
+	// 删除注册入口.
+	//
+	// DELETE /system/register-entries/{id}
+	DeleteRegisterEntry(ctx context.Context, params DeleteRegisterEntryParams) (DeleteRegisterEntryRes, error)
+	// DeleteRegisterPolicy implements deleteRegisterPolicy operation.
+	//
+	// 删除注册策略.
+	//
+	// DELETE /system/register-policies/{code}
+	DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (DeleteRegisterPolicyRes, error)
 	// DeleteRole implements deleteRole operation.
 	//
 	// 删除角色.
@@ -464,6 +488,12 @@ type Handler interface {
 	//
 	// GET /permission-actions/{id}/impact-preview
 	GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (AnyObject, error)
+	// GetRegisterContext implements getRegisterContext operation.
+	//
+	// 获取注册上下文（命中入口 + 有效策略合并结果）.
+	//
+	// GET /auth/register-context
+	GetRegisterContext(ctx context.Context, params GetRegisterContextParams) (GetRegisterContextRes, error)
 	// GetRole implements getRole operation.
 	//
 	// 获取角色详情.
@@ -770,6 +800,24 @@ type Handler interface {
 	//
 	// GET /pages/runtime/public
 	ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (*AnyListResponse, error)
+	// ListRegisterEntries implements listRegisterEntries operation.
+	//
+	// 注册入口列表.
+	//
+	// GET /system/register-entries
+	ListRegisterEntries(ctx context.Context) (ListRegisterEntriesRes, error)
+	// ListRegisterLogs implements listRegisterLogs operation.
+	//
+	// 注册记录列表.
+	//
+	// GET /system/users/register-logs
+	ListRegisterLogs(ctx context.Context, params ListRegisterLogsParams) (ListRegisterLogsRes, error)
+	// ListRegisterPolicies implements listRegisterPolicies operation.
+	//
+	// 注册策略列表.
+	//
+	// GET /system/register-policies
+	ListRegisterPolicies(ctx context.Context) (ListRegisterPoliciesRes, error)
 	// ListRoleOptions implements listRoleOptions operation.
 	//
 	// 获取角色候选列表.
@@ -1136,6 +1184,18 @@ type Handler interface {
 	//
 	// PUT /permission-actions/groups/{id}
 	UpdatePermissionActionGroup(ctx context.Context, req AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error)
+	// UpdateRegisterEntry implements updateRegisterEntry operation.
+	//
+	// 更新注册入口.
+	//
+	// PUT /system/register-entries/{id}
+	UpdateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest, params UpdateRegisterEntryParams) (UpdateRegisterEntryRes, error)
+	// UpdateRegisterPolicy implements updateRegisterPolicy operation.
+	//
+	// 更新注册策略.
+	//
+	// PUT /system/register-policies/{code}
+	UpdateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (UpdateRegisterPolicyRes, error)
 	// UpdateRole implements updateRole operation.
 	//
 	// 更新角色.

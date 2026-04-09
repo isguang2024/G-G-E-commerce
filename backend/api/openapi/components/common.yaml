@@ -90,21 +90,32 @@ components:
           minLength: 6
     LoginResponse:
       type: object
-      required:
-      - access_token
-      - refresh_token
-      - expires_in
+      required: []
       properties:
         access_token:
           type: string
+          nullable: true
         refresh_token:
           type: string
+          nullable: true
         expires_in:
           type: integer
+          nullable: true
+        pending:
+          type: boolean
+          nullable: true
+          description: 当 auto_login=false 时为 true，表示注册成功但未自动登录
         user:
           type: object
           additionalProperties: {}
           nullable: true
+        landing:
+          type: object
+          nullable: true
+          properties:
+            app_key: {type: string}
+            navigation_space_key: {type: string}
+            home_path: {type: string}
     RegisterRequest:
       type: object
       required:
@@ -116,9 +127,17 @@ components:
         password:
           type: string
           minLength: 6
+        confirm_password:
+          type: string
         email:
           type: string
         nickname:
+          type: string
+        captcha_token:
+          type: string
+        invitation_code:
+          type: string
+        agreement_version:
           type: string
     RefreshTokenRequest:
       type: object

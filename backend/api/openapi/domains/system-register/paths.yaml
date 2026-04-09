@@ -1,0 +1,238 @@
+paths:
+  /system/register-entries:
+    get:
+      operationId: listRegisterEntries
+      summary: 注册入口列表
+      tags: [system-register]
+      x-permission-key: system.register_entry.read
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterEntryList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    post:
+      operationId: createRegisterEntry
+      summary: 创建注册入口
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterEntryUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterEntryItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /system/register-entries/{id}:
+    put:
+      operationId: updateRegisterEntry
+      summary: 更新注册入口
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterEntryUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterEntryItem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    delete:
+      operationId: deleteRegisterEntry
+      summary: 删除注册入口
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /system/register-policies:
+    get:
+      operationId: listRegisterPolicies
+      summary: 注册策略列表
+      tags: [system-register]
+      x-permission-key: system.register_policy.read
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    post:
+      operationId: createRegisterPolicy
+      summary: 创建注册策略
+      tags: [system-register]
+      x-permission-key: system.register_policy.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /system/register-policies/{code}:
+    put:
+      operationId: updateRegisterPolicy
+      summary: 更新注册策略
+      tags: [system-register]
+      x-permission-key: system.register_policy.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyItem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    delete:
+      operationId: deleteRegisterPolicy
+      summary: 删除注册策略
+      tags: [system-register]
+      x-permission-key: system.register_policy.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: {type: string}
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /system/users/register-logs:
+    get:
+      operationId: listRegisterLogs
+      summary: 注册记录列表
+      tags: [system-register]
+      x-permission-key: system.register_log.read
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: query
+          name: source
+          schema: {type: string}
+        - in: query
+          name: entry_code
+          schema: {type: string}
+        - in: query
+          name: policy_code
+          schema: {type: string}
+        - in: query
+          name: page
+          schema: {type: integer, default: 1}
+        - in: query
+          name: page_size
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterLogList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}

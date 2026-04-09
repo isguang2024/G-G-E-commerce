@@ -60,6 +60,36 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/register-context:
+    get:
+      operationId: getRegisterContext
+      summary: 获取注册上下文（命中入口 + 有效策略合并结果）
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      parameters:
+        - in: query
+          name: host
+          required: false
+          schema: {type: string}
+        - in: query
+          name: path
+          required: false
+          schema: {type: string}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/auth/schemas.yaml#/components/schemas/RegisterContext'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /auth/refresh:
     post:
       operationId: refreshToken

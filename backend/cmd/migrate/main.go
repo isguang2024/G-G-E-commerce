@@ -150,6 +150,12 @@ func main() {
 		logger.Info("Default role feature packages initialized successfully")
 	}
 
+	if err := permissionseed.EnsureRegisterSystemSeeds(database.DB); err != nil {
+		logger.Warn("Failed to initialize register system seeds", zap.Error(err))
+	} else {
+		logger.Info("Register system seeds initialized successfully")
+	}
+
 	if err := initDefaultAPIEndpointCategories(logger); err != nil {
 		logger.Warn("Failed to initialize api endpoint categories", zap.Error(err))
 	} else {

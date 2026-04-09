@@ -3,6 +3,8 @@
 package gen
 
 import (
+	"time"
+
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
@@ -472,6 +474,16 @@ type DeleteMediaUnauthorized Error
 
 func (*DeleteMediaUnauthorized) deleteMediaRes() {}
 
+// DeleteRegisterEntryNoContent is response for DeleteRegisterEntry operation.
+type DeleteRegisterEntryNoContent struct{}
+
+func (*DeleteRegisterEntryNoContent) deleteRegisterEntryRes() {}
+
+// DeleteRegisterPolicyNoContent is response for DeleteRegisterPolicy operation.
+type DeleteRegisterPolicyNoContent struct{}
+
+func (*DeleteRegisterPolicyNoContent) deleteRegisterPolicyRes() {}
+
 type DeleteUserForbidden Error
 
 func (*DeleteUserForbidden) deleteUserRes() {}
@@ -526,13 +538,23 @@ func (s *Error) SetDetails(val OptNilErrorDetails) {
 	s.Details = val
 }
 
-func (*Error) explainPermissionsRes()  {}
-func (*Error) getAuthMeRes()           {}
-func (*Error) getCurrentWorkspaceRes() {}
-func (*Error) getRoleRes()             {}
-func (*Error) listMyWorkspacesRes()    {}
-func (*Error) refreshTokenRes()        {}
-func (*Error) registerRes()            {}
+func (*Error) createRegisterEntryRes()  {}
+func (*Error) createRegisterPolicyRes() {}
+func (*Error) deleteRegisterEntryRes()  {}
+func (*Error) deleteRegisterPolicyRes() {}
+func (*Error) explainPermissionsRes()   {}
+func (*Error) getAuthMeRes()            {}
+func (*Error) getCurrentWorkspaceRes()  {}
+func (*Error) getRegisterContextRes()   {}
+func (*Error) getRoleRes()              {}
+func (*Error) listMyWorkspacesRes()     {}
+func (*Error) listRegisterEntriesRes()  {}
+func (*Error) listRegisterLogsRes()     {}
+func (*Error) listRegisterPoliciesRes() {}
+func (*Error) refreshTokenRes()         {}
+func (*Error) registerRes()             {}
+func (*Error) updateRegisterEntryRes()  {}
+func (*Error) updateRegisterPolicyRes() {}
 
 // 可选上下文，如参数校验失败时携带 {field: reason}.
 type ErrorDetails map[string]jx.Raw
@@ -1351,25 +1373,33 @@ func (s *LoginRequest) SetPassword(val string) {
 
 // Ref: #/components/schemas/LoginResponse
 type LoginResponse struct {
-	AccessToken  string                  `json:"access_token"`
-	RefreshToken string                  `json:"refresh_token"`
-	ExpiresIn    int                     `json:"expires_in"`
-	User         OptNilLoginResponseUser `json:"user"`
+	AccessToken  OptNilString `json:"access_token"`
+	RefreshToken OptNilString `json:"refresh_token"`
+	ExpiresIn    OptNilInt    `json:"expires_in"`
+	// 当 auto_login=false 时为 true，表示注册成功但未自动登录.
+	Pending OptNilBool                 `json:"pending"`
+	User    OptNilLoginResponseUser    `json:"user"`
+	Landing OptNilLoginResponseLanding `json:"landing"`
 }
 
 // GetAccessToken returns the value of AccessToken.
-func (s *LoginResponse) GetAccessToken() string {
+func (s *LoginResponse) GetAccessToken() OptNilString {
 	return s.AccessToken
 }
 
 // GetRefreshToken returns the value of RefreshToken.
-func (s *LoginResponse) GetRefreshToken() string {
+func (s *LoginResponse) GetRefreshToken() OptNilString {
 	return s.RefreshToken
 }
 
 // GetExpiresIn returns the value of ExpiresIn.
-func (s *LoginResponse) GetExpiresIn() int {
+func (s *LoginResponse) GetExpiresIn() OptNilInt {
 	return s.ExpiresIn
+}
+
+// GetPending returns the value of Pending.
+func (s *LoginResponse) GetPending() OptNilBool {
+	return s.Pending
 }
 
 // GetUser returns the value of User.
@@ -1377,19 +1407,29 @@ func (s *LoginResponse) GetUser() OptNilLoginResponseUser {
 	return s.User
 }
 
+// GetLanding returns the value of Landing.
+func (s *LoginResponse) GetLanding() OptNilLoginResponseLanding {
+	return s.Landing
+}
+
 // SetAccessToken sets the value of AccessToken.
-func (s *LoginResponse) SetAccessToken(val string) {
+func (s *LoginResponse) SetAccessToken(val OptNilString) {
 	s.AccessToken = val
 }
 
 // SetRefreshToken sets the value of RefreshToken.
-func (s *LoginResponse) SetRefreshToken(val string) {
+func (s *LoginResponse) SetRefreshToken(val OptNilString) {
 	s.RefreshToken = val
 }
 
 // SetExpiresIn sets the value of ExpiresIn.
-func (s *LoginResponse) SetExpiresIn(val int) {
+func (s *LoginResponse) SetExpiresIn(val OptNilInt) {
 	s.ExpiresIn = val
+}
+
+// SetPending sets the value of Pending.
+func (s *LoginResponse) SetPending(val OptNilBool) {
+	s.Pending = val
 }
 
 // SetUser sets the value of User.
@@ -1397,8 +1437,49 @@ func (s *LoginResponse) SetUser(val OptNilLoginResponseUser) {
 	s.User = val
 }
 
+// SetLanding sets the value of Landing.
+func (s *LoginResponse) SetLanding(val OptNilLoginResponseLanding) {
+	s.Landing = val
+}
+
 func (*LoginResponse) loginRes()    {}
 func (*LoginResponse) registerRes() {}
+
+type LoginResponseLanding struct {
+	AppKey             OptString `json:"app_key"`
+	NavigationSpaceKey OptString `json:"navigation_space_key"`
+	HomePath           OptString `json:"home_path"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *LoginResponseLanding) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetNavigationSpaceKey returns the value of NavigationSpaceKey.
+func (s *LoginResponseLanding) GetNavigationSpaceKey() OptString {
+	return s.NavigationSpaceKey
+}
+
+// GetHomePath returns the value of HomePath.
+func (s *LoginResponseLanding) GetHomePath() OptString {
+	return s.HomePath
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *LoginResponseLanding) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetNavigationSpaceKey sets the value of NavigationSpaceKey.
+func (s *LoginResponseLanding) SetNavigationSpaceKey(val OptString) {
+	s.NavigationSpaceKey = val
+}
+
+// SetHomePath sets the value of HomePath.
+func (s *LoginResponseLanding) SetHomePath(val OptString) {
+	s.HomePath = val
+}
 
 type LoginResponseUser map[string]jx.Raw
 
@@ -1954,6 +2035,69 @@ func (o OptMultipartFile) Or(d ht.MultipartFile) ht.MultipartFile {
 	return d
 }
 
+// NewOptNilBool returns new OptNilBool with value set to v.
+func NewOptNilBool(v bool) OptNilBool {
+	return OptNilBool{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilBool is optional nullable bool.
+type OptNilBool struct {
+	Value bool
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilBool was set.
+func (o OptNilBool) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilBool) Reset() {
+	var v bool
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilBool) SetTo(v bool) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilBool) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilBool) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v bool
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilBool) Get() (v bool, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilErrorDetails returns new OptNilErrorDetails with value set to v.
 func NewOptNilErrorDetails(v ErrorDetails) OptNilErrorDetails {
 	return OptNilErrorDetails{
@@ -2017,6 +2161,132 @@ func (o OptNilErrorDetails) Or(d ErrorDetails) ErrorDetails {
 	return d
 }
 
+// NewOptNilInt returns new OptNilInt with value set to v.
+func NewOptNilInt(v int) OptNilInt {
+	return OptNilInt{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilInt is optional nullable int.
+type OptNilInt struct {
+	Value int
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilInt was set.
+func (o OptNilInt) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilInt) Reset() {
+	var v int
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilInt) SetTo(v int) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilInt) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilInt) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v int
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilInt) Get() (v int, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilInt) Or(d int) int {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilLoginResponseLanding returns new OptNilLoginResponseLanding with value set to v.
+func NewOptNilLoginResponseLanding(v LoginResponseLanding) OptNilLoginResponseLanding {
+	return OptNilLoginResponseLanding{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilLoginResponseLanding is optional nullable LoginResponseLanding.
+type OptNilLoginResponseLanding struct {
+	Value LoginResponseLanding
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilLoginResponseLanding was set.
+func (o OptNilLoginResponseLanding) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilLoginResponseLanding) Reset() {
+	var v LoginResponseLanding
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilLoginResponseLanding) SetTo(v LoginResponseLanding) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilLoginResponseLanding) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilLoginResponseLanding) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v LoginResponseLanding
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilLoginResponseLanding) Get() (v LoginResponseLanding, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilLoginResponseLanding) Or(d LoginResponseLanding) LoginResponseLanding {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilLoginResponseUser returns new OptNilLoginResponseUser with value set to v.
 func NewOptNilLoginResponseUser(v LoginResponseUser) OptNilLoginResponseUser {
 	return OptNilLoginResponseUser{
@@ -2074,6 +2344,69 @@ func (o OptNilLoginResponseUser) Get() (v LoginResponseUser, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilLoginResponseUser) Or(d LoginResponseUser) LoginResponseUser {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilRegisterLogItemPolicySnapshot returns new OptNilRegisterLogItemPolicySnapshot with value set to v.
+func NewOptNilRegisterLogItemPolicySnapshot(v RegisterLogItemPolicySnapshot) OptNilRegisterLogItemPolicySnapshot {
+	return OptNilRegisterLogItemPolicySnapshot{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilRegisterLogItemPolicySnapshot is optional nullable RegisterLogItemPolicySnapshot.
+type OptNilRegisterLogItemPolicySnapshot struct {
+	Value RegisterLogItemPolicySnapshot
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilRegisterLogItemPolicySnapshot was set.
+func (o OptNilRegisterLogItemPolicySnapshot) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilRegisterLogItemPolicySnapshot) Reset() {
+	var v RegisterLogItemPolicySnapshot
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilRegisterLogItemPolicySnapshot) SetTo(v RegisterLogItemPolicySnapshot) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilRegisterLogItemPolicySnapshot) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilRegisterLogItemPolicySnapshot) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v RegisterLogItemPolicySnapshot
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilRegisterLogItemPolicySnapshot) Get() (v RegisterLogItemPolicySnapshot, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilRegisterLogItemPolicySnapshot) Or(d RegisterLogItemPolicySnapshot) RegisterLogItemPolicySnapshot {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3070,12 +3403,1214 @@ func (s *RefreshTokenRequest) SetRefreshToken(val string) {
 	s.RefreshToken = val
 }
 
+// Ref: #/components/schemas/RegisterContext
+type RegisterContext struct {
+	EntryCode                string    `json:"entry_code"`
+	EntryName                OptString `json:"entry_name"`
+	EntryAppKey              string    `json:"entry_app_key"`
+	RegisterSource           OptString `json:"register_source"`
+	PolicyCode               string    `json:"policy_code"`
+	TargetAppKey             string    `json:"target_app_key"`
+	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
+	TargetHomePath           string    `json:"target_home_path"`
+	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
+	AllowPublicRegister      bool      `json:"allow_public_register"`
+	RequireInvite            bool      `json:"require_invite"`
+	RequireEmailVerify       bool      `json:"require_email_verify"`
+	RequireCaptcha           bool      `json:"require_captcha"`
+	AutoLogin                bool      `json:"auto_login"`
+	AgreementVersion         OptString `json:"agreement_version"`
+	// 人机验证提供商：none | recaptcha | hcaptcha | turnstile.
+	CaptchaProvider OptString `json:"captcha_provider"`
+	// 对应提供商的公开 site_key，前端渲染 captcha widget 使用.
+	CaptchaSiteKey OptString `json:"captcha_site_key"`
+}
+
+// GetEntryCode returns the value of EntryCode.
+func (s *RegisterContext) GetEntryCode() string {
+	return s.EntryCode
+}
+
+// GetEntryName returns the value of EntryName.
+func (s *RegisterContext) GetEntryName() OptString {
+	return s.EntryName
+}
+
+// GetEntryAppKey returns the value of EntryAppKey.
+func (s *RegisterContext) GetEntryAppKey() string {
+	return s.EntryAppKey
+}
+
+// GetRegisterSource returns the value of RegisterSource.
+func (s *RegisterContext) GetRegisterSource() OptString {
+	return s.RegisterSource
+}
+
+// GetPolicyCode returns the value of PolicyCode.
+func (s *RegisterContext) GetPolicyCode() string {
+	return s.PolicyCode
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *RegisterContext) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
+func (s *RegisterContext) GetTargetNavigationSpaceKey() string {
+	return s.TargetNavigationSpaceKey
+}
+
+// GetTargetHomePath returns the value of TargetHomePath.
+func (s *RegisterContext) GetTargetHomePath() string {
+	return s.TargetHomePath
+}
+
+// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
+func (s *RegisterContext) GetDefaultWorkspaceType() OptString {
+	return s.DefaultWorkspaceType
+}
+
+// GetAllowPublicRegister returns the value of AllowPublicRegister.
+func (s *RegisterContext) GetAllowPublicRegister() bool {
+	return s.AllowPublicRegister
+}
+
+// GetRequireInvite returns the value of RequireInvite.
+func (s *RegisterContext) GetRequireInvite() bool {
+	return s.RequireInvite
+}
+
+// GetRequireEmailVerify returns the value of RequireEmailVerify.
+func (s *RegisterContext) GetRequireEmailVerify() bool {
+	return s.RequireEmailVerify
+}
+
+// GetRequireCaptcha returns the value of RequireCaptcha.
+func (s *RegisterContext) GetRequireCaptcha() bool {
+	return s.RequireCaptcha
+}
+
+// GetAutoLogin returns the value of AutoLogin.
+func (s *RegisterContext) GetAutoLogin() bool {
+	return s.AutoLogin
+}
+
+// GetAgreementVersion returns the value of AgreementVersion.
+func (s *RegisterContext) GetAgreementVersion() OptString {
+	return s.AgreementVersion
+}
+
+// GetCaptchaProvider returns the value of CaptchaProvider.
+func (s *RegisterContext) GetCaptchaProvider() OptString {
+	return s.CaptchaProvider
+}
+
+// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
+func (s *RegisterContext) GetCaptchaSiteKey() OptString {
+	return s.CaptchaSiteKey
+}
+
+// SetEntryCode sets the value of EntryCode.
+func (s *RegisterContext) SetEntryCode(val string) {
+	s.EntryCode = val
+}
+
+// SetEntryName sets the value of EntryName.
+func (s *RegisterContext) SetEntryName(val OptString) {
+	s.EntryName = val
+}
+
+// SetEntryAppKey sets the value of EntryAppKey.
+func (s *RegisterContext) SetEntryAppKey(val string) {
+	s.EntryAppKey = val
+}
+
+// SetRegisterSource sets the value of RegisterSource.
+func (s *RegisterContext) SetRegisterSource(val OptString) {
+	s.RegisterSource = val
+}
+
+// SetPolicyCode sets the value of PolicyCode.
+func (s *RegisterContext) SetPolicyCode(val string) {
+	s.PolicyCode = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *RegisterContext) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
+func (s *RegisterContext) SetTargetNavigationSpaceKey(val string) {
+	s.TargetNavigationSpaceKey = val
+}
+
+// SetTargetHomePath sets the value of TargetHomePath.
+func (s *RegisterContext) SetTargetHomePath(val string) {
+	s.TargetHomePath = val
+}
+
+// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
+func (s *RegisterContext) SetDefaultWorkspaceType(val OptString) {
+	s.DefaultWorkspaceType = val
+}
+
+// SetAllowPublicRegister sets the value of AllowPublicRegister.
+func (s *RegisterContext) SetAllowPublicRegister(val bool) {
+	s.AllowPublicRegister = val
+}
+
+// SetRequireInvite sets the value of RequireInvite.
+func (s *RegisterContext) SetRequireInvite(val bool) {
+	s.RequireInvite = val
+}
+
+// SetRequireEmailVerify sets the value of RequireEmailVerify.
+func (s *RegisterContext) SetRequireEmailVerify(val bool) {
+	s.RequireEmailVerify = val
+}
+
+// SetRequireCaptcha sets the value of RequireCaptcha.
+func (s *RegisterContext) SetRequireCaptcha(val bool) {
+	s.RequireCaptcha = val
+}
+
+// SetAutoLogin sets the value of AutoLogin.
+func (s *RegisterContext) SetAutoLogin(val bool) {
+	s.AutoLogin = val
+}
+
+// SetAgreementVersion sets the value of AgreementVersion.
+func (s *RegisterContext) SetAgreementVersion(val OptString) {
+	s.AgreementVersion = val
+}
+
+// SetCaptchaProvider sets the value of CaptchaProvider.
+func (s *RegisterContext) SetCaptchaProvider(val OptString) {
+	s.CaptchaProvider = val
+}
+
+// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
+func (s *RegisterContext) SetCaptchaSiteKey(val OptString) {
+	s.CaptchaSiteKey = val
+}
+
+func (*RegisterContext) getRegisterContextRes() {}
+
+// Ref: #/components/schemas/RegisterEntryItem
+type RegisterEntryItem struct {
+	ID                  uuid.UUID  `json:"id"`
+	AppKey              string     `json:"app_key"`
+	EntryCode           string     `json:"entry_code"`
+	Name                string     `json:"name"`
+	Host                OptString  `json:"host"`
+	PathPrefix          OptString  `json:"path_prefix"`
+	RegisterSource      OptString  `json:"register_source"`
+	PolicyCode          string     `json:"policy_code"`
+	Status              string     `json:"status"`
+	AllowPublicRegister OptNilBool `json:"allow_public_register"`
+	RequireInvite       OptNilBool `json:"require_invite"`
+	RequireEmailVerify  OptNilBool `json:"require_email_verify"`
+	RequireCaptcha      OptNilBool `json:"require_captcha"`
+	AutoLogin           OptNilBool `json:"auto_login"`
+	SortOrder           OptInt     `json:"sort_order"`
+	Remark              OptString  `json:"remark"`
+}
+
+// GetID returns the value of ID.
+func (s *RegisterEntryItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *RegisterEntryItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetEntryCode returns the value of EntryCode.
+func (s *RegisterEntryItem) GetEntryCode() string {
+	return s.EntryCode
+}
+
+// GetName returns the value of Name.
+func (s *RegisterEntryItem) GetName() string {
+	return s.Name
+}
+
+// GetHost returns the value of Host.
+func (s *RegisterEntryItem) GetHost() OptString {
+	return s.Host
+}
+
+// GetPathPrefix returns the value of PathPrefix.
+func (s *RegisterEntryItem) GetPathPrefix() OptString {
+	return s.PathPrefix
+}
+
+// GetRegisterSource returns the value of RegisterSource.
+func (s *RegisterEntryItem) GetRegisterSource() OptString {
+	return s.RegisterSource
+}
+
+// GetPolicyCode returns the value of PolicyCode.
+func (s *RegisterEntryItem) GetPolicyCode() string {
+	return s.PolicyCode
+}
+
+// GetStatus returns the value of Status.
+func (s *RegisterEntryItem) GetStatus() string {
+	return s.Status
+}
+
+// GetAllowPublicRegister returns the value of AllowPublicRegister.
+func (s *RegisterEntryItem) GetAllowPublicRegister() OptNilBool {
+	return s.AllowPublicRegister
+}
+
+// GetRequireInvite returns the value of RequireInvite.
+func (s *RegisterEntryItem) GetRequireInvite() OptNilBool {
+	return s.RequireInvite
+}
+
+// GetRequireEmailVerify returns the value of RequireEmailVerify.
+func (s *RegisterEntryItem) GetRequireEmailVerify() OptNilBool {
+	return s.RequireEmailVerify
+}
+
+// GetRequireCaptcha returns the value of RequireCaptcha.
+func (s *RegisterEntryItem) GetRequireCaptcha() OptNilBool {
+	return s.RequireCaptcha
+}
+
+// GetAutoLogin returns the value of AutoLogin.
+func (s *RegisterEntryItem) GetAutoLogin() OptNilBool {
+	return s.AutoLogin
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *RegisterEntryItem) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetRemark returns the value of Remark.
+func (s *RegisterEntryItem) GetRemark() OptString {
+	return s.Remark
+}
+
+// SetID sets the value of ID.
+func (s *RegisterEntryItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *RegisterEntryItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetEntryCode sets the value of EntryCode.
+func (s *RegisterEntryItem) SetEntryCode(val string) {
+	s.EntryCode = val
+}
+
+// SetName sets the value of Name.
+func (s *RegisterEntryItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetHost sets the value of Host.
+func (s *RegisterEntryItem) SetHost(val OptString) {
+	s.Host = val
+}
+
+// SetPathPrefix sets the value of PathPrefix.
+func (s *RegisterEntryItem) SetPathPrefix(val OptString) {
+	s.PathPrefix = val
+}
+
+// SetRegisterSource sets the value of RegisterSource.
+func (s *RegisterEntryItem) SetRegisterSource(val OptString) {
+	s.RegisterSource = val
+}
+
+// SetPolicyCode sets the value of PolicyCode.
+func (s *RegisterEntryItem) SetPolicyCode(val string) {
+	s.PolicyCode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RegisterEntryItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetAllowPublicRegister sets the value of AllowPublicRegister.
+func (s *RegisterEntryItem) SetAllowPublicRegister(val OptNilBool) {
+	s.AllowPublicRegister = val
+}
+
+// SetRequireInvite sets the value of RequireInvite.
+func (s *RegisterEntryItem) SetRequireInvite(val OptNilBool) {
+	s.RequireInvite = val
+}
+
+// SetRequireEmailVerify sets the value of RequireEmailVerify.
+func (s *RegisterEntryItem) SetRequireEmailVerify(val OptNilBool) {
+	s.RequireEmailVerify = val
+}
+
+// SetRequireCaptcha sets the value of RequireCaptcha.
+func (s *RegisterEntryItem) SetRequireCaptcha(val OptNilBool) {
+	s.RequireCaptcha = val
+}
+
+// SetAutoLogin sets the value of AutoLogin.
+func (s *RegisterEntryItem) SetAutoLogin(val OptNilBool) {
+	s.AutoLogin = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *RegisterEntryItem) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetRemark sets the value of Remark.
+func (s *RegisterEntryItem) SetRemark(val OptString) {
+	s.Remark = val
+}
+
+func (*RegisterEntryItem) createRegisterEntryRes() {}
+func (*RegisterEntryItem) updateRegisterEntryRes() {}
+
+// Ref: #/components/schemas/RegisterEntryList
+type RegisterEntryList struct {
+	Records []RegisterEntryItem `json:"records"`
+	Total   int                 `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *RegisterEntryList) GetRecords() []RegisterEntryItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *RegisterEntryList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *RegisterEntryList) SetRecords(val []RegisterEntryItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *RegisterEntryList) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*RegisterEntryList) listRegisterEntriesRes() {}
+
+// Ref: #/components/schemas/RegisterEntryUpsertRequest
+type RegisterEntryUpsertRequest struct {
+	AppKey              string     `json:"app_key"`
+	EntryCode           string     `json:"entry_code"`
+	Name                string     `json:"name"`
+	Host                OptString  `json:"host"`
+	PathPrefix          OptString  `json:"path_prefix"`
+	RegisterSource      OptString  `json:"register_source"`
+	PolicyCode          string     `json:"policy_code"`
+	Status              OptString  `json:"status"`
+	AllowPublicRegister OptNilBool `json:"allow_public_register"`
+	RequireInvite       OptNilBool `json:"require_invite"`
+	RequireEmailVerify  OptNilBool `json:"require_email_verify"`
+	RequireCaptcha      OptNilBool `json:"require_captcha"`
+	AutoLogin           OptNilBool `json:"auto_login"`
+	SortOrder           OptInt     `json:"sort_order"`
+	Remark              OptString  `json:"remark"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *RegisterEntryUpsertRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetEntryCode returns the value of EntryCode.
+func (s *RegisterEntryUpsertRequest) GetEntryCode() string {
+	return s.EntryCode
+}
+
+// GetName returns the value of Name.
+func (s *RegisterEntryUpsertRequest) GetName() string {
+	return s.Name
+}
+
+// GetHost returns the value of Host.
+func (s *RegisterEntryUpsertRequest) GetHost() OptString {
+	return s.Host
+}
+
+// GetPathPrefix returns the value of PathPrefix.
+func (s *RegisterEntryUpsertRequest) GetPathPrefix() OptString {
+	return s.PathPrefix
+}
+
+// GetRegisterSource returns the value of RegisterSource.
+func (s *RegisterEntryUpsertRequest) GetRegisterSource() OptString {
+	return s.RegisterSource
+}
+
+// GetPolicyCode returns the value of PolicyCode.
+func (s *RegisterEntryUpsertRequest) GetPolicyCode() string {
+	return s.PolicyCode
+}
+
+// GetStatus returns the value of Status.
+func (s *RegisterEntryUpsertRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetAllowPublicRegister returns the value of AllowPublicRegister.
+func (s *RegisterEntryUpsertRequest) GetAllowPublicRegister() OptNilBool {
+	return s.AllowPublicRegister
+}
+
+// GetRequireInvite returns the value of RequireInvite.
+func (s *RegisterEntryUpsertRequest) GetRequireInvite() OptNilBool {
+	return s.RequireInvite
+}
+
+// GetRequireEmailVerify returns the value of RequireEmailVerify.
+func (s *RegisterEntryUpsertRequest) GetRequireEmailVerify() OptNilBool {
+	return s.RequireEmailVerify
+}
+
+// GetRequireCaptcha returns the value of RequireCaptcha.
+func (s *RegisterEntryUpsertRequest) GetRequireCaptcha() OptNilBool {
+	return s.RequireCaptcha
+}
+
+// GetAutoLogin returns the value of AutoLogin.
+func (s *RegisterEntryUpsertRequest) GetAutoLogin() OptNilBool {
+	return s.AutoLogin
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *RegisterEntryUpsertRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetRemark returns the value of Remark.
+func (s *RegisterEntryUpsertRequest) GetRemark() OptString {
+	return s.Remark
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *RegisterEntryUpsertRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetEntryCode sets the value of EntryCode.
+func (s *RegisterEntryUpsertRequest) SetEntryCode(val string) {
+	s.EntryCode = val
+}
+
+// SetName sets the value of Name.
+func (s *RegisterEntryUpsertRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetHost sets the value of Host.
+func (s *RegisterEntryUpsertRequest) SetHost(val OptString) {
+	s.Host = val
+}
+
+// SetPathPrefix sets the value of PathPrefix.
+func (s *RegisterEntryUpsertRequest) SetPathPrefix(val OptString) {
+	s.PathPrefix = val
+}
+
+// SetRegisterSource sets the value of RegisterSource.
+func (s *RegisterEntryUpsertRequest) SetRegisterSource(val OptString) {
+	s.RegisterSource = val
+}
+
+// SetPolicyCode sets the value of PolicyCode.
+func (s *RegisterEntryUpsertRequest) SetPolicyCode(val string) {
+	s.PolicyCode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RegisterEntryUpsertRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetAllowPublicRegister sets the value of AllowPublicRegister.
+func (s *RegisterEntryUpsertRequest) SetAllowPublicRegister(val OptNilBool) {
+	s.AllowPublicRegister = val
+}
+
+// SetRequireInvite sets the value of RequireInvite.
+func (s *RegisterEntryUpsertRequest) SetRequireInvite(val OptNilBool) {
+	s.RequireInvite = val
+}
+
+// SetRequireEmailVerify sets the value of RequireEmailVerify.
+func (s *RegisterEntryUpsertRequest) SetRequireEmailVerify(val OptNilBool) {
+	s.RequireEmailVerify = val
+}
+
+// SetRequireCaptcha sets the value of RequireCaptcha.
+func (s *RegisterEntryUpsertRequest) SetRequireCaptcha(val OptNilBool) {
+	s.RequireCaptcha = val
+}
+
+// SetAutoLogin sets the value of AutoLogin.
+func (s *RegisterEntryUpsertRequest) SetAutoLogin(val OptNilBool) {
+	s.AutoLogin = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *RegisterEntryUpsertRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetRemark sets the value of Remark.
+func (s *RegisterEntryUpsertRequest) SetRemark(val OptString) {
+	s.Remark = val
+}
+
+// Ref: #/components/schemas/RegisterLogItem
+type RegisterLogItem struct {
+	UserID             uuid.UUID `json:"user_id"`
+	Username           string    `json:"username"`
+	Email              OptString `json:"email"`
+	RegisterAppKey     OptString `json:"register_app_key"`
+	RegisterEntryCode  string    `json:"register_entry_code"`
+	RegisterPolicyCode string    `json:"register_policy_code"`
+	RegisterSource     string    `json:"register_source"`
+	RegisterIP         OptString `json:"register_ip"`
+	RegisterUserAgent  OptString `json:"register_user_agent"`
+	AgreementVersion   OptString `json:"agreement_version"`
+	CreatedAt          time.Time `json:"created_at"`
+	// 注册时刻冻结的有效策略快照（含布尔开关、角色 codes、功能包 keys）.
+	PolicySnapshot OptNilRegisterLogItemPolicySnapshot `json:"policy_snapshot"`
+}
+
+// GetUserID returns the value of UserID.
+func (s *RegisterLogItem) GetUserID() uuid.UUID {
+	return s.UserID
+}
+
+// GetUsername returns the value of Username.
+func (s *RegisterLogItem) GetUsername() string {
+	return s.Username
+}
+
+// GetEmail returns the value of Email.
+func (s *RegisterLogItem) GetEmail() OptString {
+	return s.Email
+}
+
+// GetRegisterAppKey returns the value of RegisterAppKey.
+func (s *RegisterLogItem) GetRegisterAppKey() OptString {
+	return s.RegisterAppKey
+}
+
+// GetRegisterEntryCode returns the value of RegisterEntryCode.
+func (s *RegisterLogItem) GetRegisterEntryCode() string {
+	return s.RegisterEntryCode
+}
+
+// GetRegisterPolicyCode returns the value of RegisterPolicyCode.
+func (s *RegisterLogItem) GetRegisterPolicyCode() string {
+	return s.RegisterPolicyCode
+}
+
+// GetRegisterSource returns the value of RegisterSource.
+func (s *RegisterLogItem) GetRegisterSource() string {
+	return s.RegisterSource
+}
+
+// GetRegisterIP returns the value of RegisterIP.
+func (s *RegisterLogItem) GetRegisterIP() OptString {
+	return s.RegisterIP
+}
+
+// GetRegisterUserAgent returns the value of RegisterUserAgent.
+func (s *RegisterLogItem) GetRegisterUserAgent() OptString {
+	return s.RegisterUserAgent
+}
+
+// GetAgreementVersion returns the value of AgreementVersion.
+func (s *RegisterLogItem) GetAgreementVersion() OptString {
+	return s.AgreementVersion
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RegisterLogItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetPolicySnapshot returns the value of PolicySnapshot.
+func (s *RegisterLogItem) GetPolicySnapshot() OptNilRegisterLogItemPolicySnapshot {
+	return s.PolicySnapshot
+}
+
+// SetUserID sets the value of UserID.
+func (s *RegisterLogItem) SetUserID(val uuid.UUID) {
+	s.UserID = val
+}
+
+// SetUsername sets the value of Username.
+func (s *RegisterLogItem) SetUsername(val string) {
+	s.Username = val
+}
+
+// SetEmail sets the value of Email.
+func (s *RegisterLogItem) SetEmail(val OptString) {
+	s.Email = val
+}
+
+// SetRegisterAppKey sets the value of RegisterAppKey.
+func (s *RegisterLogItem) SetRegisterAppKey(val OptString) {
+	s.RegisterAppKey = val
+}
+
+// SetRegisterEntryCode sets the value of RegisterEntryCode.
+func (s *RegisterLogItem) SetRegisterEntryCode(val string) {
+	s.RegisterEntryCode = val
+}
+
+// SetRegisterPolicyCode sets the value of RegisterPolicyCode.
+func (s *RegisterLogItem) SetRegisterPolicyCode(val string) {
+	s.RegisterPolicyCode = val
+}
+
+// SetRegisterSource sets the value of RegisterSource.
+func (s *RegisterLogItem) SetRegisterSource(val string) {
+	s.RegisterSource = val
+}
+
+// SetRegisterIP sets the value of RegisterIP.
+func (s *RegisterLogItem) SetRegisterIP(val OptString) {
+	s.RegisterIP = val
+}
+
+// SetRegisterUserAgent sets the value of RegisterUserAgent.
+func (s *RegisterLogItem) SetRegisterUserAgent(val OptString) {
+	s.RegisterUserAgent = val
+}
+
+// SetAgreementVersion sets the value of AgreementVersion.
+func (s *RegisterLogItem) SetAgreementVersion(val OptString) {
+	s.AgreementVersion = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RegisterLogItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetPolicySnapshot sets the value of PolicySnapshot.
+func (s *RegisterLogItem) SetPolicySnapshot(val OptNilRegisterLogItemPolicySnapshot) {
+	s.PolicySnapshot = val
+}
+
+// 注册时刻冻结的有效策略快照（含布尔开关、角色 codes、功能包 keys）.
+type RegisterLogItemPolicySnapshot map[string]jx.Raw
+
+func (s *RegisterLogItemPolicySnapshot) init() RegisterLogItemPolicySnapshot {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/RegisterLogList
+type RegisterLogList struct {
+	Records []RegisterLogItem `json:"records"`
+	Total   int               `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *RegisterLogList) GetRecords() []RegisterLogItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *RegisterLogList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *RegisterLogList) SetRecords(val []RegisterLogItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *RegisterLogList) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*RegisterLogList) listRegisterLogsRes() {}
+
+// Ref: #/components/schemas/RegisterPolicyItem
+type RegisterPolicyItem struct {
+	ID                       uuid.UUID `json:"id"`
+	AppKey                   string    `json:"app_key"`
+	PolicyCode               string    `json:"policy_code"`
+	Name                     string    `json:"name"`
+	Description              OptString `json:"description"`
+	TargetAppKey             string    `json:"target_app_key"`
+	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
+	TargetHomePath           OptString `json:"target_home_path"`
+	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
+	Status                   string    `json:"status"`
+	AllowPublicRegister      OptBool   `json:"allow_public_register"`
+	RequireInvite            OptBool   `json:"require_invite"`
+	RequireEmailVerify       OptBool   `json:"require_email_verify"`
+	RequireCaptcha           OptBool   `json:"require_captcha"`
+	AutoLogin                OptBool   `json:"auto_login"`
+	CaptchaProvider          OptString `json:"captcha_provider"`
+	CaptchaSiteKey           OptString `json:"captcha_site_key"`
+	RoleCodes                []string  `json:"role_codes"`
+	FeaturePackageKeys       []string  `json:"feature_package_keys"`
+}
+
+// GetID returns the value of ID.
+func (s *RegisterPolicyItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *RegisterPolicyItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetPolicyCode returns the value of PolicyCode.
+func (s *RegisterPolicyItem) GetPolicyCode() string {
+	return s.PolicyCode
+}
+
+// GetName returns the value of Name.
+func (s *RegisterPolicyItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *RegisterPolicyItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *RegisterPolicyItem) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
+func (s *RegisterPolicyItem) GetTargetNavigationSpaceKey() string {
+	return s.TargetNavigationSpaceKey
+}
+
+// GetTargetHomePath returns the value of TargetHomePath.
+func (s *RegisterPolicyItem) GetTargetHomePath() OptString {
+	return s.TargetHomePath
+}
+
+// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
+func (s *RegisterPolicyItem) GetDefaultWorkspaceType() OptString {
+	return s.DefaultWorkspaceType
+}
+
+// GetStatus returns the value of Status.
+func (s *RegisterPolicyItem) GetStatus() string {
+	return s.Status
+}
+
+// GetAllowPublicRegister returns the value of AllowPublicRegister.
+func (s *RegisterPolicyItem) GetAllowPublicRegister() OptBool {
+	return s.AllowPublicRegister
+}
+
+// GetRequireInvite returns the value of RequireInvite.
+func (s *RegisterPolicyItem) GetRequireInvite() OptBool {
+	return s.RequireInvite
+}
+
+// GetRequireEmailVerify returns the value of RequireEmailVerify.
+func (s *RegisterPolicyItem) GetRequireEmailVerify() OptBool {
+	return s.RequireEmailVerify
+}
+
+// GetRequireCaptcha returns the value of RequireCaptcha.
+func (s *RegisterPolicyItem) GetRequireCaptcha() OptBool {
+	return s.RequireCaptcha
+}
+
+// GetAutoLogin returns the value of AutoLogin.
+func (s *RegisterPolicyItem) GetAutoLogin() OptBool {
+	return s.AutoLogin
+}
+
+// GetCaptchaProvider returns the value of CaptchaProvider.
+func (s *RegisterPolicyItem) GetCaptchaProvider() OptString {
+	return s.CaptchaProvider
+}
+
+// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
+func (s *RegisterPolicyItem) GetCaptchaSiteKey() OptString {
+	return s.CaptchaSiteKey
+}
+
+// GetRoleCodes returns the value of RoleCodes.
+func (s *RegisterPolicyItem) GetRoleCodes() []string {
+	return s.RoleCodes
+}
+
+// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
+func (s *RegisterPolicyItem) GetFeaturePackageKeys() []string {
+	return s.FeaturePackageKeys
+}
+
+// SetID sets the value of ID.
+func (s *RegisterPolicyItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *RegisterPolicyItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetPolicyCode sets the value of PolicyCode.
+func (s *RegisterPolicyItem) SetPolicyCode(val string) {
+	s.PolicyCode = val
+}
+
+// SetName sets the value of Name.
+func (s *RegisterPolicyItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *RegisterPolicyItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *RegisterPolicyItem) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
+func (s *RegisterPolicyItem) SetTargetNavigationSpaceKey(val string) {
+	s.TargetNavigationSpaceKey = val
+}
+
+// SetTargetHomePath sets the value of TargetHomePath.
+func (s *RegisterPolicyItem) SetTargetHomePath(val OptString) {
+	s.TargetHomePath = val
+}
+
+// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
+func (s *RegisterPolicyItem) SetDefaultWorkspaceType(val OptString) {
+	s.DefaultWorkspaceType = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RegisterPolicyItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetAllowPublicRegister sets the value of AllowPublicRegister.
+func (s *RegisterPolicyItem) SetAllowPublicRegister(val OptBool) {
+	s.AllowPublicRegister = val
+}
+
+// SetRequireInvite sets the value of RequireInvite.
+func (s *RegisterPolicyItem) SetRequireInvite(val OptBool) {
+	s.RequireInvite = val
+}
+
+// SetRequireEmailVerify sets the value of RequireEmailVerify.
+func (s *RegisterPolicyItem) SetRequireEmailVerify(val OptBool) {
+	s.RequireEmailVerify = val
+}
+
+// SetRequireCaptcha sets the value of RequireCaptcha.
+func (s *RegisterPolicyItem) SetRequireCaptcha(val OptBool) {
+	s.RequireCaptcha = val
+}
+
+// SetAutoLogin sets the value of AutoLogin.
+func (s *RegisterPolicyItem) SetAutoLogin(val OptBool) {
+	s.AutoLogin = val
+}
+
+// SetCaptchaProvider sets the value of CaptchaProvider.
+func (s *RegisterPolicyItem) SetCaptchaProvider(val OptString) {
+	s.CaptchaProvider = val
+}
+
+// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
+func (s *RegisterPolicyItem) SetCaptchaSiteKey(val OptString) {
+	s.CaptchaSiteKey = val
+}
+
+// SetRoleCodes sets the value of RoleCodes.
+func (s *RegisterPolicyItem) SetRoleCodes(val []string) {
+	s.RoleCodes = val
+}
+
+// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
+func (s *RegisterPolicyItem) SetFeaturePackageKeys(val []string) {
+	s.FeaturePackageKeys = val
+}
+
+func (*RegisterPolicyItem) createRegisterPolicyRes() {}
+func (*RegisterPolicyItem) updateRegisterPolicyRes() {}
+
+// Ref: #/components/schemas/RegisterPolicyList
+type RegisterPolicyList struct {
+	Records []RegisterPolicyItem `json:"records"`
+	Total   int                  `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *RegisterPolicyList) GetRecords() []RegisterPolicyItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *RegisterPolicyList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *RegisterPolicyList) SetRecords(val []RegisterPolicyItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *RegisterPolicyList) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*RegisterPolicyList) listRegisterPoliciesRes() {}
+
+// Ref: #/components/schemas/RegisterPolicyUpsertRequest
+type RegisterPolicyUpsertRequest struct {
+	AppKey                   string    `json:"app_key"`
+	PolicyCode               string    `json:"policy_code"`
+	Name                     string    `json:"name"`
+	Description              OptString `json:"description"`
+	TargetAppKey             string    `json:"target_app_key"`
+	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
+	TargetHomePath           OptString `json:"target_home_path"`
+	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
+	Status                   OptString `json:"status"`
+	AllowPublicRegister      OptBool   `json:"allow_public_register"`
+	RequireInvite            OptBool   `json:"require_invite"`
+	RequireEmailVerify       OptBool   `json:"require_email_verify"`
+	RequireCaptcha           OptBool   `json:"require_captcha"`
+	AutoLogin                OptBool   `json:"auto_login"`
+	CaptchaProvider          OptString `json:"captcha_provider"`
+	CaptchaSiteKey           OptString `json:"captcha_site_key"`
+	RoleCodes                []string  `json:"role_codes"`
+	FeaturePackageKeys       []string  `json:"feature_package_keys"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *RegisterPolicyUpsertRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetPolicyCode returns the value of PolicyCode.
+func (s *RegisterPolicyUpsertRequest) GetPolicyCode() string {
+	return s.PolicyCode
+}
+
+// GetName returns the value of Name.
+func (s *RegisterPolicyUpsertRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *RegisterPolicyUpsertRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *RegisterPolicyUpsertRequest) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
+func (s *RegisterPolicyUpsertRequest) GetTargetNavigationSpaceKey() string {
+	return s.TargetNavigationSpaceKey
+}
+
+// GetTargetHomePath returns the value of TargetHomePath.
+func (s *RegisterPolicyUpsertRequest) GetTargetHomePath() OptString {
+	return s.TargetHomePath
+}
+
+// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
+func (s *RegisterPolicyUpsertRequest) GetDefaultWorkspaceType() OptString {
+	return s.DefaultWorkspaceType
+}
+
+// GetStatus returns the value of Status.
+func (s *RegisterPolicyUpsertRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetAllowPublicRegister returns the value of AllowPublicRegister.
+func (s *RegisterPolicyUpsertRequest) GetAllowPublicRegister() OptBool {
+	return s.AllowPublicRegister
+}
+
+// GetRequireInvite returns the value of RequireInvite.
+func (s *RegisterPolicyUpsertRequest) GetRequireInvite() OptBool {
+	return s.RequireInvite
+}
+
+// GetRequireEmailVerify returns the value of RequireEmailVerify.
+func (s *RegisterPolicyUpsertRequest) GetRequireEmailVerify() OptBool {
+	return s.RequireEmailVerify
+}
+
+// GetRequireCaptcha returns the value of RequireCaptcha.
+func (s *RegisterPolicyUpsertRequest) GetRequireCaptcha() OptBool {
+	return s.RequireCaptcha
+}
+
+// GetAutoLogin returns the value of AutoLogin.
+func (s *RegisterPolicyUpsertRequest) GetAutoLogin() OptBool {
+	return s.AutoLogin
+}
+
+// GetCaptchaProvider returns the value of CaptchaProvider.
+func (s *RegisterPolicyUpsertRequest) GetCaptchaProvider() OptString {
+	return s.CaptchaProvider
+}
+
+// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
+func (s *RegisterPolicyUpsertRequest) GetCaptchaSiteKey() OptString {
+	return s.CaptchaSiteKey
+}
+
+// GetRoleCodes returns the value of RoleCodes.
+func (s *RegisterPolicyUpsertRequest) GetRoleCodes() []string {
+	return s.RoleCodes
+}
+
+// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
+func (s *RegisterPolicyUpsertRequest) GetFeaturePackageKeys() []string {
+	return s.FeaturePackageKeys
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *RegisterPolicyUpsertRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetPolicyCode sets the value of PolicyCode.
+func (s *RegisterPolicyUpsertRequest) SetPolicyCode(val string) {
+	s.PolicyCode = val
+}
+
+// SetName sets the value of Name.
+func (s *RegisterPolicyUpsertRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *RegisterPolicyUpsertRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *RegisterPolicyUpsertRequest) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
+func (s *RegisterPolicyUpsertRequest) SetTargetNavigationSpaceKey(val string) {
+	s.TargetNavigationSpaceKey = val
+}
+
+// SetTargetHomePath sets the value of TargetHomePath.
+func (s *RegisterPolicyUpsertRequest) SetTargetHomePath(val OptString) {
+	s.TargetHomePath = val
+}
+
+// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
+func (s *RegisterPolicyUpsertRequest) SetDefaultWorkspaceType(val OptString) {
+	s.DefaultWorkspaceType = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RegisterPolicyUpsertRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetAllowPublicRegister sets the value of AllowPublicRegister.
+func (s *RegisterPolicyUpsertRequest) SetAllowPublicRegister(val OptBool) {
+	s.AllowPublicRegister = val
+}
+
+// SetRequireInvite sets the value of RequireInvite.
+func (s *RegisterPolicyUpsertRequest) SetRequireInvite(val OptBool) {
+	s.RequireInvite = val
+}
+
+// SetRequireEmailVerify sets the value of RequireEmailVerify.
+func (s *RegisterPolicyUpsertRequest) SetRequireEmailVerify(val OptBool) {
+	s.RequireEmailVerify = val
+}
+
+// SetRequireCaptcha sets the value of RequireCaptcha.
+func (s *RegisterPolicyUpsertRequest) SetRequireCaptcha(val OptBool) {
+	s.RequireCaptcha = val
+}
+
+// SetAutoLogin sets the value of AutoLogin.
+func (s *RegisterPolicyUpsertRequest) SetAutoLogin(val OptBool) {
+	s.AutoLogin = val
+}
+
+// SetCaptchaProvider sets the value of CaptchaProvider.
+func (s *RegisterPolicyUpsertRequest) SetCaptchaProvider(val OptString) {
+	s.CaptchaProvider = val
+}
+
+// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
+func (s *RegisterPolicyUpsertRequest) SetCaptchaSiteKey(val OptString) {
+	s.CaptchaSiteKey = val
+}
+
+// SetRoleCodes sets the value of RoleCodes.
+func (s *RegisterPolicyUpsertRequest) SetRoleCodes(val []string) {
+	s.RoleCodes = val
+}
+
+// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
+func (s *RegisterPolicyUpsertRequest) SetFeaturePackageKeys(val []string) {
+	s.FeaturePackageKeys = val
+}
+
 // Ref: #/components/schemas/RegisterRequest
 type RegisterRequest struct {
-	Username string    `json:"username"`
-	Password string    `json:"password"`
-	Email    OptString `json:"email"`
-	Nickname OptString `json:"nickname"`
+	Username         string    `json:"username"`
+	Password         string    `json:"password"`
+	ConfirmPassword  OptString `json:"confirm_password"`
+	Email            OptString `json:"email"`
+	Nickname         OptString `json:"nickname"`
+	CaptchaToken     OptString `json:"captcha_token"`
+	InvitationCode   OptString `json:"invitation_code"`
+	AgreementVersion OptString `json:"agreement_version"`
 }
 
 // GetUsername returns the value of Username.
@@ -3088,6 +4623,11 @@ func (s *RegisterRequest) GetPassword() string {
 	return s.Password
 }
 
+// GetConfirmPassword returns the value of ConfirmPassword.
+func (s *RegisterRequest) GetConfirmPassword() OptString {
+	return s.ConfirmPassword
+}
+
 // GetEmail returns the value of Email.
 func (s *RegisterRequest) GetEmail() OptString {
 	return s.Email
@@ -3096,6 +4636,21 @@ func (s *RegisterRequest) GetEmail() OptString {
 // GetNickname returns the value of Nickname.
 func (s *RegisterRequest) GetNickname() OptString {
 	return s.Nickname
+}
+
+// GetCaptchaToken returns the value of CaptchaToken.
+func (s *RegisterRequest) GetCaptchaToken() OptString {
+	return s.CaptchaToken
+}
+
+// GetInvitationCode returns the value of InvitationCode.
+func (s *RegisterRequest) GetInvitationCode() OptString {
+	return s.InvitationCode
+}
+
+// GetAgreementVersion returns the value of AgreementVersion.
+func (s *RegisterRequest) GetAgreementVersion() OptString {
+	return s.AgreementVersion
 }
 
 // SetUsername sets the value of Username.
@@ -3108,6 +4663,11 @@ func (s *RegisterRequest) SetPassword(val string) {
 	s.Password = val
 }
 
+// SetConfirmPassword sets the value of ConfirmPassword.
+func (s *RegisterRequest) SetConfirmPassword(val OptString) {
+	s.ConfirmPassword = val
+}
+
 // SetEmail sets the value of Email.
 func (s *RegisterRequest) SetEmail(val OptString) {
 	s.Email = val
@@ -3116,6 +4676,21 @@ func (s *RegisterRequest) SetEmail(val OptString) {
 // SetNickname sets the value of Nickname.
 func (s *RegisterRequest) SetNickname(val OptString) {
 	s.Nickname = val
+}
+
+// SetCaptchaToken sets the value of CaptchaToken.
+func (s *RegisterRequest) SetCaptchaToken(val OptString) {
+	s.CaptchaToken = val
+}
+
+// SetInvitationCode sets the value of InvitationCode.
+func (s *RegisterRequest) SetInvitationCode(val OptString) {
+	s.InvitationCode = val
+}
+
+// SetAgreementVersion sets the value of AgreementVersion.
+func (s *RegisterRequest) SetAgreementVersion(val OptString) {
+	s.AgreementVersion = val
 }
 
 // Ref: #/components/schemas/RoleActionsResponse

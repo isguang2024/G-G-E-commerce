@@ -526,7 +526,7 @@ export function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuS
     description: item?.description || '',
     isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',
-    scheme: `${item?.scheme || item?.meta?.scheme || meta?.scheme || 'https'}`.trim() || 'https',
+    scheme: `${item?.scheme || item?.meta?.scheme || meta?.scheme || ''}`.trim(),
     routePrefix:
       `${item?.route_prefix || meta?.route_prefix || meta?.routePrefix || ''}`.trim(),
     authMode:

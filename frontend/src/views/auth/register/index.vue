@@ -44,9 +44,47 @@
                 :placeholder="$t('register.placeholder.confirmPassword')"
                 type="password"
                 autocomplete="off"
-                @keyup.enter="register"
                 show-password
               />
+            </ElFormItem>
+
+            <!-- 邮箱（策略要求邮箱验证时显示） -->
+            <ElFormItem v-if="ctx?.require_email_verify" prop="email">
+              <ElInput
+                class="custom-height"
+                v-model.trim="formData.email"
+                placeholder="邮箱地址"
+                type="email"
+                autocomplete="email"
+              />
+            </ElFormItem>
+
+            <!-- 邀请码（策略要求邀请码时显示） -->
+            <ElFormItem v-if="ctx?.require_invite" prop="invitationCode">
+              <ElInput
+                class="custom-height"
+                v-model.trim="formData.invitationCode"
+                placeholder="邀请码"
+                autocomplete="off"
+              />
+            </ElFormItem>
+
+            <!-- 人机验证（无第三方 widget 时降级为文本输入） -->
+            <ElFormItem v-if="ctx?.require_captcha" prop="captchaToken">
+              <template v-if="!ctx?.captcha_provider || ctx.captcha_provider === 'none'">
+                <ElInput
+                  class="custom-height"
+                  v-model.trim="formData.captchaToken"
+                  placeholder="验证码（请联系管理员获取）"
+                  autocomplete="off"
+                />
+              </template>
+              <template v-else>
+                <!-- 占位：集成真实 captcha widget 时替换此处 -->
+                <div class="text-sm text-gray-500">
+                  人机验证（{{ ctx.captcha_provider }}）暂不可用，请联系管理员
+                </div>
+              </template>
             </ElFormItem>
 
             <ElFormItem prop="agreement">
@@ -89,13 +127,30 @@
   import { useI18n } from 'vue-i18n'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
+  import { fetchRegister, fetchRegisterContext } from '@/api/auth'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'Register' })
+
+  const userStore = useUserStore()
+
+  const ctx = ref<Awaited<ReturnType<typeof fetchRegisterContext>> | null>(null)
+
+  onMounted(async () => {
+    try {
+      ctx.value = await fetchRegisterContext(window.location.host, window.location.pathname)
+    } catch (e) {
+      console.warn('fetch register context failed', e)
+    }
+  })
 
   interface RegisterForm {
     username: string
     password: string
     confirmPassword: string
+    email: string
+    invitationCode: string
+    captchaToken: string
     agreement: boolean
   }
 
@@ -120,6 +175,9 @@
     username: '',
     password: '',
     confirmPassword: '',
+    email: '',
+    invitationCode: '',
+    captchaToken: '',
     agreement: false
   })
 
@@ -189,6 +247,16 @@
       { min: PASSWORD_MIN_LENGTH, message: t('register.rule.passwordLength'), trigger: 'blur' }
     ],
     confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
+    ...(ctx.value?.require_email_verify
+      ? { email: [{ required: true, type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }] }
+      : {}),
+    ...(ctx.value?.require_invite
+      ? { invitationCode: [{ required: true, message: '请输入邀请码', trigger: 'blur' }] }
+      : {}),
+    ...(ctx.value?.require_captcha &&
+    (!ctx.value.captcha_provider || ctx.value.captcha_provider === 'none')
+      ? { captchaToken: [{ required: true, message: '请输入验证码', trigger: 'blur' }] }
+      : {}),
     agreement: [{ validator: validateAgreement, trigger: 'change' }]
   }))
 
@@ -203,23 +271,37 @@
       await formRef.value.validate()
       loading.value = true
 
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   username: formData.username,
-      //   password: formData.password
-      // }
-      // const res = await AuthService.register(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('注册成功')
-      //   toLogin()
-      // }
-
-      // 模拟注册请求
-      setTimeout(() => {
+      if (ctx.value && ctx.value.allow_public_register === false) {
+        ElMessage.error('当前未开启公开注册')
         loading.value = false
-        ElMessage.success('注册成功')
+        return
+      }
+      const res = await fetchRegister({
+        username: formData.username,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
+        ...(formData.email ? { email: formData.email } : {}),
+        ...(formData.invitationCode ? { invitation_code: formData.invitationCode } : {}),
+        ...(formData.captchaToken ? { captcha_token: formData.captchaToken } : {}),
+        agreement_version: 'v1'
+      })
+      loading.value = false
+      ElMessage.success('注册成功')
+
+      // auto_login: 持久化 token，直接跳转 landing
+      if (res.access_token) {
+        userStore.setToken(res.access_token, res.refresh_token ?? undefined)
+        userStore.setLoginStatus(true)
+        const homePath = res.landing?.home_path ?? '/dashboard/console'
+        setTimeout(() => router.push(homePath), REDIRECT_DELAY)
+      } else if (res.pending) {
+        // auto_login=false：注册成功但未自动登录，引导去登录页
+        setTimeout(() => router.push({ name: 'Login', query: { registered: '1' } }), REDIRECT_DELAY)
+      } else if (res.landing?.home_path) {
+        setTimeout(() => router.push(res.landing!.home_path!), REDIRECT_DELAY)
+      } else {
         toLogin()
-      }, REDIRECT_DELAY)
+      }
     } catch (error) {
       console.error('表单验证失败:', error)
       loading.value = false

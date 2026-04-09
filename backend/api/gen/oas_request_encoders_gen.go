@@ -266,6 +266,34 @@ func encodeCreatePermissionActionGroupRequest(
 	return nil
 }
 
+func encodeCreateRegisterEntryRequest(
+	req *RegisterEntryUpsertRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateRegisterPolicyRequest(
+	req *RegisterPolicyUpsertRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateRoleRequest(
 	req *RoleCreateRequest,
 	r *http.Request,
@@ -940,6 +968,34 @@ func encodeUpdatePermissionActionRequest(
 
 func encodeUpdatePermissionActionGroupRequest(
 	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateRegisterEntryRequest(
+	req *RegisterEntryUpsertRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateRegisterPolicyRequest(
+	req *RegisterPolicyUpsertRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

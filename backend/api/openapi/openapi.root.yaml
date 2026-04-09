@@ -34,11 +34,24 @@ tags:
 - name: message
 - name: api_endpoint
 - name: media
+- name: system-register
 paths:
+  /system/register-entries:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
+  /system/register-entries/{id}:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries~1{id}
+  /system/register-policies:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies
+  /system/register-policies/{code}:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies~1{code}
+  /system/users/register-logs:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1users~1register-logs
   /auth/login:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1login
   /auth/register:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register
+  /auth/register-context:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register-context
   /auth/refresh:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1refresh
   /auth/me:

@@ -4,6 +4,95 @@
  */
 
 export interface paths {
+    "/system/register-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 注册入口列表 */
+        get: operations["listRegisterEntries"];
+        put?: never;
+        /** 创建注册入口 */
+        post: operations["createRegisterEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/register-entries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新注册入口 */
+        put: operations["updateRegisterEntry"];
+        post?: never;
+        /** 删除注册入口 */
+        delete: operations["deleteRegisterEntry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/register-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 注册策略列表 */
+        get: operations["listRegisterPolicies"];
+        put?: never;
+        /** 创建注册策略 */
+        post: operations["createRegisterPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/register-policies/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新注册策略 */
+        put: operations["updateRegisterPolicy"];
+        post?: never;
+        /** 删除注册策略 */
+        delete: operations["deleteRegisterPolicy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/users/register-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 注册记录列表 */
+        get: operations["listRegisterLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -32,6 +121,23 @@ export interface paths {
         put?: never;
         /** 用户注册 */
         post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取注册上下文（命中入口 + 有效策略合并结果） */
+        get: operations["getRegisterContext"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2410,18 +2516,29 @@ export interface components {
             password: string;
         };
         LoginResponse: {
-            access_token: string;
-            refresh_token: string;
-            expires_in: number;
+            access_token?: string | null;
+            refresh_token?: string | null;
+            expires_in?: number | null;
+            /** @description 当 auto_login=false 时为 true，表示注册成功但未自动登录 */
+            pending?: boolean | null;
             user?: {
                 [key: string]: unknown;
+            } | null;
+            landing?: {
+                app_key?: string;
+                navigation_space_key?: string;
+                home_path?: string;
             } | null;
         };
         RegisterRequest: {
             username: string;
             password: string;
+            confirm_password?: string;
             email?: string;
             nickname?: string;
+            captcha_token?: string;
+            invitation_code?: string;
+            agreement_version?: string;
         };
         RefreshTokenRequest: {
             refresh_token: string;
@@ -2876,6 +2993,136 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        RegisterEntryItem: {
+            /** Format: uuid */
+            id: string;
+            app_key: string;
+            entry_code: string;
+            name: string;
+            host?: string;
+            path_prefix?: string;
+            register_source?: string;
+            policy_code: string;
+            status: string;
+            allow_public_register?: boolean | null;
+            require_invite?: boolean | null;
+            require_email_verify?: boolean | null;
+            require_captcha?: boolean | null;
+            auto_login?: boolean | null;
+            sort_order?: number;
+            remark?: string;
+        };
+        RegisterEntryList: {
+            records: components["schemas"]["RegisterEntryItem"][];
+            total: number;
+        };
+        RegisterEntryUpsertRequest: {
+            app_key: string;
+            entry_code: string;
+            name: string;
+            host?: string;
+            path_prefix?: string;
+            register_source?: string;
+            policy_code: string;
+            status?: string;
+            allow_public_register?: boolean | null;
+            require_invite?: boolean | null;
+            require_email_verify?: boolean | null;
+            require_captcha?: boolean | null;
+            auto_login?: boolean | null;
+            sort_order?: number;
+            remark?: string;
+        };
+        RegisterPolicyItem: {
+            /** Format: uuid */
+            id: string;
+            app_key: string;
+            policy_code: string;
+            name: string;
+            description?: string;
+            target_app_key: string;
+            target_navigation_space_key: string;
+            target_home_path?: string;
+            default_workspace_type?: string;
+            status: string;
+            allow_public_register?: boolean;
+            require_invite?: boolean;
+            require_email_verify?: boolean;
+            require_captcha?: boolean;
+            auto_login?: boolean;
+            captcha_provider?: string;
+            captcha_site_key?: string;
+            role_codes?: string[];
+            feature_package_keys?: string[];
+        };
+        RegisterPolicyList: {
+            records: components["schemas"]["RegisterPolicyItem"][];
+            total: number;
+        };
+        RegisterPolicyUpsertRequest: {
+            app_key: string;
+            policy_code: string;
+            name: string;
+            description?: string;
+            target_app_key: string;
+            target_navigation_space_key: string;
+            target_home_path?: string;
+            default_workspace_type?: string;
+            status?: string;
+            allow_public_register?: boolean;
+            require_invite?: boolean;
+            require_email_verify?: boolean;
+            require_captcha?: boolean;
+            auto_login?: boolean;
+            captcha_provider?: string;
+            captcha_site_key?: string;
+            role_codes?: string[];
+            feature_package_keys?: string[];
+        };
+        RegisterLogItem: {
+            /** Format: uuid */
+            user_id: string;
+            username: string;
+            email?: string;
+            register_app_key?: string;
+            register_entry_code: string;
+            register_policy_code: string;
+            register_source: string;
+            register_ip?: string;
+            register_user_agent?: string;
+            agreement_version?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @description 注册时刻冻结的有效策略快照（含布尔开关、角色 codes、功能包 keys） */
+            policy_snapshot?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        RegisterLogList: {
+            records: components["schemas"]["RegisterLogItem"][];
+            total: number;
+        };
+        RegisterContext: {
+            entry_code: string;
+            entry_name?: string;
+            entry_app_key: string;
+            register_source?: string;
+            policy_code: string;
+            target_app_key: string;
+            target_navigation_space_key: string;
+            target_home_path: string;
+            default_workspace_type?: string;
+            allow_public_register: boolean;
+            require_invite: boolean;
+            require_email_verify: boolean;
+            require_captcha: boolean;
+            auto_login: boolean;
+            agreement_version?: string;
+            /** @description 人机验证提供商：none | recaptcha | hcaptcha | turnstile */
+            captcha_provider?: string;
+            /** @description 对应提供商的公开 site_key，前端渲染 captcha widget 使用 */
+            captcha_site_key?: string;
+        };
         "schemas-Error": {
             /**
              * @description 业务码（与 HTTP 状态码分离）。
@@ -2957,6 +3204,293 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listRegisterEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterEntryList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createRegisterEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterEntryUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterEntryItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateRegisterEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterEntryUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterEntryItem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteRegisterEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRegisterPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterPolicyList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createRegisterPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPolicyUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterPolicyItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateRegisterPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPolicyUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterPolicyItem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteRegisterPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRegisterLogs: {
+        parameters: {
+            query?: {
+                source?: string;
+                entry_code?: string;
+                policy_code?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterLogList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     login: {
         parameters: {
             query?: never;
@@ -3023,6 +3557,38 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRegisterContext: {
+        parameters: {
+            query?: {
+                host?: string;
+                path?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterContext"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -25,6 +25,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/navigation"
 	"github.com/gg-ecommerce/backend/internal/modules/system/page"
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
+	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
 	"github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
@@ -83,6 +84,9 @@ type APIHandler struct {
 	keyRepo          user.PermissionKeyRepository
 	// Phase 5: apiendpoint domain
 	apiEndpointSvc apiendpoint.Service
+	// 注册体系
+	registerResolver *register.Resolver
+	registerSvc      *register.Service
 }
 
 func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator, apiEndpointSvc apiendpoint.Service) *APIHandler {
@@ -186,7 +190,7 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		logger,
 	)
 
-	return &APIHandler{
+	h := &APIHandler{
 		db:               db,
 		logger:           logger,
 		service:          workspace.NewService(db, logger),
@@ -213,8 +217,18 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		featurePkgRepo:   featurePkgRepo,
 		cwFeaturePkgRepo: cwFeaturePkgRepo,
 		keyRepo:          keyRepo,
-		apiEndpointSvc:   apiEndpointSvc,
+		apiEndpointSvc: apiEndpointSvc,
 	}
+	registerResolver := register.NewResolver(register.NewRepository(db))
+	h.registerResolver = registerResolver
+	h.registerSvc = register.NewService(
+		db,
+		registerResolver,
+		h.authSvc,
+		h.service,
+		logger,
+	)
+	return h
 }
 
 func (h *APIHandler) GetWorkspace(ctx context.Context, params gen.GetWorkspaceParams) (gen.GetWorkspaceRes, error) {

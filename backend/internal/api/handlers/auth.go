@@ -18,12 +18,17 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 )
 
 // CtxClientIP carries the originating client IP from the gin bridge into
 // ogen handlers (used by Login for last-login bookkeeping).
-const CtxClientIP ctxKey = "client_ip"
+const (
+	CtxClientIP    ctxKey = "client_ip"
+	CtxRequestHost ctxKey = "request_host"
+	CtxRequestPath ctxKey = "request_path"
+	CtxUserAgent   ctxKey = "user_agent"
+)
 
 func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.LoginRes, error) {
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
@@ -36,9 +41,9 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 		return nil, err
 	}
 	out := &gen.LoginResponse{
-		AccessToken:  resp.AccessToken,
-		RefreshToken: resp.RefreshToken,
-		ExpiresIn:    resp.ExpiresIn,
+		AccessToken:  gen.NewOptNilString(resp.AccessToken),
+		RefreshToken: gen.NewOptNilString(resp.RefreshToken),
+		ExpiresIn:    gen.NewOptNilInt(resp.ExpiresIn),
 	}
 	if userMap, ok := resp.User.(map[string]interface{}); ok {
 		out.User = gen.NewOptNilLoginResponseUser(toJxRawMap(userMap))
@@ -50,24 +55,101 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
 		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
-	dtoReq := &dto.RegisterRequest{
-		Username: req.Username,
-		Password: req.Password,
-		Email:    optString(req.Email),
-		Nickname: optString(req.Nickname),
+	if h.registerSvc == nil {
+		return nil, errors.New("register service not configured")
 	}
-	resp, err := h.authSvc.Register(dtoReq)
+	result, err := h.registerSvc.Register(ctx, register.RegisterInput{
+		Username:         req.Username,
+		Password:         req.Password,
+		ConfirmPassword:  optString(req.ConfirmPassword),
+		Email:            optString(req.Email),
+		Nickname:         optString(req.Nickname),
+		CaptchaToken:     optString(req.CaptchaToken),
+		InvitationCode:   optString(req.InvitationCode),
+		AgreementVersion: optString(req.AgreementVersion),
+		Host:             stringFromCtx(ctx, CtxRequestHost),
+		Path:             stringFromCtx(ctx, CtxRequestPath),
+		IP:               clientIPFromCtx(ctx),
+		UserAgent:        stringFromCtx(ctx, CtxUserAgent),
+	})
 	if err != nil {
 		h.logger.Debug("register failed", zap.Error(err))
+		if errors.Is(err, register.ErrPublicRegisterDisabled) {
+			return nil, &apperr.ParamError{Msg: "公开注册未开启"}
+		}
 		return nil, err
 	}
-	out := &gen.LoginResponse{
-		AccessToken:  resp.AccessToken,
-		RefreshToken: resp.RefreshToken,
-		ExpiresIn:    resp.ExpiresIn,
+	out := &gen.LoginResponse{}
+	if result.Login != nil {
+		out.AccessToken = gen.NewOptNilString(result.Login.AccessToken)
+		out.RefreshToken = gen.NewOptNilString(result.Login.RefreshToken)
+		out.ExpiresIn = gen.NewOptNilInt(result.Login.ExpiresIn)
+		if userMap, ok := result.Login.User.(map[string]interface{}); ok {
+			out.User = gen.NewOptNilLoginResponseUser(toJxRawMap(userMap))
+		}
 	}
-	if userMap, ok := resp.User.(map[string]interface{}); ok {
-		out.User = gen.NewOptNilLoginResponseUser(toJxRawMap(userMap))
+	if result.Pending {
+		out.Pending = gen.NewOptNilBool(true)
+	}
+	if result.Landing != nil {
+		out.Landing = gen.NewOptNilLoginResponseLanding(gen.LoginResponseLanding{
+			AppKey:             gen.NewOptString(result.Landing.AppKey),
+			NavigationSpaceKey: gen.NewOptString(result.Landing.NavigationSpaceKey),
+			HomePath:           gen.NewOptString(result.Landing.HomePath),
+		})
+	}
+	return out, nil
+}
+
+// GetRegisterContext: 由 host + path 命中入口并合并策略，返回前端注册页所需的
+// 有效上下文。公开接口，未命中任何 entry 时退回 default entry。
+func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegisterContextParams) (gen.GetRegisterContextRes, error) {
+	host := ""
+	if params.Host.Set {
+		host = strings.TrimSpace(params.Host.Value)
+	}
+	path := ""
+	if params.Path.Set {
+		path = strings.TrimSpace(params.Path.Value)
+	}
+	if path == "" {
+		path = "/account/auth/register"
+	}
+	if h.registerResolver == nil {
+		return nil, errors.New("register resolver not configured")
+	}
+	eff, err := h.registerResolver.Resolve(ctx, host, path)
+	if err != nil {
+		return nil, err
+	}
+	out := &gen.RegisterContext{
+		EntryCode:                eff.EntryCode,
+		EntryAppKey:              eff.EntryAppKey,
+		PolicyCode:               eff.PolicyCode,
+		TargetAppKey:             eff.TargetAppKey,
+		TargetNavigationSpaceKey: eff.TargetNavigationSpaceKey,
+		TargetHomePath:           eff.TargetHomePath,
+		AllowPublicRegister:      eff.AllowPublicRegister,
+		RequireInvite:            eff.RequireInvite,
+		RequireEmailVerify:       eff.RequireEmailVerify,
+		RequireCaptcha:           eff.RequireCaptcha,
+		AutoLogin:                eff.AutoLogin,
+	}
+	if eff.EntryName != "" {
+		out.EntryName = gen.NewOptString(eff.EntryName)
+	}
+	if eff.RegisterSource != "" {
+		out.RegisterSource = gen.NewOptString(eff.RegisterSource)
+	}
+	if eff.DefaultWorkspaceType != "" {
+		out.DefaultWorkspaceType = gen.NewOptString(eff.DefaultWorkspaceType)
+	}
+	if eff.AgreementVersion != "" {
+		out.AgreementVersion = gen.NewOptString(eff.AgreementVersion)
+	}
+	if eff.CaptchaProvider != "" && eff.CaptchaProvider != "none" {
+		out.CaptchaProvider = gen.NewOptString(eff.CaptchaProvider)
+		out.CaptchaSiteKey = gen.NewOptString(eff.CaptchaSiteKey)
 	}
 	return out, nil
 }
@@ -204,6 +286,26 @@ func (h *APIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error) {
 func stringFromCtx(ctx context.Context, key ctxKey) string {
 	v, _ := ctx.Value(key).(string)
 	return v
+}
+
+func requestHostFromCtx(ctx context.Context) string {
+	return strings.TrimSpace(stringFromCtx(ctx, CtxRequestHost))
+}
+
+func requestPathFromCtx(ctx context.Context) string {
+	return strings.TrimSpace(stringFromCtx(ctx, CtxRequestPath))
+}
+
+func collaborationWorkspaceIDFromContext(ctx context.Context) (*uuid.UUID, bool) {
+	raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationWorkspaceID))
+	if raw == "" {
+		return nil, false
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil || id == uuid.Nil {
+		return nil, false
+	}
+	return &id, true
 }
 
 func clientIPFromCtx(ctx context.Context) string {

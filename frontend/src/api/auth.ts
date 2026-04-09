@@ -20,6 +20,49 @@ export async function fetchLogin(params: Api.Auth.LoginParams) {
 }
 
 /**
+ * 获取注册上下文：按当前 host+path 命中注册入口 + 合并策略，返回前端
+ * 渲染注册页所需的开关（是否允许公开注册、是否需要邀请码 / 人机验证等）
+ * 以及注册成功后的 landing 目标。
+ */
+export async function fetchRegisterContext(host?: string, path?: string) {
+  const { data, error, response } = await v5Client.GET('/auth/register-context', {
+    params: { query: { host, path } },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
+  })
+  if (error || !data) {
+    throw (error ? createV5HttpError(error, response) : new Error('fetch register context failed'))
+  }
+  return data
+}
+
+/**
+ * 注册账号 — 走 v5 OpenAPI /auth/register。返回 LoginResponse + landing。
+ */
+export async function fetchRegister(body: {
+  username: string
+  password: string
+  confirm_password?: string
+  email?: string
+  nickname?: string
+  captcha_token?: string
+  invitation_code?: string
+  agreement_version?: string
+}) {
+  const { data, error, response } = await v5Client.POST('/auth/register', {
+    body,
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
+  })
+  if (error || !data) {
+    throw (error ? createV5HttpError(error, response) : new Error('register failed'))
+  }
+  return data
+}
+
+/**
  * 刷新 Token — v5 OpenAPI client。
  */
 export async function fetchRefreshToken(refreshToken: string) {

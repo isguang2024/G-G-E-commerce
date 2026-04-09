@@ -13,12 +13,28 @@ type CreateApiEndpointCategoryRes interface {
 	createApiEndpointCategoryRes()
 }
 
+type CreateRegisterEntryRes interface {
+	createRegisterEntryRes()
+}
+
+type CreateRegisterPolicyRes interface {
+	createRegisterPolicyRes()
+}
+
 type CreateUserRes interface {
 	createUserRes()
 }
 
 type DeleteMediaRes interface {
 	deleteMediaRes()
+}
+
+type DeleteRegisterEntryRes interface {
+	deleteRegisterEntryRes()
+}
+
+type DeleteRegisterPolicyRes interface {
+	deleteRegisterPolicyRes()
 }
 
 type DeleteUserRes interface {
@@ -39,6 +55,10 @@ type GetAuthMeRes interface {
 
 type GetCurrentWorkspaceRes interface {
 	getCurrentWorkspaceRes()
+}
+
+type GetRegisterContextRes interface {
+	getRegisterContextRes()
 }
 
 type GetRoleRes interface {
@@ -67,6 +87,18 @@ type ListMediaRes interface {
 
 type ListMyWorkspacesRes interface {
 	listMyWorkspacesRes()
+}
+
+type ListRegisterEntriesRes interface {
+	listRegisterEntriesRes()
+}
+
+type ListRegisterLogsRes interface {
+	listRegisterLogsRes()
+}
+
+type ListRegisterPoliciesRes interface {
+	listRegisterPoliciesRes()
 }
 
 type ListStaleApiEndpointsRes interface {
@@ -111,6 +143,14 @@ type UpdateApiEndpointContextScopeRes interface {
 
 type UpdateApiEndpointRes interface {
 	updateApiEndpointRes()
+}
+
+type UpdateRegisterEntryRes interface {
+	updateRegisterEntryRes()
+}
+
+type UpdateRegisterPolicyRes interface {
+	updateRegisterPolicyRes()
 }
 
 type UpdateUserRes interface {

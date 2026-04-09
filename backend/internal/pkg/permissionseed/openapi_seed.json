@@ -152,6 +152,16 @@
       "access_mode": "public"
     },
     {
+      "operation_id": "getRegisterContext",
+      "method": "get",
+      "path": "/auth/register-context",
+      "permission_key": "",
+      "summary": "获取注册上下文（命中入口 + 有效策略合并结果）",
+      "tags": "auth",
+      "api_category": "auth",
+      "access_mode": "public"
+    },
+    {
       "operation_id": "listCollaborationWorkspaces",
       "method": "get",
       "path": "/collaboration-workspaces",
@@ -1719,6 +1729,96 @@
       "summary": "从默认空间初始化菜单空间",
       "tags": "system",
       "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRegisterEntries",
+      "method": "get",
+      "path": "/system/register-entries",
+      "permission_key": "system.register_entry.read",
+      "summary": "注册入口列表",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createRegisterEntry",
+      "method": "post",
+      "path": "/system/register-entries",
+      "permission_key": "system.register_entry.write",
+      "summary": "创建注册入口",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteRegisterEntry",
+      "method": "delete",
+      "path": "/system/register-entries/{id}",
+      "permission_key": "system.register_entry.write",
+      "summary": "删除注册入口",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateRegisterEntry",
+      "method": "put",
+      "path": "/system/register-entries/{id}",
+      "permission_key": "system.register_entry.write",
+      "summary": "更新注册入口",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRegisterPolicies",
+      "method": "get",
+      "path": "/system/register-policies",
+      "permission_key": "system.register_policy.read",
+      "summary": "注册策略列表",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createRegisterPolicy",
+      "method": "post",
+      "path": "/system/register-policies",
+      "permission_key": "system.register_policy.write",
+      "summary": "创建注册策略",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteRegisterPolicy",
+      "method": "delete",
+      "path": "/system/register-policies/{code}",
+      "permission_key": "system.register_policy.write",
+      "summary": "删除注册策略",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateRegisterPolicy",
+      "method": "put",
+      "path": "/system/register-policies/{code}",
+      "permission_key": "system.register_policy.write",
+      "summary": "更新注册策略",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRegisterLogs",
+      "method": "get",
+      "path": "/system/users/register-logs",
+      "permission_key": "system.register_log.read",
+      "summary": "注册记录列表",
+      "tags": "system-register",
+      "api_category": "system-register",
       "access_mode": "permission"
     },
     {

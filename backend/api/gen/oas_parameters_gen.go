@@ -1001,6 +1001,136 @@ func decodeDeletePermissionActionParams(args [1]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
+// DeleteRegisterEntryParams is parameters of deleteRegisterEntry operation.
+type DeleteRegisterEntryParams struct {
+	ID uuid.UUID
+}
+
+func unpackDeleteRegisterEntryParams(packed middleware.Parameters) (params DeleteRegisterEntryParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteRegisterEntryParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteRegisterEntryParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// DeleteRegisterPolicyParams is parameters of deleteRegisterPolicy operation.
+type DeleteRegisterPolicyParams struct {
+	Code string
+}
+
+func unpackDeleteRegisterPolicyParams(packed middleware.Parameters) (params DeleteRegisterPolicyParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "code",
+			In:   "path",
+		}
+		params.Code = packed[key].(string)
+	}
+	return params
+}
+
+func decodeDeleteRegisterPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteRegisterPolicyParams, _ error) {
+	// Decode path: code.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "code",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Code = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "code",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteRoleParams is parameters of deleteRole operation.
 type DeleteRoleParams struct {
 	ID uuid.UUID
@@ -4047,6 +4177,121 @@ func decodeGetPermissionActionImpactPreviewParams(args [1]string, argsEscaped bo
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetRegisterContextParams is parameters of getRegisterContext operation.
+type GetRegisterContextParams struct {
+	Host OptString `json:",omitempty,omitzero"`
+	Path OptString `json:",omitempty,omitzero"`
+}
+
+func unpackGetRegisterContextParams(packed middleware.Parameters) (params GetRegisterContextParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "host",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Host = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "path",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Path = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeGetRegisterContextParams(args [0]string, argsEscaped bool, r *http.Request) (params GetRegisterContextParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: host.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "host",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotHostVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotHostVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Host.SetTo(paramsDotHostVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "host",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: path.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPathVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPathVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Path.SetTo(paramsDotPathVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "path",
+			In:   "query",
 			Err:  err,
 		}
 	}
@@ -8772,6 +9017,284 @@ func decodeListPublicRuntimePagesParams(args [0]string, argsEscaped bool, r *htt
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "space_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ListRegisterLogsParams is parameters of listRegisterLogs operation.
+type ListRegisterLogsParams struct {
+	Source     OptString `json:",omitempty,omitzero"`
+	EntryCode  OptString `json:",omitempty,omitzero"`
+	PolicyCode OptString `json:",omitempty,omitzero"`
+	Page       OptInt    `json:",omitempty,omitzero"`
+	PageSize   OptInt    `json:",omitempty,omitzero"`
+}
+
+func unpackListRegisterLogsParams(packed middleware.Parameters) (params ListRegisterLogsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "source",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Source = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "entry_code",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.EntryCode = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "policy_code",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PolicyCode = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "page",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Page = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "page_size",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PageSize = v.(OptInt)
+		}
+	}
+	return params
+}
+
+func decodeListRegisterLogsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListRegisterLogsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: source.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "source",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSourceVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSourceVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Source.SetTo(paramsDotSourceVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "source",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: entry_code.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "entry_code",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotEntryCodeVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotEntryCodeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.EntryCode.SetTo(paramsDotEntryCodeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "entry_code",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: policy_code.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "policy_code",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPolicyCodeVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPolicyCodeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PolicyCode.SetTo(paramsDotPolicyCodeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "policy_code",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Set default value for query: page.
+	{
+		val := int(1)
+		params.Page.SetTo(val)
+	}
+	// Decode query: page.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "page",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPageVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPageVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Page.SetTo(paramsDotPageVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "page",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Set default value for query: page_size.
+	{
+		val := int(20)
+		params.PageSize.SetTo(val)
+	}
+	// Decode query: page_size.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "page_size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPageSizeVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPageSizeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PageSize.SetTo(paramsDotPageSizeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "page_size",
 			In:   "query",
 			Err:  err,
 		}
@@ -13539,6 +14062,136 @@ func decodeUpdatePermissionActionGroupParams(args [1]string, argsEscaped bool, r
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateRegisterEntryParams is parameters of updateRegisterEntry operation.
+type UpdateRegisterEntryParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateRegisterEntryParams(packed middleware.Parameters) (params UpdateRegisterEntryParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateRegisterEntryParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateRegisterEntryParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateRegisterPolicyParams is parameters of updateRegisterPolicy operation.
+type UpdateRegisterPolicyParams struct {
+	Code string
+}
+
+func unpackUpdateRegisterPolicyParams(packed middleware.Parameters) (params UpdateRegisterPolicyParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "code",
+			In:   "path",
+		}
+		params.Code = packed[key].(string)
+	}
+	return params
+}
+
+func decodeUpdateRegisterPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateRegisterPolicyParams, _ error) {
+	// Decode path: code.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "code",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Code = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "code",
 			In:   "path",
 			Err:  err,
 		}
