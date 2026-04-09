@@ -18,7 +18,7 @@
     "lint:lint-staged": "lint-staged",
     "prepare": "husky",
     "commit": "git-cz",
-    "gen:api": "openapi-typescript ../backend/api/openapi/openapi.yaml -o src/api/v5/schema.d.ts"
+    "gen:api": "openapi-typescript ../backend/api/openapi/dist/openapi.yaml -o src/api/v5/schema.d.ts"
   },
   "config": {
     "commitizen": {

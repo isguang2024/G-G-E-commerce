@@ -282,7 +282,7 @@
     }
     saving.value = true
     try {
-      await fetchSetUserPackages(userId, selectedPackageIds.value, currentAppKey.value)
+      await fetchSetUserPackages(userId, selectedPackageIds.value)
       ElMessage.success('用户功能包已保存')
       emit('success')
       visible.value = false

@@ -7044,6 +7044,30 @@ func (s *PageSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.InheritPermission.Set {
+			e.FieldStart("inherit_permission")
+			s.InheritPermission.Encode(e)
+		}
+	}
+	{
+		if s.KeepAlive.Set {
+			e.FieldStart("keep_alive")
+			s.KeepAlive.Encode(e)
+		}
+	}
+	{
+		if s.IsFullPage.Set {
+			e.FieldStart("is_full_page")
+			s.IsFullPage.Encode(e)
+		}
+	}
+	{
+		if s.Meta.Set {
+			e.FieldStart("meta")
+			s.Meta.Encode(e)
+		}
+	}
+	{
 		if s.Status.Set {
 			e.FieldStart("status")
 			s.Status.Encode(e)
@@ -7051,7 +7075,7 @@ func (s *PageSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPageSaveRequest = [19]string{
+var jsonFieldsNameOfPageSaveRequest = [23]string{
 	0:  "page_key",
 	1:  "name",
 	2:  "route_name",
@@ -7070,7 +7094,11 @@ var jsonFieldsNameOfPageSaveRequest = [19]string{
 	15: "breadcrumb_mode",
 	16: "access_mode",
 	17: "permission_key",
-	18: "status",
+	18: "inherit_permission",
+	19: "keep_alive",
+	20: "is_full_page",
+	21: "meta",
+	22: "status",
 }
 
 // Decode decodes PageSaveRequest from json.
@@ -7269,6 +7297,46 @@ func (s *PageSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"permission_key\"")
+			}
+		case "inherit_permission":
+			if err := func() error {
+				s.InheritPermission.Reset()
+				if err := s.InheritPermission.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"inherit_permission\"")
+			}
+		case "keep_alive":
+			if err := func() error {
+				s.KeepAlive.Reset()
+				if err := s.KeepAlive.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"keep_alive\"")
+			}
+		case "is_full_page":
+			if err := func() error {
+				s.IsFullPage.Reset()
+				if err := s.IsFullPage.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_full_page\"")
+			}
+		case "meta":
+			if err := func() error {
+				s.Meta.Reset()
+				if err := s.Meta.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"meta\"")
 			}
 		case "status":
 			if err := func() error {

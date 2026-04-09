@@ -2788,25 +2788,29 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 
 // Ref: #/components/schemas/PageSaveRequest
 type PageSaveRequest struct {
-	PageKey         OptString `json:"page_key"`
-	Name            OptString `json:"name"`
-	RouteName       OptString `json:"route_name"`
-	RoutePath       OptString `json:"route_path"`
-	Component       OptString `json:"component"`
-	SpaceKeys       []string  `json:"space_keys"`
-	PageType        OptString `json:"page_type"`
-	VisibilityScope OptString `json:"visibility_scope"`
-	Source          OptString `json:"source"`
-	ModuleKey       OptString `json:"module_key"`
-	SortOrder       OptInt    `json:"sort_order"`
-	ParentMenuID    OptString `json:"parent_menu_id"`
-	ParentPageKey   OptString `json:"parent_page_key"`
-	DisplayGroupKey OptString `json:"display_group_key"`
-	ActiveMenuPath  OptString `json:"active_menu_path"`
-	BreadcrumbMode  OptString `json:"breadcrumb_mode"`
-	AccessMode      OptString `json:"access_mode"`
-	PermissionKey   OptString `json:"permission_key"`
-	Status          OptString `json:"status"`
+	PageKey           OptString    `json:"page_key"`
+	Name              OptString    `json:"name"`
+	RouteName         OptString    `json:"route_name"`
+	RoutePath         OptString    `json:"route_path"`
+	Component         OptString    `json:"component"`
+	SpaceKeys         []string     `json:"space_keys"`
+	PageType          OptString    `json:"page_type"`
+	VisibilityScope   OptString    `json:"visibility_scope"`
+	Source            OptString    `json:"source"`
+	ModuleKey         OptString    `json:"module_key"`
+	SortOrder         OptInt       `json:"sort_order"`
+	ParentMenuID      OptString    `json:"parent_menu_id"`
+	ParentPageKey     OptString    `json:"parent_page_key"`
+	DisplayGroupKey   OptString    `json:"display_group_key"`
+	ActiveMenuPath    OptString    `json:"active_menu_path"`
+	BreadcrumbMode    OptString    `json:"breadcrumb_mode"`
+	AccessMode        OptString    `json:"access_mode"`
+	PermissionKey     OptString    `json:"permission_key"`
+	InheritPermission OptBool      `json:"inherit_permission"`
+	KeepAlive         OptBool      `json:"keep_alive"`
+	IsFullPage        OptBool      `json:"is_full_page"`
+	Meta              OptAnyObject `json:"meta"`
+	Status            OptString    `json:"status"`
 }
 
 // GetPageKey returns the value of PageKey.
@@ -2897,6 +2901,26 @@ func (s *PageSaveRequest) GetAccessMode() OptString {
 // GetPermissionKey returns the value of PermissionKey.
 func (s *PageSaveRequest) GetPermissionKey() OptString {
 	return s.PermissionKey
+}
+
+// GetInheritPermission returns the value of InheritPermission.
+func (s *PageSaveRequest) GetInheritPermission() OptBool {
+	return s.InheritPermission
+}
+
+// GetKeepAlive returns the value of KeepAlive.
+func (s *PageSaveRequest) GetKeepAlive() OptBool {
+	return s.KeepAlive
+}
+
+// GetIsFullPage returns the value of IsFullPage.
+func (s *PageSaveRequest) GetIsFullPage() OptBool {
+	return s.IsFullPage
+}
+
+// GetMeta returns the value of Meta.
+func (s *PageSaveRequest) GetMeta() OptAnyObject {
+	return s.Meta
 }
 
 // GetStatus returns the value of Status.
@@ -2992,6 +3016,26 @@ func (s *PageSaveRequest) SetAccessMode(val OptString) {
 // SetPermissionKey sets the value of PermissionKey.
 func (s *PageSaveRequest) SetPermissionKey(val OptString) {
 	s.PermissionKey = val
+}
+
+// SetInheritPermission sets the value of InheritPermission.
+func (s *PageSaveRequest) SetInheritPermission(val OptBool) {
+	s.InheritPermission = val
+}
+
+// SetKeepAlive sets the value of KeepAlive.
+func (s *PageSaveRequest) SetKeepAlive(val OptBool) {
+	s.KeepAlive = val
+}
+
+// SetIsFullPage sets the value of IsFullPage.
+func (s *PageSaveRequest) SetIsFullPage(val OptBool) {
+	s.IsFullPage = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *PageSaveRequest) SetMeta(val OptAnyObject) {
+	s.Meta = val
 }
 
 // SetStatus sets the value of Status.

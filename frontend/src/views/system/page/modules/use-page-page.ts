@@ -23,6 +23,7 @@ import {
   fetchGetPageMenuOptions,
   fetchUpdatePage
 } from '@/api/system-manage'
+import { router } from '@/router'
 import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import {
@@ -485,8 +486,7 @@ export function usePagePage() {
     if (nextTarget.mode === 'location') {
       return nextTarget.target
     }
-    const pathname = `${window.location.pathname || '/'}`.replace(/\/?$/, '/')
-    return `${window.location.origin}${pathname}#${nextTarget.target}`
+    return new URL(router.resolve(nextTarget.target).href, window.location.origin).toString()
   }
 
   function handleVisit(row: PageItem) {

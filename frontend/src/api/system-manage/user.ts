@@ -53,12 +53,11 @@ export async function fetchGetUserPackages(userId: string, appKey?: string) {
 /** 设置用户个人空间功能包 */
 export async function fetchSetUserPackages(
   userId: string,
-  packageIds: string[],
-  appKey?: string
+  packageIds: string[]
 ) {
   const { error } = await v5Client.PUT('/users/{id}/packages', {
-    params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any },
-    body: { package_ids: packageIds } as any
+    params: { path: { id: userId } },
+    body: { ids: packageIds } as any
   })
   if (error) throw error
 }

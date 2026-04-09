@@ -157,7 +157,7 @@ func (h *APIHandler) DeletePage(ctx context.Context, params gen.DeletePageParams
 }
 
 func pageSaveRequestFromGen(req *gen.PageSaveRequest, appKey string) *page.SaveRequest {
-	return &page.SaveRequest{
+	saveReq := &page.SaveRequest{
 		AppKey:          appKey,
 		PageKey:         optString(req.PageKey),
 		Name:            optString(req.Name),
@@ -179,4 +179,22 @@ func pageSaveRequestFromGen(req *gen.PageSaveRequest, appKey string) *page.SaveR
 		PermissionKey:   optString(req.PermissionKey),
 		Status:          optString(req.Status),
 	}
+	if req.InheritPermission.Set {
+		value := req.InheritPermission.Value
+		saveReq.InheritPermission = &value
+	}
+	if req.KeepAlive.Set {
+		value := req.KeepAlive.Value
+		saveReq.KeepAlive = &value
+	}
+	if req.IsFullPage.Set {
+		value := req.IsFullPage.Value
+		saveReq.IsFullPage = &value
+	}
+	if req.Meta.Set {
+		meta := map[string]interface{}{}
+		_ = unmarshalAnyObject(req.Meta.Value, &meta)
+		saveReq.Meta = meta
+	}
+	return saveReq
 }

@@ -174,6 +174,12 @@
     }
 
     const normalized = decodeOnce(current).trim()
+    if (normalized.startsWith('#/')) {
+      return normalized.slice(1)
+    }
+    if (normalized.startsWith('/#/')) {
+      return normalized.slice(2)
+    }
     if (!normalized || !normalized.startsWith('/')) return '/'
     if (normalized.startsWith('/auth/login')) return '/'
 
@@ -188,10 +194,7 @@
     }
 
     const fallbackUrl = () => {
-      const fallback = new URL(window.location.href)
-      fallback.pathname = '/'
-      fallback.hash = `#${landingPath.startsWith('/') ? landingPath : `/${landingPath}`}`
-      return fallback.toString()
+      return new URL(router.resolve(landingPath).href, window.location.origin).toString()
     }
     const fallbackFallbackUrl = fallbackUrl()
 

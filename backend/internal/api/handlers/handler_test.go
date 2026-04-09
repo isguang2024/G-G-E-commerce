@@ -138,6 +138,7 @@ func testEngine(t *testing.T) *gin.Engine {
 	permMW := middleware.OpenAPIPermission(eval, permLookup, logger)
 	ogenServer, err := apigen.NewServer(
 		ogenHandler,
+		handlers.SecurityHandler{},
 		apigen.WithMiddleware(permMW),
 	)
 	if err != nil {
@@ -375,7 +376,7 @@ func TestSmokeOgenServerBuilds(t *testing.T) {
 	}
 	logger := zap.NewNop()
 	h := handlers.NewAPIHandler(nil, cfg, logger, &noopEvaluator{}, nilAPIEndpointSvc{})
-	_, err := apigen.NewServer(h)
+	_, err := apigen.NewServer(h, handlers.SecurityHandler{})
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
 	}

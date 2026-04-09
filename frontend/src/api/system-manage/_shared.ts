@@ -345,25 +345,25 @@ export function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePack
 }
 
 export function normalizeRole(item: any): Api.SystemManage.RoleListItem {
-  const appKeysRaw = item?.app_keys || []
+  const appKeysRaw = item?.app_keys || item?.appKeys || []
   const appKeys = Array.isArray(appKeysRaw)
     ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
-    roleId: item?.role_id || item?.id || '',
-    roleName: item?.role_name || item?.name || '',
-    roleCode: item?.role_code || item?.code || '',
-    description: item?.description || '',
+    roleId: item?.role_id || item?.roleId || item?.id || '',
+    roleName: item?.role_name || item?.roleName || item?.name || '',
+    roleCode: item?.role_code || item?.roleCode || item?.code || '',
+    description: item?.description || item?.remark || '',
     appKeys,
-    sortOrder: item?.sort_order ?? 0,
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     status: item?.status || 'normal',
     priority: item?.priority ?? 0,
-    customParams: item?.custom_params || {},
-    createTime: item?.create_time || '',
+    customParams: item?.custom_params || item?.customParams || {},
+    createTime: item?.create_time || item?.createTime || '',
     collaborationWorkspaceId:
-      item?.collaboration_workspace_id || null,
-    isGlobal: Boolean(item?.is_global ?? appKeys.length === 0),
-    canEditPermission: Boolean(item?.can_edit_permission ?? true)
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || null,
+    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? appKeys.length === 0),
+    canEditPermission: Boolean(item?.can_edit_permission ?? item?.canEditPermission ?? true)
   }
 }
 

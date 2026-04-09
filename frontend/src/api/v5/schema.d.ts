@@ -2855,6 +2855,10 @@ export interface components {
             breadcrumb_mode?: string;
             access_mode?: string;
             permission_key?: string;
+            inherit_permission?: boolean;
+            keep_alive?: boolean;
+            is_full_page?: boolean;
+            meta?: components["schemas"]["AnyObject"];
             status?: string;
         };
         PageSyncResult: {

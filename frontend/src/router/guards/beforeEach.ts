@@ -404,7 +404,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 3.1 已登录场景支持通过 URL 显式切换菜单空间（如 #/system/menu?space_key=ops）
+  // 3.1 已登录场景支持通过 URL 显式切换菜单空间（如 /system/menu?space_key=ops）
   if (userStore.isLogin && preferredSpaceKey) {
     const menuSpaceStore = useMenuSpaceStore()
     if (normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey) !== preferredSpaceKey) {

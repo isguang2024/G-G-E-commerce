@@ -999,6 +999,14 @@ components:
           type: string
         permission_key:
           type: string
+        inherit_permission:
+          type: boolean
+        keep_alive:
+          type: boolean
+        is_full_page:
+          type: boolean
+        meta:
+          $ref: '#/components/schemas/AnyObject'
         status:
           type: string
     PageSyncResult:

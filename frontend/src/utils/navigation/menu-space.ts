@@ -208,7 +208,8 @@ export function buildMenuSpaceTargetUrl(
     binding.host,
     currentHost || (typeof window !== 'undefined' ? window.location.host : '')
   )
-  return `${resolveMenuSpaceScheme(binding.scheme)}://${targetHost}${basePath}#${normalizedPath}`
+  const routePath = normalizedPath === '/' ? basePath : `${basePath}${normalizedPath.slice(1)}`
+  return `${resolveMenuSpaceScheme(binding.scheme)}://${targetHost}${routePath}`
 }
 
 export function isMenuSpaceVisible(
