@@ -4,6 +4,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
 )
 
@@ -31,25 +33,42 @@ func cwIDFromContext(ctx context.Context) *uuid.UUID {
 	return &id
 }
 
+func mapJSON[T any](input any) (T, error) {
+	var out T
+	raw, err := json.Marshal(input)
+	if err != nil {
+		return out, err
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
 // ── Inbox ────────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetInboxSummary(ctx context.Context) (gen.AnyObject, error) {
+func (h *APIHandler) GetInboxSummary(ctx context.Context) (*gen.InboxSummary, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return gen.AnyObject{}, nil
+		return &gen.InboxSummary{}, nil
 	}
 	summary, err := h.systemFacade.GetInboxSummary(userID)
 	if err != nil {
 		h.logger.Error("get inbox summary failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(summary), nil
+	return &gen.InboxSummary{
+		UnreadTotal:  summary.UnreadTotal,
+		NoticeCount:  summary.NoticeCount,
+		MessageCount: summary.MessageCount,
+		TodoCount:    summary.TodoCount,
+	}, nil
 }
 
-func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.MessageListResponse, error) {
+func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.InboxListResponse, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return &gen.MessageListResponse{}, nil
+		return &gen.InboxListResponse{}, nil
 	}
 	current := 1
 	size := 20
@@ -67,26 +86,32 @@ func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) 
 		h.logger.Error("list inbox failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.MessageListResponse{
-		Records: marshalList(result.Records),
+	records, err := mapJSON[[]gen.InboxItem](result.Records)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.InboxListResponse{
+		Records: records,
 		Total:   int(result.Total),
+		Current: gen.NewOptInt(result.Current),
+		Size:    gen.NewOptInt(result.Size),
 	}, nil
 }
 
-func (h *APIHandler) GetInboxDetail(ctx context.Context, params gen.GetInboxDetailParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetInboxDetail(ctx context.Context, params gen.GetInboxDetailParams) (*gen.InboxItem, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return gen.AnyObject{}, nil
+		return &gen.InboxItem{}, nil
 	}
 	detail, err := h.systemFacade.GetInboxDetail(userID, params.DeliveryId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return gen.AnyObject{}, nil
+			return &gen.InboxItem{}, nil
 		}
 		h.logger.Error("get inbox detail failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(detail), nil
+	return mapJSON[*gen.InboxItem](detail)
 }
 
 func (h *APIHandler) MarkInboxRead(ctx context.Context, params gen.MarkInboxReadParams) (*gen.MutationResult, error) {
@@ -116,18 +141,15 @@ func (h *APIHandler) MarkInboxReadAll(ctx context.Context) (*gen.MutationResult,
 	return ok(), nil
 }
 
-func (h *APIHandler) HandleInboxTodo(ctx context.Context, req gen.AnyObject, params gen.HandleInboxTodoParams) (*gen.MutationResult, error) {
+func (h *APIHandler) HandleInboxTodo(ctx context.Context, req *gen.InboxTodoActionRequest, params gen.HandleInboxTodoParams) (*gen.MutationResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MutationResult{Success: false}, nil
 	}
-	var body struct {
-		Action string `json:"action"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
+	if req == nil {
 		return &gen.MutationResult{Success: false}, nil
 	}
-	if err := h.systemFacade.UpdateTodoStatus(userID, params.DeliveryId, body.Action); err != nil {
+	if err := h.systemFacade.UpdateTodoStatus(userID, params.DeliveryId, req.Action); err != nil {
 		if strings.Contains(err.Error(), "invalid todo action") ||
 			strings.Contains(err.Error(), "无效") {
 			return &gen.MutationResult{Success: false}, nil
@@ -143,10 +165,10 @@ func (h *APIHandler) HandleInboxTodo(ctx context.Context, req gen.AnyObject, par
 
 // ── Dispatch ─────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetMessageDispatchOptions(ctx context.Context) (gen.AnyObject, error) {
+func (h *APIHandler) GetMessageDispatchOptions(ctx context.Context) (*gen.MessageDispatchOptions, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return gen.AnyObject{}, nil
+		return &gen.MessageDispatchOptions{}, nil
 	}
 	cwID := cwIDFromContext(ctx)
 	options, err := h.systemFacade.GetDispatchOptions(userID, cwID)
@@ -154,66 +176,44 @@ func (h *APIHandler) GetMessageDispatchOptions(ctx context.Context) (gen.AnyObje
 		h.logger.Error("get message dispatch options failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(options), nil
+	return mapJSON[*gen.MessageDispatchOptions](options)
 }
 
-func (h *APIHandler) DispatchMessage(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispatchRequest) (*gen.MessageDispatchResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return &gen.MutationResult{Success: false}, nil
+		return &gen.MessageDispatchResult{}, nil
 	}
 	cwID := cwIDFromContext(ctx)
 
-	var body struct {
-		SenderID                        string   `json:"sender_id"`
-		TemplateID                      string   `json:"template_id"`
-		TemplateKey                     string   `json:"template_key"`
-		MessageType                     string   `json:"message_type"`
-		AudienceType                    string   `json:"audience_type"`
-		TargetCollaborationWorkspaceIDs []string `json:"target_collaboration_workspace_ids"`
-		TargetUserIDs                   []string `json:"target_user_ids"`
-		TargetGroupIDs                  []string `json:"target_group_ids"`
-		Title                           string   `json:"title"`
-		Summary                         string   `json:"summary"`
-		Content                         string   `json:"content"`
-		Priority                        string   `json:"priority"`
-		ActionType                      string   `json:"action_type"`
-		ActionTarget                    string   `json:"action_target"`
-		BizType                         string   `json:"biz_type"`
-		ExpiredAt                       string   `json:"expired_at"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return &gen.MutationResult{Success: false}, nil
-	}
-
-	_, err := h.systemFacade.DispatchMessage(userID, cwID, systemmod.MessageDispatchRequest{
-		SenderID:                        body.SenderID,
-		TemplateID:                      body.TemplateID,
-		TemplateKey:                     body.TemplateKey,
-		MessageType:                     body.MessageType,
-		AudienceType:                    body.AudienceType,
-		TargetCollaborationWorkspaceIDs: body.TargetCollaborationWorkspaceIDs,
-		TargetUserIDs:                   body.TargetUserIDs,
-		TargetGroupIDs:                  body.TargetGroupIDs,
-		Title:                           body.Title,
-		Summary:                         body.Summary,
-		Content:                         body.Content,
-		Priority:                        body.Priority,
-		ActionType:                      body.ActionType,
-		ActionTarget:                    body.ActionTarget,
-		BizType:                         body.BizType,
-		ExpiredAt:                       body.ExpiredAt,
+	result, err := h.systemFacade.DispatchMessage(userID, cwID, systemmod.MessageDispatchRequest{
+		SenderID:                        optString(req.SenderID),
+		TemplateID:                      optString(req.TemplateID),
+		TemplateKey:                     optString(req.TemplateKey),
+		MessageType:                     optString(req.MessageType),
+		AudienceType:                    optString(req.AudienceType),
+		TargetCollaborationWorkspaceIDs: req.TargetCollaborationWorkspaceIds,
+		TargetUserIDs:                   req.TargetUserIds,
+		TargetGroupIDs:                  req.TargetGroupIds,
+		Title:                           optString(req.Title),
+		Summary:                         optString(req.Summary),
+		Content:                         optString(req.Content),
+		Priority:                        optString(req.Priority),
+		ActionType:                      optString(req.ActionType),
+		ActionTarget:                    optString(req.ActionTarget),
+		BizType:                         optString(req.BizType),
+		ExpiredAt:                       optString(req.ExpiredAt),
 	})
 	if err != nil {
 		h.logger.Error("dispatch message failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageDispatchResult](result)
 }
 
 // ── Templates ────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageListResponse, error) {
+func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageTemplateListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	result, err := h.systemFacade.ListTemplates(cwID, systemmod.MessageTemplateQuery{
 		Current: 1,
@@ -223,162 +223,204 @@ func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageList
 		h.logger.Error("list message templates failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.MessageListResponse{
-		Records: marshalList(result.Records),
+	records, err := mapJSON[[]gen.MessageTemplateItem](result.Records)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.MessageTemplateListResponse{
+		Records: records,
 		Total:   int(result.Total),
+		Current: gen.NewOptInt(result.Current),
+		Size:    gen.NewOptInt(result.Size),
 	}, nil
 }
 
-func (h *APIHandler) CreateMessageTemplate(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) CreateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest) (*gen.MessageTemplateItem, error) {
 	cwID := cwIDFromContext(ctx)
-	var body systemmod.MessageTemplateUpsertRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return &gen.MutationResult{Success: false}, nil
-	}
-	if _, err := h.systemFacade.SaveTemplate("", cwID, body); err != nil {
+	body := messageTemplateUpsertRequestFromGen(req)
+	item, err := h.systemFacade.SaveTemplate("", cwID, body)
+	if err != nil {
 		h.logger.Error("create message template failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageTemplateItem](item)
 }
 
-func (h *APIHandler) UpdateMessageTemplate(ctx context.Context, req gen.AnyObject, params gen.UpdateMessageTemplateParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest, params gen.UpdateMessageTemplateParams) (*gen.MessageTemplateItem, error) {
 	cwID := cwIDFromContext(ctx)
-	var body systemmod.MessageTemplateUpsertRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return &gen.MutationResult{Success: false}, nil
-	}
-	if _, err := h.systemFacade.SaveTemplate(params.TemplateId.String(), cwID, body); err != nil {
+	body := messageTemplateUpsertRequestFromGen(req)
+	item, err := h.systemFacade.SaveTemplate(params.TemplateId.String(), cwID, body)
+	if err != nil {
 		h.logger.Error("update message template failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageTemplateItem](item)
 }
 
 // ── Senders ──────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageListResponse, error) {
+func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageSenderListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListSenders(cwID)
 	if err != nil {
 		h.logger.Error("list message senders failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.MessageListResponse{
-		Records: marshalList(items),
-		Total:   len(items),
-	}, nil
+	records, err := mapJSON[[]gen.MessageSenderItem](items)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.MessageSenderListResponse{Records: records}, nil
 }
 
-func (h *APIHandler) CreateMessageSender(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) CreateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest) (*gen.MessageSenderItem, error) {
 	cwID := cwIDFromContext(ctx)
-	var body systemmod.MessageSenderSaveRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return &gen.MutationResult{Success: false}, nil
-	}
-	if _, err := h.systemFacade.SaveSender("", cwID, body); err != nil {
+	body := messageSenderSaveRequestFromGen(req)
+	item, err := h.systemFacade.SaveSender("", cwID, body)
+	if err != nil {
 		h.logger.Error("create message sender failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageSenderItem](item)
 }
 
-func (h *APIHandler) UpdateMessageSender(ctx context.Context, req gen.AnyObject, params gen.UpdateMessageSenderParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest, params gen.UpdateMessageSenderParams) (*gen.MessageSenderItem, error) {
 	cwID := cwIDFromContext(ctx)
-	var body systemmod.MessageSenderSaveRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return &gen.MutationResult{Success: false}, nil
-	}
-	if _, err := h.systemFacade.SaveSender(params.SenderId.String(), cwID, body); err != nil {
+	body := messageSenderSaveRequestFromGen(req)
+	item, err := h.systemFacade.SaveSender(params.SenderId.String(), cwID, body)
+	if err != nil {
 		h.logger.Error("update message sender failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageSenderItem](item)
 }
 
 // ── Recipient Groups ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.MessageListResponse, error) {
+func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.MessageRecipientGroupListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListRecipientGroups(cwID)
 	if err != nil {
 		h.logger.Error("list message recipient groups failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.MessageListResponse{
-		Records: marshalList(items),
-		Total:   len(items),
-	}, nil
+	records, err := mapJSON[[]gen.MessageRecipientGroupItem](items)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.MessageRecipientGroupListResponse{Records: records}, nil
 }
 
-func (h *APIHandler) CreateMessageRecipientGroup(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) CreateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest) (*gen.MessageRecipientGroupItem, error) {
 	cwID := cwIDFromContext(ctx)
 	group, err := parseRecipientGroupRequest(req)
 	if err != nil {
-		return &gen.MutationResult{Success: false}, nil
+		return &gen.MessageRecipientGroupItem{}, nil
 	}
-	if _, err := h.systemFacade.SaveRecipientGroup("", cwID, group); err != nil {
+	item, err := h.systemFacade.SaveRecipientGroup("", cwID, group)
+	if err != nil {
 		h.logger.Error("create message recipient group failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageRecipientGroupItem](item)
 }
 
-func (h *APIHandler) UpdateMessageRecipientGroup(ctx context.Context, req gen.AnyObject, params gen.UpdateMessageRecipientGroupParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest, params gen.UpdateMessageRecipientGroupParams) (*gen.MessageRecipientGroupItem, error) {
 	cwID := cwIDFromContext(ctx)
 	group, err := parseRecipientGroupRequest(req)
 	if err != nil {
-		return &gen.MutationResult{Success: false}, nil
+		return &gen.MessageRecipientGroupItem{}, nil
 	}
-	if _, err := h.systemFacade.SaveRecipientGroup(params.GroupId.String(), cwID, group); err != nil {
+	item, err := h.systemFacade.SaveRecipientGroup(params.GroupId.String(), cwID, group)
+	if err != nil {
 		h.logger.Error("update message recipient group failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return mapJSON[*gen.MessageRecipientGroupItem](item)
 }
 
 // parseRecipientGroupRequest decodes a recipient-group save request from AnyObject.
-func parseRecipientGroupRequest(req gen.AnyObject) (systemmod.MessageRecipientGroupSaveRequest, error) {
-	var body struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		MatchMode   string `json:"match_mode"`
-		Status      string `json:"status"`
-		Targets     []struct {
-			TargetType               string `json:"target_type"`
-			UserID                   string `json:"user_id"`
-			CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
-			RoleCode                 string `json:"role_code"`
-			PackageKey               string `json:"package_key"`
-			SortOrder                int    `json:"sort_order"`
-		} `json:"targets"`
+func parseRecipientGroupRequest(req *gen.MessageRecipientGroupSaveRequest) (systemmod.MessageRecipientGroupSaveRequest, error) {
+	if req == nil {
+		return systemmod.MessageRecipientGroupSaveRequest{}, errors.New("request body required")
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return systemmod.MessageRecipientGroupSaveRequest{}, err
+	body := systemmod.MessageRecipientGroupSaveRequest{
+		Name:        req.Name,
+		Description: optString(req.Description),
+		MatchMode:   optString(req.MatchMode),
+		Status:      optString(req.Status),
 	}
-	targets := make([]systemmod.MessageRecipientGroupTargetSaveRequest, 0, len(body.Targets))
-	for _, t := range body.Targets {
+	if req.Meta.Set {
+		body.Meta = messageRecipientGroupMetaToJSON(req.Meta.Value)
+	}
+	targets := make([]systemmod.MessageRecipientGroupTargetSaveRequest, 0, len(req.Targets))
+	for _, t := range req.Targets {
 		targets = append(targets, systemmod.MessageRecipientGroupTargetSaveRequest{
 			TargetType:               t.TargetType,
-			UserID:                   t.UserID,
-			CollaborationWorkspaceID: t.CollaborationWorkspaceID,
-			RoleCode:                 t.RoleCode,
-			PackageKey:               t.PackageKey,
-			SortOrder:                t.SortOrder,
+			UserID:                   optUUIDToString(t.UserID),
+			CollaborationWorkspaceID: optUUIDToString(t.CollaborationWorkspaceID),
+			RoleCode:                 optString(t.RoleCode),
+			PackageKey:               optString(t.PackageKey),
+			SortOrder:                optInt(t.SortOrder, 0),
+			Meta:                     messageRecipientGroupTargetMetaToJSON(t.Meta.Value),
 		})
 	}
-	return systemmod.MessageRecipientGroupSaveRequest{
-		Name:        body.Name,
-		Description: body.Description,
-		MatchMode:   body.MatchMode,
-		Status:      body.Status,
-		Targets:     targets,
-	}, nil
+	body.Targets = targets
+	return body, nil
+}
+
+func messageTemplateUpsertRequestFromGen(req *gen.MessageTemplateSaveRequest) systemmod.MessageTemplateUpsertRequest {
+	if req == nil {
+		return systemmod.MessageTemplateUpsertRequest{}
+	}
+	return systemmod.MessageTemplateUpsertRequest{
+		TemplateKey:     optString(req.TemplateKey),
+		Name:            req.Name,
+		Description:     optString(req.Description),
+		MessageType:     req.MessageType,
+		AudienceType:    req.AudienceType,
+		TitleTemplate:   optString(req.TitleTemplate),
+		SummaryTemplate: optString(req.SummaryTemplate),
+		ContentTemplate: optString(req.ContentTemplate),
+		Status:          optString(req.Status),
+	}
+}
+
+func messageSenderSaveRequestFromGen(req *gen.MessageSenderSaveRequest) systemmod.MessageSenderSaveRequest {
+	if req == nil {
+		return systemmod.MessageSenderSaveRequest{}
+	}
+	body := systemmod.MessageSenderSaveRequest{
+		Name:        req.Name,
+		Description: optString(req.Description),
+		AvatarURL:   optString(req.AvatarURL),
+		IsDefault:   optBool(req.IsDefault),
+		Status:      optString(req.Status),
+	}
+	if req.Meta.Set {
+		body.Meta = messageSenderMetaToJSON(req.Meta.Value)
+	}
+	return body
+}
+
+func messageSenderMetaToJSON(meta gen.MessageSenderMeta) models.MetaJSON { return nil }
+
+func messageRecipientGroupMetaToJSON(meta gen.MessageRecipientGroupMeta) models.MetaJSON { return nil }
+
+func messageRecipientGroupTargetMetaToJSON(meta gen.MessageRecipientGroupTargetMeta) models.MetaJSON {
+	return nil
+}
+
+func optUUIDToString(o gen.OptUUID) string {
+	if !o.Set {
+		return ""
+	}
+	return o.Value.String()
 }
 
 // ── Dispatch Records ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.MessageListResponse, error) {
+func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.MessageDispatchRecordListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	current := 1
 	size := 20
@@ -396,21 +438,32 @@ func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.
 		h.logger.Error("list message dispatch records failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.MessageListResponse{
-		Records: marshalList(result.Records),
+	records, err := mapJSON[[]gen.DispatchRecordItem](result.Records)
+	if err != nil {
+		return nil, err
+	}
+	summary, err := mapJSON[gen.DispatchRecordSummary](result.Summary)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.MessageDispatchRecordListResponse{
+		Records: records,
 		Total:   int(result.Total),
+		Current: gen.NewOptInt(result.Current),
+		Size:    gen.NewOptInt(result.Size),
+		Summary: summary,
 	}, nil
 }
 
-func (h *APIHandler) GetMessageDispatchRecord(ctx context.Context, params gen.GetMessageDispatchRecordParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetMessageDispatchRecord(ctx context.Context, params gen.GetMessageDispatchRecordParams) (*gen.MessageDispatchRecord, error) {
 	cwID := cwIDFromContext(ctx)
 	detail, err := h.systemFacade.GetDispatchRecordDetail(cwID, params.RecordId.String())
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return gen.AnyObject{}, nil
+			return &gen.MessageDispatchRecord{}, nil
 		}
 		h.logger.Error("get message dispatch record failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(detail), nil
+	return mapJSON[*gen.MessageDispatchRecord](detail)
 }

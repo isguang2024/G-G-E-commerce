@@ -17,7 +17,7 @@ import (
 )
 
 func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceMemberAddRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -64,7 +64,7 @@ func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceMemberAddRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -81,14 +81,14 @@ func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeAddCurrentCollaborationWorkspaceMemberRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceMemberAddRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -135,7 +135,7 @@ func (s *Server) decodeAddCurrentCollaborationWorkspaceMemberRequest(r *http.Req
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceMemberAddRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -152,14 +152,14 @@ func (s *Server) decodeAddCurrentCollaborationWorkspaceMemberRequest(r *http.Req
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeAddPermissionActionEndpointRequest(r *http.Request) (
-	req AnyObject,
+	req *PermissionActionEndpointAddRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -206,7 +206,7 @@ func (s *Server) decodeAddPermissionActionEndpointRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request PermissionActionEndpointAddRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -223,7 +223,7 @@ func (s *Server) decodeAddPermissionActionEndpointRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -309,7 +309,7 @@ func (s *Server) decodeAssignUserRolesRequest(r *http.Request) (
 }
 
 func (s *Server) decodeBatchUpdatePermissionActionsRequest(r *http.Request) (
-	req AnyObject,
+	req *PermissionActionBatchUpdateRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -356,7 +356,7 @@ func (s *Server) decodeBatchUpdatePermissionActionsRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request PermissionActionBatchUpdateRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -373,14 +373,22 @@ func (s *Server) decodeBatchUpdatePermissionActionsRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCleanupStaleApiEndpointsRequest(r *http.Request) (
-	req AnyObject,
+	req *CleanupStaleRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -427,7 +435,7 @@ func (s *Server) decodeCleanupStaleApiEndpointsRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CleanupStaleRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -444,14 +452,22 @@ func (s *Server) decodeCleanupStaleApiEndpointsRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateApiEndpointCategoryRequest(r *http.Request) (
-	req AnyObject,
+	req *ApiEndpointCategorySaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -498,7 +514,7 @@ func (s *Server) decodeCreateApiEndpointCategoryRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request ApiEndpointCategorySaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -515,14 +531,14 @@ func (s *Server) decodeCreateApiEndpointCategoryRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -569,7 +585,7 @@ func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -586,14 +602,14 @@ func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -640,7 +656,7 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -657,14 +673,14 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateCurrentCollaborationWorkspaceRoleRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -711,7 +727,7 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceRoleRequest(r *http.Re
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -728,7 +744,7 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceRoleRequest(r *http.Re
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -877,7 +893,7 @@ func (s *Server) decodeCreateMenuRequest(r *http.Request) (
 }
 
 func (s *Server) decodeCreateMessageRecipientGroupRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageRecipientGroupSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -924,7 +940,7 @@ func (s *Server) decodeCreateMessageRecipientGroupRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageRecipientGroupSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -941,14 +957,22 @@ func (s *Server) decodeCreateMessageRecipientGroupRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateMessageSenderRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageSenderSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -995,7 +1019,7 @@ func (s *Server) decodeCreateMessageSenderRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageSenderSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1012,14 +1036,14 @@ func (s *Server) decodeCreateMessageSenderRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeCreateMessageTemplateRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageTemplateSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1066,7 +1090,7 @@ func (s *Server) decodeCreateMessageTemplateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageTemplateSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1083,7 +1107,7 @@ func (s *Server) decodeCreateMessageTemplateRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -1232,7 +1256,7 @@ func (s *Server) decodeCreatePermissionActionRequest(r *http.Request) (
 }
 
 func (s *Server) decodeCreatePermissionActionGroupRequest(r *http.Request) (
-	req AnyObject,
+	req *PermissionActionGroupSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1279,7 +1303,7 @@ func (s *Server) decodeCreatePermissionActionGroupRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request PermissionActionGroupSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1296,7 +1320,7 @@ func (s *Server) decodeCreatePermissionActionGroupRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -1603,7 +1627,7 @@ func (s *Server) decodeCreateUserRequest(r *http.Request) (
 }
 
 func (s *Server) decodeDispatchMessageRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageDispatchRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1650,7 +1674,7 @@ func (s *Server) decodeDispatchMessageRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageDispatchRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1667,14 +1691,14 @@ func (s *Server) decodeDispatchMessageRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeHandleInboxTodoRequest(r *http.Request) (
-	req AnyObject,
+	req *InboxTodoActionRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1721,7 +1745,7 @@ func (s *Server) decodeHandleInboxTodoRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request InboxTodoActionRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1738,7 +1762,7 @@ func (s *Server) decodeHandleInboxTodoRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -2045,7 +2069,7 @@ func (s *Server) decodeRollbackFeaturePackageRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSaveAppRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemAppSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2092,7 +2116,7 @@ func (s *Server) decodeSaveAppRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemAppSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2109,14 +2133,14 @@ func (s *Server) decodeSaveAppRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSaveAppHostBindingRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemAppHostBindingSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2163,7 +2187,7 @@ func (s *Server) decodeSaveAppHostBindingRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemAppHostBindingSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2180,14 +2204,14 @@ func (s *Server) decodeSaveAppHostBindingRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSaveMenuSpaceRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemMenuSpaceSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2234,7 +2258,7 @@ func (s *Server) decodeSaveMenuSpaceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemMenuSpaceSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2251,14 +2275,14 @@ func (s *Server) decodeSaveMenuSpaceRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSaveMenuSpaceEntryBindingRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemMenuSpaceEntryBindingSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2305,7 +2329,7 @@ func (s *Server) decodeSaveMenuSpaceEntryBindingRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemMenuSpaceEntryBindingSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2322,14 +2346,14 @@ func (s *Server) decodeSaveMenuSpaceEntryBindingRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSaveMenuSpaceHostBindingRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemMenuSpaceHostBindingSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2376,7 +2400,7 @@ func (s *Server) decodeSaveMenuSpaceHostBindingRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemMenuSpaceHostBindingSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2393,14 +2417,14 @@ func (s *Server) decodeSaveMenuSpaceHostBindingRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSaveMenuSpaceModeRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemMenuSpaceModeSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2447,7 +2471,7 @@ func (s *Server) decodeSaveMenuSpaceModeRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemMenuSpaceModeSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2464,14 +2488,14 @@ func (s *Server) decodeSaveMenuSpaceModeRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeSavePermissionActionBatchTemplateRequest(r *http.Request) (
-	req AnyObject,
+	req *PermissionActionBatchTemplateSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -2518,7 +2542,7 @@ func (s *Server) decodeSavePermissionActionBatchTemplateRequest(r *http.Request)
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request PermissionActionBatchTemplateSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -2535,7 +2559,7 @@ func (s *Server) decodeSavePermissionActionBatchTemplateRequest(r *http.Request)
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -3727,7 +3751,7 @@ func (s *Server) decodeSetRolePackagesRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSetUserMenusRequest(r *http.Request) (
-	req AnyObject,
+	req *UserMenusResponse,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3774,7 +3798,7 @@ func (s *Server) decodeSetUserMenusRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request UserMenusResponse
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3791,7 +3815,15 @@ func (s *Server) decodeSetUserMenusRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -3948,7 +3980,7 @@ func (s *Server) decodeSwitchWorkspaceRequest(r *http.Request) (
 }
 
 func (s *Server) decodeUpdateApiEndpointRequest(r *http.Request) (
-	req AnyObject,
+	req *ApiEndpointSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3995,7 +4027,7 @@ func (s *Server) decodeUpdateApiEndpointRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request ApiEndpointSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4012,14 +4044,22 @@ func (s *Server) decodeUpdateApiEndpointRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateApiEndpointCategoryRequest(r *http.Request) (
-	req AnyObject,
+	req *ApiEndpointCategorySaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4066,7 +4106,7 @@ func (s *Server) decodeUpdateApiEndpointCategoryRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request ApiEndpointCategorySaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4083,14 +4123,14 @@ func (s *Server) decodeUpdateApiEndpointCategoryRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateApiEndpointContextScopeRequest(r *http.Request) (
-	req AnyObject,
+	req *ApiEndpointSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4137,7 +4177,7 @@ func (s *Server) decodeUpdateApiEndpointContextScopeRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request ApiEndpointSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4154,14 +4194,22 @@ func (s *Server) decodeUpdateApiEndpointContextScopeRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4208,7 +4256,7 @@ func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4225,14 +4273,14 @@ func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceMemberRoleRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4279,7 +4327,7 @@ func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Req
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceMemberRoleRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4296,14 +4344,14 @@ func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Req
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4350,7 +4398,7 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4367,14 +4415,14 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r *http.Request) (
-	req AnyObject,
+	req *CollaborationWorkspaceMemberRoleRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4421,7 +4469,7 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r *h
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request CollaborationWorkspaceMemberRoleRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4438,14 +4486,14 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r *h
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateFastEnterConfigRequest(r *http.Request) (
-	req AnyObject,
+	req *SystemFastEnterConfig,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4492,7 +4540,7 @@ func (s *Server) decodeUpdateFastEnterConfigRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request SystemFastEnterConfig
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4509,7 +4557,15 @@ func (s *Server) decodeUpdateFastEnterConfigRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -4658,7 +4714,7 @@ func (s *Server) decodeUpdateMenuRequest(r *http.Request) (
 }
 
 func (s *Server) decodeUpdateMessageRecipientGroupRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageRecipientGroupSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4705,7 +4761,7 @@ func (s *Server) decodeUpdateMessageRecipientGroupRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageRecipientGroupSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4722,14 +4778,22 @@ func (s *Server) decodeUpdateMessageRecipientGroupRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateMessageSenderRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageSenderSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4776,7 +4840,7 @@ func (s *Server) decodeUpdateMessageSenderRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageSenderSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4793,14 +4857,14 @@ func (s *Server) decodeUpdateMessageSenderRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
 }
 
 func (s *Server) decodeUpdateMessageTemplateRequest(r *http.Request) (
-	req AnyObject,
+	req *MessageTemplateSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4847,7 +4911,7 @@ func (s *Server) decodeUpdateMessageTemplateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request MessageTemplateSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4864,7 +4928,7 @@ func (s *Server) decodeUpdateMessageTemplateRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}
@@ -5013,7 +5077,7 @@ func (s *Server) decodeUpdatePermissionActionRequest(r *http.Request) (
 }
 
 func (s *Server) decodeUpdatePermissionActionGroupRequest(r *http.Request) (
-	req AnyObject,
+	req *PermissionActionGroupSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -5060,7 +5124,7 @@ func (s *Server) decodeUpdatePermissionActionGroupRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request AnyObject
+		var request PermissionActionGroupSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -5077,7 +5141,7 @@ func (s *Server) decodeUpdatePermissionActionGroupRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
-		return request, rawBody, close, nil
+		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
 	}

@@ -3,6 +3,51 @@
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
+    FeaturePackageSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - package_id
+        - package_key
+        - package_type
+        - name
+        - description
+        - workspace_scope
+        - context_type
+        - app_keys
+        - status
+        - sort_order
+        - child_package_ids
+        - action_ids
+        - menu_ids
+        - collaboration_workspace_ids
+        - snapshot_created_at
+      properties:
+        package_id: {type: string, format: uuid}
+        package_key: {type: string}
+        package_type: {type: string}
+        name: {type: string}
+        description: {type: string}
+        workspace_scope: {type: string}
+        context_type: {type: string}
+        app_keys:
+          type: array
+          items: {type: string}
+        status: {type: string}
+        sort_order: {type: integer}
+        child_package_ids:
+          type: array
+          items: {type: string, format: uuid}
+        action_ids:
+          type: array
+          items: {type: string, format: uuid}
+        menu_ids:
+          type: array
+          items: {type: string, format: uuid}
+        collaboration_workspace_ids:
+          type: array
+          items: {type: string, format: uuid}
+        snapshot_created_at: {type: string, format: date-time}
     FeaturePackageCollaborationWorkspaceItem:
       type: object
       required: [id]
@@ -32,7 +77,7 @@ components:
         version_no: {type: integer}
         change_type: {type: string}
         snapshot:
-          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/FeaturePackageSnapshot'
         operator_id: {type: string, format: uuid, nullable: true}
         request_id: {type: string}
         created_at: {type: string, format: date-time}

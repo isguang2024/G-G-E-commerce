@@ -37,18 +37,46 @@ func (h *APIHandler) GetNavigation(ctx context.Context, params gen.GetNavigation
 
 	out := &gen.NavigationManifest{
 		VersionStamp: manifest.VersionStamp,
-		MenuTree:     marshalList(manifest.MenuTree),
-		EntryRoutes:  marshalList(manifest.EntryRoutes),
-		ManagedPages: marshalList(manifest.ManagedPages),
+	}
+	if menuTree, err := mapJSON[[]gen.MenuTreeItem](manifest.MenuTree); err == nil {
+		out.MenuTree = menuTree
+	} else {
+		return nil, err
+	}
+	if entryRoutes, err := mapJSON[[]gen.MenuTreeItem](manifest.EntryRoutes); err == nil {
+		out.EntryRoutes = entryRoutes
+	} else {
+		return nil, err
+	}
+	if managedPages, err := mapJSON[[]gen.PageListItem](manifest.ManagedPages); err == nil {
+		out.ManagedPages = managedPages
+	} else {
+		return nil, err
 	}
 	if manifest.CurrentApp != nil {
-		out.CurrentApp = gen.NewOptAnyObject(marshalAnyObject(manifest.CurrentApp))
+		currentApp, err := systemCurrentAppResponseFromModel(manifest.CurrentApp)
+		if err != nil {
+			return nil, err
+		}
+		if currentApp != nil {
+			out.CurrentApp = gen.NewOptSystemCurrentAppResponse(*currentApp)
+		}
 	}
 	if manifest.CurrentSpace != nil {
-		out.CurrentSpace = gen.NewOptAnyObject(marshalAnyObject(manifest.CurrentSpace))
+		currentSpace, err := systemCurrentMenuSpaceResponseFromModel(manifest.CurrentSpace)
+		if err != nil {
+			return nil, err
+		}
+		if currentSpace != nil {
+			out.CurrentSpace = gen.NewOptSystemCurrentMenuSpaceResponse(*currentSpace)
+		}
 	}
 	if manifest.Context != nil {
-		out.Context = gen.NewOptAnyObject(marshalAnyObject(manifest.Context))
+		contextValue, err := mapJSON[gen.NavigationContext](manifest.Context)
+		if err != nil {
+			return nil, err
+		}
+		out.Context = gen.NewOptNavigationContext(contextValue)
 	}
 	return out, nil
 }

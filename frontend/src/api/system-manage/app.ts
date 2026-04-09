@@ -8,26 +8,24 @@ import {
   normalizeMenuSpaceEntryBinding,
   normalizeMenuSpaceKey,
   normalizeFastEnterConfig,
-  toV5Body,
-  toV5ListResponse,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from './_shared'
 
 export async function fetchGetViewPages(force = false) {
   const query: V5Query<'/system/view-pages', 'get'> = force ? { force: '1' } : {}
-  const raw = toV5Record(
-    await unwrap(
+  const raw = await unwrap(
     v5Client.GET('/system/view-pages', {
       params: { query }
     })
   )
-  )
   return {
-    pages: (raw?.pages || []) as Array<{ filePath: string; componentPath: string }>,
+    pages: (raw?.pages || []).map((item) => ({
+      filePath: item?.file_path || '',
+      componentPath: item?.component_path || ''
+    })),
     refreshed: Boolean(raw?.refreshed),
-    refreshedAt: `${raw?.refreshed_at || raw?.refreshedAt || ''}`
+    refreshedAt: `${raw?.refreshed_at || ''}`
   }
 }
 
@@ -37,7 +35,28 @@ export async function fetchGetFastEnterConfig() {
 }
 
 export async function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnterConfig) {
-  const body: V5RequestBody<'/system/fast-enter', 'put'> = toV5Body(data)
+  const body: V5RequestBody<'/system/fast-enter', 'put'> = {
+    applications: (data.applications || []).map((item) => ({
+      id: item.id || '',
+      name: item.name || '',
+      description: item.description || '',
+      icon: item.icon || '',
+      iconColor: item.iconColor || '',
+      enabled: Boolean(item.enabled),
+      order: Number(item.order ?? 0),
+      routeName: item.routeName,
+      link: item.link
+    })),
+    quickLinks: (data.quickLinks || []).map((item) => ({
+      id: item.id || '',
+      name: item.name || '',
+      enabled: Boolean(item.enabled),
+      order: Number(item.order ?? 0),
+      routeName: item.routeName,
+      link: item.link
+    })),
+    minWidth: data.minWidth
+  }
   const res = await unwrap(v5Client.PUT('/system/fast-enter', { body }))
   return normalizeFastEnterConfig(res)
 }
@@ -52,9 +71,9 @@ export async function fetchGetCurrentMenuSpace(spaceKey: string | undefined, app
   return {
     space: normalizeMenuSpace(res?.space || {}),
     binding: res?.binding ? normalizeMenuSpaceHostBinding(res.binding) : undefined,
-    resolvedBy: `${res?.resolved_by || res?.resolvedBy || ''}`.trim(),
-    requestHost: `${res?.request_host || res?.requestHost || ''}`.trim(),
-    accessGranted: Boolean(res?.access_granted ?? res?.accessGranted ?? true)
+    resolvedBy: `${res?.resolved_by || ''}`.trim(),
+    requestHost: `${res?.request_host || ''}`.trim(),
+    accessGranted: Boolean(res?.access_granted ?? true)
   }
 }
 
@@ -66,12 +85,12 @@ export async function fetchGetMenuSpaceMode(appKey: string) {
 
 export async function fetchUpdateMenuSpaceMode(appKey: string, mode: string) {
   const body: V5RequestBody<'/system/menu-space-mode', 'put'> = { app_key: appKey, mode }
-  const res = toV5Record(await unwrap(v5Client.PUT('/system/menu-space-mode', { body })))
+  const res = await unwrap(v5Client.PUT('/system/menu-space-mode', { body }))
   return { mode: `${res?.mode || mode || 'single'}`.trim() || 'single' }
 }
 
 export async function fetchGetApps() {
-  const res = toV5ListResponse(await unwrap(v5Client.GET('/system/apps')))
+  const res = await unwrap(v5Client.GET('/system/apps'))
   return {
     records: (res.records || []).map(normalizeApp),
     total: Number(res.total || 0)
@@ -79,7 +98,17 @@ export async function fetchGetApps() {
 }
 
 export async function fetchSaveApp(data: Api.SystemManage.AppSaveParams) {
-  const body: V5RequestBody<'/system/apps', 'post'> = toV5Body(data)
+  const body: V5RequestBody<'/system/apps', 'post'> = {
+    app_key: data.app_key,
+    name: data.name,
+    description: data.description,
+    space_mode: data.space_mode,
+    default_space_key: data.default_space_key,
+    auth_mode: (data as Api.SystemManage.AppSaveParams & { auth_mode?: string }).auth_mode,
+    status: data.status,
+    is_default: data.is_default,
+    meta: data.meta
+  }
   const res = await unwrap(v5Client.POST('/system/apps', { body }))
   return normalizeApp(res)
 }
@@ -94,19 +123,17 @@ export async function fetchGetCurrentApp(appKey?: string) {
   return {
     app: normalizeApp(res?.app || {}),
     binding: res?.binding ? normalizeAppHostBinding(res.binding) : undefined,
-    resolvedBy: `${res?.resolved_by || res?.resolvedBy || ''}`.trim(),
-    requestHost: `${res?.request_host || res?.requestHost || ''}`.trim()
+    resolvedBy: `${res?.resolved_by || ''}`.trim(),
+    requestHost: `${res?.request_host || ''}`.trim()
   }
 }
 
 export async function fetchGetAppHostBindings(appKey?: string) {
   const query: V5Query<'/system/app-host-bindings', 'get'> = appKey ? { app_key: appKey } : {}
-  const res = toV5ListResponse(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/system/app-host-bindings', {
       params: { query }
     })
-  )
   )
   return {
     records: (res?.records || []).map(normalizeAppHostBinding),
@@ -115,7 +142,19 @@ export async function fetchGetAppHostBindings(appKey?: string) {
 }
 
 export async function fetchSaveAppHostBinding(data: Api.SystemManage.AppHostBindingSaveParams) {
-  const body: V5RequestBody<'/system/app-host-bindings', 'post'> = toV5Body(data)
+  const body: V5RequestBody<'/system/app-host-bindings', 'post'> = {
+    id: data.id,
+    app_key: data.app_key,
+    match_type: data.match_type,
+    host: data.host || '',
+    path_pattern: data.path_pattern,
+    priority: data.priority,
+    description: data.description,
+    is_primary: data.is_primary,
+    default_space_key: data.default_space_key,
+    status: data.status,
+    meta: data.meta
+  }
   const res = await unwrap(v5Client.POST('/system/app-host-bindings', { body }))
   return normalizeAppHostBinding(res)
 }
@@ -133,12 +172,10 @@ export async function fetchDeleteAppHostBinding(id: string, appKey?: string) {
 
 export async function fetchGetMenuSpaceEntryBindings(appKey: string) {
   const query: V5Query<'/system/menu-space-entry-bindings', 'get'> = { app_key: appKey }
-  const res = toV5ListResponse(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/system/menu-space-entry-bindings', {
       params: { query }
     })
-  )
   )
   return {
     records: (res?.records || []).map(normalizeMenuSpaceEntryBinding),
@@ -149,7 +186,19 @@ export async function fetchGetMenuSpaceEntryBindings(appKey: string) {
 export async function fetchSaveMenuSpaceEntryBinding(
   data: Api.SystemManage.MenuSpaceEntryBindingSaveParams
 ) {
-  const body: V5RequestBody<'/system/menu-space-entry-bindings', 'post'> = toV5Body(data)
+  const body: V5RequestBody<'/system/menu-space-entry-bindings', 'post'> = {
+    id: data.id,
+    app_key: data.app_key,
+    space_key: data.space_key,
+    match_type: data.match_type,
+    host: data.host || '',
+    path_pattern: data.path_pattern,
+    priority: data.priority,
+    description: data.description,
+    is_primary: data.is_primary,
+    status: data.status,
+    meta: data.meta
+  }
   const res = await unwrap(v5Client.POST('/system/menu-space-entry-bindings', { body }))
   return normalizeMenuSpaceEntryBinding(res)
 }
@@ -167,12 +216,10 @@ export async function fetchDeleteMenuSpaceEntryBinding(id: string, appKey?: stri
 
 export async function fetchGetMenuSpaces(appKey: string) {
   const query: V5Query<'/system/menu-spaces', 'get'> = { app_key: appKey }
-  const res = toV5ListResponse(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/system/menu-spaces', {
       params: { query }
     })
-  )
   )
   return {
     records: (res?.records || []).map(normalizeMenuSpace),
@@ -181,7 +228,18 @@ export async function fetchGetMenuSpaces(appKey: string) {
 }
 
 export async function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSaveParams) {
-  const body: V5RequestBody<'/system/menu-spaces', 'post'> = toV5Body(data)
+  const body: V5RequestBody<'/system/menu-spaces', 'post'> = {
+    app_key: data.app_key,
+    space_key: data.space_key,
+    name: data.name,
+    description: data.description,
+    default_home_path: data.default_home_path,
+    is_default: data.is_default,
+    status: data.status,
+    access_mode: data.access_mode,
+    allowed_role_codes: data.allowed_role_codes,
+    meta: data.meta
+  }
   const res = await unwrap(v5Client.POST('/system/menu-spaces', { body }))
   return normalizeMenuSpace(res)
 }
@@ -193,38 +251,30 @@ export async function fetchInitializeMenuSpaceFromDefault(
 ) {
   void appKey
   void force
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.POST('/system/menu-spaces/{spaceKey}/initialize-default', {
       params: { path: { spaceKey: normalizeMenuSpaceKey(spaceKey) } }
     })
   )
-  )
   return {
-    sourceSpaceKey: res?.source_space_key || res?.sourceSpaceKey || '',
+    sourceSpaceKey: res?.source_space_key || '',
     targetSpaceKey:
-      res?.target_space_key || res?.targetSpaceKey || normalizeMenuSpaceKey(spaceKey),
-    forceReinitialized: Boolean(res?.force_reinitialized ?? res?.forceReinitialized ?? false),
-    clearedMenuCount: Number(res?.cleared_menu_count ?? res?.clearedMenuCount ?? 0),
-    clearedPageCount: Number(res?.cleared_page_count ?? res?.clearedPageCount ?? 0),
-    clearedPackageMenuLinkCount: Number(
-      res?.cleared_package_menu_link_count ?? res?.clearedPackageMenuLinkCount ?? 0
-    ),
-    createdMenuCount: Number(res?.created_menu_count ?? res?.createdMenuCount ?? 0),
-    createdPageCount: Number(res?.created_page_count ?? res?.createdPageCount ?? 0),
-    createdPackageMenuLinkCount: Number(
-      res?.created_package_menu_link_count ?? res?.createdPackageMenuLinkCount ?? 0
-    )
+      res?.target_space_key || normalizeMenuSpaceKey(spaceKey),
+    forceReinitialized: Boolean(res?.force_reinitialized ?? false),
+    clearedMenuCount: Number(res?.cleared_menu_count ?? 0),
+    clearedPageCount: Number(res?.cleared_page_count ?? 0),
+    clearedPackageMenuLinkCount: Number(res?.cleared_package_menu_link_count ?? 0),
+    createdMenuCount: Number(res?.created_menu_count ?? 0),
+    createdPageCount: Number(res?.created_page_count ?? 0),
+    createdPackageMenuLinkCount: Number(res?.created_package_menu_link_count ?? 0)
   }
 }
 
 export async function fetchGetMenuSpaceHostBindings(appKey: string) {
   void appKey
-  const res = toV5ListResponse(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/system/menu-space-host-bindings', {
     })
-  )
   )
   return {
     records: (res?.records || []).map(normalizeMenuSpaceHostBinding),
@@ -235,7 +285,15 @@ export async function fetchGetMenuSpaceHostBindings(appKey: string) {
 export async function fetchSaveMenuSpaceHostBinding(
   data: Api.SystemManage.MenuSpaceHostBindingSaveParams
 ) {
-  const body: V5RequestBody<'/system/menu-space-host-bindings', 'post'> = toV5Body(data)
+  const body: V5RequestBody<'/system/menu-space-host-bindings', 'post'> = {
+    app_key: data.app_key,
+    host: data.host,
+    space_key: data.space_key,
+    description: data.description,
+    is_default: data.is_default,
+    status: data.status,
+    meta: data.meta
+  }
   const res = await unwrap(v5Client.POST('/system/menu-space-host-bindings', { body }))
   return normalizeMenuSpaceHostBinding(res)
 }

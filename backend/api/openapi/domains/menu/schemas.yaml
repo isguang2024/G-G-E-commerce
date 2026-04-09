@@ -2,4 +2,23 @@
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    MenuDeletePreviewResponse:
+      type: object
+      required:
+      - mode
+      - menu_count
+      - child_count
+      - affected_page_count
+      - affected_relation_count
+      properties:
+        mode:
+          type: string
+        menu_count:
+          type: integer
+        child_count:
+          type: integer
+        affected_page_count:
+          type: integer
+        affected_relation_count:
+          type: integer

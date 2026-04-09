@@ -24,7 +24,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/MediaUploadResponse'
         '401':
           description: Unauthorized
           content:
@@ -51,7 +51,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/MediaListResponse'
         '401':
           description: Unauthorized
           content:

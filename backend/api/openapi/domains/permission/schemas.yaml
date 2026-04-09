@@ -201,7 +201,7 @@ components:
         name: {type: string}
         description: {type: string}
         payload:
-          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/PermissionActionBatchTemplatePayload'
         created_by: {type: string, format: uuid, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
@@ -213,6 +213,132 @@ components:
           type: array
           items: {$ref: '#/components/schemas/PermissionActionBatchTemplateItem'}
         total: {type: integer, format: int64}
+    PermissionActionBatchTemplateSaveRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        description: {type: string}
+        payload:
+          $ref: '#/components/schemas/PermissionActionBatchTemplatePayload'
+    PermissionActionBatchTemplatePayload:
+      type: object
+      additionalProperties: false
+      properties:
+        ids:
+          type: array
+          items: {type: string, format: uuid}
+        status: {type: string}
+        module_group_id: {type: string, format: uuid}
+        feature_group_id: {type: string, format: uuid}
+        template_name: {type: string}
+    PermissionActionCleanupResult:
+      type: object
+      required: [deleted_count, deleted_keys]
+      properties:
+        deleted_count: {type: integer, format: int64}
+        deleted_keys:
+          type: array
+          items: {type: string}
+    PermissionActionEndpointList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionEndpointListItem'}
+        total:
+          type: integer
+          format: int64
+    PermissionActionEndpointListItem:
+      type: object
+      required: [id, code, method, path, handler, summary, access_mode, permission_keys]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        method:
+          type: string
+        path:
+          type: string
+        handler:
+          type: string
+        summary:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        permission_keys:
+          type: array
+          items:
+            type: string
+        permission_contexts:
+          type: array
+          items:
+            type: string
+        permission_binding_mode:
+          type: string
+        shared_across_contexts:
+          type: boolean
+        permission_note:
+          type: string
+        auth_mode:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/PermissionActionEndpointCategorySummary'
+    PermissionActionEndpointCategorySummary:
+      type: object
+      additionalProperties: false
+      required: [id, code, name, sort_order, status]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        name_en: {type: string}
+        sort_order: {type: integer}
+        status: {type: string}
+    PermissionActionGroupSaveRequest:
+      type: object
+      required:
+      - code
+      - name
+      - group_type
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        name_en:
+          type: string
+        description:
+          type: string
+        group_type:
+          type: string
+        status:
+          type: string
+        sort_order:
+          type: integer
+    PermissionActionEndpointAddRequest:
+      type: object
+      required:
+      - endpoint_code
+      properties:
+        endpoint_code:
+          type: string
+    PermissionActionBatchUpdateResult:
+      type: object
+      required: [updated_count, skipped_ids]
+      properties:
+        updated_count: {type: integer, format: int64}
+        skipped_ids:
+          type: array
+          items: {type: string}
     RiskAuditItem:
       type: object
       required:
@@ -232,13 +358,27 @@ components:
         object_id: {type: string}
         operation_type: {type: string}
         before_summary:
-          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/RiskAuditSummary'
         after_summary:
-          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/RiskAuditSummary'
         impact_summary:
-          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/RiskAuditSummary'
         request_id: {type: string}
         created_at: {type: string, format: date-time}
+    RiskAuditSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        permission_key: {type: string}
+        status: {type: string}
+        context_type: {type: string}
+        module_code: {type: string}
+        feature_kind: {type: string}
+        module_group_id: {type: string, format: uuid}
+        feature_group_id: {type: string, format: uuid}
+        template_name: {type: string}
+        package_count: {type: integer}
+        collaboration_workspace_count: {type: integer}
     PermissionActionRiskAuditList:
       type: object
       required: [records, total]

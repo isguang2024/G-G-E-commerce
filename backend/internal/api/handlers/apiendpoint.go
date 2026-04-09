@@ -4,7 +4,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"io"
 	"strings"
 
 	"github.com/google/uuid"
@@ -282,8 +281,15 @@ func (h *APIHandler) GetApiEndpointOverview(ctx context.Context, params gen.GetA
 		h.logger.Error("get api endpoint overview failed", zap.Error(err))
 		return nil, err
 	}
-	obj := marshalAnyObject(overview)
-	return &obj, nil
+	return &gen.ApiEndpointOverview{
+		TotalCount:             overview.TotalCount,
+		UncategorizedCount:     overview.UncategorizedCount,
+		StaleCount:             overview.StaleCount,
+		NoPermissionCount:     overview.NoPermissionCount,
+		SharedPermissionCount: overview.SharedPermissionCount,
+		CrossContextSharedCount: overview.CrossContextSharedCount,
+		CategoryCounts:         apiEndpointOverviewCategoryCountsFromModel(overview.CategoryCounts),
+	}, nil
 }
 
 // ─── listStaleApiEndpoints ────────────────────────────────────────────────────
@@ -372,20 +378,16 @@ func (h *APIHandler) SyncApiEndpoints(ctx context.Context) (gen.SyncApiEndpoints
 
 // ─── cleanupStaleApiEndpoints ─────────────────────────────────────────────────
 
-func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req gen.AnyObject) (gen.CleanupStaleApiEndpointsRes, error) {
-	var body struct {
-		IDs []string `json:"ids"`
+func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req *gen.CleanupStaleRequest) (gen.CleanupStaleApiEndpointsRes, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil && !errors.Is(err, io.EOF) {
-		return nil, err
+	if len(req.Ids) == 0 {
+		return &gen.CleanupStaleResult{DeletedCount: 0}, nil
 	}
-	endpointIDs := make([]uuid.UUID, 0, len(body.IDs))
-	seen := make(map[uuid.UUID]struct{}, len(body.IDs))
-	for _, rawID := range body.IDs {
-		id, err := uuid.Parse(strings.TrimSpace(rawID))
-		if err != nil {
-			return nil, err
-		}
+	endpointIDs := make([]uuid.UUID, 0, len(req.Ids))
+	seen := make(map[uuid.UUID]struct{}, len(req.Ids))
+	for _, id := range req.Ids {
 		if _, exists := seen[id]; exists {
 			continue
 		}
@@ -397,61 +399,56 @@ func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req gen.AnyOb
 		h.logger.Error("cleanup stale api endpoints failed", zap.Error(err))
 		return nil, err
 	}
-	obj := marshalAnyObject(map[string]interface{}{
-		"deleted_count": deletedCount,
-	})
-	return &obj, nil
+	return &gen.CleanupStaleResult{DeletedCount: int64(deletedCount)}, nil
 }
 
 // ─── updateApiEndpoint ────────────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateApiEndpoint(ctx context.Context, req gen.AnyObject, params gen.UpdateApiEndpointParams) (gen.UpdateApiEndpointRes, error) {
+func (h *APIHandler) UpdateApiEndpoint(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointParams) (gen.UpdateApiEndpointRes, error) {
 	return h.saveEndpointFromBody(ctx, params.ID, req)
 }
 
 // ─── createApiEndpointCategory ────────────────────────────────────────────────
 
-func (h *APIHandler) CreateApiEndpointCategory(ctx context.Context, req gen.AnyObject) (gen.CreateApiEndpointCategoryRes, error) {
+func (h *APIHandler) UpdateApiEndpointContextScope(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointContextScopeParams) (gen.UpdateApiEndpointContextScopeRes, error) {
+	return h.saveEndpointFromBody(ctx, params.ID, req)
+}
+
+func (h *APIHandler) CreateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest) (gen.CreateApiEndpointCategoryRes, error) {
 	return h.saveCategoryFromBody(ctx, uuid.Nil, req)
 }
 
 // ─── updateApiEndpointCategory ────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateApiEndpointCategory(ctx context.Context, req gen.AnyObject, params gen.UpdateApiEndpointCategoryParams) (gen.UpdateApiEndpointCategoryRes, error) {
+func (h *APIHandler) UpdateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest, params gen.UpdateApiEndpointCategoryParams) (gen.UpdateApiEndpointCategoryRes, error) {
 	return h.saveCategoryFromBody(ctx, params.ID, req)
 }
 
 // ─── internal save helpers ────────────────────────────────────────────────────
 
-func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req gen.AnyObject) (*gen.AnyObject, error) {
-	var body struct {
-		Code           string   `json:"code"`
-		Method         string   `json:"method"`
-		Path           string   `json:"path"`
-		Summary        string   `json:"summary"`
-		CategoryID     string   `json:"category_id"`
-		Status         string   `json:"status"`
-		Handler        string   `json:"handler"`
-		PermissionKeys []string `json:"permission_keys"`
+func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointSaveRequest) (*gen.ApiEndpointItem, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	categoryID, err := parseMaybeUUID(body.CategoryID)
-	if err != nil {
-		return nil, err
+	var categoryID *uuid.UUID
+	if req.CategoryID.Set {
+		parsed, err := uuid.Parse(req.CategoryID.Value)
+		if err != nil {
+			return nil, err
+		}
+		categoryID = &parsed
 	}
 	endpoint := &user.APIEndpoint{
 		ID:         id,
-		Code:       strings.TrimSpace(body.Code),
-		Method:     strings.TrimSpace(body.Method),
-		Path:       strings.TrimSpace(body.Path),
-		Summary:    strings.TrimSpace(body.Summary),
+		Code:       strings.TrimSpace(req.Code),
+		Method:     strings.TrimSpace(req.Method),
+		Path:       strings.TrimSpace(req.Path),
+		Summary:    strings.TrimSpace(req.Summary),
 		CategoryID: categoryID,
-		Status:     strings.TrimSpace(body.Status),
-		Handler:    strings.TrimSpace(body.Handler),
+		Status:     strings.TrimSpace(req.Status),
+		Handler:    strings.TrimSpace(req.Handler),
 	}
-	saved, err := h.apiEndpointSvc.Save(endpoint, body.PermissionKeys, "")
+	saved, err := h.apiEndpointSvc.Save(endpoint, req.PermissionKeys, "")
 	if err != nil {
 		h.logger.Error("save api endpoint failed", zap.Error(err))
 		return nil, err
@@ -462,34 +459,38 @@ func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req g
 	for _, cat := range categories {
 		categoryMap[cat.ID] = cat
 	}
-	obj := marshalAnyObject(epToMap(saved, bindings, categoryMap, apiendpoint.EndpointRuntimeState{}))
-	return &obj, nil
+	out := apiEndpointItemFromModel(saved, bindings, categoryMap, apiendpoint.EndpointRuntimeState{})
+	return &out, nil
 }
 
-func (h *APIHandler) saveCategoryFromBody(_ context.Context, id uuid.UUID, req gen.AnyObject) (*gen.AnyObject, error) {
-	var body struct {
-		Code      string `json:"code"`
-		Name      string `json:"name"`
-		NameEn    string `json:"name_en"`
-		SortOrder int    `json:"sort_order"`
-		Status    string `json:"status"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) saveCategoryFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointCategorySaveRequest) (*gen.ApiEndpointCategoryItem, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
 	item := &user.APIEndpointCategory{
 		ID:        id,
-		Code:      strings.TrimSpace(body.Code),
-		Name:      strings.TrimSpace(body.Name),
-		NameEn:    strings.TrimSpace(body.NameEn),
-		SortOrder: body.SortOrder,
-		Status:    strings.TrimSpace(body.Status),
+		Code:      strings.TrimSpace(req.Code),
+		Name:      strings.TrimSpace(req.Name),
+		NameEn:    strings.TrimSpace(req.NameEn),
+		SortOrder: req.SortOrder,
+		Status:    strings.TrimSpace(req.Status),
 	}
 	saved, err := h.apiEndpointSvc.SaveCategory(item)
 	if err != nil {
 		h.logger.Error("save api endpoint category failed", zap.Error(err))
 		return nil, err
 	}
-	obj := marshalAnyObject(catToMap(saved))
-	return &obj, nil
+	out := apiEndpointCategoryItemFromModel(saved)
+	return &out, nil
+}
+
+func apiEndpointOverviewCategoryCountsFromModel(items []apiendpoint.EndpointCategoryCount) []gen.ApiEndpointOverviewCategoryCountsItem {
+	out := make([]gen.ApiEndpointOverviewCategoryCountsItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, gen.ApiEndpointOverviewCategoryCountsItem{
+			CategoryID: item.CategoryID,
+			Count:      item.Count,
+		})
+	}
+	return out
 }

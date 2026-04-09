@@ -16,7 +16,7 @@ export async function fetchLogin(params: Api.Auth.LoginParams) {
   if (error || !data) {
     throw (error ? createV5HttpError(error, response) : new Error('login failed'))
   }
-  return data as unknown as Api.Auth.LoginResponse
+  return data as Api.Auth.LoginResponse
 }
 
 /**
@@ -75,7 +75,7 @@ export async function fetchRefreshToken(refreshToken: string) {
   if (error || !data) {
     throw (error ? createV5HttpError(error, response) : new Error('refresh failed'))
   }
-  return data as unknown as Api.Auth.LoginResponse
+  return data as Api.Auth.LoginResponse
 }
 
 /**

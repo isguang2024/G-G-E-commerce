@@ -317,7 +317,7 @@ func decodeAssignUserRolesResponse(resp *http.Response) (res AssignUserRolesRes,
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeBatchUpdatePermissionActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeBatchUpdatePermissionActionsResponse(resp *http.Response) (res *PermissionActionBatchUpdateResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -333,7 +333,7 @@ func decodeBatchUpdatePermissionActionsResponse(resp *http.Response) (res *Mutat
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response PermissionActionBatchUpdateResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -349,6 +349,15 @@ func decodeBatchUpdatePermissionActionsResponse(resp *http.Response) (res *Mutat
 					Err:         err,
 				}
 				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
 			}
 			return &response, nil
 		default:
@@ -374,7 +383,7 @@ func decodeCleanupStaleApiEndpointsResponse(resp *http.Response) (res CleanupSta
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response CleanupStaleResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -469,7 +478,7 @@ func decodeCleanupStaleApiEndpointsResponse(resp *http.Response) (res CleanupSta
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCleanupUnusedPermissionActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCleanupUnusedPermissionActionsResponse(resp *http.Response) (res *PermissionActionCleanupResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -485,7 +494,7 @@ func decodeCleanupUnusedPermissionActionsResponse(resp *http.Response) (res *Mut
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response PermissionActionCleanupResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -501,6 +510,15 @@ func decodeCleanupUnusedPermissionActionsResponse(resp *http.Response) (res *Mut
 					Err:         err,
 				}
 				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
 			}
 			return &response, nil
 		default:
@@ -526,7 +544,7 @@ func decodeCreateApiEndpointCategoryResponse(resp *http.Response) (res CreateApi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response ApiEndpointCategoryItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -826,7 +844,7 @@ func decodeCreateMenuResponse(resp *http.Response) (res *MutationResult, _ error
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateMessageRecipientGroupResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreateMessageRecipientGroupResponse(resp *http.Response) (res *MessageRecipientGroupItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -842,7 +860,57 @@ func decodeCreateMessageRecipientGroupResponse(resp *http.Response) (res *Mutati
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response MessageRecipientGroupItem
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeCreateMessageSenderResponse(resp *http.Response) (res *MessageSenderItem, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response MessageSenderItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -867,7 +935,7 @@ func decodeCreateMessageRecipientGroupResponse(resp *http.Response) (res *Mutati
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateMessageSenderResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreateMessageTemplateResponse(resp *http.Response) (res *MessageTemplateItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -883,7 +951,7 @@ func decodeCreateMessageSenderResponse(resp *http.Response) (res *MutationResult
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response MessageTemplateItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -908,7 +976,7 @@ func decodeCreateMessageSenderResponse(resp *http.Response) (res *MutationResult
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateMessageTemplateResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreatePageResponse(resp *http.Response) (res *PageSaveResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -924,7 +992,7 @@ func decodeCreateMessageTemplateResponse(resp *http.Response) (res *MutationResu
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response PageSaveResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -942,47 +1010,6 @@ func decodeCreateMessageTemplateResponse(resp *http.Response) (res *MutationResu
 				return res, err
 			}
 			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeCreatePageResponse(resp *http.Response) (res AnyObject, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response AnyObject
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			return response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -1031,7 +1058,7 @@ func decodeCreatePermissionActionResponse(resp *http.Response) (res *IDResult, _
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreatePermissionActionGroupResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreatePermissionActionGroupResponse(resp *http.Response) (res *IDResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1047,7 +1074,7 @@ func decodeCreatePermissionActionGroupResponse(resp *http.Response) (res *Mutati
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response IDResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -1534,7 +1561,7 @@ func decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Re
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeDeleteFeaturePackageResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeDeleteFeaturePackageResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1550,7 +1577,7 @@ func decodeDeleteFeaturePackageResponse(resp *http.Response) (res *MutationResul
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -2166,7 +2193,7 @@ func decodeDeleteUserResponse(resp *http.Response) (res DeleteUserRes, _ error) 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeDispatchMessageResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeDispatchMessageResponse(resp *http.Response) (res *MessageDispatchResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2182,7 +2209,7 @@ func decodeDispatchMessageResponse(resp *http.Response) (res *MutationResult, _ 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response MessageDispatchResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -2308,7 +2335,7 @@ func decodeGetApiEndpointOverviewResponse(resp *http.Response) (res GetApiEndpoi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response ApiEndpointOverview
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -2324,6 +2351,15 @@ func decodeGetApiEndpointOverviewResponse(resp *http.Response) (res GetApiEndpoi
 					Err:         err,
 				}
 				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
 			}
 			return &response, nil
 		default:
@@ -2779,7 +2815,7 @@ func decodeGetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentAppResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetCurrentAppResponse(resp *http.Response) (res *SystemCurrentAppResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2795,7 +2831,7 @@ func decodeGetCurrentAppResponse(resp *http.Response) (res AnyObject, _ error) {
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response SystemCurrentAppResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -2812,7 +2848,16 @@ func decodeGetCurrentAppResponse(resp *http.Response) (res AnyObject, _ error) {
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3311,7 +3356,7 @@ func decodeGetCurrentCollaborationWorkspaceMenusResponse(resp *http.Response) (r
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentMenuSpaceResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetCurrentMenuSpaceResponse(resp *http.Response) (res *SystemCurrentMenuSpaceResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3327,7 +3372,7 @@ func decodeGetCurrentMenuSpaceResponse(resp *http.Response) (res AnyObject, _ er
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response SystemCurrentMenuSpaceResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3344,7 +3389,16 @@ func decodeGetCurrentMenuSpaceResponse(resp *http.Response) (res AnyObject, _ er
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3437,7 +3491,7 @@ func decodeGetCurrentWorkspaceResponse(resp *http.Response) (res GetCurrentWorks
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetFastEnterConfigResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetFastEnterConfigResponse(resp *http.Response) (res *SystemFastEnterConfig, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3453,7 +3507,7 @@ func decodeGetFastEnterConfigResponse(resp *http.Response) (res AnyObject, _ err
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response SystemFastEnterConfig
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3470,7 +3524,16 @@ func decodeGetFastEnterConfigResponse(resp *http.Response) (res AnyObject, _ err
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3810,7 +3873,7 @@ func decodeGetFeaturePackageRelationTreeResponse(resp *http.Response) (res *Feat
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetInboxDetailResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetInboxDetailResponse(resp *http.Response) (res *InboxItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3826,7 +3889,7 @@ func decodeGetInboxDetailResponse(resp *http.Response) (res AnyObject, _ error) 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response InboxItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3843,7 +3906,7 @@ func decodeGetInboxDetailResponse(resp *http.Response) (res AnyObject, _ error) 
 				}
 				return res, err
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3851,7 +3914,7 @@ func decodeGetInboxDetailResponse(resp *http.Response) (res AnyObject, _ error) 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetInboxSummaryResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetInboxSummaryResponse(resp *http.Response) (res *InboxSummary, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3867,7 +3930,7 @@ func decodeGetInboxSummaryResponse(resp *http.Response) (res AnyObject, _ error)
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response InboxSummary
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3884,7 +3947,7 @@ func decodeGetInboxSummaryResponse(resp *http.Response) (res AnyObject, _ error)
 				}
 				return res, err
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3892,7 +3955,7 @@ func decodeGetInboxSummaryResponse(resp *http.Response) (res AnyObject, _ error)
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetMenuDeletePreviewResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetMenuDeletePreviewResponse(resp *http.Response) (res *MenuDeletePreviewResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3908,7 +3971,7 @@ func decodeGetMenuDeletePreviewResponse(resp *http.Response) (res AnyObject, _ e
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response MenuDeletePreviewResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3925,7 +3988,7 @@ func decodeGetMenuDeletePreviewResponse(resp *http.Response) (res AnyObject, _ e
 				}
 				return res, err
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -3933,7 +3996,7 @@ func decodeGetMenuDeletePreviewResponse(resp *http.Response) (res AnyObject, _ e
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetMenuSpaceModeResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetMenuSpaceModeResponse(resp *http.Response) (res *SystemMenuSpaceModeResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3949,7 +4012,7 @@ func decodeGetMenuSpaceModeResponse(resp *http.Response) (res AnyObject, _ error
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response SystemMenuSpaceModeResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3966,7 +4029,7 @@ func decodeGetMenuSpaceModeResponse(resp *http.Response) (res AnyObject, _ error
 				}
 				return res, err
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4024,7 +4087,7 @@ func decodeGetMenuTreeResponse(resp *http.Response) (res *MenuTreeResponse, _ er
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetMessageDispatchOptionsResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetMessageDispatchOptionsResponse(resp *http.Response) (res *MessageDispatchOptions, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4040,7 +4103,7 @@ func decodeGetMessageDispatchOptionsResponse(resp *http.Response) (res AnyObject
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response MessageDispatchOptions
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4057,7 +4120,16 @@ func decodeGetMessageDispatchOptionsResponse(resp *http.Response) (res AnyObject
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4065,7 +4137,7 @@ func decodeGetMessageDispatchOptionsResponse(resp *http.Response) (res AnyObject
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetMessageDispatchRecordResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetMessageDispatchRecordResponse(resp *http.Response) (res *MessageDispatchRecord, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4081,7 +4153,7 @@ func decodeGetMessageDispatchRecordResponse(resp *http.Response) (res AnyObject,
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response MessageDispatchRecord
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4098,7 +4170,16 @@ func decodeGetMessageDispatchRecordResponse(resp *http.Response) (res AnyObject,
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4156,7 +4237,7 @@ func decodeGetNavigationResponse(resp *http.Response) (res *NavigationManifest, 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetPageResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetPageResponse(resp *http.Response) (res *PageSaveResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4172,7 +4253,7 @@ func decodeGetPageResponse(resp *http.Response) (res AnyObject, _ error) {
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response PageSaveResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4189,7 +4270,7 @@ func decodeGetPageResponse(resp *http.Response) (res AnyObject, _ error) {
 				}
 				return res, err
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4197,7 +4278,7 @@ func decodeGetPageResponse(resp *http.Response) (res AnyObject, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetPageAccessTraceResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetPageAccessTraceResponse(resp *http.Response) (res *PageAccessTraceResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4213,7 +4294,7 @@ func decodeGetPageAccessTraceResponse(resp *http.Response) (res AnyObject, _ err
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response PageAccessTraceResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4230,7 +4311,16 @@ func decodeGetPageAccessTraceResponse(resp *http.Response) (res AnyObject, _ err
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4936,7 +5026,7 @@ func decodeGetUserResponse(resp *http.Response) (res GetUserRes, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res *UserCollaborationWorkspacesResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4952,7 +5042,7 @@ func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res AnyO
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response UserCollaborationWorkspacesResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4969,7 +5059,16 @@ func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res AnyO
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -4977,7 +5076,7 @@ func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res AnyO
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetUserMenusResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetUserMenusResponse(resp *http.Response) (res *UserMenusResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4993,7 +5092,7 @@ func decodeGetUserMenusResponse(resp *http.Response) (res AnyObject, _ error) {
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response UserMenusResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5010,7 +5109,16 @@ func decodeGetUserMenusResponse(resp *http.Response) (res AnyObject, _ error) {
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -5068,7 +5176,7 @@ func decodeGetUserPackagesResponse(resp *http.Response) (res *UserPackagesRespon
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetUserPermissionDiagnosisResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetUserPermissionDiagnosisResponse(resp *http.Response) (res *UserPermissionDiagnosisResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5084,7 +5192,7 @@ func decodeGetUserPermissionDiagnosisResponse(resp *http.Response) (res AnyObjec
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response UserPermissionDiagnosisResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5101,7 +5209,16 @@ func decodeGetUserPermissionDiagnosisResponse(resp *http.Response) (res AnyObjec
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -5109,7 +5226,7 @@ func decodeGetUserPermissionDiagnosisResponse(resp *http.Response) (res AnyObjec
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetUserPermissionsResponse(resp *http.Response) (res AnyObject, _ error) {
+func decodeGetUserPermissionsResponse(resp *http.Response) (res *UserPermissionsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5125,7 +5242,7 @@ func decodeGetUserPermissionsResponse(resp *http.Response) (res AnyObject, _ err
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response UserPermissionsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5142,7 +5259,16 @@ func decodeGetUserPermissionsResponse(resp *http.Response) (res AnyObject, _ err
 				}
 				return res, err
 			}
-			return response, nil
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -5311,7 +5437,7 @@ func decodeHandleInboxTodoResponse(resp *http.Response) (res *MutationResult, _ 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeInitializeMenuSpaceFromDefaultResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeInitializeMenuSpaceFromDefaultResponse(resp *http.Response) (res *SystemMenuSpaceInitializeResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5327,7 +5453,7 @@ func decodeInitializeMenuSpaceFromDefaultResponse(resp *http.Response) (res *Mut
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemMenuSpaceInitializeResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5592,7 +5718,7 @@ func decodeListApiEndpointsResponse(resp *http.Response) (res ListApiEndpointsRe
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListAppHostBindingsResponse(resp *http.Response) (res *SystemListResponse, _ error) {
+func decodeListAppHostBindingsResponse(resp *http.Response) (res *SystemAppHostBindingListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5608,7 +5734,7 @@ func decodeListAppHostBindingsResponse(resp *http.Response) (res *SystemListResp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SystemListResponse
+			var response SystemAppHostBindingListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5642,7 +5768,7 @@ func decodeListAppHostBindingsResponse(resp *http.Response) (res *SystemListResp
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListAppsResponse(resp *http.Response) (res *SystemListResponse, _ error) {
+func decodeListAppsResponse(resp *http.Response) (res *SystemAppListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5658,7 +5784,7 @@ func decodeListAppsResponse(resp *http.Response) (res *SystemListResponse, _ err
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SystemListResponse
+			var response SystemAppListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6242,7 +6368,7 @@ func decodeListFeaturePackagesResponse(resp *http.Response) (res *FeaturePackage
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListInboxResponse(resp *http.Response) (res *MessageListResponse, _ error) {
+func decodeListInboxResponse(resp *http.Response) (res *InboxListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6258,7 +6384,7 @@ func decodeListInboxResponse(resp *http.Response) (res *MessageListResponse, _ e
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MessageListResponse
+			var response InboxListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6308,7 +6434,7 @@ func decodeListMediaResponse(resp *http.Response) (res ListMediaRes, _ error) {
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyListResponse
+			var response MediaListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6412,7 +6538,7 @@ func decodeListMediaResponse(resp *http.Response) (res ListMediaRes, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMenuSpaceEntryBindingsResponse(resp *http.Response) (res *SystemListResponse, _ error) {
+func decodeListMenuSpaceEntryBindingsResponse(resp *http.Response) (res *SystemMenuSpaceEntryBindingListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6428,7 +6554,7 @@ func decodeListMenuSpaceEntryBindingsResponse(resp *http.Response) (res *SystemL
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SystemListResponse
+			var response SystemMenuSpaceEntryBindingListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6462,7 +6588,7 @@ func decodeListMenuSpaceEntryBindingsResponse(resp *http.Response) (res *SystemL
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMenuSpaceHostBindingsResponse(resp *http.Response) (res *SystemListResponse, _ error) {
+func decodeListMenuSpaceHostBindingsResponse(resp *http.Response) (res *SystemMenuSpaceHostBindingListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6478,7 +6604,7 @@ func decodeListMenuSpaceHostBindingsResponse(resp *http.Response) (res *SystemLi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SystemListResponse
+			var response SystemMenuSpaceHostBindingListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6512,7 +6638,7 @@ func decodeListMenuSpaceHostBindingsResponse(resp *http.Response) (res *SystemLi
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMenuSpacesResponse(resp *http.Response) (res *SystemListResponse, _ error) {
+func decodeListMenuSpacesResponse(resp *http.Response) (res *SystemMenuSpaceListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6528,7 +6654,7 @@ func decodeListMenuSpacesResponse(resp *http.Response) (res *SystemListResponse,
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SystemListResponse
+			var response SystemMenuSpaceListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6562,7 +6688,7 @@ func decodeListMenuSpacesResponse(resp *http.Response) (res *SystemListResponse,
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMessageDispatchRecordsResponse(resp *http.Response) (res *MessageListResponse, _ error) {
+func decodeListMessageDispatchRecordsResponse(resp *http.Response) (res *MessageDispatchRecordListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6578,7 +6704,7 @@ func decodeListMessageDispatchRecordsResponse(resp *http.Response) (res *Message
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MessageListResponse
+			var response MessageDispatchRecordListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6612,7 +6738,7 @@ func decodeListMessageDispatchRecordsResponse(resp *http.Response) (res *Message
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMessageRecipientGroupsResponse(resp *http.Response) (res *MessageListResponse, _ error) {
+func decodeListMessageRecipientGroupsResponse(resp *http.Response) (res *MessageRecipientGroupListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6628,7 +6754,7 @@ func decodeListMessageRecipientGroupsResponse(resp *http.Response) (res *Message
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MessageListResponse
+			var response MessageRecipientGroupListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6662,7 +6788,7 @@ func decodeListMessageRecipientGroupsResponse(resp *http.Response) (res *Message
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMessageSendersResponse(resp *http.Response) (res *MessageListResponse, _ error) {
+func decodeListMessageSendersResponse(resp *http.Response) (res *MessageSenderListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6678,7 +6804,7 @@ func decodeListMessageSendersResponse(resp *http.Response) (res *MessageListResp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MessageListResponse
+			var response MessageSenderListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6712,7 +6838,7 @@ func decodeListMessageSendersResponse(resp *http.Response) (res *MessageListResp
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMessageTemplatesResponse(resp *http.Response) (res *MessageListResponse, _ error) {
+func decodeListMessageTemplatesResponse(resp *http.Response) (res *MessageTemplateListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6728,7 +6854,7 @@ func decodeListMessageTemplatesResponse(resp *http.Response) (res *MessageListRe
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MessageListResponse
+			var response MessageTemplateListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -7097,7 +7223,7 @@ func decodeListPermissionActionBatchTemplatesResponse(resp *http.Response) (res 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListPermissionActionEndpointsResponse(resp *http.Response) (res *AnyListResponse, _ error) {
+func decodeListPermissionActionEndpointsResponse(resp *http.Response) (res *PermissionActionEndpointList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -7113,7 +7239,7 @@ func decodeListPermissionActionEndpointsResponse(resp *http.Response) (res *AnyL
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyListResponse
+			var response PermissionActionEndpointList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8405,7 +8531,7 @@ func decodeMarkInboxReadAllResponse(resp *http.Response) (res *MutationResult, _
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodePreviewPageBreadcrumbResponse(resp *http.Response) (res *PageListResponse, _ error) {
+func decodePreviewPageBreadcrumbResponse(resp *http.Response) (res *PageBreadcrumbPreviewListResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8421,7 +8547,7 @@ func decodePreviewPageBreadcrumbResponse(resp *http.Response) (res *PageListResp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response PageListResponse
+			var response PageBreadcrumbPreviewListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8771,7 +8897,7 @@ func decodeRemovePermissionActionEndpointResponse(resp *http.Response) (res *Mut
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeRollbackFeaturePackageResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeRollbackFeaturePackageResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8787,7 +8913,7 @@ func decodeRollbackFeaturePackageResponse(resp *http.Response) (res *MutationRes
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8812,7 +8938,7 @@ func decodeRollbackFeaturePackageResponse(resp *http.Response) (res *MutationRes
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSaveAppResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSaveAppResponse(resp *http.Response) (res *SystemAppItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8828,7 +8954,57 @@ func decodeSaveAppResponse(resp *http.Response) (res *MutationResult, _ error) {
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemAppItem
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeSaveAppHostBindingResponse(resp *http.Response) (res *SystemAppHostBindingItem, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response SystemAppHostBindingItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8853,7 +9029,7 @@ func decodeSaveAppResponse(resp *http.Response) (res *MutationResult, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSaveAppHostBindingResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSaveMenuSpaceResponse(resp *http.Response) (res *SystemMenuSpaceItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8869,7 +9045,57 @@ func decodeSaveAppHostBindingResponse(resp *http.Response) (res *MutationResult,
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemMenuSpaceItem
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeSaveMenuSpaceEntryBindingResponse(resp *http.Response) (res *SystemMenuSpaceEntryBindingItem, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response SystemMenuSpaceEntryBindingItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8894,7 +9120,7 @@ func decodeSaveAppHostBindingResponse(resp *http.Response) (res *MutationResult,
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSaveMenuSpaceResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSaveMenuSpaceHostBindingResponse(resp *http.Response) (res *SystemMenuSpaceHostBindingItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8910,7 +9136,7 @@ func decodeSaveMenuSpaceResponse(resp *http.Response) (res *MutationResult, _ er
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemMenuSpaceHostBindingItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8935,7 +9161,7 @@ func decodeSaveMenuSpaceResponse(resp *http.Response) (res *MutationResult, _ er
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSaveMenuSpaceEntryBindingResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSaveMenuSpaceModeResponse(resp *http.Response) (res *SystemMenuSpaceModeResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8951,7 +9177,7 @@ func decodeSaveMenuSpaceEntryBindingResponse(resp *http.Response) (res *Mutation
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemMenuSpaceModeResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8976,7 +9202,7 @@ func decodeSaveMenuSpaceEntryBindingResponse(resp *http.Response) (res *Mutation
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSaveMenuSpaceHostBindingResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSavePermissionActionBatchTemplateResponse(resp *http.Response) (res *PermissionActionBatchTemplateItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8992,89 +9218,7 @@ func decodeSaveMenuSpaceHostBindingResponse(resp *http.Response) (res *MutationR
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeSaveMenuSpaceModeResponse(resp *http.Response) (res *MutationResult, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response MutationResult
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeSavePermissionActionBatchTemplateResponse(resp *http.Response) (res *MutationResult, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response MutationResult
+			var response PermissionActionBatchTemplateItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9181,7 +9325,7 @@ func decodeSetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *Mut
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9197,7 +9341,7 @@ func decodeSetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9386,7 +9530,7 @@ func decodeSetCurrentCollaborationWorkspaceMemberRolesResponse(resp *http.Respon
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetFeaturePackageActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetFeaturePackageActionsResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9402,7 +9546,7 @@ func decodeSetFeaturePackageActionsResponse(resp *http.Response) (res *MutationR
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9427,7 +9571,7 @@ func decodeSetFeaturePackageActionsResponse(resp *http.Response) (res *MutationR
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetFeaturePackageChildrenResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetFeaturePackageChildrenResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9443,7 +9587,7 @@ func decodeSetFeaturePackageChildrenResponse(resp *http.Response) (res *Mutation
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9468,7 +9612,7 @@ func decodeSetFeaturePackageChildrenResponse(resp *http.Response) (res *Mutation
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9484,7 +9628,7 @@ func decodeSetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response)
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9509,7 +9653,7 @@ func decodeSetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response)
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetFeaturePackageMenusResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetFeaturePackageMenusResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9525,7 +9669,7 @@ func decodeSetFeaturePackageMenusResponse(resp *http.Response) (res *MutationRes
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10093,7 +10237,7 @@ func decodeUpdateApiEndpointResponse(resp *http.Response) (res UpdateApiEndpoint
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response ApiEndpointItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10109,6 +10253,15 @@ func decodeUpdateApiEndpointResponse(resp *http.Response) (res UpdateApiEndpoint
 					Err:         err,
 				}
 				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
 			}
 			return &response, nil
 		default:
@@ -10204,7 +10357,7 @@ func decodeUpdateApiEndpointCategoryResponse(resp *http.Response) (res UpdateApi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response ApiEndpointCategoryItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10315,7 +10468,7 @@ func decodeUpdateApiEndpointContextScopeResponse(resp *http.Response) (res Updat
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response ApiEndpointItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10331,6 +10484,15 @@ func decodeUpdateApiEndpointContextScopeResponse(resp *http.Response) (res Updat
 					Err:         err,
 				}
 				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
 			}
 			return &response, nil
 		default:
@@ -10574,7 +10736,7 @@ func decodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(resp *http.Resp
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateFastEnterConfigResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateFastEnterConfigResponse(resp *http.Response) (res *SystemFastEnterConfig, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10590,7 +10752,7 @@ func decodeUpdateFastEnterConfigResponse(resp *http.Response) (res *MutationResu
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response SystemFastEnterConfig
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10607,6 +10769,15 @@ func decodeUpdateFastEnterConfigResponse(resp *http.Response) (res *MutationResu
 				}
 				return res, err
 			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
 			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
@@ -10615,7 +10786,7 @@ func decodeUpdateFastEnterConfigResponse(resp *http.Response) (res *MutationResu
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateFeaturePackageResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateFeaturePackageResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10631,7 +10802,7 @@ func decodeUpdateFeaturePackageResponse(resp *http.Response) (res *MutationResul
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response FeaturePackageMutationResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10697,7 +10868,7 @@ func decodeUpdateMenuResponse(resp *http.Response) (res *MutationResult, _ error
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateMessageRecipientGroupResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateMessageRecipientGroupResponse(resp *http.Response) (res *MessageRecipientGroupItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10713,7 +10884,57 @@ func decodeUpdateMessageRecipientGroupResponse(resp *http.Response) (res *Mutati
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response MessageRecipientGroupItem
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeUpdateMessageSenderResponse(resp *http.Response) (res *MessageSenderItem, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response MessageSenderItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10738,7 +10959,7 @@ func decodeUpdateMessageRecipientGroupResponse(resp *http.Response) (res *Mutati
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateMessageSenderResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateMessageTemplateResponse(resp *http.Response) (res *MessageTemplateItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10754,7 +10975,7 @@ func decodeUpdateMessageSenderResponse(resp *http.Response) (res *MutationResult
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response MessageTemplateItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10779,7 +11000,7 @@ func decodeUpdateMessageSenderResponse(resp *http.Response) (res *MutationResult
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateMessageTemplateResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdatePageResponse(resp *http.Response) (res *PageSaveResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10795,7 +11016,7 @@ func decodeUpdateMessageTemplateResponse(resp *http.Response) (res *MutationResu
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MutationResult
+			var response PageSaveResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10813,47 +11034,6 @@ func decodeUpdateMessageTemplateResponse(resp *http.Response) (res *MutationResu
 				return res, err
 			}
 			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeUpdatePageResponse(resp *http.Response) (res AnyObject, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response AnyObject
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			return response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -11333,7 +11513,7 @@ func decodeUploadMediaResponse(resp *http.Response) (res UploadMediaRes, _ error
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response AnyObject
+			var response MediaUploadResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

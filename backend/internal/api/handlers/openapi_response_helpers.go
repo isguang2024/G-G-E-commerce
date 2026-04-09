@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	permissionpkg "github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/google/uuid"
 )
 
 func permissionKeySegments(permissionKey string) (string, string) {
@@ -218,7 +221,7 @@ func permissionBatchTemplateItemFromModel(item user.PermissionBatchTemplate) gen
 		ID:          item.ID,
 		Name:        item.Name,
 		Description: item.Description,
-		Payload:     marshalAnyObject(item.Payload),
+		Payload:     permissionBatchTemplatePayloadFromMap(item.Payload),
 		CreatedAt:   item.CreatedAt,
 		UpdatedAt:   item.UpdatedAt,
 	}
@@ -236,20 +239,93 @@ func permissionBatchTemplateItemsFromModels(items []user.PermissionBatchTemplate
 	return out
 }
 
+func permissionActionEndpointListItemFromModel(item permissionpkg.APIEndpointView) gen.PermissionActionEndpointListItem {
+	out := gen.PermissionActionEndpointListItem{
+		ID:                 item.ID,
+		Code:               item.Code,
+		Method:             item.Method,
+		Path:               item.Path,
+		Handler:            item.Handler,
+		Summary:            item.Summary,
+		AccessMode:         item.AccessMode,
+		PermissionKeys:     []string{},
+		PermissionContexts: []string{},
+	}
+	if item.CategoryID != nil {
+		out.CategoryID = gen.NewOptUUID(*item.CategoryID)
+	}
+	return out
+}
+
 func riskAuditItemFromModel(item user.RiskOperationAudit) gen.RiskAuditItem {
 	out := gen.RiskAuditItem{
 		ID:            item.ID,
 		ObjectType:    item.ObjectType,
 		ObjectID:      item.ObjectID,
 		OperationType: item.OperationType,
-		BeforeSummary: marshalAnyObject(item.BeforeSummary),
-		AfterSummary:  marshalAnyObject(item.AfterSummary),
-		ImpactSummary: marshalAnyObject(item.ImpactSummary),
+		BeforeSummary: riskAuditSummaryFromMap(item.BeforeSummary),
+		AfterSummary:  riskAuditSummaryFromMap(item.AfterSummary),
+		ImpactSummary: riskAuditSummaryFromMap(item.ImpactSummary),
 		RequestID:     item.RequestID,
 		CreatedAt:     item.CreatedAt,
 	}
 	if item.OperatorID != nil {
 		out.OperatorID = gen.NewOptNilUUID(*item.OperatorID)
+	}
+	return out
+}
+
+func permissionBatchTemplatePayloadFromMap(payload models.MetaJSON) gen.PermissionActionBatchTemplatePayload {
+	out := gen.PermissionActionBatchTemplatePayload{}
+	if ids := metaUUIDSlice(payload, "ids"); len(ids) > 0 {
+		out.Ids = ids
+	}
+	if value := metaString(payload, "status"); value != "" {
+		out.Status = gen.NewOptString(value)
+	}
+	if value := metaUUID(payload, "module_group_id"); value != uuid.Nil {
+		out.ModuleGroupID = gen.NewOptUUID(value)
+	}
+	if value := metaUUID(payload, "feature_group_id"); value != uuid.Nil {
+		out.FeatureGroupID = gen.NewOptUUID(value)
+	}
+	if value := metaString(payload, "template_name"); value != "" {
+		out.TemplateName = gen.NewOptString(value)
+	}
+	return out
+}
+
+func riskAuditSummaryFromMap(summary models.MetaJSON) gen.RiskAuditSummary {
+	out := gen.RiskAuditSummary{}
+	if value := metaString(summary, "permission_key"); value != "" {
+		out.PermissionKey = gen.NewOptString(value)
+	}
+	if value := metaString(summary, "status"); value != "" {
+		out.Status = gen.NewOptString(value)
+	}
+	if value := metaString(summary, "context_type"); value != "" {
+		out.ContextType = gen.NewOptString(value)
+	}
+	if value := metaString(summary, "module_code"); value != "" {
+		out.ModuleCode = gen.NewOptString(value)
+	}
+	if value := metaString(summary, "feature_kind"); value != "" {
+		out.FeatureKind = gen.NewOptString(value)
+	}
+	if value := metaUUID(summary, "module_group_id"); value != uuid.Nil {
+		out.ModuleGroupID = gen.NewOptUUID(value)
+	}
+	if value := metaUUID(summary, "feature_group_id"); value != uuid.Nil {
+		out.FeatureGroupID = gen.NewOptUUID(value)
+	}
+	if value := metaString(summary, "template_name"); value != "" {
+		out.TemplateName = gen.NewOptString(value)
+	}
+	if value := metaInt(summary, "package_count"); value > 0 {
+		out.PackageCount = gen.NewOptInt(value)
+	}
+	if value := metaInt(summary, "collaboration_workspace_count"); value > 0 {
+		out.CollaborationWorkspaceCount = gen.NewOptInt(value)
 	}
 	return out
 }
@@ -364,4 +440,166 @@ func permissionActionImpactPreviewFromModel(preview *permissionpkg.PermissionImp
 		CollaborationWorkspaceCount: preview.CollaborationWorkspaceCount,
 		UserCount:                   preview.UserCount,
 	}
+}
+
+func featurePackageSnapshotFromModel(snapshot models.MetaJSON) gen.FeaturePackageSnapshot {
+	return gen.FeaturePackageSnapshot{
+		PackageID:                 metaUUID(snapshot, "package_id"),
+		PackageKey:                metaString(snapshot, "package_key"),
+		PackageType:               metaString(snapshot, "package_type"),
+		Name:                      metaString(snapshot, "name"),
+		Description:               metaString(snapshot, "description"),
+		WorkspaceScope:            metaString(snapshot, "workspace_scope"),
+		ContextType:               metaString(snapshot, "context_type"),
+		AppKeys:                   metaStringSlice(snapshot, "app_keys"),
+		Status:                    metaString(snapshot, "status"),
+		SortOrder:                 metaInt(snapshot, "sort_order"),
+		ChildPackageIds:           metaUUIDSlice(snapshot, "child_package_ids"),
+		ActionIds:                 metaUUIDSlice(snapshot, "action_ids"),
+		MenuIds:                   metaUUIDSlice(snapshot, "menu_ids"),
+		CollaborationWorkspaceIds: metaUUIDSlice(snapshot, "collaboration_workspace_ids"),
+		SnapshotCreatedAt:         metaDateTime(snapshot, "snapshot_created_at", "snapshot_createdAt"),
+	}
+}
+
+func metaString(meta models.MetaJSON, keys ...string) string {
+	for _, key := range keys {
+		value, ok := meta[key]
+		if !ok || value == nil {
+			continue
+		}
+		if s, ok := value.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func metaStringSlice(meta models.MetaJSON, keys ...string) []string {
+	for _, key := range keys {
+		value, ok := meta[key]
+		if !ok || value == nil {
+			continue
+		}
+		switch typed := value.(type) {
+		case []string:
+			return append([]string(nil), typed...)
+		case []interface{}:
+			out := make([]string, 0, len(typed))
+			for _, item := range typed {
+				if s, ok := item.(string); ok && strings.TrimSpace(s) != "" {
+					out = append(out, s)
+				}
+			}
+			return out
+		}
+	}
+	return []string{}
+}
+
+func metaInt(meta models.MetaJSON, keys ...string) int {
+	for _, key := range keys {
+		value, ok := meta[key]
+		if !ok || value == nil {
+			continue
+		}
+		switch typed := value.(type) {
+		case int:
+			return typed
+		case int8:
+			return int(typed)
+		case int16:
+			return int(typed)
+		case int32:
+			return int(typed)
+		case int64:
+			return int(typed)
+		case float32:
+			return int(typed)
+		case float64:
+			return int(typed)
+		}
+	}
+	return 0
+}
+
+func metaUUID(meta models.MetaJSON, keys ...string) uuid.UUID {
+	for _, key := range keys {
+		raw := metaString(meta, key)
+		if strings.TrimSpace(raw) == "" {
+			continue
+		}
+		if parsed, err := uuid.Parse(raw); err == nil {
+			return parsed
+		}
+	}
+	return uuid.Nil
+}
+
+func metaUUIDSlice(meta models.MetaJSON, keys ...string) []uuid.UUID {
+	for _, key := range keys {
+		value, ok := meta[key]
+		if !ok || value == nil {
+			continue
+		}
+		switch typed := value.(type) {
+		case []string:
+			out := make([]uuid.UUID, 0, len(typed))
+			for _, item := range typed {
+				if parsed, err := uuid.Parse(item); err == nil {
+					out = append(out, parsed)
+				}
+			}
+			return out
+		case []interface{}:
+			out := make([]uuid.UUID, 0, len(typed))
+			for _, item := range typed {
+				if s, ok := item.(string); ok {
+					if parsed, err := uuid.Parse(s); err == nil {
+						out = append(out, parsed)
+					}
+				}
+			}
+			return out
+		}
+	}
+	return []uuid.UUID{}
+}
+
+func metaDateTime(meta models.MetaJSON, keys ...string) time.Time {
+	for _, key := range keys {
+		raw := metaString(meta, key)
+		if strings.TrimSpace(raw) == "" {
+			continue
+		}
+		if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+			return parsed
+		}
+	}
+	return time.Time{}
+}
+
+func featurePackageMenuItemsFromModels(items []user.Menu) []gen.FeaturePackageMenuItem {
+	out := make([]gen.FeaturePackageMenuItem, 0, len(items))
+	for i := range items {
+		item := items[i]
+		node := gen.FeaturePackageMenuItem{
+			ID:        item.ID,
+			AppKey:    item.AppKey,
+			SpaceKey:  item.SpaceKey,
+			Kind:      item.Kind,
+			Path:      optStringValue(item.Path),
+			Name:      item.Name,
+			Component: optStringValue(item.Component),
+			Title:     item.Title,
+			Icon:      optStringValue(item.Icon),
+			SortOrder: item.SortOrder,
+			Hidden:    item.Hidden,
+		}
+		if item.ParentID != nil {
+			node.ParentID = gen.NewOptNilUUID(*item.ParentID)
+		}
+		out = append(out, node)
+	}
+	return out
 }

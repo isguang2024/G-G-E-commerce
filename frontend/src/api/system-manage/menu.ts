@@ -5,8 +5,6 @@ import {
   AppRouteRecord,
   normalizeMenuSpaceKey,
   normalizeRuntimeMenuTree,
-  toV5ListResponse,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from './_shared'
@@ -16,7 +14,7 @@ export async function fetchGetMenuList(spaceKey?: string, appKey?: string) {
   const query: V5Query<'/menus/tree', 'get'> = {}
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
-  const res = toV5ListResponse(await unwrap(v5Client.GET('/menus/tree', { params: { query } })))
+  const res = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
   return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
@@ -25,7 +23,7 @@ export async function fetchGetMenuTreeAll(spaceKey?: string, appKey?: string) {
   const query: V5Query<'/menus/tree', 'get'> = { all: '1' }
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
-  const res = toV5ListResponse(await unwrap(v5Client.GET('/menus/tree', { params: { query } })))
+  const res = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
   return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
@@ -36,8 +34,8 @@ export async function fetchCreateMenu(data: Api.SystemManage.MenuCreateParams, _
     name: data.name || '',
     kind: data.kind || 'menu'
   }
-  const res = toV5Record(await unwrap(v5Client.POST('/menus', { body })))
-  return { id: `${res.id || ''}` }
+  const res = await unwrap(v5Client.POST('/menus', { body }))
+  return { success: Boolean(res.success) }
 }
 
 /** 更新菜单 */
@@ -75,15 +73,12 @@ export async function fetchGetMenuDeletePreview(
       params: { path: { id } }
     })
   )
-  const payload = toV5Record(res)
   return {
-    mode: `${payload?.mode || 'single'}`.trim(),
-    menuCount: Number(payload?.menuCount ?? payload?.menu_count ?? 0),
-    childCount: Number(payload?.childCount ?? payload?.child_count ?? 0),
-    affectedPageCount: Number(payload?.affectedPageCount ?? payload?.affected_page_count ?? 0),
-    affectedRelationCount: Number(
-      payload?.affectedRelationCount ?? payload?.affected_relation_count ?? 0
-    )
+    mode: `${res.mode || 'single'}`.trim(),
+    menuCount: Number(res.menu_count ?? 0),
+    childCount: Number(res.child_count ?? 0),
+    affectedPageCount: Number(res.affected_page_count ?? 0),
+    affectedRelationCount: Number(res.affected_relation_count ?? 0)
   }
 }
 

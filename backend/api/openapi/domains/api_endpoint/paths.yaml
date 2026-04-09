@@ -91,7 +91,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointOverview'
         '401':
           description: Unauthorized
           content:
@@ -231,14 +231,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/ApiEndpointCategorySaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointCategoryItem'
         '401':
           description: Unauthorized
           content:
@@ -289,16 +289,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/CleanupStaleRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/CleanupStaleResult'
         '401':
           description: Unauthorized
           content:
@@ -329,16 +329,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointItem'
         '401':
           description: Unauthorized
           content:
@@ -369,16 +369,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointItem'
         '401':
           description: Unauthorized
           content:
@@ -409,16 +409,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointCategorySaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/ApiEndpointCategoryItem'
         '401':
           description: Unauthorized
           content:

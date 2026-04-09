@@ -33,19 +33,19 @@ type Invoker interface {
 	// 添加协作空间成员.
 	//
 	// POST /collaboration-workspaces/{id}/members
-	AddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	AddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
 	// AddCurrentCollaborationWorkspaceMember invokes addCurrentCollaborationWorkspaceMember operation.
 	//
 	// 添加当前协作空间成员.
 	//
 	// POST /collaboration-workspaces/current/members
-	AddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (*MutationResult, error)
+	AddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (*MutationResult, error)
 	// AddPermissionActionEndpoint invokes addPermissionActionEndpoint operation.
 	//
 	// 新增功能权限关联接口.
 	//
 	// POST /permission-actions/{id}/endpoints
-	AddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (*MutationResult, error)
+	AddPermissionActionEndpoint(ctx context.Context, request *PermissionActionEndpointAddRequest, params AddPermissionActionEndpointParams) (*MutationResult, error)
 	// AssignUserRoles invokes assignUserRoles operation.
 	//
 	// 分配用户角色.
@@ -57,43 +57,43 @@ type Invoker interface {
 	// 批量治理功能权限.
 	//
 	// POST /permission-actions/batch
-	BatchUpdatePermissionActions(ctx context.Context, request AnyObject) (*MutationResult, error)
+	BatchUpdatePermissionActions(ctx context.Context, request *PermissionActionBatchUpdateRequest) (*PermissionActionBatchUpdateResult, error)
 	// CleanupStaleApiEndpoints invokes cleanupStaleApiEndpoints operation.
 	//
 	// 清理失效 API.
 	//
 	// POST /api-endpoints/cleanup-stale
-	CleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (CleanupStaleApiEndpointsRes, error)
+	CleanupStaleApiEndpoints(ctx context.Context, request *CleanupStaleRequest) (CleanupStaleApiEndpointsRes, error)
 	// CleanupUnusedPermissionActions invokes cleanupUnusedPermissionActions operation.
 	//
 	// 清理未消费功能权限.
 	//
 	// POST /permission-actions/cleanup-unused
-	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
+	CleanupUnusedPermissionActions(ctx context.Context) (*PermissionActionCleanupResult, error)
 	// CreateApiEndpointCategory invokes createApiEndpointCategory operation.
 	//
 	// 创建 API 分类.
 	//
 	// POST /api-endpoints/categories
-	CreateApiEndpointCategory(ctx context.Context, request AnyObject) (CreateApiEndpointCategoryRes, error)
+	CreateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest) (CreateApiEndpointCategoryRes, error)
 	// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
 	//
 	// 创建协作空间.
 	//
 	// POST /collaboration-workspaces
-	CreateCollaborationWorkspace(ctx context.Context, request AnyObject) (*IDResult, error)
+	CreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (*IDResult, error)
 	// CreateCurrentCollaborationWorkspaceBoundaryRole invokes createCurrentCollaborationWorkspaceBoundaryRole operation.
 	//
 	// 创建当前协作空间角色(边界管理).
 	//
 	// POST /collaboration-workspaces/current/boundary/roles
-	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
 	// CreateCurrentCollaborationWorkspaceRole invokes createCurrentCollaborationWorkspaceRole operation.
 	//
 	// 创建当前协作空间角色.
 	//
 	// POST /collaboration-workspaces/current/roles
-	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
 	// CreateFeaturePackage invokes createFeaturePackage operation.
 	//
 	// 创建功能包.
@@ -111,25 +111,25 @@ type Invoker interface {
 	// 新建消息接收组.
 	//
 	// POST /messages/recipient-groups
-	CreateMessageRecipientGroup(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest) (*MessageRecipientGroupItem, error)
 	// CreateMessageSender invokes createMessageSender operation.
 	//
 	// 新建消息发送人.
 	//
 	// POST /messages/senders
-	CreateMessageSender(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreateMessageSender(ctx context.Context, request *MessageSenderSaveRequest) (*MessageSenderItem, error)
 	// CreateMessageTemplate invokes createMessageTemplate operation.
 	//
 	// 新建消息模板.
 	//
 	// POST /messages/templates
-	CreateMessageTemplate(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest) (*MessageTemplateItem, error)
 	// CreatePage invokes createPage operation.
 	//
 	// 创建页面.
 	//
 	// POST /pages
-	CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (AnyObject, error)
+	CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (*PageSaveResult, error)
 	// CreatePermissionAction invokes createPermissionAction operation.
 	//
 	// 创建功能权限.
@@ -141,7 +141,7 @@ type Invoker interface {
 	// 创建功能权限分组.
 	//
 	// POST /permission-actions/groups
-	CreatePermissionActionGroup(ctx context.Context, request AnyObject) (*MutationResult, error)
+	CreatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest) (*IDResult, error)
 	// CreateRegisterEntry invokes createRegisterEntry operation.
 	//
 	// 创建注册入口.
@@ -189,7 +189,7 @@ type Invoker interface {
 	// 删除功能包.
 	//
 	// DELETE /feature-packages/{id}
-	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error)
+	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// DeleteMedia invokes deleteMedia operation.
 	//
 	// 删除媒体资源.
@@ -255,7 +255,7 @@ type Invoker interface {
 	// 发送站内消息.
 	//
 	// POST /messages/dispatch
-	DispatchMessage(ctx context.Context, request AnyObject) (*MutationResult, error)
+	DispatchMessage(ctx context.Context, request *MessageDispatchRequest) (*MessageDispatchResult, error)
 	// ExplainPermissions invokes explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -315,7 +315,7 @@ type Invoker interface {
 	// 获取当前应用.
 	//
 	// GET /system/apps/current
-	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (AnyObject, error)
+	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (*SystemCurrentAppResponse, error)
 	// GetCurrentCollaborationWorkspace invokes getCurrentCollaborationWorkspace operation.
 	//
 	// 获取当前协作空间详情.
@@ -381,7 +381,7 @@ type Invoker interface {
 	// 获取当前菜单空间.
 	//
 	// GET /system/menu-spaces/current
-	GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (AnyObject, error)
+	GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (*SystemCurrentMenuSpaceResponse, error)
 	// GetCurrentWorkspace invokes getCurrentWorkspace operation.
 	//
 	// 获取当前授权工作空间.
@@ -393,7 +393,7 @@ type Invoker interface {
 	// 获取快捷入口配置.
 	//
 	// GET /system/fast-enter
-	GetFastEnterConfig(ctx context.Context) (AnyObject, error)
+	GetFastEnterConfig(ctx context.Context) (*SystemFastEnterConfig, error)
 	// GetFeaturePackage invokes getFeaturePackage operation.
 	//
 	// 获取功能包详情.
@@ -441,25 +441,25 @@ type Invoker interface {
 	// 获取消息详情.
 	//
 	// GET /messages/inbox/{deliveryId}
-	GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (AnyObject, error)
+	GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (*InboxItem, error)
 	// GetInboxSummary invokes getInboxSummary operation.
 	//
 	// 获取消息摘要.
 	//
 	// GET /messages/inbox/summary
-	GetInboxSummary(ctx context.Context) (AnyObject, error)
+	GetInboxSummary(ctx context.Context) (*InboxSummary, error)
 	// GetMenuDeletePreview invokes getMenuDeletePreview operation.
 	//
 	// 获取菜单删除预览.
 	//
 	// GET /menus/{id}/delete-preview
-	GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (AnyObject, error)
+	GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (*MenuDeletePreviewResponse, error)
 	// GetMenuSpaceMode invokes getMenuSpaceMode operation.
 	//
 	// 获取菜单空间模式.
 	//
 	// GET /system/menu-space-mode
-	GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (AnyObject, error)
+	GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (*SystemMenuSpaceModeResponse, error)
 	// GetMenuTree invokes getMenuTree operation.
 	//
 	// 获取菜单树.
@@ -471,13 +471,13 @@ type Invoker interface {
 	// 获取消息发送配置.
 	//
 	// GET /messages/dispatch/options
-	GetMessageDispatchOptions(ctx context.Context) (AnyObject, error)
+	GetMessageDispatchOptions(ctx context.Context) (*MessageDispatchOptions, error)
 	// GetMessageDispatchRecord invokes getMessageDispatchRecord operation.
 	//
 	// 获取消息发送记录详情.
 	//
 	// GET /messages/records/{recordId}
-	GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (AnyObject, error)
+	GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (*MessageDispatchRecord, error)
 	// GetNavigation invokes getNavigation operation.
 	//
 	// 获取运行时导航清单.
@@ -489,13 +489,13 @@ type Invoker interface {
 	// 获取页面详情.
 	//
 	// GET /pages/{id}
-	GetPage(ctx context.Context, params GetPageParams) (AnyObject, error)
+	GetPage(ctx context.Context, params GetPageParams) (*PageSaveResult, error)
 	// GetPageAccessTrace invokes getPageAccessTrace operation.
 	//
 	// 获取页面访问链路.
 	//
 	// GET /pages/access-trace
-	GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (AnyObject, error)
+	GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (*PageAccessTraceResponse, error)
 	// GetPermissionAction invokes getPermissionAction operation.
 	//
 	// 获取功能权限详情.
@@ -567,13 +567,13 @@ type Invoker interface {
 	// 获取用户所在协作空间列表.
 	//
 	// GET /users/{id}/collaboration-workspaces
-	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (AnyObject, error)
+	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (*UserCollaborationWorkspacesResponse, error)
 	// GetUserMenus invokes getUserMenus operation.
 	//
 	// 获取用户菜单裁剪.
 	//
 	// GET /users/{id}/menus
-	GetUserMenus(ctx context.Context, params GetUserMenusParams) (AnyObject, error)
+	GetUserMenus(ctx context.Context, params GetUserMenusParams) (*UserMenusResponse, error)
 	// GetUserPackages invokes getUserPackages operation.
 	//
 	// 获取用户功能包.
@@ -585,13 +585,13 @@ type Invoker interface {
 	// 获取用户权限诊断.
 	//
 	// GET /users/{id}/permission-diagnosis
-	GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (AnyObject, error)
+	GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (*UserPermissionDiagnosisResponse, error)
 	// GetUserPermissions invokes getUserPermissions operation.
 	//
 	// 获取用户菜单权限.
 	//
 	// GET /users/{id}/permissions
-	GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (AnyObject, error)
+	GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (*UserPermissionsResponse, error)
 	// GetWorkspace invokes getWorkspace operation.
 	//
 	// 获取工作空间详情.
@@ -603,13 +603,13 @@ type Invoker interface {
 	// 处理待办消息.
 	//
 	// POST /messages/inbox/{deliveryId}/todo-action
-	HandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (*MutationResult, error)
+	HandleInboxTodo(ctx context.Context, request *InboxTodoActionRequest, params HandleInboxTodoParams) (*MutationResult, error)
 	// InitializeMenuSpaceFromDefault invokes initializeMenuSpaceFromDefault operation.
 	//
 	// 从默认空间初始化菜单空间.
 	//
 	// POST /system/menu-spaces/{spaceKey}/initialize-default
-	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error)
+	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error)
 	// ListApiEndpointCategories invokes listApiEndpointCategories operation.
 	//
 	// 获取 API 分类列表.
@@ -627,13 +627,13 @@ type Invoker interface {
 	// 获取应用入口解析绑定.
 	//
 	// GET /system/app-host-bindings
-	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemListResponse, error)
+	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemAppHostBindingListResponse, error)
 	// ListApps invokes listApps operation.
 	//
 	// 获取应用列表.
 	//
 	// GET /system/apps
-	ListApps(ctx context.Context) (*SystemListResponse, error)
+	ListApps(ctx context.Context) (*SystemAppListResponse, error)
 	// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
 	//
 	// 获取协作空间成员列表.
@@ -705,7 +705,7 @@ type Invoker interface {
 	// 获取消息列表.
 	//
 	// GET /messages/inbox
-	ListInbox(ctx context.Context, params ListInboxParams) (*MessageListResponse, error)
+	ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error)
 	// ListMedia invokes listMedia operation.
 	//
 	// 获取媒体资源列表.
@@ -717,43 +717,43 @@ type Invoker interface {
 	// 获取菜单空间入口解析绑定.
 	//
 	// GET /system/menu-space-entry-bindings
-	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemListResponse, error)
+	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemMenuSpaceEntryBindingListResponse, error)
 	// ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
 	//
 	// GET /system/menu-space-host-bindings
-	ListMenuSpaceHostBindings(ctx context.Context) (*SystemListResponse, error)
+	ListMenuSpaceHostBindings(ctx context.Context) (*SystemMenuSpaceHostBindingListResponse, error)
 	// ListMenuSpaces invokes listMenuSpaces operation.
 	//
 	// 获取菜单空间列表.
 	//
 	// GET /system/menu-spaces
-	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemListResponse, error)
+	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemMenuSpaceListResponse, error)
 	// ListMessageDispatchRecords invokes listMessageDispatchRecords operation.
 	//
 	// 获取消息发送记录.
 	//
 	// GET /messages/records
-	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageListResponse, error)
+	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageDispatchRecordListResponse, error)
 	// ListMessageRecipientGroups invokes listMessageRecipientGroups operation.
 	//
 	// 获取消息接收组.
 	//
 	// GET /messages/recipient-groups
-	ListMessageRecipientGroups(ctx context.Context) (*MessageListResponse, error)
+	ListMessageRecipientGroups(ctx context.Context) (*MessageRecipientGroupListResponse, error)
 	// ListMessageSenders invokes listMessageSenders operation.
 	//
 	// 获取消息发送人.
 	//
 	// GET /messages/senders
-	ListMessageSenders(ctx context.Context) (*MessageListResponse, error)
+	ListMessageSenders(ctx context.Context) (*MessageSenderListResponse, error)
 	// ListMessageTemplates invokes listMessageTemplates operation.
 	//
 	// 获取消息模板.
 	//
 	// GET /messages/templates
-	ListMessageTemplates(ctx context.Context) (*MessageListResponse, error)
+	ListMessageTemplates(ctx context.Context) (*MessageTemplateListResponse, error)
 	// ListMyCollaborationWorkspaces invokes listMyCollaborationWorkspaces operation.
 	//
 	// 获取我的协作空间列表.
@@ -795,7 +795,7 @@ type Invoker interface {
 	// 获取功能权限关联接口.
 	//
 	// GET /permission-actions/{id}/endpoints
-	ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*AnyListResponse, error)
+	ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*PermissionActionEndpointList, error)
 	// ListPermissionActionGroups invokes listPermissionActionGroups operation.
 	//
 	// 获取功能权限分组列表.
@@ -909,7 +909,7 @@ type Invoker interface {
 	// 预览页面面包屑.
 	//
 	// GET /pages/{id}/breadcrumb-preview
-	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageListResponse, error)
+	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageBreadcrumbPreviewListResponse, error)
 	// RefreshToken invokes refreshToken operation.
 	//
 	// 刷新访问令牌.
@@ -951,49 +951,49 @@ type Invoker interface {
 	// 回滚功能包版本.
 	//
 	// POST /feature-packages/{id}/rollback
-	RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
+	RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// SaveApp invokes saveApp operation.
 	//
 	// 保存应用.
 	//
 	// POST /system/apps
-	SaveApp(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveApp(ctx context.Context, request *SystemAppSaveRequest) (*SystemAppItem, error)
 	// SaveAppHostBinding invokes saveAppHostBinding operation.
 	//
 	// 保存应用入口解析绑定.
 	//
 	// POST /system/app-host-bindings
-	SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveAppHostBinding(ctx context.Context, request *SystemAppHostBindingSaveRequest) (*SystemAppHostBindingItem, error)
 	// SaveMenuSpace invokes saveMenuSpace operation.
 	//
 	// 保存菜单空间.
 	//
 	// POST /system/menu-spaces
-	SaveMenuSpace(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveMenuSpace(ctx context.Context, request *SystemMenuSpaceSaveRequest) (*SystemMenuSpaceItem, error)
 	// SaveMenuSpaceEntryBinding invokes saveMenuSpaceEntryBinding operation.
 	//
 	// 保存菜单空间入口解析绑定.
 	//
 	// POST /system/menu-space-entry-bindings
-	SaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveMenuSpaceEntryBinding(ctx context.Context, request *SystemMenuSpaceEntryBindingSaveRequest) (*SystemMenuSpaceEntryBindingItem, error)
 	// SaveMenuSpaceHostBinding invokes saveMenuSpaceHostBinding operation.
 	//
 	// 保存菜单空间 Host 绑定.
 	//
 	// POST /system/menu-space-host-bindings
-	SaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveMenuSpaceHostBinding(ctx context.Context, request *SystemMenuSpaceHostBindingSaveRequest) (*SystemMenuSpaceHostBindingItem, error)
 	// SaveMenuSpaceMode invokes saveMenuSpaceMode operation.
 	//
 	// 保存菜单空间模式.
 	//
 	// PUT /system/menu-space-mode
-	SaveMenuSpaceMode(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SaveMenuSpaceMode(ctx context.Context, request *SystemMenuSpaceModeSaveRequest) (*SystemMenuSpaceModeResponse, error)
 	// SavePermissionActionBatchTemplate invokes savePermissionActionBatchTemplate operation.
 	//
 	// 保存功能权限批量模板.
 	//
 	// POST /permission-actions/templates
-	SavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (*MutationResult, error)
+	SavePermissionActionBatchTemplate(ctx context.Context, request *PermissionActionBatchTemplateSaveRequest) (*PermissionActionBatchTemplateItem, error)
 	// SetCollaborationWorkspaceActions invokes setCollaborationWorkspaceActions operation.
 	//
 	// 配置协作空间功能权限边界.
@@ -1011,7 +1011,7 @@ type Invoker interface {
 	// 配置协作空间功能包.
 	//
 	// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-	SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*MutationResult, error)
+	SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*FeaturePackageMutationResult, error)
 	// SetCurrentCollaborationWorkspaceBoundaryRoleActions invokes setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
 	//
 	// 配置当前协作空间角色功能权限(边界管理).
@@ -1041,25 +1041,25 @@ type Invoker interface {
 	// 配置功能包权限.
 	//
 	// PUT /feature-packages/{id}/actions
-	SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*MutationResult, error)
+	SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageChildren invokes setFeaturePackageChildren operation.
 	//
 	// 配置组合包基础包.
 	//
 	// PUT /feature-packages/{id}/children
-	SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*MutationResult, error)
+	SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageCollaborationWorkspaces invokes setFeaturePackageCollaborationWorkspaces operation.
 	//
 	// 配置功能包协作空间.
 	//
 	// PUT /feature-packages/{id}/collaboration-workspaces
-	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*MutationResult, error)
+	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageMenus invokes setFeaturePackageMenus operation.
 	//
 	// 配置功能包菜单.
 	//
 	// PUT /feature-packages/{id}/menus
-	SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*MutationResult, error)
+	SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*FeaturePackageMutationResult, error)
 	// SetRoleActions invokes setRoleActions operation.
 	//
 	// 配置角色功能权限.
@@ -1089,7 +1089,7 @@ type Invoker interface {
 	// 配置用户菜单裁剪.
 	//
 	// PUT /users/{id}/menus
-	SetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (*MutationResult, error)
+	SetUserMenus(ctx context.Context, request *UserMenusResponse, params SetUserMenusParams) (*MutationResult, error)
 	// SetUserPackages invokes setUserPackages operation.
 	//
 	// 配置用户功能包.
@@ -1119,55 +1119,55 @@ type Invoker interface {
 	// 更新 API 注册项.
 	//
 	// PUT /api-endpoints/{id}
-	UpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
+	UpdateApiEndpoint(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
 	// UpdateApiEndpointCategory invokes updateApiEndpointCategory operation.
 	//
 	// 更新 API 分类.
 	//
 	// PUT /api-endpoints/categories/{id}
-	UpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
+	UpdateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
 	// UpdateApiEndpointContextScope invokes updateApiEndpointContextScope operation.
 	//
 	// 更新 API 协作空间上下文.
 	//
 	// PUT /api-endpoints/{id}/context-scope
-	UpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
+	UpdateApiEndpointContextScope(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
 	// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
 	//
 	// 更新协作空间.
 	//
 	// PUT /collaboration-workspaces/{id}
-	UpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
+	UpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
 	// UpdateCollaborationWorkspaceMemberRole invokes updateCollaborationWorkspaceMemberRole operation.
 	//
 	// 更新协作空间成员身份.
 	//
 	// PUT /collaboration-workspaces/{id}/members/{userId}/role
-	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
 	// UpdateCurrentCollaborationWorkspaceBoundaryRole invokes updateCurrentCollaborationWorkspaceBoundaryRole operation.
 	//
 	// 更新当前协作空间角色(边界管理).
 	//
 	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
 	// UpdateCurrentCollaborationWorkspaceMemberRole invokes updateCurrentCollaborationWorkspaceMemberRole operation.
 	//
 	// 更新当前协作空间成员身份.
 	//
 	// PUT /collaboration-workspaces/current/members/{userId}/role
-	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
 	// UpdateFastEnterConfig invokes updateFastEnterConfig operation.
 	//
 	// 更新快捷入口配置.
 	//
 	// PUT /system/fast-enter
-	UpdateFastEnterConfig(ctx context.Context, request AnyObject) (*MutationResult, error)
+	UpdateFastEnterConfig(ctx context.Context, request *SystemFastEnterConfig) (*SystemFastEnterConfig, error)
 	// UpdateFeaturePackage invokes updateFeaturePackage operation.
 	//
 	// 更新功能包.
 	//
 	// PUT /feature-packages/{id}
-	UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*MutationResult, error)
+	UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// UpdateMenu invokes updateMenu operation.
 	//
 	// 更新菜单.
@@ -1179,25 +1179,25 @@ type Invoker interface {
 	// 更新消息接收组.
 	//
 	// PUT /messages/recipient-groups/{groupId}
-	UpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (*MutationResult, error)
+	UpdateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest, params UpdateMessageRecipientGroupParams) (*MessageRecipientGroupItem, error)
 	// UpdateMessageSender invokes updateMessageSender operation.
 	//
 	// 更新消息发送人.
 	//
 	// PUT /messages/senders/{senderId}
-	UpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (*MutationResult, error)
+	UpdateMessageSender(ctx context.Context, request *MessageSenderSaveRequest, params UpdateMessageSenderParams) (*MessageSenderItem, error)
 	// UpdateMessageTemplate invokes updateMessageTemplate operation.
 	//
 	// 更新消息模板.
 	//
 	// PUT /messages/templates/{templateId}
-	UpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (*MutationResult, error)
+	UpdateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest, params UpdateMessageTemplateParams) (*MessageTemplateItem, error)
 	// UpdatePage invokes updatePage operation.
 	//
 	// 更新页面.
 	//
 	// PUT /pages/{id}
-	UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (AnyObject, error)
+	UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (*PageSaveResult, error)
 	// UpdatePermissionAction invokes updatePermissionAction operation.
 	//
 	// 更新功能权限.
@@ -1209,7 +1209,7 @@ type Invoker interface {
 	// 更新功能权限分组.
 	//
 	// PUT /permission-actions/groups/{id}
-	UpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error)
+	UpdatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest, params UpdatePermissionActionGroupParams) (*MutationResult, error)
 	// UpdateRegisterEntry invokes updateRegisterEntry operation.
 	//
 	// 更新注册入口.
@@ -1288,12 +1288,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // 添加协作空间成员.
 //
 // POST /collaboration-workspaces/{id}/members
-func (c *Client) AddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error) {
+func (c *Client) AddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error) {
 	res, err := c.sendAddCollaborationWorkspaceMember(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("addCollaborationWorkspaceMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1417,12 +1417,12 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 // 添加当前协作空间成员.
 //
 // POST /collaboration-workspaces/current/members
-func (c *Client) AddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) AddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (*MutationResult, error) {
 	res, err := c.sendAddCurrentCollaborationWorkspaceMember(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("addCurrentCollaborationWorkspaceMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1527,12 +1527,12 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 // 新增功能权限关联接口.
 //
 // POST /permission-actions/{id}/endpoints
-func (c *Client) AddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (*MutationResult, error) {
+func (c *Client) AddPermissionActionEndpoint(ctx context.Context, request *PermissionActionEndpointAddRequest, params AddPermissionActionEndpointParams) (*MutationResult, error) {
 	res, err := c.sendAddPermissionActionEndpoint(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (res *MutationResult, err error) {
+func (c *Client) sendAddPermissionActionEndpoint(ctx context.Context, request *PermissionActionEndpointAddRequest, params AddPermissionActionEndpointParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("addPermissionActionEndpoint"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1785,12 +1785,12 @@ func (c *Client) sendAssignUserRoles(ctx context.Context, request *UserAssignRol
 // 批量治理功能权限.
 //
 // POST /permission-actions/batch
-func (c *Client) BatchUpdatePermissionActions(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) BatchUpdatePermissionActions(ctx context.Context, request *PermissionActionBatchUpdateRequest) (*PermissionActionBatchUpdateResult, error) {
 	res, err := c.sendBatchUpdatePermissionActions(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendBatchUpdatePermissionActions(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendBatchUpdatePermissionActions(ctx context.Context, request *PermissionActionBatchUpdateRequest) (res *PermissionActionBatchUpdateResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("batchUpdatePermissionActions"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1895,12 +1895,12 @@ func (c *Client) sendBatchUpdatePermissionActions(ctx context.Context, request A
 // 清理失效 API.
 //
 // POST /api-endpoints/cleanup-stale
-func (c *Client) CleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (CleanupStaleApiEndpointsRes, error) {
+func (c *Client) CleanupStaleApiEndpoints(ctx context.Context, request *CleanupStaleRequest) (CleanupStaleApiEndpointsRes, error) {
 	res, err := c.sendCleanupStaleApiEndpoints(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (res CleanupStaleApiEndpointsRes, err error) {
+func (c *Client) sendCleanupStaleApiEndpoints(ctx context.Context, request *CleanupStaleRequest) (res CleanupStaleApiEndpointsRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("cleanupStaleApiEndpoints"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2005,12 +2005,12 @@ func (c *Client) sendCleanupStaleApiEndpoints(ctx context.Context, request AnyOb
 // 清理未消费功能权限.
 //
 // POST /permission-actions/cleanup-unused
-func (c *Client) CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error) {
+func (c *Client) CleanupUnusedPermissionActions(ctx context.Context) (*PermissionActionCleanupResult, error) {
 	res, err := c.sendCleanupUnusedPermissionActions(ctx)
 	return res, err
 }
 
-func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *MutationResult, err error) {
+func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *PermissionActionCleanupResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("cleanupUnusedPermissionActions"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2112,12 +2112,12 @@ func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *M
 // 创建 API 分类.
 //
 // POST /api-endpoints/categories
-func (c *Client) CreateApiEndpointCategory(ctx context.Context, request AnyObject) (CreateApiEndpointCategoryRes, error) {
+func (c *Client) CreateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest) (CreateApiEndpointCategoryRes, error) {
 	res, err := c.sendCreateApiEndpointCategory(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateApiEndpointCategory(ctx context.Context, request AnyObject) (res CreateApiEndpointCategoryRes, err error) {
+func (c *Client) sendCreateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest) (res CreateApiEndpointCategoryRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createApiEndpointCategory"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2222,12 +2222,12 @@ func (c *Client) sendCreateApiEndpointCategory(ctx context.Context, request AnyO
 // 创建协作空间.
 //
 // POST /collaboration-workspaces
-func (c *Client) CreateCollaborationWorkspace(ctx context.Context, request AnyObject) (*IDResult, error) {
+func (c *Client) CreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (*IDResult, error) {
 	res, err := c.sendCreateCollaborationWorkspace(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request AnyObject) (res *IDResult, err error) {
+func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (res *IDResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createCollaborationWorkspace"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2332,12 +2332,12 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request A
 // 创建当前协作空间角色(边界管理).
 //
 // POST /collaboration-workspaces/current/boundary/roles
-func (c *Client) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error) {
 	res, err := c.sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createCurrentCollaborationWorkspaceBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2442,12 +2442,12 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 // 创建当前协作空间角色.
 //
 // POST /collaboration-workspaces/current/roles
-func (c *Client) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error) {
 	res, err := c.sendCreateCurrentCollaborationWorkspaceRole(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createCurrentCollaborationWorkspaceRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2772,12 +2772,12 @@ func (c *Client) sendCreateMenu(ctx context.Context, request *MenuSaveRequest) (
 // 新建消息接收组.
 //
 // POST /messages/recipient-groups
-func (c *Client) CreateMessageRecipientGroup(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest) (*MessageRecipientGroupItem, error) {
 	res, err := c.sendCreateMessageRecipientGroup(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateMessageRecipientGroup(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest) (res *MessageRecipientGroupItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createMessageRecipientGroup"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2882,12 +2882,12 @@ func (c *Client) sendCreateMessageRecipientGroup(ctx context.Context, request An
 // 新建消息发送人.
 //
 // POST /messages/senders
-func (c *Client) CreateMessageSender(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreateMessageSender(ctx context.Context, request *MessageSenderSaveRequest) (*MessageSenderItem, error) {
 	res, err := c.sendCreateMessageSender(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateMessageSender(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreateMessageSender(ctx context.Context, request *MessageSenderSaveRequest) (res *MessageSenderItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createMessageSender"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2992,12 +2992,12 @@ func (c *Client) sendCreateMessageSender(ctx context.Context, request AnyObject)
 // 新建消息模板.
 //
 // POST /messages/templates
-func (c *Client) CreateMessageTemplate(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest) (*MessageTemplateItem, error) {
 	res, err := c.sendCreateMessageTemplate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateMessageTemplate(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest) (res *MessageTemplateItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createMessageTemplate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -3102,12 +3102,12 @@ func (c *Client) sendCreateMessageTemplate(ctx context.Context, request AnyObjec
 // 创建页面.
 //
 // POST /pages
-func (c *Client) CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (AnyObject, error) {
+func (c *Client) CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (*PageSaveResult, error) {
 	res, err := c.sendCreatePage(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendCreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (res AnyObject, err error) {
+func (c *Client) sendCreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (res *PageSaveResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createPage"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -3340,12 +3340,12 @@ func (c *Client) sendCreatePermissionAction(ctx context.Context, request *Permis
 // 创建功能权限分组.
 //
 // POST /permission-actions/groups
-func (c *Client) CreatePermissionActionGroup(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) CreatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest) (*IDResult, error) {
 	res, err := c.sendCreatePermissionActionGroup(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreatePermissionActionGroup(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendCreatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest) (res *IDResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("createPermissionActionGroup"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4286,12 +4286,12 @@ func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 // 删除功能包.
 //
 // DELETE /feature-packages/{id}
-func (c *Client) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error) {
+func (c *Client) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendDeleteFeaturePackage(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendDeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (res *MutationResult, err error) {
+func (c *Client) sendDeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("deleteFeaturePackage"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -5700,12 +5700,12 @@ func (c *Client) sendDeleteUser(ctx context.Context, params DeleteUserParams) (r
 // 发送站内消息.
 //
 // POST /messages/dispatch
-func (c *Client) DispatchMessage(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) DispatchMessage(ctx context.Context, request *MessageDispatchRequest) (*MessageDispatchResult, error) {
 	res, err := c.sendDispatchMessage(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendDispatchMessage(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendDispatchMessage(ctx context.Context, request *MessageDispatchRequest) (res *MessageDispatchResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("dispatchMessage"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6945,12 +6945,12 @@ func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, para
 // 获取当前应用.
 //
 // GET /system/apps/current
-func (c *Client) GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (AnyObject, error) {
+func (c *Client) GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (*SystemCurrentAppResponse, error) {
 	res, err := c.sendGetCurrentApp(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentApp(ctx context.Context, params GetCurrentAppParams) (res AnyObject, err error) {
+func (c *Client) sendGetCurrentApp(ctx context.Context, params GetCurrentAppParams) (res *SystemCurrentAppResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getCurrentApp"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8219,12 +8219,12 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) 
 // 获取当前菜单空间.
 //
 // GET /system/menu-spaces/current
-func (c *Client) GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (AnyObject, error) {
+func (c *Client) GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (*SystemCurrentMenuSpaceResponse, error) {
 	res, err := c.sendGetCurrentMenuSpace(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (res AnyObject, err error) {
+func (c *Client) sendGetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (res *SystemCurrentMenuSpaceResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getCurrentMenuSpace"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8471,12 +8471,12 @@ func (c *Client) sendGetCurrentWorkspace(ctx context.Context) (res GetCurrentWor
 // 获取快捷入口配置.
 //
 // GET /system/fast-enter
-func (c *Client) GetFastEnterConfig(ctx context.Context) (AnyObject, error) {
+func (c *Client) GetFastEnterConfig(ctx context.Context) (*SystemFastEnterConfig, error) {
 	res, err := c.sendGetFastEnterConfig(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetFastEnterConfig(ctx context.Context) (res AnyObject, err error) {
+func (c *Client) sendGetFastEnterConfig(ctx context.Context) (res *SystemFastEnterConfig, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getFastEnterConfig"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9562,12 +9562,12 @@ func (c *Client) sendGetFeaturePackageRelationTree(ctx context.Context, params G
 // 获取消息详情.
 //
 // GET /messages/inbox/{deliveryId}
-func (c *Client) GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (AnyObject, error) {
+func (c *Client) GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (*InboxItem, error) {
 	res, err := c.sendGetInboxDetail(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetInboxDetail(ctx context.Context, params GetInboxDetailParams) (res AnyObject, err error) {
+func (c *Client) sendGetInboxDetail(ctx context.Context, params GetInboxDetailParams) (res *InboxItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getInboxDetail"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9687,12 +9687,12 @@ func (c *Client) sendGetInboxDetail(ctx context.Context, params GetInboxDetailPa
 // 获取消息摘要.
 //
 // GET /messages/inbox/summary
-func (c *Client) GetInboxSummary(ctx context.Context) (AnyObject, error) {
+func (c *Client) GetInboxSummary(ctx context.Context) (*InboxSummary, error) {
 	res, err := c.sendGetInboxSummary(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetInboxSummary(ctx context.Context) (res AnyObject, err error) {
+func (c *Client) sendGetInboxSummary(ctx context.Context) (res *InboxSummary, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getInboxSummary"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9794,12 +9794,12 @@ func (c *Client) sendGetInboxSummary(ctx context.Context) (res AnyObject, err er
 // 获取菜单删除预览.
 //
 // GET /menus/{id}/delete-preview
-func (c *Client) GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (AnyObject, error) {
+func (c *Client) GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (*MenuDeletePreviewResponse, error) {
 	res, err := c.sendGetMenuDeletePreview(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (res AnyObject, err error) {
+func (c *Client) sendGetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (res *MenuDeletePreviewResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getMenuDeletePreview"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9920,12 +9920,12 @@ func (c *Client) sendGetMenuDeletePreview(ctx context.Context, params GetMenuDel
 // 获取菜单空间模式.
 //
 // GET /system/menu-space-mode
-func (c *Client) GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (AnyObject, error) {
+func (c *Client) GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (*SystemMenuSpaceModeResponse, error) {
 	res, err := c.sendGetMenuSpaceMode(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (res AnyObject, err error) {
+func (c *Client) sendGetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (res *SystemMenuSpaceModeResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getMenuSpaceMode"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10210,12 +10210,12 @@ func (c *Client) sendGetMenuTree(ctx context.Context, params GetMenuTreeParams) 
 // 获取消息发送配置.
 //
 // GET /messages/dispatch/options
-func (c *Client) GetMessageDispatchOptions(ctx context.Context) (AnyObject, error) {
+func (c *Client) GetMessageDispatchOptions(ctx context.Context) (*MessageDispatchOptions, error) {
 	res, err := c.sendGetMessageDispatchOptions(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetMessageDispatchOptions(ctx context.Context) (res AnyObject, err error) {
+func (c *Client) sendGetMessageDispatchOptions(ctx context.Context) (res *MessageDispatchOptions, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getMessageDispatchOptions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10317,12 +10317,12 @@ func (c *Client) sendGetMessageDispatchOptions(ctx context.Context) (res AnyObje
 // 获取消息发送记录详情.
 //
 // GET /messages/records/{recordId}
-func (c *Client) GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (AnyObject, error) {
+func (c *Client) GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (*MessageDispatchRecord, error) {
 	res, err := c.sendGetMessageDispatchRecord(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (res AnyObject, err error) {
+func (c *Client) sendGetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (res *MessageDispatchRecord, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getMessageDispatchRecord"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10587,12 +10587,12 @@ func (c *Client) sendGetNavigation(ctx context.Context, params GetNavigationPara
 // 获取页面详情.
 //
 // GET /pages/{id}
-func (c *Client) GetPage(ctx context.Context, params GetPageParams) (AnyObject, error) {
+func (c *Client) GetPage(ctx context.Context, params GetPageParams) (*PageSaveResult, error) {
 	res, err := c.sendGetPage(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetPage(ctx context.Context, params GetPageParams) (res AnyObject, err error) {
+func (c *Client) sendGetPage(ctx context.Context, params GetPageParams) (res *PageSaveResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getPage"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10730,12 +10730,12 @@ func (c *Client) sendGetPage(ctx context.Context, params GetPageParams) (res Any
 // 获取页面访问链路.
 //
 // GET /pages/access-trace
-func (c *Client) GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (AnyObject, error) {
+func (c *Client) GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (*PageAccessTraceResponse, error) {
 	res, err := c.sendGetPageAccessTrace(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (res AnyObject, err error) {
+func (c *Client) sendGetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (res *PageAccessTraceResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getPageAccessTrace"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12379,12 +12379,12 @@ func (c *Client) sendGetUser(ctx context.Context, params GetUserParams) (res Get
 // 获取用户所在协作空间列表.
 //
 // GET /users/{id}/collaboration-workspaces
-func (c *Client) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (AnyObject, error) {
+func (c *Client) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (*UserCollaborationWorkspacesResponse, error) {
 	res, err := c.sendGetUserCollaborationWorkspaces(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (res AnyObject, err error) {
+func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (res *UserCollaborationWorkspacesResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getUserCollaborationWorkspaces"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12505,12 +12505,12 @@ func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params 
 // 获取用户菜单裁剪.
 //
 // GET /users/{id}/menus
-func (c *Client) GetUserMenus(ctx context.Context, params GetUserMenusParams) (AnyObject, error) {
+func (c *Client) GetUserMenus(ctx context.Context, params GetUserMenusParams) (*UserMenusResponse, error) {
 	res, err := c.sendGetUserMenus(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetUserMenus(ctx context.Context, params GetUserMenusParams) (res AnyObject, err error) {
+func (c *Client) sendGetUserMenus(ctx context.Context, params GetUserMenusParams) (res *UserMenusResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getUserMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12799,12 +12799,12 @@ func (c *Client) sendGetUserPackages(ctx context.Context, params GetUserPackages
 // 获取用户权限诊断.
 //
 // GET /users/{id}/permission-diagnosis
-func (c *Client) GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (AnyObject, error) {
+func (c *Client) GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (*UserPermissionDiagnosisResponse, error) {
 	res, err := c.sendGetUserPermissionDiagnosis(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (res AnyObject, err error) {
+func (c *Client) sendGetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (res *UserPermissionDiagnosisResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getUserPermissionDiagnosis"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12980,12 +12980,12 @@ func (c *Client) sendGetUserPermissionDiagnosis(ctx context.Context, params GetU
 // 获取用户菜单权限.
 //
 // GET /users/{id}/permissions
-func (c *Client) GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (AnyObject, error) {
+func (c *Client) GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (*UserPermissionsResponse, error) {
 	res, err := c.sendGetUserPermissions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (res AnyObject, err error) {
+func (c *Client) sendGetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (res *UserPermissionsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getUserPermissions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13252,12 +13252,12 @@ func (c *Client) sendGetWorkspace(ctx context.Context, params GetWorkspaceParams
 // 处理待办消息.
 //
 // POST /messages/inbox/{deliveryId}/todo-action
-func (c *Client) HandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (*MutationResult, error) {
+func (c *Client) HandleInboxTodo(ctx context.Context, request *InboxTodoActionRequest, params HandleInboxTodoParams) (*MutationResult, error) {
 	res, err := c.sendHandleInboxTodo(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendHandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (res *MutationResult, err error) {
+func (c *Client) sendHandleInboxTodo(ctx context.Context, request *InboxTodoActionRequest, params HandleInboxTodoParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("handleInboxTodo"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -13381,12 +13381,12 @@ func (c *Client) sendHandleInboxTodo(ctx context.Context, request AnyObject, par
 // 从默认空间初始化菜单空间.
 //
 // POST /system/menu-spaces/{spaceKey}/initialize-default
-func (c *Client) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error) {
+func (c *Client) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error) {
 	res, err := c.sendInitializeMenuSpaceFromDefault(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (res *MutationResult, err error) {
+func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (res *SystemMenuSpaceInitializeResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("initializeMenuSpaceFromDefault"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -13912,12 +13912,12 @@ func (c *Client) sendListApiEndpoints(ctx context.Context, params ListApiEndpoin
 // 获取应用入口解析绑定.
 //
 // GET /system/app-host-bindings
-func (c *Client) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemListResponse, error) {
+func (c *Client) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemAppHostBindingListResponse, error) {
 	res, err := c.sendListAppHostBindings(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (res *SystemListResponse, err error) {
+func (c *Client) sendListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (res *SystemAppHostBindingListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listAppHostBindings"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14040,12 +14040,12 @@ func (c *Client) sendListAppHostBindings(ctx context.Context, params ListAppHost
 // 获取应用列表.
 //
 // GET /system/apps
-func (c *Client) ListApps(ctx context.Context) (*SystemListResponse, error) {
+func (c *Client) ListApps(ctx context.Context) (*SystemAppListResponse, error) {
 	res, err := c.sendListApps(ctx)
 	return res, err
 }
 
-func (c *Client) sendListApps(ctx context.Context) (res *SystemListResponse, err error) {
+func (c *Client) sendListApps(ctx context.Context) (res *SystemAppListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listApps"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15658,12 +15658,12 @@ func (c *Client) sendListFeaturePackages(ctx context.Context, params ListFeature
 // 获取消息列表.
 //
 // GET /messages/inbox
-func (c *Client) ListInbox(ctx context.Context, params ListInboxParams) (*MessageListResponse, error) {
+func (c *Client) ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error) {
 	res, err := c.sendListInbox(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListInbox(ctx context.Context, params ListInboxParams) (res *MessageListResponse, err error) {
+func (c *Client) sendListInbox(ctx context.Context, params ListInboxParams) (res *InboxListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listInbox"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15910,12 +15910,12 @@ func (c *Client) sendListMedia(ctx context.Context) (res ListMediaRes, err error
 // 获取菜单空间入口解析绑定.
 //
 // GET /system/menu-space-entry-bindings
-func (c *Client) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemListResponse, error) {
+func (c *Client) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemMenuSpaceEntryBindingListResponse, error) {
 	res, err := c.sendListMenuSpaceEntryBindings(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (res *SystemListResponse, err error) {
+func (c *Client) sendListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (res *SystemMenuSpaceEntryBindingListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMenuSpaceEntryBindings"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16038,12 +16038,12 @@ func (c *Client) sendListMenuSpaceEntryBindings(ctx context.Context, params List
 // 获取菜单空间 Host 绑定.
 //
 // GET /system/menu-space-host-bindings
-func (c *Client) ListMenuSpaceHostBindings(ctx context.Context) (*SystemListResponse, error) {
+func (c *Client) ListMenuSpaceHostBindings(ctx context.Context) (*SystemMenuSpaceHostBindingListResponse, error) {
 	res, err := c.sendListMenuSpaceHostBindings(ctx)
 	return res, err
 }
 
-func (c *Client) sendListMenuSpaceHostBindings(ctx context.Context) (res *SystemListResponse, err error) {
+func (c *Client) sendListMenuSpaceHostBindings(ctx context.Context) (res *SystemMenuSpaceHostBindingListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMenuSpaceHostBindings"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16145,12 +16145,12 @@ func (c *Client) sendListMenuSpaceHostBindings(ctx context.Context) (res *System
 // 获取菜单空间列表.
 //
 // GET /system/menu-spaces
-func (c *Client) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemListResponse, error) {
+func (c *Client) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemMenuSpaceListResponse, error) {
 	res, err := c.sendListMenuSpaces(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (res *SystemListResponse, err error) {
+func (c *Client) sendListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (res *SystemMenuSpaceListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMenuSpaces"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16273,12 +16273,12 @@ func (c *Client) sendListMenuSpaces(ctx context.Context, params ListMenuSpacesPa
 // 获取消息发送记录.
 //
 // GET /messages/records
-func (c *Client) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageListResponse, error) {
+func (c *Client) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageDispatchRecordListResponse, error) {
 	res, err := c.sendListMessageDispatchRecords(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (res *MessageListResponse, err error) {
+func (c *Client) sendListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (res *MessageDispatchRecordListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMessageDispatchRecords"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16418,12 +16418,12 @@ func (c *Client) sendListMessageDispatchRecords(ctx context.Context, params List
 // 获取消息接收组.
 //
 // GET /messages/recipient-groups
-func (c *Client) ListMessageRecipientGroups(ctx context.Context) (*MessageListResponse, error) {
+func (c *Client) ListMessageRecipientGroups(ctx context.Context) (*MessageRecipientGroupListResponse, error) {
 	res, err := c.sendListMessageRecipientGroups(ctx)
 	return res, err
 }
 
-func (c *Client) sendListMessageRecipientGroups(ctx context.Context) (res *MessageListResponse, err error) {
+func (c *Client) sendListMessageRecipientGroups(ctx context.Context) (res *MessageRecipientGroupListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMessageRecipientGroups"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16525,12 +16525,12 @@ func (c *Client) sendListMessageRecipientGroups(ctx context.Context) (res *Messa
 // 获取消息发送人.
 //
 // GET /messages/senders
-func (c *Client) ListMessageSenders(ctx context.Context) (*MessageListResponse, error) {
+func (c *Client) ListMessageSenders(ctx context.Context) (*MessageSenderListResponse, error) {
 	res, err := c.sendListMessageSenders(ctx)
 	return res, err
 }
 
-func (c *Client) sendListMessageSenders(ctx context.Context) (res *MessageListResponse, err error) {
+func (c *Client) sendListMessageSenders(ctx context.Context) (res *MessageSenderListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMessageSenders"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16632,12 +16632,12 @@ func (c *Client) sendListMessageSenders(ctx context.Context) (res *MessageListRe
 // 获取消息模板.
 //
 // GET /messages/templates
-func (c *Client) ListMessageTemplates(ctx context.Context) (*MessageListResponse, error) {
+func (c *Client) ListMessageTemplates(ctx context.Context) (*MessageTemplateListResponse, error) {
 	res, err := c.sendListMessageTemplates(ctx)
 	return res, err
 }
 
-func (c *Client) sendListMessageTemplates(ctx context.Context) (res *MessageListResponse, err error) {
+func (c *Client) sendListMessageTemplates(ctx context.Context) (res *MessageTemplateListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listMessageTemplates"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -17554,12 +17554,12 @@ func (c *Client) sendListPermissionActionBatchTemplates(ctx context.Context) (re
 // 获取功能权限关联接口.
 //
 // GET /permission-actions/{id}/endpoints
-func (c *Client) ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*AnyListResponse, error) {
+func (c *Client) ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*PermissionActionEndpointList, error) {
 	res, err := c.sendListPermissionActionEndpoints(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (res *AnyListResponse, err error) {
+func (c *Client) sendListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (res *PermissionActionEndpointList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listPermissionActionEndpoints"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -20338,12 +20338,12 @@ func (c *Client) sendMarkInboxReadAll(ctx context.Context) (res *MutationResult,
 // 预览页面面包屑.
 //
 // GET /pages/{id}/breadcrumb-preview
-func (c *Client) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageListResponse, error) {
+func (c *Client) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageBreadcrumbPreviewListResponse, error) {
 	res, err := c.sendPreviewPageBreadcrumb(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendPreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (res *PageListResponse, err error) {
+func (c *Client) sendPreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (res *PageBreadcrumbPreviewListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("previewPageBreadcrumb"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -21175,12 +21175,12 @@ func (c *Client) sendRemovePermissionActionEndpoint(ctx context.Context, params 
 // 回滚功能包版本.
 //
 // POST /feature-packages/{id}/rollback
-func (c *Client) RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error) {
+func (c *Client) RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendRollbackFeaturePackage(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (res *MutationResult, err error) {
+func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("rollbackFeaturePackage"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21304,12 +21304,12 @@ func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *Rollba
 // 保存应用.
 //
 // POST /system/apps
-func (c *Client) SaveApp(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveApp(ctx context.Context, request *SystemAppSaveRequest) (*SystemAppItem, error) {
 	res, err := c.sendSaveApp(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveApp(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveApp(ctx context.Context, request *SystemAppSaveRequest) (res *SystemAppItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveApp"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21414,12 +21414,12 @@ func (c *Client) sendSaveApp(ctx context.Context, request AnyObject) (res *Mutat
 // 保存应用入口解析绑定.
 //
 // POST /system/app-host-bindings
-func (c *Client) SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveAppHostBinding(ctx context.Context, request *SystemAppHostBindingSaveRequest) (*SystemAppHostBindingItem, error) {
 	res, err := c.sendSaveAppHostBinding(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveAppHostBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveAppHostBinding(ctx context.Context, request *SystemAppHostBindingSaveRequest) (res *SystemAppHostBindingItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveAppHostBinding"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21524,12 +21524,12 @@ func (c *Client) sendSaveAppHostBinding(ctx context.Context, request AnyObject) 
 // 保存菜单空间.
 //
 // POST /system/menu-spaces
-func (c *Client) SaveMenuSpace(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveMenuSpace(ctx context.Context, request *SystemMenuSpaceSaveRequest) (*SystemMenuSpaceItem, error) {
 	res, err := c.sendSaveMenuSpace(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveMenuSpace(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveMenuSpace(ctx context.Context, request *SystemMenuSpaceSaveRequest) (res *SystemMenuSpaceItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveMenuSpace"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21634,12 +21634,12 @@ func (c *Client) sendSaveMenuSpace(ctx context.Context, request AnyObject) (res 
 // 保存菜单空间入口解析绑定.
 //
 // POST /system/menu-space-entry-bindings
-func (c *Client) SaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveMenuSpaceEntryBinding(ctx context.Context, request *SystemMenuSpaceEntryBindingSaveRequest) (*SystemMenuSpaceEntryBindingItem, error) {
 	res, err := c.sendSaveMenuSpaceEntryBinding(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveMenuSpaceEntryBinding(ctx context.Context, request *SystemMenuSpaceEntryBindingSaveRequest) (res *SystemMenuSpaceEntryBindingItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveMenuSpaceEntryBinding"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21744,12 +21744,12 @@ func (c *Client) sendSaveMenuSpaceEntryBinding(ctx context.Context, request AnyO
 // 保存菜单空间 Host 绑定.
 //
 // POST /system/menu-space-host-bindings
-func (c *Client) SaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveMenuSpaceHostBinding(ctx context.Context, request *SystemMenuSpaceHostBindingSaveRequest) (*SystemMenuSpaceHostBindingItem, error) {
 	res, err := c.sendSaveMenuSpaceHostBinding(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveMenuSpaceHostBinding(ctx context.Context, request *SystemMenuSpaceHostBindingSaveRequest) (res *SystemMenuSpaceHostBindingItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveMenuSpaceHostBinding"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21854,12 +21854,12 @@ func (c *Client) sendSaveMenuSpaceHostBinding(ctx context.Context, request AnyOb
 // 保存菜单空间模式.
 //
 // PUT /system/menu-space-mode
-func (c *Client) SaveMenuSpaceMode(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SaveMenuSpaceMode(ctx context.Context, request *SystemMenuSpaceModeSaveRequest) (*SystemMenuSpaceModeResponse, error) {
 	res, err := c.sendSaveMenuSpaceMode(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSaveMenuSpaceMode(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSaveMenuSpaceMode(ctx context.Context, request *SystemMenuSpaceModeSaveRequest) (res *SystemMenuSpaceModeResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("saveMenuSpaceMode"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -21964,12 +21964,12 @@ func (c *Client) sendSaveMenuSpaceMode(ctx context.Context, request AnyObject) (
 // 保存功能权限批量模板.
 //
 // POST /permission-actions/templates
-func (c *Client) SavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) SavePermissionActionBatchTemplate(ctx context.Context, request *PermissionActionBatchTemplateSaveRequest) (*PermissionActionBatchTemplateItem, error) {
 	res, err := c.sendSavePermissionActionBatchTemplate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendSavePermissionActionBatchTemplate(ctx context.Context, request *PermissionActionBatchTemplateSaveRequest) (res *PermissionActionBatchTemplateItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("savePermissionActionBatchTemplate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -22332,12 +22332,12 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 // 配置协作空间功能包.
 //
 // PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (c *Client) SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*MutationResult, error) {
+func (c *Client) SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendSetCollaborationWorkspacePackages(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setCollaborationWorkspacePackages"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -22997,12 +22997,12 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 // 配置功能包权限.
 //
 // PUT /feature-packages/{id}/actions
-func (c *Client) SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*MutationResult, error) {
+func (c *Client) SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendSetFeaturePackageActions(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (res *MutationResult, err error) {
+func (c *Client) sendSetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setFeaturePackageActions"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -23147,12 +23147,12 @@ func (c *Client) sendSetFeaturePackageActions(ctx context.Context, request *UUID
 // 配置组合包基础包.
 //
 // PUT /feature-packages/{id}/children
-func (c *Client) SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*MutationResult, error) {
+func (c *Client) SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendSetFeaturePackageChildren(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (res *MutationResult, err error) {
+func (c *Client) sendSetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setFeaturePackageChildren"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -23297,12 +23297,12 @@ func (c *Client) sendSetFeaturePackageChildren(ctx context.Context, request *UUI
 // 配置功能包协作空间.
 //
 // PUT /feature-packages/{id}/collaboration-workspaces
-func (c *Client) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*MutationResult, error) {
+func (c *Client) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendSetFeaturePackageCollaborationWorkspaces(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (res *MutationResult, err error) {
+func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setFeaturePackageCollaborationWorkspaces"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -23447,12 +23447,12 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 // 配置功能包菜单.
 //
 // PUT /feature-packages/{id}/menus
-func (c *Client) SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*MutationResult, error) {
+func (c *Client) SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendSetFeaturePackageMenus(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (res *MutationResult, err error) {
+func (c *Client) sendSetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setFeaturePackageMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -24167,12 +24167,12 @@ func (c *Client) sendSetRolePackages(ctx context.Context, request *UUIDListReque
 // 配置用户菜单裁剪.
 //
 // PUT /users/{id}/menus
-func (c *Client) SetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (*MutationResult, error) {
+func (c *Client) SetUserMenus(ctx context.Context, request *UserMenusResponse, params SetUserMenusParams) (*MutationResult, error) {
 	res, err := c.sendSetUserMenus(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (res *MutationResult, err error) {
+func (c *Client) sendSetUserMenus(ctx context.Context, request *UserMenusResponse, params SetUserMenusParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("setUserMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -24767,12 +24767,12 @@ func (c *Client) sendSyncPages(ctx context.Context, params SyncPagesParams) (res
 // 更新 API 注册项.
 //
 // PUT /api-endpoints/{id}
-func (c *Client) UpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error) {
+func (c *Client) UpdateApiEndpoint(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error) {
 	res, err := c.sendUpdateApiEndpoint(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (res UpdateApiEndpointRes, err error) {
+func (c *Client) sendUpdateApiEndpoint(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointParams) (res UpdateApiEndpointRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateApiEndpoint"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -24895,12 +24895,12 @@ func (c *Client) sendUpdateApiEndpoint(ctx context.Context, request AnyObject, p
 // 更新 API 分类.
 //
 // PUT /api-endpoints/categories/{id}
-func (c *Client) UpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error) {
+func (c *Client) UpdateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error) {
 	res, err := c.sendUpdateApiEndpointCategory(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (res UpdateApiEndpointCategoryRes, err error) {
+func (c *Client) sendUpdateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest, params UpdateApiEndpointCategoryParams) (res UpdateApiEndpointCategoryRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateApiEndpointCategory"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25023,12 +25023,12 @@ func (c *Client) sendUpdateApiEndpointCategory(ctx context.Context, request AnyO
 // 更新 API 协作空间上下文.
 //
 // PUT /api-endpoints/{id}/context-scope
-func (c *Client) UpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error) {
+func (c *Client) UpdateApiEndpointContextScope(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error) {
 	res, err := c.sendUpdateApiEndpointContextScope(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (res UpdateApiEndpointContextScopeRes, err error) {
+func (c *Client) sendUpdateApiEndpointContextScope(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (res UpdateApiEndpointContextScopeRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateApiEndpointContextScope"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25152,12 +25152,12 @@ func (c *Client) sendUpdateApiEndpointContextScope(ctx context.Context, request 
 // 更新协作空间.
 //
 // PUT /collaboration-workspaces/{id}
-func (c *Client) UpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (*MutationResult, error) {
+func (c *Client) UpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (*MutationResult, error) {
 	res, err := c.sendUpdateCollaborationWorkspace(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateCollaborationWorkspace"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25280,12 +25280,12 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request A
 // 更新协作空间成员身份.
 //
 // PUT /collaboration-workspaces/{id}/members/{userId}/role
-func (c *Client) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
+func (c *Client) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
 	res, err := c.sendUpdateCollaborationWorkspaceMemberRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateCollaborationWorkspaceMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25428,12 +25428,12 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 // 更新当前协作空间角色(边界管理).
 //
 // PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-func (c *Client) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
+func (c *Client) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
 	res, err := c.sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateCurrentCollaborationWorkspaceBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25556,12 +25556,12 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 // 更新当前协作空间成员身份.
 //
 // PUT /collaboration-workspaces/current/members/{userId}/role
-func (c *Client) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
+func (c *Client) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
 	res, err := c.sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateCurrentCollaborationWorkspaceMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25685,12 +25685,12 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 // 更新快捷入口配置.
 //
 // PUT /system/fast-enter
-func (c *Client) UpdateFastEnterConfig(ctx context.Context, request AnyObject) (*MutationResult, error) {
+func (c *Client) UpdateFastEnterConfig(ctx context.Context, request *SystemFastEnterConfig) (*SystemFastEnterConfig, error) {
 	res, err := c.sendUpdateFastEnterConfig(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendUpdateFastEnterConfig(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+func (c *Client) sendUpdateFastEnterConfig(ctx context.Context, request *SystemFastEnterConfig) (res *SystemFastEnterConfig, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateFastEnterConfig"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -25795,12 +25795,12 @@ func (c *Client) sendUpdateFastEnterConfig(ctx context.Context, request AnyObjec
 // 更新功能包.
 //
 // PUT /feature-packages/{id}
-func (c *Client) UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*MutationResult, error) {
+func (c *Client) UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error) {
 	res, err := c.sendUpdateFeaturePackage(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateFeaturePackage"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26051,12 +26051,12 @@ func (c *Client) sendUpdateMenu(ctx context.Context, request *MenuSaveRequest, p
 // 更新消息接收组.
 //
 // PUT /messages/recipient-groups/{groupId}
-func (c *Client) UpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (*MutationResult, error) {
+func (c *Client) UpdateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest, params UpdateMessageRecipientGroupParams) (*MessageRecipientGroupItem, error) {
 	res, err := c.sendUpdateMessageRecipientGroup(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateMessageRecipientGroup(ctx context.Context, request *MessageRecipientGroupSaveRequest, params UpdateMessageRecipientGroupParams) (res *MessageRecipientGroupItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateMessageRecipientGroup"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26179,12 +26179,12 @@ func (c *Client) sendUpdateMessageRecipientGroup(ctx context.Context, request An
 // 更新消息发送人.
 //
 // PUT /messages/senders/{senderId}
-func (c *Client) UpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (*MutationResult, error) {
+func (c *Client) UpdateMessageSender(ctx context.Context, request *MessageSenderSaveRequest, params UpdateMessageSenderParams) (*MessageSenderItem, error) {
 	res, err := c.sendUpdateMessageSender(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateMessageSender(ctx context.Context, request *MessageSenderSaveRequest, params UpdateMessageSenderParams) (res *MessageSenderItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateMessageSender"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26307,12 +26307,12 @@ func (c *Client) sendUpdateMessageSender(ctx context.Context, request AnyObject,
 // 更新消息模板.
 //
 // PUT /messages/templates/{templateId}
-func (c *Client) UpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (*MutationResult, error) {
+func (c *Client) UpdateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest, params UpdateMessageTemplateParams) (*MessageTemplateItem, error) {
 	res, err := c.sendUpdateMessageTemplate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateMessageTemplate(ctx context.Context, request *MessageTemplateSaveRequest, params UpdateMessageTemplateParams) (res *MessageTemplateItem, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateMessageTemplate"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26435,12 +26435,12 @@ func (c *Client) sendUpdateMessageTemplate(ctx context.Context, request AnyObjec
 // 更新页面.
 //
 // PUT /pages/{id}
-func (c *Client) UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (AnyObject, error) {
+func (c *Client) UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (*PageSaveResult, error) {
 	res, err := c.sendUpdatePage(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (res AnyObject, err error) {
+func (c *Client) sendUpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (res *PageSaveResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updatePage"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26709,12 +26709,12 @@ func (c *Client) sendUpdatePermissionAction(ctx context.Context, request *Permis
 // 更新功能权限分组.
 //
 // PUT /permission-actions/groups/{id}
-func (c *Client) UpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error) {
+func (c *Client) UpdatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest, params UpdatePermissionActionGroupParams) (*MutationResult, error) {
 	res, err := c.sendUpdatePermissionActionGroup(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdatePermissionActionGroup(ctx context.Context, request *PermissionActionGroupSaveRequest, params UpdatePermissionActionGroupParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updatePermissionActionGroup"),
 		semconv.HTTPRequestMethodKey.String("PUT"),

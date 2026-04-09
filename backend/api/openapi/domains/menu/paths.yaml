@@ -141,4 +141,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/MenuDeletePreviewResponse'

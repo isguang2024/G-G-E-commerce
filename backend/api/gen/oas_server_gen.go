@@ -13,19 +13,19 @@ type Handler interface {
 	// 添加协作空间成员.
 	//
 	// POST /collaboration-workspaces/{id}/members
-	AddCollaborationWorkspaceMember(ctx context.Context, req AnyObject, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	AddCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
 	// AddCurrentCollaborationWorkspaceMember implements addCurrentCollaborationWorkspaceMember operation.
 	//
 	// 添加当前协作空间成员.
 	//
 	// POST /collaboration-workspaces/current/members
-	AddCurrentCollaborationWorkspaceMember(ctx context.Context, req AnyObject) (*MutationResult, error)
+	AddCurrentCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest) (*MutationResult, error)
 	// AddPermissionActionEndpoint implements addPermissionActionEndpoint operation.
 	//
 	// 新增功能权限关联接口.
 	//
 	// POST /permission-actions/{id}/endpoints
-	AddPermissionActionEndpoint(ctx context.Context, req AnyObject, params AddPermissionActionEndpointParams) (*MutationResult, error)
+	AddPermissionActionEndpoint(ctx context.Context, req *PermissionActionEndpointAddRequest, params AddPermissionActionEndpointParams) (*MutationResult, error)
 	// AssignUserRoles implements assignUserRoles operation.
 	//
 	// 分配用户角色.
@@ -37,43 +37,43 @@ type Handler interface {
 	// 批量治理功能权限.
 	//
 	// POST /permission-actions/batch
-	BatchUpdatePermissionActions(ctx context.Context, req AnyObject) (*MutationResult, error)
+	BatchUpdatePermissionActions(ctx context.Context, req *PermissionActionBatchUpdateRequest) (*PermissionActionBatchUpdateResult, error)
 	// CleanupStaleApiEndpoints implements cleanupStaleApiEndpoints operation.
 	//
 	// 清理失效 API.
 	//
 	// POST /api-endpoints/cleanup-stale
-	CleanupStaleApiEndpoints(ctx context.Context, req AnyObject) (CleanupStaleApiEndpointsRes, error)
+	CleanupStaleApiEndpoints(ctx context.Context, req *CleanupStaleRequest) (CleanupStaleApiEndpointsRes, error)
 	// CleanupUnusedPermissionActions implements cleanupUnusedPermissionActions operation.
 	//
 	// 清理未消费功能权限.
 	//
 	// POST /permission-actions/cleanup-unused
-	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
+	CleanupUnusedPermissionActions(ctx context.Context) (*PermissionActionCleanupResult, error)
 	// CreateApiEndpointCategory implements createApiEndpointCategory operation.
 	//
 	// 创建 API 分类.
 	//
 	// POST /api-endpoints/categories
-	CreateApiEndpointCategory(ctx context.Context, req AnyObject) (CreateApiEndpointCategoryRes, error)
+	CreateApiEndpointCategory(ctx context.Context, req *ApiEndpointCategorySaveRequest) (CreateApiEndpointCategoryRes, error)
 	// CreateCollaborationWorkspace implements createCollaborationWorkspace operation.
 	//
 	// 创建协作空间.
 	//
 	// POST /collaboration-workspaces
-	CreateCollaborationWorkspace(ctx context.Context, req AnyObject) (*IDResult, error)
+	CreateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest) (*IDResult, error)
 	// CreateCurrentCollaborationWorkspaceBoundaryRole implements createCurrentCollaborationWorkspaceBoundaryRole operation.
 	//
 	// 创建当前协作空间角色(边界管理).
 	//
 	// POST /collaboration-workspaces/current/boundary/roles
-	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
 	// CreateCurrentCollaborationWorkspaceRole implements createCurrentCollaborationWorkspaceRole operation.
 	//
 	// 创建当前协作空间角色.
 	//
 	// POST /collaboration-workspaces/current/roles
-	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
 	// CreateFeaturePackage implements createFeaturePackage operation.
 	//
 	// 创建功能包.
@@ -91,25 +91,25 @@ type Handler interface {
 	// 新建消息接收组.
 	//
 	// POST /messages/recipient-groups
-	CreateMessageRecipientGroup(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreateMessageRecipientGroup(ctx context.Context, req *MessageRecipientGroupSaveRequest) (*MessageRecipientGroupItem, error)
 	// CreateMessageSender implements createMessageSender operation.
 	//
 	// 新建消息发送人.
 	//
 	// POST /messages/senders
-	CreateMessageSender(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreateMessageSender(ctx context.Context, req *MessageSenderSaveRequest) (*MessageSenderItem, error)
 	// CreateMessageTemplate implements createMessageTemplate operation.
 	//
 	// 新建消息模板.
 	//
 	// POST /messages/templates
-	CreateMessageTemplate(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreateMessageTemplate(ctx context.Context, req *MessageTemplateSaveRequest) (*MessageTemplateItem, error)
 	// CreatePage implements createPage operation.
 	//
 	// 创建页面.
 	//
 	// POST /pages
-	CreatePage(ctx context.Context, req *PageSaveRequest, params CreatePageParams) (AnyObject, error)
+	CreatePage(ctx context.Context, req *PageSaveRequest, params CreatePageParams) (*PageSaveResult, error)
 	// CreatePermissionAction implements createPermissionAction operation.
 	//
 	// 创建功能权限.
@@ -121,7 +121,7 @@ type Handler interface {
 	// 创建功能权限分组.
 	//
 	// POST /permission-actions/groups
-	CreatePermissionActionGroup(ctx context.Context, req AnyObject) (*MutationResult, error)
+	CreatePermissionActionGroup(ctx context.Context, req *PermissionActionGroupSaveRequest) (*IDResult, error)
 	// CreateRegisterEntry implements createRegisterEntry operation.
 	//
 	// 创建注册入口.
@@ -169,7 +169,7 @@ type Handler interface {
 	// 删除功能包.
 	//
 	// DELETE /feature-packages/{id}
-	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error)
+	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// DeleteMedia implements deleteMedia operation.
 	//
 	// 删除媒体资源.
@@ -235,7 +235,7 @@ type Handler interface {
 	// 发送站内消息.
 	//
 	// POST /messages/dispatch
-	DispatchMessage(ctx context.Context, req AnyObject) (*MutationResult, error)
+	DispatchMessage(ctx context.Context, req *MessageDispatchRequest) (*MessageDispatchResult, error)
 	// ExplainPermissions implements explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -295,7 +295,7 @@ type Handler interface {
 	// 获取当前应用.
 	//
 	// GET /system/apps/current
-	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (AnyObject, error)
+	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (*SystemCurrentAppResponse, error)
 	// GetCurrentCollaborationWorkspace implements getCurrentCollaborationWorkspace operation.
 	//
 	// 获取当前协作空间详情.
@@ -361,7 +361,7 @@ type Handler interface {
 	// 获取当前菜单空间.
 	//
 	// GET /system/menu-spaces/current
-	GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (AnyObject, error)
+	GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (*SystemCurrentMenuSpaceResponse, error)
 	// GetCurrentWorkspace implements getCurrentWorkspace operation.
 	//
 	// 获取当前授权工作空间.
@@ -373,7 +373,7 @@ type Handler interface {
 	// 获取快捷入口配置.
 	//
 	// GET /system/fast-enter
-	GetFastEnterConfig(ctx context.Context) (AnyObject, error)
+	GetFastEnterConfig(ctx context.Context) (*SystemFastEnterConfig, error)
 	// GetFeaturePackage implements getFeaturePackage operation.
 	//
 	// 获取功能包详情.
@@ -421,25 +421,25 @@ type Handler interface {
 	// 获取消息详情.
 	//
 	// GET /messages/inbox/{deliveryId}
-	GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (AnyObject, error)
+	GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (*InboxItem, error)
 	// GetInboxSummary implements getInboxSummary operation.
 	//
 	// 获取消息摘要.
 	//
 	// GET /messages/inbox/summary
-	GetInboxSummary(ctx context.Context) (AnyObject, error)
+	GetInboxSummary(ctx context.Context) (*InboxSummary, error)
 	// GetMenuDeletePreview implements getMenuDeletePreview operation.
 	//
 	// 获取菜单删除预览.
 	//
 	// GET /menus/{id}/delete-preview
-	GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (AnyObject, error)
+	GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (*MenuDeletePreviewResponse, error)
 	// GetMenuSpaceMode implements getMenuSpaceMode operation.
 	//
 	// 获取菜单空间模式.
 	//
 	// GET /system/menu-space-mode
-	GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (AnyObject, error)
+	GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (*SystemMenuSpaceModeResponse, error)
 	// GetMenuTree implements getMenuTree operation.
 	//
 	// 获取菜单树.
@@ -451,13 +451,13 @@ type Handler interface {
 	// 获取消息发送配置.
 	//
 	// GET /messages/dispatch/options
-	GetMessageDispatchOptions(ctx context.Context) (AnyObject, error)
+	GetMessageDispatchOptions(ctx context.Context) (*MessageDispatchOptions, error)
 	// GetMessageDispatchRecord implements getMessageDispatchRecord operation.
 	//
 	// 获取消息发送记录详情.
 	//
 	// GET /messages/records/{recordId}
-	GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (AnyObject, error)
+	GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (*MessageDispatchRecord, error)
 	// GetNavigation implements getNavigation operation.
 	//
 	// 获取运行时导航清单.
@@ -469,13 +469,13 @@ type Handler interface {
 	// 获取页面详情.
 	//
 	// GET /pages/{id}
-	GetPage(ctx context.Context, params GetPageParams) (AnyObject, error)
+	GetPage(ctx context.Context, params GetPageParams) (*PageSaveResult, error)
 	// GetPageAccessTrace implements getPageAccessTrace operation.
 	//
 	// 获取页面访问链路.
 	//
 	// GET /pages/access-trace
-	GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (AnyObject, error)
+	GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (*PageAccessTraceResponse, error)
 	// GetPermissionAction implements getPermissionAction operation.
 	//
 	// 获取功能权限详情.
@@ -547,13 +547,13 @@ type Handler interface {
 	// 获取用户所在协作空间列表.
 	//
 	// GET /users/{id}/collaboration-workspaces
-	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (AnyObject, error)
+	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (*UserCollaborationWorkspacesResponse, error)
 	// GetUserMenus implements getUserMenus operation.
 	//
 	// 获取用户菜单裁剪.
 	//
 	// GET /users/{id}/menus
-	GetUserMenus(ctx context.Context, params GetUserMenusParams) (AnyObject, error)
+	GetUserMenus(ctx context.Context, params GetUserMenusParams) (*UserMenusResponse, error)
 	// GetUserPackages implements getUserPackages operation.
 	//
 	// 获取用户功能包.
@@ -565,13 +565,13 @@ type Handler interface {
 	// 获取用户权限诊断.
 	//
 	// GET /users/{id}/permission-diagnosis
-	GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (AnyObject, error)
+	GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (*UserPermissionDiagnosisResponse, error)
 	// GetUserPermissions implements getUserPermissions operation.
 	//
 	// 获取用户菜单权限.
 	//
 	// GET /users/{id}/permissions
-	GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (AnyObject, error)
+	GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (*UserPermissionsResponse, error)
 	// GetWorkspace implements getWorkspace operation.
 	//
 	// 获取工作空间详情.
@@ -583,13 +583,13 @@ type Handler interface {
 	// 处理待办消息.
 	//
 	// POST /messages/inbox/{deliveryId}/todo-action
-	HandleInboxTodo(ctx context.Context, req AnyObject, params HandleInboxTodoParams) (*MutationResult, error)
+	HandleInboxTodo(ctx context.Context, req *InboxTodoActionRequest, params HandleInboxTodoParams) (*MutationResult, error)
 	// InitializeMenuSpaceFromDefault implements initializeMenuSpaceFromDefault operation.
 	//
 	// 从默认空间初始化菜单空间.
 	//
 	// POST /system/menu-spaces/{spaceKey}/initialize-default
-	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error)
+	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error)
 	// ListApiEndpointCategories implements listApiEndpointCategories operation.
 	//
 	// 获取 API 分类列表.
@@ -607,13 +607,13 @@ type Handler interface {
 	// 获取应用入口解析绑定.
 	//
 	// GET /system/app-host-bindings
-	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemListResponse, error)
+	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemAppHostBindingListResponse, error)
 	// ListApps implements listApps operation.
 	//
 	// 获取应用列表.
 	//
 	// GET /system/apps
-	ListApps(ctx context.Context) (*SystemListResponse, error)
+	ListApps(ctx context.Context) (*SystemAppListResponse, error)
 	// ListCollaborationWorkspaceMembers implements listCollaborationWorkspaceMembers operation.
 	//
 	// 获取协作空间成员列表.
@@ -685,7 +685,7 @@ type Handler interface {
 	// 获取消息列表.
 	//
 	// GET /messages/inbox
-	ListInbox(ctx context.Context, params ListInboxParams) (*MessageListResponse, error)
+	ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error)
 	// ListMedia implements listMedia operation.
 	//
 	// 获取媒体资源列表.
@@ -697,43 +697,43 @@ type Handler interface {
 	// 获取菜单空间入口解析绑定.
 	//
 	// GET /system/menu-space-entry-bindings
-	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemListResponse, error)
+	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemMenuSpaceEntryBindingListResponse, error)
 	// ListMenuSpaceHostBindings implements listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
 	//
 	// GET /system/menu-space-host-bindings
-	ListMenuSpaceHostBindings(ctx context.Context) (*SystemListResponse, error)
+	ListMenuSpaceHostBindings(ctx context.Context) (*SystemMenuSpaceHostBindingListResponse, error)
 	// ListMenuSpaces implements listMenuSpaces operation.
 	//
 	// 获取菜单空间列表.
 	//
 	// GET /system/menu-spaces
-	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemListResponse, error)
+	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemMenuSpaceListResponse, error)
 	// ListMessageDispatchRecords implements listMessageDispatchRecords operation.
 	//
 	// 获取消息发送记录.
 	//
 	// GET /messages/records
-	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageListResponse, error)
+	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageDispatchRecordListResponse, error)
 	// ListMessageRecipientGroups implements listMessageRecipientGroups operation.
 	//
 	// 获取消息接收组.
 	//
 	// GET /messages/recipient-groups
-	ListMessageRecipientGroups(ctx context.Context) (*MessageListResponse, error)
+	ListMessageRecipientGroups(ctx context.Context) (*MessageRecipientGroupListResponse, error)
 	// ListMessageSenders implements listMessageSenders operation.
 	//
 	// 获取消息发送人.
 	//
 	// GET /messages/senders
-	ListMessageSenders(ctx context.Context) (*MessageListResponse, error)
+	ListMessageSenders(ctx context.Context) (*MessageSenderListResponse, error)
 	// ListMessageTemplates implements listMessageTemplates operation.
 	//
 	// 获取消息模板.
 	//
 	// GET /messages/templates
-	ListMessageTemplates(ctx context.Context) (*MessageListResponse, error)
+	ListMessageTemplates(ctx context.Context) (*MessageTemplateListResponse, error)
 	// ListMyCollaborationWorkspaces implements listMyCollaborationWorkspaces operation.
 	//
 	// 获取我的协作空间列表.
@@ -775,7 +775,7 @@ type Handler interface {
 	// 获取功能权限关联接口.
 	//
 	// GET /permission-actions/{id}/endpoints
-	ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*AnyListResponse, error)
+	ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*PermissionActionEndpointList, error)
 	// ListPermissionActionGroups implements listPermissionActionGroups operation.
 	//
 	// 获取功能权限分组列表.
@@ -889,7 +889,7 @@ type Handler interface {
 	// 预览页面面包屑.
 	//
 	// GET /pages/{id}/breadcrumb-preview
-	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageListResponse, error)
+	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageBreadcrumbPreviewListResponse, error)
 	// RefreshToken implements refreshToken operation.
 	//
 	// 刷新访问令牌.
@@ -931,49 +931,49 @@ type Handler interface {
 	// 回滚功能包版本.
 	//
 	// POST /feature-packages/{id}/rollback
-	RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
+	RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// SaveApp implements saveApp operation.
 	//
 	// 保存应用.
 	//
 	// POST /system/apps
-	SaveApp(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveApp(ctx context.Context, req *SystemAppSaveRequest) (*SystemAppItem, error)
 	// SaveAppHostBinding implements saveAppHostBinding operation.
 	//
 	// 保存应用入口解析绑定.
 	//
 	// POST /system/app-host-bindings
-	SaveAppHostBinding(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveAppHostBinding(ctx context.Context, req *SystemAppHostBindingSaveRequest) (*SystemAppHostBindingItem, error)
 	// SaveMenuSpace implements saveMenuSpace operation.
 	//
 	// 保存菜单空间.
 	//
 	// POST /system/menu-spaces
-	SaveMenuSpace(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveMenuSpace(ctx context.Context, req *SystemMenuSpaceSaveRequest) (*SystemMenuSpaceItem, error)
 	// SaveMenuSpaceEntryBinding implements saveMenuSpaceEntryBinding operation.
 	//
 	// 保存菜单空间入口解析绑定.
 	//
 	// POST /system/menu-space-entry-bindings
-	SaveMenuSpaceEntryBinding(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveMenuSpaceEntryBinding(ctx context.Context, req *SystemMenuSpaceEntryBindingSaveRequest) (*SystemMenuSpaceEntryBindingItem, error)
 	// SaveMenuSpaceHostBinding implements saveMenuSpaceHostBinding operation.
 	//
 	// 保存菜单空间 Host 绑定.
 	//
 	// POST /system/menu-space-host-bindings
-	SaveMenuSpaceHostBinding(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveMenuSpaceHostBinding(ctx context.Context, req *SystemMenuSpaceHostBindingSaveRequest) (*SystemMenuSpaceHostBindingItem, error)
 	// SaveMenuSpaceMode implements saveMenuSpaceMode operation.
 	//
 	// 保存菜单空间模式.
 	//
 	// PUT /system/menu-space-mode
-	SaveMenuSpaceMode(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SaveMenuSpaceMode(ctx context.Context, req *SystemMenuSpaceModeSaveRequest) (*SystemMenuSpaceModeResponse, error)
 	// SavePermissionActionBatchTemplate implements savePermissionActionBatchTemplate operation.
 	//
 	// 保存功能权限批量模板.
 	//
 	// POST /permission-actions/templates
-	SavePermissionActionBatchTemplate(ctx context.Context, req AnyObject) (*MutationResult, error)
+	SavePermissionActionBatchTemplate(ctx context.Context, req *PermissionActionBatchTemplateSaveRequest) (*PermissionActionBatchTemplateItem, error)
 	// SetCollaborationWorkspaceActions implements setCollaborationWorkspaceActions operation.
 	//
 	// 配置协作空间功能权限边界.
@@ -991,7 +991,7 @@ type Handler interface {
 	// 配置协作空间功能包.
 	//
 	// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-	SetCollaborationWorkspacePackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*MutationResult, error)
+	SetCollaborationWorkspacePackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*FeaturePackageMutationResult, error)
 	// SetCurrentCollaborationWorkspaceBoundaryRoleActions implements setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
 	//
 	// 配置当前协作空间角色功能权限(边界管理).
@@ -1021,25 +1021,25 @@ type Handler interface {
 	// 配置功能包权限.
 	//
 	// PUT /feature-packages/{id}/actions
-	SetFeaturePackageActions(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageActionsParams) (*MutationResult, error)
+	SetFeaturePackageActions(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageActionsParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageChildren implements setFeaturePackageChildren operation.
 	//
 	// 配置组合包基础包.
 	//
 	// PUT /feature-packages/{id}/children
-	SetFeaturePackageChildren(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageChildrenParams) (*MutationResult, error)
+	SetFeaturePackageChildren(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageChildrenParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageCollaborationWorkspaces implements setFeaturePackageCollaborationWorkspaces operation.
 	//
 	// 配置功能包协作空间.
 	//
 	// PUT /feature-packages/{id}/collaboration-workspaces
-	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*MutationResult, error)
+	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageMenus implements setFeaturePackageMenus operation.
 	//
 	// 配置功能包菜单.
 	//
 	// PUT /feature-packages/{id}/menus
-	SetFeaturePackageMenus(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageMenusParams) (*MutationResult, error)
+	SetFeaturePackageMenus(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageMenusParams) (*FeaturePackageMutationResult, error)
 	// SetRoleActions implements setRoleActions operation.
 	//
 	// 配置角色功能权限.
@@ -1069,7 +1069,7 @@ type Handler interface {
 	// 配置用户菜单裁剪.
 	//
 	// PUT /users/{id}/menus
-	SetUserMenus(ctx context.Context, req AnyObject, params SetUserMenusParams) (*MutationResult, error)
+	SetUserMenus(ctx context.Context, req *UserMenusResponse, params SetUserMenusParams) (*MutationResult, error)
 	// SetUserPackages implements setUserPackages operation.
 	//
 	// 配置用户功能包.
@@ -1099,55 +1099,55 @@ type Handler interface {
 	// 更新 API 注册项.
 	//
 	// PUT /api-endpoints/{id}
-	UpdateApiEndpoint(ctx context.Context, req AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
+	UpdateApiEndpoint(ctx context.Context, req *ApiEndpointSaveRequest, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
 	// UpdateApiEndpointCategory implements updateApiEndpointCategory operation.
 	//
 	// 更新 API 分类.
 	//
 	// PUT /api-endpoints/categories/{id}
-	UpdateApiEndpointCategory(ctx context.Context, req AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
+	UpdateApiEndpointCategory(ctx context.Context, req *ApiEndpointCategorySaveRequest, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
 	// UpdateApiEndpointContextScope implements updateApiEndpointContextScope operation.
 	//
 	// 更新 API 协作空间上下文.
 	//
 	// PUT /api-endpoints/{id}/context-scope
-	UpdateApiEndpointContextScope(ctx context.Context, req AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
+	UpdateApiEndpointContextScope(ctx context.Context, req *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
 	// UpdateCollaborationWorkspace implements updateCollaborationWorkspace operation.
 	//
 	// 更新协作空间.
 	//
 	// PUT /collaboration-workspaces/{id}
-	UpdateCollaborationWorkspace(ctx context.Context, req AnyObject, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
+	UpdateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
 	// UpdateCollaborationWorkspaceMemberRole implements updateCollaborationWorkspaceMemberRole operation.
 	//
 	// 更新协作空间成员身份.
 	//
 	// PUT /collaboration-workspaces/{id}/members/{userId}/role
-	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
 	// UpdateCurrentCollaborationWorkspaceBoundaryRole implements updateCurrentCollaborationWorkspaceBoundaryRole operation.
 	//
 	// 更新当前协作空间角色(边界管理).
 	//
 	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
 	// UpdateCurrentCollaborationWorkspaceMemberRole implements updateCurrentCollaborationWorkspaceMemberRole operation.
 	//
 	// 更新当前协作空间成员身份.
 	//
 	// PUT /collaboration-workspaces/current/members/{userId}/role
-	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
 	// UpdateFastEnterConfig implements updateFastEnterConfig operation.
 	//
 	// 更新快捷入口配置.
 	//
 	// PUT /system/fast-enter
-	UpdateFastEnterConfig(ctx context.Context, req AnyObject) (*MutationResult, error)
+	UpdateFastEnterConfig(ctx context.Context, req *SystemFastEnterConfig) (*SystemFastEnterConfig, error)
 	// UpdateFeaturePackage implements updateFeaturePackage operation.
 	//
 	// 更新功能包.
 	//
 	// PUT /feature-packages/{id}
-	UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*MutationResult, error)
+	UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error)
 	// UpdateMenu implements updateMenu operation.
 	//
 	// 更新菜单.
@@ -1159,25 +1159,25 @@ type Handler interface {
 	// 更新消息接收组.
 	//
 	// PUT /messages/recipient-groups/{groupId}
-	UpdateMessageRecipientGroup(ctx context.Context, req AnyObject, params UpdateMessageRecipientGroupParams) (*MutationResult, error)
+	UpdateMessageRecipientGroup(ctx context.Context, req *MessageRecipientGroupSaveRequest, params UpdateMessageRecipientGroupParams) (*MessageRecipientGroupItem, error)
 	// UpdateMessageSender implements updateMessageSender operation.
 	//
 	// 更新消息发送人.
 	//
 	// PUT /messages/senders/{senderId}
-	UpdateMessageSender(ctx context.Context, req AnyObject, params UpdateMessageSenderParams) (*MutationResult, error)
+	UpdateMessageSender(ctx context.Context, req *MessageSenderSaveRequest, params UpdateMessageSenderParams) (*MessageSenderItem, error)
 	// UpdateMessageTemplate implements updateMessageTemplate operation.
 	//
 	// 更新消息模板.
 	//
 	// PUT /messages/templates/{templateId}
-	UpdateMessageTemplate(ctx context.Context, req AnyObject, params UpdateMessageTemplateParams) (*MutationResult, error)
+	UpdateMessageTemplate(ctx context.Context, req *MessageTemplateSaveRequest, params UpdateMessageTemplateParams) (*MessageTemplateItem, error)
 	// UpdatePage implements updatePage operation.
 	//
 	// 更新页面.
 	//
 	// PUT /pages/{id}
-	UpdatePage(ctx context.Context, req *PageSaveRequest, params UpdatePageParams) (AnyObject, error)
+	UpdatePage(ctx context.Context, req *PageSaveRequest, params UpdatePageParams) (*PageSaveResult, error)
 	// UpdatePermissionAction implements updatePermissionAction operation.
 	//
 	// 更新功能权限.
@@ -1189,7 +1189,7 @@ type Handler interface {
 	// 更新功能权限分组.
 	//
 	// PUT /permission-actions/groups/{id}
-	UpdatePermissionActionGroup(ctx context.Context, req AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error)
+	UpdatePermissionActionGroup(ctx context.Context, req *PermissionActionGroupSaveRequest, params UpdatePermissionActionGroupParams) (*MutationResult, error)
 	// UpdateRegisterEntry implements updateRegisterEntry operation.
 	//
 	// 更新注册入口.

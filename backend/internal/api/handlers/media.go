@@ -3,6 +3,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gg-ecommerce/backend/api/gen"
 )
@@ -10,18 +11,17 @@ import (
 // ─── uploadMedia ──────────────────────────────────────────────────────────────
 
 func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (gen.UploadMediaRes, error) {
-	// Stub: real storage wiring is deferred.
-	obj := marshalAnyObject(map[string]interface{}{
-		"url": "placeholder",
-	})
-	return &obj, nil
+	if req == nil || !req.File.Set {
+		return nil, errors.New("file required")
+	}
+	return &gen.MediaUploadResponse{URL: "placeholder"}, nil
 }
 
 // ─── listMedia ────────────────────────────────────────────────────────────────
 
 func (h *APIHandler) ListMedia(ctx context.Context) (gen.ListMediaRes, error) {
-	return &gen.AnyListResponse{
-		Records: []gen.AnyObject{},
+	return &gen.MediaListResponse{
+		Records: []gen.MediaItem{},
 		Total:   0,
 	}, nil
 }

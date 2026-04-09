@@ -3,7 +3,120 @@
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
-    MessageListResponse:
+    InboxSummary:
+      type: object
+      required:
+      - unread_total
+      - notice_count
+      - message_count
+      - todo_count
+      properties:
+        unread_total:
+          type: integer
+          format: int64
+        notice_count:
+          type: integer
+          format: int64
+        message_count:
+          type: integer
+          format: int64
+        todo_count:
+          type: integer
+          format: int64
+    InboxItem:
+      type: object
+      required:
+      - id
+      - message_id
+      - box_type
+      - delivery_status
+      - title
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          format: uuid
+        box_type:
+          type: string
+        delivery_status:
+          type: string
+        todo_status:
+          type: string
+        read_at:
+          type: string
+          format: date-time
+        done_at:
+          type: string
+          format: date-time
+        last_action_at:
+          type: string
+          format: date-time
+        recipient_collaboration_workspace_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        summary:
+          type: string
+        content:
+          type: string
+        priority:
+          type: string
+        action_type:
+          type: string
+        action_target:
+          type: string
+        message_type:
+          type: string
+        biz_type:
+          type: string
+        scope_type:
+          type: string
+        scope_id:
+          type: string
+          format: uuid
+        sender_type:
+          type: string
+        sender_name_snapshot:
+          type: string
+        sender_avatar_snapshot:
+          type: string
+        sender_service_key:
+          type: string
+        audience_type:
+          type: string
+        audience_scope:
+          type: string
+        target_collaboration_workspace_id:
+          type: string
+          format: uuid
+        published_at:
+          type: string
+          format: date-time
+        expired_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        meta:
+          $ref: '#/components/schemas/MessageInboxMeta'
+    MessageInboxMeta:
+      type: object
+      additionalProperties: false
+      properties:
+        dispatch_status: {type: string}
+        dispatch_error: {type: string}
+        recipient_count: {type: integer}
+        published_at: {type: string, format: date-time}
+        failed_at: {type: string, format: date-time}
+        target_collaboration_workspace_ids:
+          type: array
+          items: {type: string, format: uuid}
+    InboxListResponse:
       type: object
       required:
       - records
@@ -12,6 +125,420 @@ components:
         records:
           type: array
           items:
-            $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/InboxItem'
         total:
           type: integer
+        current:
+          type: integer
+        size:
+          type: integer
+    InboxDetail:
+      $ref: '#/components/schemas/InboxItem'
+    DispatchAudienceOption:
+      type: object
+      required: [value, label, description]
+      properties:
+        value: {type: string}
+        label: {type: string}
+        description: {type: string}
+    DispatchTemplateOption:
+      type: object
+      required: [id, template_key, name, description, message_type, owner_scope, audience_type]
+      properties:
+        id: {type: string, format: uuid}
+        template_key: {type: string}
+        name: {type: string}
+        description: {type: string}
+        message_type: {type: string}
+        owner_scope: {type: string}
+        audience_type: {type: string}
+        title_template: {type: string}
+        summary_template: {type: string}
+        content_template: {type: string}
+    DispatchCollaborationWorkspaceOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+    DispatchSenderOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        avatar_url: {type: string}
+        is_default: {type: boolean}
+    DispatchUserOption:
+      type: object
+      required: [id, name, display_name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        display_name: {type: string}
+        description: {type: string}
+        collaboration_workspace_id: {type: string, format: uuid}
+        collaboration_workspace_name: {type: string}
+    DispatchRecipientGroupOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        match_mode: {type: string}
+        estimated_count: {type: integer}
+    DispatchRoleOption:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        description: {type: string}
+    DispatchFeaturePackageOption:
+      type: object
+      required: [id, package_key, name]
+      properties:
+        id: {type: string, format: uuid}
+        package_key: {type: string}
+        name: {type: string}
+        description: {type: string}
+    MessageDispatchOptions:
+      type: object
+      required:
+      - sender_scope
+      - sender_options
+      - audience_options
+      - template_options
+      - collaboration_workspaces
+      - users
+      - recipient_groups
+      - roles
+      - feature_packages
+      - default_message_type
+      - default_audience_type
+      - default_priority
+      - supports_external_link
+      properties:
+        sender_scope: {type: string}
+        current_collaboration_workspace_id: {type: string}
+        current_collaboration_workspace_name: {type: string}
+        sender_options:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchSenderOption'}
+        default_sender_id: {type: string}
+        audience_options:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchAudienceOption'}
+        template_options:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchTemplateOption'}
+        collaboration_workspaces:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchCollaborationWorkspaceOption'}
+        users:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchUserOption'}
+        recipient_groups:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchRecipientGroupOption'}
+        roles:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchRoleOption'}
+        feature_packages:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchFeaturePackageOption'}
+        default_message_type: {type: string}
+        default_audience_type: {type: string}
+        default_priority: {type: string}
+        supports_external_link: {type: boolean}
+    InboxTodoActionRequest:
+      type: object
+      required: [action]
+      properties:
+        action: {type: string}
+    MessageDispatchResult:
+      type: object
+      required: [message_id, delivery_count, dispatch_status]
+      properties:
+        message_id: {type: string, format: uuid}
+        delivery_count: {type: integer}
+        dispatch_status: {type: string}
+    MessageDispatchRequest:
+      type: object
+      properties:
+        sender_id: {type: string}
+        template_id: {type: string}
+        template_key: {type: string}
+        message_type: {type: string}
+        audience_type: {type: string}
+        target_collaboration_workspace_ids:
+          type: array
+          items: {type: string}
+        target_user_ids:
+          type: array
+          items: {type: string}
+        target_group_ids:
+          type: array
+          items: {type: string}
+        title: {type: string}
+        summary: {type: string}
+        content: {type: string}
+        priority: {type: string}
+        action_type: {type: string}
+        action_target: {type: string}
+        biz_type: {type: string}
+        expired_at: {type: string}
+    MessageTemplateItem:
+      type: object
+      required: [id, template_key, name, message_type, owner_scope, audience_type, status, editable]
+      properties:
+        id: {type: string, format: uuid}
+        template_key: {type: string}
+        name: {type: string}
+        description: {type: string}
+        message_type: {type: string}
+        owner_scope: {type: string}
+        owner_collaboration_workspace_id: {type: string, format: uuid}
+        owner_collaboration_workspace_name: {type: string}
+        audience_type: {type: string}
+        title_template: {type: string}
+        summary_template: {type: string}
+        content_template: {type: string}
+        status: {type: string}
+        editable: {type: boolean}
+        meta:
+          $ref: '#/components/schemas/MessageTemplateMeta'
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    MessageTemplateMeta:
+      type: object
+      additionalProperties: false
+      properties: {}
+    MessageTemplateListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/MessageTemplateItem'}
+        total: {type: integer}
+        current: {type: integer}
+        size: {type: integer}
+    MessageTemplateSaveRequest:
+      type: object
+      required: [name, message_type, audience_type]
+      properties:
+        template_key: {type: string}
+        name: {type: string}
+        description: {type: string}
+        message_type: {type: string}
+        audience_type: {type: string}
+        title_template: {type: string}
+        summary_template: {type: string}
+        content_template: {type: string}
+        status: {type: string}
+    MessageSenderItem:
+      type: object
+      required: [id, scope_type, name, status, editable]
+      properties:
+        id: {type: string, format: uuid}
+        scope_type: {type: string}
+        scope_id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        avatar_url: {type: string}
+        is_default: {type: boolean}
+        status: {type: string}
+        editable: {type: boolean}
+        meta:
+          $ref: '#/components/schemas/MessageSenderMeta'
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    MessageSenderMeta:
+      type: object
+      additionalProperties: false
+      properties: {}
+    MessageSenderListResponse:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/MessageSenderItem'}
+    MessageSenderSaveRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        description: {type: string}
+        avatar_url: {type: string}
+        is_default: {type: boolean}
+        status: {type: string}
+        meta:
+          $ref: '#/components/schemas/MessageSenderMeta'
+    MessageRecipientGroupTargetItem:
+      type: object
+      required: [id, target_type]
+      properties:
+        id: {type: string, format: uuid}
+        target_type: {type: string}
+        user_id: {type: string, format: uuid}
+        user_name: {type: string}
+        collaboration_workspace_id: {type: string, format: uuid}
+        collaboration_workspace_name: {type: string}
+        role_code: {type: string}
+        role_name: {type: string}
+        package_key: {type: string}
+        package_name: {type: string}
+        sort_order: {type: integer}
+        meta:
+          $ref: '#/components/schemas/MessageRecipientGroupTargetMeta'
+    MessageRecipientGroupTargetMeta:
+      type: object
+      additionalProperties: false
+      properties: {}
+    MessageRecipientGroupItem:
+      type: object
+      required: [id, scope_type, name, status, editable, targets]
+      properties:
+        id: {type: string, format: uuid}
+        scope_type: {type: string}
+        scope_id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        match_mode: {type: string}
+        status: {type: string}
+        editable: {type: boolean}
+        estimated_count: {type: integer}
+        meta:
+          $ref: '#/components/schemas/MessageRecipientGroupMeta'
+        targets:
+          type: array
+          items: {$ref: '#/components/schemas/MessageRecipientGroupTargetItem'}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    MessageRecipientGroupMeta:
+      type: object
+      additionalProperties: false
+      properties: {}
+    MessageRecipientGroupListResponse:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/MessageRecipientGroupItem'}
+    MessageRecipientGroupSaveRequest:
+      type: object
+      required: [name, targets]
+      properties:
+        name: {type: string}
+        description: {type: string}
+        match_mode: {type: string}
+        status: {type: string}
+        meta:
+          $ref: '#/components/schemas/MessageRecipientGroupMeta'
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageRecipientGroupTargetSaveRequest'
+    MessageRecipientGroupTargetSaveRequest:
+      type: object
+      additionalProperties: false
+      required: [target_type]
+      properties:
+        target_type: {type: string}
+        user_id: {type: string, format: uuid}
+        collaboration_workspace_id: {type: string, format: uuid}
+        role_code: {type: string}
+        package_key: {type: string}
+        sort_order: {type: integer}
+        meta:
+          $ref: '#/components/schemas/MessageRecipientGroupTargetMeta'
+    DispatchRecordSummary:
+      type: object
+      required: [total_messages, total_deliveries, read_deliveries, todo_messages]
+      properties:
+        total_messages: {type: integer}
+        total_deliveries: {type: integer}
+        read_deliveries: {type: integer}
+        todo_messages: {type: integer}
+    DispatchRecordItem:
+      type: object
+      required:
+      - id
+      - title
+      - message_type
+      - audience_type
+      - scope_type
+      - created_at
+      - delivery_count
+      - read_count
+      - unread_count
+      - pending_todo_count
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        summary: {type: string}
+        content: {type: string}
+        message_type: {type: string}
+        audience_type: {type: string}
+        scope_type: {type: string}
+        scope_id: {type: string, format: uuid}
+        target_collaboration_workspace_id: {type: string, format: uuid}
+        target_collaboration_workspace_name: {type: string}
+        sender_name: {type: string}
+        template_name: {type: string}
+        priority: {type: string}
+        status: {type: string}
+        published_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        delivery_count: {type: integer}
+        read_count: {type: integer}
+        unread_count: {type: integer}
+        pending_todo_count: {type: integer}
+    DispatchRecordDeliveryItem:
+      type: object
+      required: [id, recipient_user_id, recipient_name, delivery_status]
+      properties:
+        id: {type: string, format: uuid}
+        recipient_user_id: {type: string, format: uuid}
+        recipient_name: {type: string}
+        recipient_collaboration_workspace_id: {type: string, format: uuid}
+        recipient_collaboration_workspace_name: {type: string}
+        delivery_status: {type: string}
+        todo_status: {type: string}
+        read_at: {type: string, format: date-time}
+        done_at: {type: string, format: date-time}
+        last_action_at: {type: string, format: date-time}
+        source_group_id: {type: string, format: uuid}
+        source_group_name: {type: string}
+        source_rule_type: {type: string}
+        source_rule_label: {type: string}
+        source_target_id: {type: string, format: uuid}
+        source_target_type: {type: string}
+        source_target_value: {type: string}
+    MessageDispatchRecordListResponse:
+      type: object
+      required: [records, total, summary]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/DispatchRecordItem'}
+        total: {type: integer}
+        current: {type: integer}
+        size: {type: integer}
+        summary:
+          $ref: '#/components/schemas/DispatchRecordSummary'
+    MessageDispatchRecord:
+      allOf:
+      - $ref: '#/components/schemas/DispatchRecordItem'
+      - type: object
+        required: [deliveries]
+        properties:
+          deliveries:
+            type: array
+            items: {$ref: '#/components/schemas/DispatchRecordDeliveryItem'}

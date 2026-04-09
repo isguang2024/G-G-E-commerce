@@ -513,6 +513,45 @@ components:
         id:
           type: string
           format: uuid
+    RefreshStats:
+      type: object
+      required:
+      - requested_package_count
+      - impacted_package_count
+      - role_count
+      - collaboration_workspace_count
+      - user_count
+      - elapsed_milliseconds
+      - finished_at
+      properties:
+        requested_package_count:
+          type: integer
+          format: int64
+        impacted_package_count:
+          type: integer
+          format: int64
+        role_count:
+          type: integer
+          format: int64
+        collaboration_workspace_count:
+          type: integer
+          format: int64
+        user_count:
+          type: integer
+          format: int64
+        elapsed_milliseconds:
+          type: integer
+          format: int64
+        finished_at:
+          type: string
+          format: date-time
+    FeaturePackageMutationResult:
+      type: object
+      required:
+      - refresh_stats
+      properties:
+        refresh_stats:
+          $ref: '#/components/schemas/RefreshStats'
     AnyObject:
       type: object
       additionalProperties: {}
@@ -879,6 +918,7 @@ components:
             $ref: '#/components/schemas/DataPermissionItem'
     NavigationManifest:
       type: object
+      additionalProperties: false
       required:
       - version_stamp
       - menu_tree
@@ -888,25 +928,62 @@ components:
         version_stamp:
           type: string
         current_app:
-          $ref: '#/components/schemas/AnyObject'
+          $ref: '../domains/system/schemas.yaml#/components/schemas/SystemCurrentAppResponse'
           nullable: true
         current_space:
-          $ref: '#/components/schemas/AnyObject'
-          nullable: true
+          $ref: '../domains/system/schemas.yaml#/components/schemas/SystemCurrentMenuSpaceResponse'
         context:
-          $ref: '#/components/schemas/AnyObject'
+          $ref: '#/components/schemas/NavigationContext'
         menu_tree:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/MenuTreeItem'
         entry_routes:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/MenuTreeItem'
         managed_pages:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '../domains/page/schemas.yaml#/components/schemas/PageListItem'
+    NavigationContext:
+      type: object
+      additionalProperties: false
+      required:
+      - app_key
+      - space_key
+      - request_host
+      - requested_space_key
+      - authenticated
+      - super_admin
+      - visible_menu_count
+      - managed_page_count
+      - action_key_count
+      properties:
+        app_key:
+          type: string
+        space_key:
+          type: string
+        request_host:
+          type: string
+        requested_space_key:
+          type: string
+        authenticated:
+          type: boolean
+        super_admin:
+          type: boolean
+        visible_menu_count:
+          type: integer
+        managed_page_count:
+          type: integer
+        action_key_count:
+          type: integer
+        user_id:
+          type: string
+          format: uuid
+        collaboration_workspace_id:
+          type: string
+          format: uuid
     MenuTreeResponse:
       type: object
       required:
@@ -915,7 +992,86 @@ components:
         records:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/MenuTreeItem'
+    MenuTreeMeta:
+      type: object
+      required:
+      - title
+      properties:
+        title:
+          type: string
+        icon:
+          type: string
+        accessMode:
+          type: string
+        link:
+          type: string
+        activePath:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        isEnable:
+          type: boolean
+        isHide:
+          type: boolean
+        isIframe:
+          type: boolean
+        isHideTab:
+          type: boolean
+        keepAlive:
+          type: boolean
+        fixedTab:
+          type: boolean
+        isFullPage:
+          type: boolean
+    MenuTreeItem:
+      type: object
+      required:
+      - id
+      - app_key
+      - space_key
+      - kind
+      - path
+      - name
+      - component
+      - meta
+      - sort_order
+      properties:
+        id:
+          type: string
+          format: uuid
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        app_key:
+          type: string
+        space_key:
+          type: string
+        kind:
+          type: string
+        path:
+          type: string
+        name:
+          type: string
+        component:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+        hidden:
+          type: boolean
+        meta:
+          $ref: '#/components/schemas/MenuTreeMeta'
+        sort_order:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuTreeItem'
     MenuSaveRequest:
       type: object
       required:
@@ -954,12 +1110,50 @@ components:
           type: integer
         status:
           type: string
-        permission_keys:
+          permission_keys:
+            type: array
+            items:
+              type: string
+    UserPermissionMenuTreeItem:
+      type: object
+      required:
+      - id
+      - name
+      - title
+      - path
+      - component
+      - hidden
+      - sort_order
+      - children
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        component:
+          type: string
+        hidden:
+          type: boolean
+        sort_order:
+          type: integer
+        children:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/UserPermissionMenuTreeItem'
     PageSaveRequest:
       type: object
+      additionalProperties: false
+      required:
+      - page_key
+      - name
+      - route_name
+      - route_path
+      - component
       properties:
         page_key:
           type: string
@@ -1006,8 +1200,127 @@ components:
         is_full_page:
           type: boolean
         meta:
-          $ref: '#/components/schemas/AnyObject'
+          $ref: '../domains/page/schemas.yaml#/components/schemas/PageMeta'
         status:
+          type: string
+    PageSaveResult:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - app_key
+      - page_key
+      - name
+      - route_name
+      - route_path
+      - component
+      - space_key
+      - page_type
+      - visibility_scope
+      - source
+      - module_key
+      - sort_order
+      - parent_page_key
+      - display_group_key
+      - active_menu_path
+      - breadcrumb_mode
+      - access_mode
+      - permission_key
+      - inherit_permission
+      - keep_alive
+      - is_full_page
+      - status
+      - meta
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        app_key:
+          type: string
+        page_key:
+          type: string
+        name:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        component:
+          type: string
+        space_key:
+          type: string
+        space_keys:
+          type: array
+          items:
+            type: string
+        page_type:
+          type: string
+        visibility_scope:
+          type: string
+        source:
+          type: string
+        module_key:
+          type: string
+        sort_order:
+          type: integer
+        parent_menu_id:
+          type: string
+          format: uuid
+        parent_menu_name:
+          type: string
+        parent_page_key:
+          type: string
+        parent_page_name:
+          type: string
+        display_group_key:
+          type: string
+        display_group_name:
+          type: string
+        active_menu_path:
+          type: string
+        breadcrumb_mode:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        inherit_permission:
+          type: boolean
+        keep_alive:
+          type: boolean
+        is_full_page:
+          type: boolean
+        status:
+          type: string
+        meta:
+          $ref: '../domains/page/schemas.yaml#/components/schemas/PageMeta'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PermissionActionBatchUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        module_group_id:
+          type: string
+          format: uuid
+        feature_group_id:
+          type: string
+          format: uuid
+        template_name:
           type: string
     PageSyncResult:
       type: object
@@ -1240,7 +1553,23 @@ components:
         menus:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/FeaturePackageMenuItem'
+    FeaturePackageMenuItem:
+      type: object
+      required: [id, app_key, space_key, kind, name, title, sort_order, hidden]
+      properties:
+        id: {type: string, format: uuid}
+        parent_id: {type: string, format: uuid, nullable: true}
+        app_key: {type: string}
+        space_key: {type: string}
+        kind: {type: string}
+        path: {type: string}
+        name: {type: string}
+        component: {type: string}
+        title: {type: string}
+        icon: {type: string}
+        sort_order: {type: integer}
+        hidden: {type: boolean}
     RollbackRequest:
       type: object
       required:
@@ -1319,6 +1648,7 @@ components:
           nullable: true
     ViewPagesResponse:
       type: object
+      additionalProperties: false
       required:
       - pages
       - refreshed
@@ -1327,10 +1657,21 @@ components:
         pages:
           type: array
           items:
-            $ref: '#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/ViewPageItem'
         refreshed:
           type: boolean
         refreshed_at:
+          type: string
+    ViewPageItem:
+      type: object
+      additionalProperties: false
+      required:
+      - file_path
+      - component_path
+      properties:
+        file_path:
+          type: string
+        component_path:
           type: string
     Error:
       type: object

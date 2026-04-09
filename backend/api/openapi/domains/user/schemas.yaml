@@ -2,4 +2,365 @@
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    UserCollaborationWorkspacesResponse:
+      type: object
+      required:
+      - records
+      properties:
+        records:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            - name
+            - status
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              status:
+                type: string
+    UserMenusResponse:
+      type: object
+      required:
+      - menu_ids
+      - available_menu_ids
+      - hidden_menu_ids
+      - expanded_package_ids
+      - derived_sources
+      - has_package_config
+      properties:
+        menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        available_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        hidden_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        expanded_package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        derived_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMenuDerivedSourceItem'
+        has_package_config:
+          type: boolean
+    UserMenuDerivedSourceItem:
+      type: object
+      additionalProperties: false
+      required:
+      - menu_id
+      - package_ids
+      properties:
+        menu_id:
+          type: string
+          format: uuid
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    UserPermissionsResponse:
+      type: object
+      required:
+      - menu_tree
+      properties:
+        menu_tree:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/UserPermissionMenuTreeItem'
+    UserPermissionDiagnosisResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - user
+      - context
+      - snapshot
+      - roles
+      - collaboration_workspace_packages
+      - menus
+      properties:
+        user:
+          $ref: '#/components/schemas/UserPermissionDiagnosisUser'
+        context:
+          $ref: '#/components/schemas/UserPermissionDiagnosisContext'
+        snapshot:
+          $ref: '#/components/schemas/UserPermissionSnapshotSummary'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPermissionRoleResult'
+        collaboration_workspace_member:
+          $ref: '#/components/schemas/UserPermissionCollaborationMember'
+        collaboration_workspace_packages:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
+        diagnosis:
+          $ref: '#/components/schemas/UserPermissionDiagnosisResult'
+        menus:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/UserPermissionMenuTreeItem'
+    UserPermissionDiagnosisUser:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - user_name
+      - status
+      - is_super_admin
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        nick_name:
+          type: string
+        status:
+          type: string
+        is_super_admin:
+          type: boolean
+    UserPermissionDiagnosisContext:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - binding_workspace_id
+      - current_collaboration_workspace_id
+      - current_collaboration_workspace_name
+      properties:
+        type:
+          type: string
+        binding_workspace_id:
+          type: string
+        current_collaboration_workspace_id:
+          type: string
+        current_collaboration_workspace_name:
+          type: string
+    UserPermissionSnapshotSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - role_count
+      - direct_package_count
+      - expanded_package_count
+      - action_count
+      - disabled_action_count
+      - menu_count
+      - has_package_config
+      - derived_action_count
+      - blocked_action_count
+      - effective_action_count
+      properties:
+        refreshed_at:
+          type: string
+        updated_at:
+          type: string
+        role_count:
+          type: integer
+        direct_package_count:
+          type: integer
+        expanded_package_count:
+          type: integer
+        action_count:
+          type: integer
+        disabled_action_count:
+          type: integer
+        menu_count:
+          type: integer
+        has_package_config:
+          type: boolean
+        derived_action_count:
+          type: integer
+        blocked_action_count:
+          type: integer
+        effective_action_count:
+          type: integer
+    UserPermissionRoleResult:
+      type: object
+      additionalProperties: false
+      required:
+      - role_id
+      - role_code
+      - role_name
+      - inherited
+      - available_action_count
+      - disabled_action_count
+      - effective_action_count
+      - matched
+      - disabled
+      - available
+      - source_packages
+      properties:
+        role_id:
+          type: string
+          format: uuid
+        role_code:
+          type: string
+        role_name:
+          type: string
+        inherited:
+          type: boolean
+        refreshed_at:
+          type: string
+        available_action_count:
+          type: integer
+        disabled_action_count:
+          type: integer
+        effective_action_count:
+          type: integer
+        matched:
+          type: boolean
+        disabled:
+          type: boolean
+        available:
+          type: boolean
+        source_packages:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
+    UserPermissionCollaborationMember:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - collaboration_workspace_id
+      - user_id
+      - role_code
+      - status
+      - matched
+      properties:
+        id:
+          type: string
+        collaboration_workspace_id:
+          type: string
+        user_id:
+          type: string
+        role_code:
+          type: string
+        status:
+          type: string
+        matched:
+          type: boolean
+    UserPermissionDiagnosisResult:
+      type: object
+      additionalProperties: false
+      required:
+      - permission_key
+      - allowed
+      - reasons
+      - matched_in_snapshot
+      - bypassed_by_super_admin
+      - blocked_by_collaboration_workspace
+      - member_matched
+      - boundary_configured
+      - role_chain_matched
+      - role_chain_disabled
+      - role_chain_available
+      - source_packages
+      - role_results
+      properties:
+        permission_key:
+          type: string
+        allowed:
+          type: boolean
+        reason_text:
+          type: string
+        reasons:
+          type: array
+          items:
+            type: string
+        matched_in_snapshot:
+          type: boolean
+        bypassed_by_super_admin:
+          type: boolean
+        blocked_by_collaboration_workspace:
+          type: boolean
+        denial_stage:
+          type: string
+        denial_reason:
+          type: string
+        member_status:
+          type: string
+        member_matched:
+          type: boolean
+        boundary_state:
+          type: string
+        boundary_configured:
+          type: boolean
+        role_chain_matched:
+          type: boolean
+        role_chain_disabled:
+          type: boolean
+        role_chain_available:
+          type: boolean
+        action:
+          $ref: '#/components/schemas/UserPermissionDiagnosisAction'
+        source_packages:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
+        role_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPermissionRoleResult'
+    UserPermissionDiagnosisAction:
+      type: object
+      additionalProperties: false
+      required:
+      - permission_key
+      - source_packages
+      - role_results
+      properties:
+        id:
+          type: string
+          format: uuid
+        permission_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        self_status:
+          type: string
+        context_type:
+          type: string
+        feature_kind:
+          type: string
+        module_code:
+          type: string
+        module_group_status:
+          type: string
+        feature_group_status:
+          type: string
+        module_group:
+          $ref: '../permission/schemas.yaml#/components/schemas/PermissionGroupItem'
+        feature_group:
+          $ref: '../permission/schemas.yaml#/components/schemas/PermissionGroupItem'
+        source_packages:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
+        role_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPermissionRoleResult'

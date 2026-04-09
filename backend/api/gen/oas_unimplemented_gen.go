@@ -18,7 +18,7 @@ var _ Handler = UnimplementedHandler{}
 // 添加协作空间成员.
 //
 // POST /collaboration-workspaces/{id}/members
-func (UnimplementedHandler) AddCollaborationWorkspaceMember(ctx context.Context, req AnyObject, params AddCollaborationWorkspaceMemberParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) AddCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -27,7 +27,7 @@ func (UnimplementedHandler) AddCollaborationWorkspaceMember(ctx context.Context,
 // 添加当前协作空间成员.
 //
 // POST /collaboration-workspaces/current/members
-func (UnimplementedHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -36,7 +36,7 @@ func (UnimplementedHandler) AddCurrentCollaborationWorkspaceMember(ctx context.C
 // 新增功能权限关联接口.
 //
 // POST /permission-actions/{id}/endpoints
-func (UnimplementedHandler) AddPermissionActionEndpoint(ctx context.Context, req AnyObject, params AddPermissionActionEndpointParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) AddPermissionActionEndpoint(ctx context.Context, req *PermissionActionEndpointAddRequest, params AddPermissionActionEndpointParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -54,7 +54,7 @@ func (UnimplementedHandler) AssignUserRoles(ctx context.Context, req *UserAssign
 // 批量治理功能权限.
 //
 // POST /permission-actions/batch
-func (UnimplementedHandler) BatchUpdatePermissionActions(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) BatchUpdatePermissionActions(ctx context.Context, req *PermissionActionBatchUpdateRequest) (r *PermissionActionBatchUpdateResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -63,7 +63,7 @@ func (UnimplementedHandler) BatchUpdatePermissionActions(ctx context.Context, re
 // 清理失效 API.
 //
 // POST /api-endpoints/cleanup-stale
-func (UnimplementedHandler) CleanupStaleApiEndpoints(ctx context.Context, req AnyObject) (r CleanupStaleApiEndpointsRes, _ error) {
+func (UnimplementedHandler) CleanupStaleApiEndpoints(ctx context.Context, req *CleanupStaleRequest) (r CleanupStaleApiEndpointsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -72,7 +72,7 @@ func (UnimplementedHandler) CleanupStaleApiEndpoints(ctx context.Context, req An
 // 清理未消费功能权限.
 //
 // POST /permission-actions/cleanup-unused
-func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) (r *PermissionActionCleanupResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -81,7 +81,7 @@ func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) 
 // 创建 API 分类.
 //
 // POST /api-endpoints/categories
-func (UnimplementedHandler) CreateApiEndpointCategory(ctx context.Context, req AnyObject) (r CreateApiEndpointCategoryRes, _ error) {
+func (UnimplementedHandler) CreateApiEndpointCategory(ctx context.Context, req *ApiEndpointCategorySaveRequest) (r CreateApiEndpointCategoryRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -90,7 +90,7 @@ func (UnimplementedHandler) CreateApiEndpointCategory(ctx context.Context, req A
 // 创建协作空间.
 //
 // POST /collaboration-workspaces
-func (UnimplementedHandler) CreateCollaborationWorkspace(ctx context.Context, req AnyObject) (r *IDResult, _ error) {
+func (UnimplementedHandler) CreateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest) (r *IDResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -99,7 +99,7 @@ func (UnimplementedHandler) CreateCollaborationWorkspace(ctx context.Context, re
 // 创建当前协作空间角色(边界管理).
 //
 // POST /collaboration-workspaces/current/boundary/roles
-func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -108,7 +108,7 @@ func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx 
 // 创建当前协作空间角色.
 //
 // POST /collaboration-workspaces/current/roles
-func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -135,7 +135,7 @@ func (UnimplementedHandler) CreateMenu(ctx context.Context, req *MenuSaveRequest
 // 新建消息接收组.
 //
 // POST /messages/recipient-groups
-func (UnimplementedHandler) CreateMessageRecipientGroup(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreateMessageRecipientGroup(ctx context.Context, req *MessageRecipientGroupSaveRequest) (r *MessageRecipientGroupItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -144,7 +144,7 @@ func (UnimplementedHandler) CreateMessageRecipientGroup(ctx context.Context, req
 // 新建消息发送人.
 //
 // POST /messages/senders
-func (UnimplementedHandler) CreateMessageSender(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreateMessageSender(ctx context.Context, req *MessageSenderSaveRequest) (r *MessageSenderItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -153,7 +153,7 @@ func (UnimplementedHandler) CreateMessageSender(ctx context.Context, req AnyObje
 // 新建消息模板.
 //
 // POST /messages/templates
-func (UnimplementedHandler) CreateMessageTemplate(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreateMessageTemplate(ctx context.Context, req *MessageTemplateSaveRequest) (r *MessageTemplateItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -162,7 +162,7 @@ func (UnimplementedHandler) CreateMessageTemplate(ctx context.Context, req AnyOb
 // 创建页面.
 //
 // POST /pages
-func (UnimplementedHandler) CreatePage(ctx context.Context, req *PageSaveRequest, params CreatePageParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) CreatePage(ctx context.Context, req *PageSaveRequest, params CreatePageParams) (r *PageSaveResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -180,7 +180,7 @@ func (UnimplementedHandler) CreatePermissionAction(ctx context.Context, req *Per
 // 创建功能权限分组.
 //
 // POST /permission-actions/groups
-func (UnimplementedHandler) CreatePermissionActionGroup(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) CreatePermissionActionGroup(ctx context.Context, req *PermissionActionGroupSaveRequest) (r *IDResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -252,7 +252,7 @@ func (UnimplementedHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx 
 // 删除功能包.
 //
 // DELETE /feature-packages/{id}
-func (UnimplementedHandler) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -351,7 +351,7 @@ func (UnimplementedHandler) DeleteUser(ctx context.Context, params DeleteUserPar
 // 发送站内消息.
 //
 // POST /messages/dispatch
-func (UnimplementedHandler) DispatchMessage(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) DispatchMessage(ctx context.Context, req *MessageDispatchRequest) (r *MessageDispatchResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -441,7 +441,7 @@ func (UnimplementedHandler) GetCollaborationWorkspacePackages(ctx context.Contex
 // 获取当前应用.
 //
 // GET /system/apps/current
-func (UnimplementedHandler) GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (r *SystemCurrentAppResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -540,7 +540,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenus(ctx context.Co
 // 获取当前菜单空间.
 //
 // GET /system/menu-spaces/current
-func (UnimplementedHandler) GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (r *SystemCurrentMenuSpaceResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -558,7 +558,7 @@ func (UnimplementedHandler) GetCurrentWorkspace(ctx context.Context) (r GetCurre
 // 获取快捷入口配置.
 //
 // GET /system/fast-enter
-func (UnimplementedHandler) GetFastEnterConfig(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetFastEnterConfig(ctx context.Context) (r *SystemFastEnterConfig, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -630,7 +630,7 @@ func (UnimplementedHandler) GetFeaturePackageRelationTree(ctx context.Context, p
 // 获取消息详情.
 //
 // GET /messages/inbox/{deliveryId}
-func (UnimplementedHandler) GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (r *InboxItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -639,7 +639,7 @@ func (UnimplementedHandler) GetInboxDetail(ctx context.Context, params GetInboxD
 // 获取消息摘要.
 //
 // GET /messages/inbox/summary
-func (UnimplementedHandler) GetInboxSummary(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetInboxSummary(ctx context.Context) (r *InboxSummary, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -648,7 +648,7 @@ func (UnimplementedHandler) GetInboxSummary(ctx context.Context) (r AnyObject, _
 // 获取菜单删除预览.
 //
 // GET /menus/{id}/delete-preview
-func (UnimplementedHandler) GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (r *MenuDeletePreviewResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -657,7 +657,7 @@ func (UnimplementedHandler) GetMenuDeletePreview(ctx context.Context, params Get
 // 获取菜单空间模式.
 //
 // GET /system/menu-space-mode
-func (UnimplementedHandler) GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (r *SystemMenuSpaceModeResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -675,7 +675,7 @@ func (UnimplementedHandler) GetMenuTree(ctx context.Context, params GetMenuTreeP
 // 获取消息发送配置.
 //
 // GET /messages/dispatch/options
-func (UnimplementedHandler) GetMessageDispatchOptions(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetMessageDispatchOptions(ctx context.Context) (r *MessageDispatchOptions, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -684,7 +684,7 @@ func (UnimplementedHandler) GetMessageDispatchOptions(ctx context.Context) (r An
 // 获取消息发送记录详情.
 //
 // GET /messages/records/{recordId}
-func (UnimplementedHandler) GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (r *MessageDispatchRecord, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -702,7 +702,7 @@ func (UnimplementedHandler) GetNavigation(ctx context.Context, params GetNavigat
 // 获取页面详情.
 //
 // GET /pages/{id}
-func (UnimplementedHandler) GetPage(ctx context.Context, params GetPageParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetPage(ctx context.Context, params GetPageParams) (r *PageSaveResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -711,7 +711,7 @@ func (UnimplementedHandler) GetPage(ctx context.Context, params GetPageParams) (
 // 获取页面访问链路.
 //
 // GET /pages/access-trace
-func (UnimplementedHandler) GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (r *PageAccessTraceResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -819,7 +819,7 @@ func (UnimplementedHandler) GetUser(ctx context.Context, params GetUserParams) (
 // 获取用户所在协作空间列表.
 //
 // GET /users/{id}/collaboration-workspaces
-func (UnimplementedHandler) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (r *UserCollaborationWorkspacesResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -828,7 +828,7 @@ func (UnimplementedHandler) GetUserCollaborationWorkspaces(ctx context.Context, 
 // 获取用户菜单裁剪.
 //
 // GET /users/{id}/menus
-func (UnimplementedHandler) GetUserMenus(ctx context.Context, params GetUserMenusParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetUserMenus(ctx context.Context, params GetUserMenusParams) (r *UserMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -846,7 +846,7 @@ func (UnimplementedHandler) GetUserPackages(ctx context.Context, params GetUserP
 // 获取用户权限诊断.
 //
 // GET /users/{id}/permission-diagnosis
-func (UnimplementedHandler) GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (r *UserPermissionDiagnosisResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -855,7 +855,7 @@ func (UnimplementedHandler) GetUserPermissionDiagnosis(ctx context.Context, para
 // 获取用户菜单权限.
 //
 // GET /users/{id}/permissions
-func (UnimplementedHandler) GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (r *UserPermissionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -873,7 +873,7 @@ func (UnimplementedHandler) GetWorkspace(ctx context.Context, params GetWorkspac
 // 处理待办消息.
 //
 // POST /messages/inbox/{deliveryId}/todo-action
-func (UnimplementedHandler) HandleInboxTodo(ctx context.Context, req AnyObject, params HandleInboxTodoParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) HandleInboxTodo(ctx context.Context, req *InboxTodoActionRequest, params HandleInboxTodoParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -882,7 +882,7 @@ func (UnimplementedHandler) HandleInboxTodo(ctx context.Context, req AnyObject, 
 // 从默认空间初始化菜单空间.
 //
 // POST /system/menu-spaces/{spaceKey}/initialize-default
-func (UnimplementedHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (r *SystemMenuSpaceInitializeResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -909,7 +909,7 @@ func (UnimplementedHandler) ListApiEndpoints(ctx context.Context, params ListApi
 // 获取应用入口解析绑定.
 //
 // GET /system/app-host-bindings
-func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *SystemListResponse, _ error) {
+func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *SystemAppHostBindingListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -918,7 +918,7 @@ func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params List
 // 获取应用列表.
 //
 // GET /system/apps
-func (UnimplementedHandler) ListApps(ctx context.Context) (r *SystemListResponse, _ error) {
+func (UnimplementedHandler) ListApps(ctx context.Context) (r *SystemAppListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1026,7 +1026,7 @@ func (UnimplementedHandler) ListFeaturePackages(ctx context.Context, params List
 // 获取消息列表.
 //
 // GET /messages/inbox
-func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *MessageListResponse, _ error) {
+func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *InboxListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1044,7 +1044,7 @@ func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ er
 // 获取菜单空间入口解析绑定.
 //
 // GET /system/menu-space-entry-bindings
-func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (r *SystemListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (r *SystemMenuSpaceEntryBindingListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1053,7 +1053,7 @@ func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, para
 // 获取菜单空间 Host 绑定.
 //
 // GET /system/menu-space-host-bindings
-func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *SystemListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *SystemMenuSpaceHostBindingListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1062,7 +1062,7 @@ func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *S
 // 获取菜单空间列表.
 //
 // GET /system/menu-spaces
-func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (r *SystemListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (r *SystemMenuSpaceListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1071,7 +1071,7 @@ func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuS
 // 获取消息发送记录.
 //
 // GET /messages/records
-func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (r *MessageListResponse, _ error) {
+func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (r *MessageDispatchRecordListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1080,7 +1080,7 @@ func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, para
 // 获取消息接收组.
 //
 // GET /messages/recipient-groups
-func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *MessageListResponse, _ error) {
+func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *MessageRecipientGroupListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1089,7 +1089,7 @@ func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *
 // 获取消息发送人.
 //
 // GET /messages/senders
-func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *MessageListResponse, _ error) {
+func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *MessageSenderListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1098,7 +1098,7 @@ func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *MessageL
 // 获取消息模板.
 //
 // GET /messages/templates
-func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *MessageListResponse, _ error) {
+func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *MessageTemplateListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1161,7 +1161,7 @@ func (UnimplementedHandler) ListPermissionActionBatchTemplates(ctx context.Conte
 // 获取功能权限关联接口.
 //
 // GET /permission-actions/{id}/endpoints
-func (UnimplementedHandler) ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (r *PermissionActionEndpointList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1332,7 +1332,7 @@ func (UnimplementedHandler) MarkInboxReadAll(ctx context.Context) (r *MutationRe
 // 预览页面面包屑.
 //
 // GET /pages/{id}/breadcrumb-preview
-func (UnimplementedHandler) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (r *PageListResponse, _ error) {
+func (UnimplementedHandler) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (r *PageBreadcrumbPreviewListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1395,7 +1395,7 @@ func (UnimplementedHandler) RemovePermissionActionEndpoint(ctx context.Context, 
 // 回滚功能包版本.
 //
 // POST /feature-packages/{id}/rollback
-func (UnimplementedHandler) RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1404,7 +1404,7 @@ func (UnimplementedHandler) RollbackFeaturePackage(ctx context.Context, req *Rol
 // 保存应用.
 //
 // POST /system/apps
-func (UnimplementedHandler) SaveApp(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveApp(ctx context.Context, req *SystemAppSaveRequest) (r *SystemAppItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1413,7 +1413,7 @@ func (UnimplementedHandler) SaveApp(ctx context.Context, req AnyObject) (r *Muta
 // 保存应用入口解析绑定.
 //
 // POST /system/app-host-bindings
-func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req *SystemAppHostBindingSaveRequest) (r *SystemAppHostBindingItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1422,7 +1422,7 @@ func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req AnyObjec
 // 保存菜单空间.
 //
 // POST /system/menu-spaces
-func (UnimplementedHandler) SaveMenuSpace(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveMenuSpace(ctx context.Context, req *SystemMenuSpaceSaveRequest) (r *SystemMenuSpaceItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1431,7 +1431,7 @@ func (UnimplementedHandler) SaveMenuSpace(ctx context.Context, req AnyObject) (r
 // 保存菜单空间入口解析绑定.
 //
 // POST /system/menu-space-entry-bindings
-func (UnimplementedHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req *SystemMenuSpaceEntryBindingSaveRequest) (r *SystemMenuSpaceEntryBindingItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1440,7 +1440,7 @@ func (UnimplementedHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req A
 // 保存菜单空间 Host 绑定.
 //
 // POST /system/menu-space-host-bindings
-func (UnimplementedHandler) SaveMenuSpaceHostBinding(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveMenuSpaceHostBinding(ctx context.Context, req *SystemMenuSpaceHostBindingSaveRequest) (r *SystemMenuSpaceHostBindingItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1449,7 +1449,7 @@ func (UnimplementedHandler) SaveMenuSpaceHostBinding(ctx context.Context, req An
 // 保存菜单空间模式.
 //
 // PUT /system/menu-space-mode
-func (UnimplementedHandler) SaveMenuSpaceMode(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SaveMenuSpaceMode(ctx context.Context, req *SystemMenuSpaceModeSaveRequest) (r *SystemMenuSpaceModeResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1458,7 +1458,7 @@ func (UnimplementedHandler) SaveMenuSpaceMode(ctx context.Context, req AnyObject
 // 保存功能权限批量模板.
 //
 // POST /permission-actions/templates
-func (UnimplementedHandler) SavePermissionActionBatchTemplate(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SavePermissionActionBatchTemplate(ctx context.Context, req *PermissionActionBatchTemplateSaveRequest) (r *PermissionActionBatchTemplateItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1485,7 +1485,7 @@ func (UnimplementedHandler) SetCollaborationWorkspaceMenus(ctx context.Context, 
 // 配置协作空间功能包.
 //
 // PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (UnimplementedHandler) SetCollaborationWorkspacePackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetCollaborationWorkspacePackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1530,7 +1530,7 @@ func (UnimplementedHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx cont
 // 配置功能包权限.
 //
 // PUT /feature-packages/{id}/actions
-func (UnimplementedHandler) SetFeaturePackageActions(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageActionsParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetFeaturePackageActions(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageActionsParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1539,7 +1539,7 @@ func (UnimplementedHandler) SetFeaturePackageActions(ctx context.Context, req *U
 // 配置组合包基础包.
 //
 // PUT /feature-packages/{id}/children
-func (UnimplementedHandler) SetFeaturePackageChildren(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageChildrenParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetFeaturePackageChildren(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageChildrenParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1548,7 +1548,7 @@ func (UnimplementedHandler) SetFeaturePackageChildren(ctx context.Context, req *
 // 配置功能包协作空间.
 //
 // PUT /feature-packages/{id}/collaboration-workspaces
-func (UnimplementedHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1557,7 +1557,7 @@ func (UnimplementedHandler) SetFeaturePackageCollaborationWorkspaces(ctx context
 // 配置功能包菜单.
 //
 // PUT /feature-packages/{id}/menus
-func (UnimplementedHandler) SetFeaturePackageMenus(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageMenusParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetFeaturePackageMenus(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageMenusParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1602,7 +1602,7 @@ func (UnimplementedHandler) SetRolePackages(ctx context.Context, req *UUIDListRe
 // 配置用户菜单裁剪.
 //
 // PUT /users/{id}/menus
-func (UnimplementedHandler) SetUserMenus(ctx context.Context, req AnyObject, params SetUserMenusParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) SetUserMenus(ctx context.Context, req *UserMenusResponse, params SetUserMenusParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1647,7 +1647,7 @@ func (UnimplementedHandler) SyncPages(ctx context.Context, params SyncPagesParam
 // 更新 API 注册项.
 //
 // PUT /api-endpoints/{id}
-func (UnimplementedHandler) UpdateApiEndpoint(ctx context.Context, req AnyObject, params UpdateApiEndpointParams) (r UpdateApiEndpointRes, _ error) {
+func (UnimplementedHandler) UpdateApiEndpoint(ctx context.Context, req *ApiEndpointSaveRequest, params UpdateApiEndpointParams) (r UpdateApiEndpointRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1656,7 +1656,7 @@ func (UnimplementedHandler) UpdateApiEndpoint(ctx context.Context, req AnyObject
 // 更新 API 分类.
 //
 // PUT /api-endpoints/categories/{id}
-func (UnimplementedHandler) UpdateApiEndpointCategory(ctx context.Context, req AnyObject, params UpdateApiEndpointCategoryParams) (r UpdateApiEndpointCategoryRes, _ error) {
+func (UnimplementedHandler) UpdateApiEndpointCategory(ctx context.Context, req *ApiEndpointCategorySaveRequest, params UpdateApiEndpointCategoryParams) (r UpdateApiEndpointCategoryRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1665,7 +1665,7 @@ func (UnimplementedHandler) UpdateApiEndpointCategory(ctx context.Context, req A
 // 更新 API 协作空间上下文.
 //
 // PUT /api-endpoints/{id}/context-scope
-func (UnimplementedHandler) UpdateApiEndpointContextScope(ctx context.Context, req AnyObject, params UpdateApiEndpointContextScopeParams) (r UpdateApiEndpointContextScopeRes, _ error) {
+func (UnimplementedHandler) UpdateApiEndpointContextScope(ctx context.Context, req *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (r UpdateApiEndpointContextScopeRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1674,7 +1674,7 @@ func (UnimplementedHandler) UpdateApiEndpointContextScope(ctx context.Context, r
 // 更新协作空间.
 //
 // PUT /collaboration-workspaces/{id}
-func (UnimplementedHandler) UpdateCollaborationWorkspace(ctx context.Context, req AnyObject, params UpdateCollaborationWorkspaceParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1683,7 +1683,7 @@ func (UnimplementedHandler) UpdateCollaborationWorkspace(ctx context.Context, re
 // 更新协作空间成员身份.
 //
 // PUT /collaboration-workspaces/{id}/members/{userId}/role
-func (UnimplementedHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1692,7 +1692,7 @@ func (UnimplementedHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.C
 // 更新当前协作空间角色(边界管理).
 //
 // PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1701,7 +1701,7 @@ func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx 
 // 更新当前协作空间成员身份.
 //
 // PUT /collaboration-workspaces/current/members/{userId}/role
-func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1710,7 +1710,7 @@ func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx co
 // 更新快捷入口配置.
 //
 // PUT /system/fast-enter
-func (UnimplementedHandler) UpdateFastEnterConfig(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateFastEnterConfig(ctx context.Context, req *SystemFastEnterConfig) (r *SystemFastEnterConfig, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1719,7 +1719,7 @@ func (UnimplementedHandler) UpdateFastEnterConfig(ctx context.Context, req AnyOb
 // 更新功能包.
 //
 // PUT /feature-packages/{id}
-func (UnimplementedHandler) UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1737,7 +1737,7 @@ func (UnimplementedHandler) UpdateMenu(ctx context.Context, req *MenuSaveRequest
 // 更新消息接收组.
 //
 // PUT /messages/recipient-groups/{groupId}
-func (UnimplementedHandler) UpdateMessageRecipientGroup(ctx context.Context, req AnyObject, params UpdateMessageRecipientGroupParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateMessageRecipientGroup(ctx context.Context, req *MessageRecipientGroupSaveRequest, params UpdateMessageRecipientGroupParams) (r *MessageRecipientGroupItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1746,7 +1746,7 @@ func (UnimplementedHandler) UpdateMessageRecipientGroup(ctx context.Context, req
 // 更新消息发送人.
 //
 // PUT /messages/senders/{senderId}
-func (UnimplementedHandler) UpdateMessageSender(ctx context.Context, req AnyObject, params UpdateMessageSenderParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateMessageSender(ctx context.Context, req *MessageSenderSaveRequest, params UpdateMessageSenderParams) (r *MessageSenderItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1755,7 +1755,7 @@ func (UnimplementedHandler) UpdateMessageSender(ctx context.Context, req AnyObje
 // 更新消息模板.
 //
 // PUT /messages/templates/{templateId}
-func (UnimplementedHandler) UpdateMessageTemplate(ctx context.Context, req AnyObject, params UpdateMessageTemplateParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdateMessageTemplate(ctx context.Context, req *MessageTemplateSaveRequest, params UpdateMessageTemplateParams) (r *MessageTemplateItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1764,7 +1764,7 @@ func (UnimplementedHandler) UpdateMessageTemplate(ctx context.Context, req AnyOb
 // 更新页面.
 //
 // PUT /pages/{id}
-func (UnimplementedHandler) UpdatePage(ctx context.Context, req *PageSaveRequest, params UpdatePageParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) UpdatePage(ctx context.Context, req *PageSaveRequest, params UpdatePageParams) (r *PageSaveResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1782,7 +1782,7 @@ func (UnimplementedHandler) UpdatePermissionAction(ctx context.Context, req *Per
 // 更新功能权限分组.
 //
 // PUT /permission-actions/groups/{id}
-func (UnimplementedHandler) UpdatePermissionActionGroup(ctx context.Context, req AnyObject, params UpdatePermissionActionGroupParams) (r *MutationResult, _ error) {
+func (UnimplementedHandler) UpdatePermissionActionGroup(ctx context.Context, req *PermissionActionGroupSaveRequest, params UpdatePermissionActionGroupParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

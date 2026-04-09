@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageMenuOptionsResponse'
   /pages/runtime/public:
     get:
       operationId: listPublicRuntimePages
@@ -46,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageUnregisteredListResponse'
   /pages/menu-options:
     get:
       operationId: listPageMenuOptions
@@ -150,7 +150,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/PageAccessTraceResponse'
   /pages/unregistered:
     get:
       operationId: listUnregisteredPages
@@ -261,7 +261,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../components/common.yaml#/components/schemas/PageSaveResult'
   /pages/{id}:
     get:
       operationId: getPage
@@ -288,7 +288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../components/common.yaml#/components/schemas/PageSaveResult'
     put:
       operationId: updatePage
       summary: 更新页面
@@ -320,7 +320,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../components/common.yaml#/components/schemas/PageSaveResult'
     delete:
       operationId: deletePage
       summary: 删除页面
@@ -373,4 +373,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageBreadcrumbPreviewListResponse'

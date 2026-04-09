@@ -29,24 +29,16 @@ func (h *APIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 
 // ─── CreateCurrentCollaborationWorkspaceRole ──────────────────────────────────
 
-func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var body struct {
-		Code        string `json:"code"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		SortOrder   int    `json:"sort_order"`
-		Priority    int    `json:"priority"`
-		Status      string `json:"status"`
+	if req == nil {
+		return nil, errText("请求体不能为空")
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	code := strings.TrimSpace(body.Code)
-	if code == "" || strings.TrimSpace(body.Name) == "" {
+	code := strings.TrimSpace(req.Code)
+	if code == "" || strings.TrimSpace(req.Name) == "" {
 		return nil, errText("角色编码和角色名称不能为空")
 	}
 	existingRoles, err := h.roleRepo.FindByCode(code)
@@ -61,11 +53,11 @@ func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context
 	role := &user.Role{
 		CollaborationWorkspaceID: &member.CollaborationWorkspaceID,
 		Code:                     code,
-		Name:                     strings.TrimSpace(body.Name),
-		Description:              strings.TrimSpace(body.Description),
-		SortOrder:                body.SortOrder,
-		Priority:                 body.Priority,
-		Status:                   cwNormalizeStatus(body.Status),
+		Name:                     strings.TrimSpace(req.Name),
+		Description:              optString(req.Description),
+		SortOrder:                optInt(req.SortOrder, 0),
+		Priority:                 optInt(req.Priority, 0),
+		Status:                   cwNormalizeStatus(optString(req.Status)),
 	}
 	if err := h.roleRepo.Create(role); err != nil {
 		h.logger.Error("create cw role failed", zap.Error(err))
@@ -82,36 +74,25 @@ func (h *APIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 
 // ─── CreateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
 
-func (h *APIHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
 	return h.CreateCurrentCollaborationWorkspaceRole(ctx, req)
 }
 
 // ─── UpdateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
 
-func (h *APIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req gen.AnyObject, params gen.UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest, params gen.UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
 	}
-	var body struct {
-		Code        string `json:"code"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		SortOrder   int    `json:"sort_order"`
-		Priority    int    `json:"priority"`
-		Status      string `json:"status"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
 	updates := map[string]interface{}{
-		"name":        strings.TrimSpace(cwDefaultString(body.Name, role.Name)),
-		"description": strings.TrimSpace(cwDefaultString(body.Description, role.Description)),
-		"sort_order":  body.SortOrder,
-		"priority":    body.Priority,
-		"status":      cwNormalizeStatus(cwDefaultString(body.Status, role.Status)),
+		"name":        strings.TrimSpace(cwDefaultString(req.Name, role.Name)),
+		"description": strings.TrimSpace(cwDefaultString(optString(req.Description), role.Description)),
+		"sort_order":  optInt(req.SortOrder, int(role.SortOrder)),
+		"priority":    optInt(req.Priority, int(role.Priority)),
+		"status":      cwNormalizeStatus(cwDefaultString(optString(req.Status), role.Status)),
 	}
-	if code := strings.TrimSpace(body.Code); code != "" && code != role.Code {
+	if code := strings.TrimSpace(req.Code); code != "" && code != role.Code {
 		existingRoles, findErr := h.roleRepo.FindByCode(code)
 		if findErr != nil {
 			return nil, findErr

@@ -112,3 +112,63 @@ components:
           type: array
           items: {$ref: '#/components/schemas/ApiEndpointCategoryItem'}
         total: {type: integer, format: int64}
+    ApiEndpointSaveRequest:
+      type: object
+      required: [code, method, path, summary, status, handler, permission_keys]
+      properties:
+        code: {type: string}
+        method: {type: string}
+        path: {type: string}
+        summary: {type: string}
+        category_id: {type: string, nullable: true}
+        status: {type: string}
+        handler: {type: string}
+        permission_keys:
+          type: array
+          items: {type: string}
+    ApiEndpointCategorySaveRequest:
+      type: object
+      required: [code, name, name_en, sort_order, status]
+      properties:
+        code: {type: string}
+        name: {type: string}
+        name_en: {type: string}
+        sort_order: {type: integer}
+        status: {type: string}
+    ApiEndpointOverview:
+      type: object
+      required:
+        - total_count
+        - uncategorized_count
+        - stale_count
+        - no_permission_count
+        - shared_permission_count
+        - cross_context_shared_count
+        - category_counts
+      properties:
+        total_count: {type: integer, format: int64}
+        uncategorized_count: {type: integer, format: int64}
+        stale_count: {type: integer, format: int64}
+        no_permission_count: {type: integer, format: int64}
+        shared_permission_count: {type: integer, format: int64}
+        cross_context_shared_count: {type: integer, format: int64}
+        category_counts:
+          type: array
+          items:
+            type: object
+            required: [category_id, count]
+            properties:
+              category_id: {type: string}
+              count: {type: integer, format: int64}
+    CleanupStaleRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          items: {type: string, format: uuid}
+    CleanupStaleResult:
+      type: object
+      required: [deleted_count]
+      properties:
+        deleted_count: {type: integer, format: int64}

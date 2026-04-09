@@ -162,7 +162,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}:
     get:
       operationId: getFeaturePackage
@@ -211,7 +211,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
     delete:
       operationId: deleteFeaturePackage
       summary: 删除功能包
@@ -232,7 +232,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}/impact-preview:
     get:
       operationId: getFeaturePackageImpactPreview
@@ -314,7 +314,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}/risk-audits:
     get:
       operationId: listFeaturePackageRiskAudits
@@ -403,7 +403,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}/actions:
     get:
       operationId: getFeaturePackageActions
@@ -460,7 +460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}/menus:
     get:
       operationId: getFeaturePackageMenus
@@ -517,7 +517,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
   /feature-packages/{id}/collaboration-workspaces:
     get:
       operationId: getFeaturePackageCollaborationWorkspaces
@@ -574,4 +574,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'

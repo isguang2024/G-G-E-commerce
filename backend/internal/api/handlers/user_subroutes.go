@@ -14,6 +14,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
@@ -37,7 +38,7 @@ func resolveAppKey(opt gen.OptString) string {
 
 // ── GetUserMenus ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusParams) (*gen.UserMenusResponse, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		h.logger.Error("get user for menus failed", zap.Error(err))
 		return nil, err
@@ -62,32 +63,28 @@ func (h *APIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusPa
 		hiddenMenuIDs = []uuid.UUID{}
 	}
 
-	return marshalAnyObject(map[string]interface{}{
-		"menu_ids":             uuidSliceToStrings(menuIDs),
-		"available_menu_ids":   uuidSliceToStrings(availableMenuIDs),
-		"hidden_menu_ids":      uuidSliceToStrings(hiddenMenuIDs),
-		"expanded_package_ids": uuidSliceToStrings(snapshot.ExpandedPackageIDs),
-		"derived_sources":      buildMenuSourceMaps(snapshot.AvailableMenuMap),
-		"has_package_config":   snapshot.HasPackageConfig,
-	}), nil
+	return &gen.UserMenusResponse{
+		MenuIds:            menuIDs,
+		AvailableMenuIds:   availableMenuIDs,
+		HiddenMenuIds:      hiddenMenuIDs,
+		ExpandedPackageIds: snapshot.ExpandedPackageIDs,
+		DerivedSources:     buildMenuSourceItems(snapshot.AvailableMenuMap),
+		HasPackageConfig:   snapshot.HasPackageConfig,
+	}, nil
 }
 
 // ── SetUserMenus ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) SetUserMenus(ctx context.Context, req gen.AnyObject, params gen.SetUserMenusParams) (*gen.MutationResult, error) {
+func (h *APIHandler) SetUserMenus(ctx context.Context, req *gen.UserMenusResponse, params gen.SetUserMenusParams) (*gen.MutationResult, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
 
-	// Extract app_key and menu_ids from the AnyObject body.
-	var body struct {
-		AppKey  string   `json:"app_key"`
-		MenuIDs []string `json:"menu_ids"`
+	appKey := models.DefaultAppKey
+	menuIDs := []uuid.UUID{}
+	if req != nil {
+		menuIDs = req.MenuIds
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	appKey := normalizeAppKeyStr(body.AppKey)
 
 	snapshot, err := h.getPersonalSnapshotForUser(params.ID, appKey)
 	if err != nil {
@@ -99,16 +96,10 @@ func (h *APIHandler) SetUserMenus(ctx context.Context, req gen.AnyObject, params
 	}
 
 	availableMenuSet := uuidSetFromSlice(snapshot.AvailableMenuIDs)
-	menuIDs := make([]uuid.UUID, 0, len(body.MenuIDs))
-	for _, s := range body.MenuIDs {
-		menuID, parseErr := uuid.Parse(s)
-		if parseErr != nil {
-			return nil, parseErr
-		}
+	for _, menuID := range menuIDs {
 		if !availableMenuSet[menuID] {
 			return &gen.MutationResult{Success: false}, nil
 		}
-		menuIDs = append(menuIDs, menuID)
 	}
 
 	blockedMenuIDs := excludeUUIDsFromSlice(snapshot.AvailableMenuIDs, menuIDs)
@@ -193,7 +184,7 @@ func (h *APIHandler) SetUserPackages(ctx context.Context, req *gen.UUIDListReque
 
 // ── GetUserPermissions ────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserPermissionsParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserPermissionsParams) (*gen.UserPermissionsResponse, error) {
 	appKey := resolveAppKey(params.AppKey)
 
 	snapshot, err := h.getPersonalSnapshotForUser(params.ID, appKey)
@@ -208,12 +199,12 @@ func (h *APIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserP
 		return nil, err
 	}
 
-	return marshalAnyObject(map[string]interface{}{"menu_tree": marshalList(tree)}), nil
+	return &gen.UserPermissionsResponse{MenuTree: buildUserPermissionTreeItems(tree)}, nil
 }
 
 // ── GetUserPermissionDiagnosis ────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.GetUserPermissionDiagnosisParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.GetUserPermissionDiagnosisParams) (*gen.UserPermissionDiagnosisResponse, error) {
 	appKey := resolveAppKey(params.AppKey)
 	permissionKey := ""
 	if params.PermissionKey.Set {
@@ -232,14 +223,7 @@ func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.
 	if err != nil {
 		return nil, err
 	}
-
-	userInfo := map[string]interface{}{
-		"id":             userEntity.ID.String(),
-		"user_name":      userEntity.Username,
-		"nick_name":      userEntity.Nickname,
-		"status":         userEntity.Status,
-		"is_super_admin": userEntity.IsSuperAdmin,
-	}
+	userInfo := buildUserPermissionDiagnosisUser(userEntity)
 
 	if collaborationWorkspaceID == nil {
 		snapshot, snapshotErr := h.getPersonalSnapshotForUser(params.ID, appKey)
@@ -247,17 +231,18 @@ func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.
 			h.logger.Error("get personal snapshot for diagnosis failed", zap.Error(snapshotErr))
 			return nil, snapshotErr
 		}
-		payload := map[string]interface{}{
-			"user":      userInfo,
-			"context":   map[string]interface{}{"type": "personal", "binding_workspace_id": "", "current_collaboration_workspace_id": "", "current_collaboration_workspace_name": ""},
-			"snapshot":  buildPersonalSnapshotSummary(snapshot),
-			"roles":     []interface{}{},
-			"diagnosis": nil,
+		resp := &gen.UserPermissionDiagnosisResponse{
+			User:                           userInfo,
+			Context:                        buildUserPermissionDiagnosisContext("personal", "", "", ""),
+			Snapshot:                       buildPersonalSnapshotSummary(snapshot),
+			Roles:                          []gen.UserPermissionRoleResult{},
+			CollaborationWorkspacePackages: []gen.FeaturePackageRef{},
+			Menus:                          []gen.UserPermissionMenuTreeItem{},
 		}
 		if permissionKey != "" {
-			payload["diagnosis"] = map[string]interface{}{"permission_key": permissionKey}
+			resp.Diagnosis = gen.NewOptUserPermissionDiagnosisResult(buildUserPermissionDiagnosisResult(permissionKey))
 		}
-		return marshalAnyObject(payload), nil
+		return resp, nil
 	}
 
 	// Collaboration workspace diagnosis.
@@ -272,22 +257,18 @@ func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.
 		currentCWID = ws.ID.String()
 	}
 
-	payload := map[string]interface{}{
-		"user": userInfo,
-		"context": map[string]interface{}{
-			"type":                                 "collaboration",
-			"binding_workspace_id":                 currentCWID,
-			"current_collaboration_workspace_id":   collaborationWorkspaceID.String(),
-			"current_collaboration_workspace_name": "",
-		},
-		"snapshot":  marshalAnyObject(cwSnapshot),
-		"roles":     []interface{}{},
-		"diagnosis": nil,
+	resp := &gen.UserPermissionDiagnosisResponse{
+		User:                           userInfo,
+		Context:                        buildUserPermissionDiagnosisContext("collaboration", currentCWID, collaborationWorkspaceID.String(), ""),
+		Snapshot:                       buildCollaborationSnapshotSummary(cwSnapshot),
+		Roles:                          []gen.UserPermissionRoleResult{},
+		CollaborationWorkspacePackages: []gen.FeaturePackageRef{},
+		Menus:                          []gen.UserPermissionMenuTreeItem{},
 	}
 	if permissionKey != "" {
-		payload["diagnosis"] = map[string]interface{}{"permission_key": permissionKey}
+		resp.Diagnosis = gen.NewOptUserPermissionDiagnosisResult(buildUserPermissionDiagnosisResult(permissionKey))
 	}
-	return marshalAnyObject(payload), nil
+	return resp, nil
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────────
@@ -341,18 +322,46 @@ func excludeUUIDsFromSlice(source []uuid.UUID, selected []uuid.UUID) []uuid.UUID
 	return out
 }
 
-func buildMenuSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []map[string]interface{} {
+func buildMenuSourceItems(sourceMap map[uuid.UUID][]uuid.UUID) []gen.UserMenuDerivedSourceItem {
 	if len(sourceMap) == 0 {
-		return []map[string]interface{}{}
+		return []gen.UserMenuDerivedSourceItem{}
 	}
-	items := make([]map[string]interface{}, 0, len(sourceMap))
+	items := make([]gen.UserMenuDerivedSourceItem, 0, len(sourceMap))
 	for menuID, packageIDs := range sourceMap {
-		items = append(items, map[string]interface{}{
-			"menu_id":     menuID.String(),
-			"package_ids": uuidSliceToStrings(packageIDs),
+		items = append(items, gen.UserMenuDerivedSourceItem{
+			MenuID:     menuID,
+			PackageIds: packageIDs,
 		})
 	}
 	return items
+}
+
+func buildUserPermissionTreeItems(tree []*user.Menu) []gen.UserPermissionMenuTreeItem {
+	items := make([]gen.UserPermissionMenuTreeItem, 0, len(tree))
+	for _, item := range tree {
+		if item == nil {
+			continue
+		}
+		items = append(items, buildUserPermissionTreeItem(item))
+	}
+	return items
+}
+
+func buildUserPermissionTreeItem(item *user.Menu) gen.UserPermissionMenuTreeItem {
+	title := strings.TrimSpace(item.Title)
+	if title == "" {
+		title = strings.TrimSpace(item.Name)
+	}
+	return gen.UserPermissionMenuTreeItem{
+		ID:        item.ID,
+		Name:      item.Name,
+		Title:     title,
+		Path:      item.Path,
+		Component: item.Component,
+		Hidden:    item.Hidden,
+		SortOrder: item.SortOrder,
+		Children:  buildUserPermissionTreeItems(item.Children),
+	}
 }
 
 func featurePkgToRef(pkg user.FeaturePackage) gen.FeaturePackageRef {
@@ -376,16 +385,104 @@ func featurePkgToRef(pkg user.FeaturePackage) gen.FeaturePackageRef {
 	return ref
 }
 
-func buildPersonalSnapshotSummary(s *platformaccess.Snapshot) map[string]interface{} {
+func buildPersonalSnapshotSummary(s *platformaccess.Snapshot) gen.UserPermissionSnapshotSummary {
 	if s == nil {
-		return map[string]interface{}{}
+		return gen.UserPermissionSnapshotSummary{
+			RoleCount:            0,
+			DirectPackageCount:   0,
+			ExpandedPackageCount: 0,
+			ActionCount:          0,
+			DisabledActionCount:  0,
+			MenuCount:            0,
+			HasPackageConfig:     false,
+			DerivedActionCount:   0,
+			BlockedActionCount:   0,
+			EffectiveActionCount: 0,
+		}
 	}
-	return map[string]interface{}{
-		"direct_package_ids":   uuidSliceToStrings(s.DirectPackageIDs),
-		"expanded_package_ids": uuidSliceToStrings(s.ExpandedPackageIDs),
-		"action_ids":           uuidSliceToStrings(s.ActionIDs),
-		"menu_ids":             uuidSliceToStrings(s.MenuIDs),
-		"available_menu_ids":   uuidSliceToStrings(s.AvailableMenuIDs),
-		"has_package_config":   s.HasPackageConfig,
+	effectiveCount := len(s.ActionIDs) - len(s.DisabledActionIDs)
+	if effectiveCount < 0 {
+		effectiveCount = 0
+	}
+	return gen.UserPermissionSnapshotSummary{
+		RoleCount:            0,
+		DirectPackageCount:   len(s.DirectPackageIDs),
+		ExpandedPackageCount: len(s.ExpandedPackageIDs),
+		ActionCount:          len(s.ActionIDs),
+		DisabledActionCount:  len(s.DisabledActionIDs),
+		MenuCount:            len(s.MenuIDs),
+		HasPackageConfig:     s.HasPackageConfig,
+		DerivedActionCount:   len(s.ActionIDs),
+		BlockedActionCount:   0,
+		EffectiveActionCount: effectiveCount,
+	}
+}
+
+func buildCollaborationSnapshotSummary(s *collaborationworkspaceboundary.Snapshot) gen.UserPermissionSnapshotSummary {
+	if s == nil {
+		return gen.UserPermissionSnapshotSummary{
+			RoleCount:            0,
+			DirectPackageCount:   0,
+			ExpandedPackageCount: 0,
+			ActionCount:          0,
+			DisabledActionCount:  0,
+			MenuCount:            0,
+			HasPackageConfig:     false,
+			DerivedActionCount:   0,
+			BlockedActionCount:   0,
+			EffectiveActionCount: 0,
+		}
+	}
+	return gen.UserPermissionSnapshotSummary{
+		RoleCount:            0,
+		DirectPackageCount:   len(s.PackageIDs),
+		ExpandedPackageCount: len(s.ExpandedPackageIDs),
+		ActionCount:          len(s.EffectiveIDs),
+		DisabledActionCount:  0,
+		MenuCount:            0,
+		HasPackageConfig:     len(s.PackageIDs) > 0,
+		DerivedActionCount:   len(s.DerivedIDs),
+		BlockedActionCount:   len(s.BlockedIDs),
+		EffectiveActionCount: len(s.EffectiveIDs),
+	}
+}
+
+func buildUserPermissionDiagnosisUser(entity *user.User) gen.UserPermissionDiagnosisUser {
+	out := gen.UserPermissionDiagnosisUser{
+		ID:           entity.ID,
+		UserName:     entity.Username,
+		Status:       entity.Status,
+		IsSuperAdmin: entity.IsSuperAdmin,
+	}
+	if entity.Nickname != "" {
+		out.NickName = gen.NewOptString(entity.Nickname)
+	}
+	return out
+}
+
+func buildUserPermissionDiagnosisContext(contextType, bindingWorkspaceID, currentWorkspaceID, currentWorkspaceName string) gen.UserPermissionDiagnosisContext {
+	return gen.UserPermissionDiagnosisContext{
+		Type:                              contextType,
+		BindingWorkspaceID:                bindingWorkspaceID,
+		CurrentCollaborationWorkspaceID:   currentWorkspaceID,
+		CurrentCollaborationWorkspaceName: currentWorkspaceName,
+	}
+}
+
+func buildUserPermissionDiagnosisResult(permissionKey string) gen.UserPermissionDiagnosisResult {
+	return gen.UserPermissionDiagnosisResult{
+		PermissionKey:                   permissionKey,
+		Allowed:                         false,
+		Reasons:                         []string{},
+		MatchedInSnapshot:               false,
+		BypassedBySuperAdmin:            false,
+		BlockedByCollaborationWorkspace: false,
+		MemberMatched:                   false,
+		BoundaryConfigured:              false,
+		RoleChainMatched:                false,
+		RoleChainDisabled:               false,
+		RoleChainAvailable:              false,
+		SourcePackages:                  []gen.FeaturePackageRef{},
+		RoleResults:                     []gen.UserPermissionRoleResult{},
 	}
 }

@@ -7,46 +7,15 @@ import {
   normalizeApiEndpoint,
   normalizePermissionActionConsumers,
   normalizeRiskAudit,
+  normalizePermissionBatchTemplate,
   normalizePermissionGroup,
   normalizeFeaturePackage,
   normalizeFeaturePackageRelationTree,
   normalizeRefreshStats,
   normalizeCollaborationWorkspace,
-  toV5Body,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from './_shared'
-
-type PermissionBatchTemplateRecord = {
-  id?: string
-  name?: string
-  description?: string
-  payload?: unknown
-  created_by?: string
-  createdBy?: string
-  created_at?: string
-  createdAt?: string
-  updated_at?: string
-  updatedAt?: string
-}
-
-type FeaturePackageVersionRecord = {
-  id?: string
-  package_id?: string
-  packageId?: string
-  version_no?: number
-  versionNo?: number
-  change_type?: string
-  changeType?: string
-  snapshot?: unknown
-  operator_id?: string
-  operatorId?: string
-  request_id?: string
-  requestId?: string
-  created_at?: string
-  createdAt?: string
-}
 
 /** 获取功能权限列表 */
 export async function fetchGetPermissionActionList(
@@ -127,14 +96,10 @@ export async function fetchDeletePermissionActionEndpoint(id: string, endpointCo
 }
 
 export async function fetchCleanupUnusedPermissionActions() {
-  const res = toV5Record(await unwrap(v5Client.POST('/permission-actions/cleanup-unused')))
-  const deletedKeys = Array.isArray(res?.deletedKeys)
-    ? res.deletedKeys
-    : Array.isArray(res?.deleted_keys)
-      ? res.deleted_keys
-      : []
+  const res = await unwrap(v5Client.POST('/permission-actions/cleanup-unused'))
+  const deletedKeys = Array.isArray(res?.deleted_keys) ? res.deleted_keys : []
   return {
-    deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0),
+    deletedCount: Number(res?.deleted_count ?? 0),
     deletedKeys: deletedKeys.map((value) => `${value || ''}`.trim()).filter(Boolean)
   }
 }
@@ -150,7 +115,7 @@ export async function fetchCreatePermissionAction(
     status: data.status,
     group_id: data.feature_group_id || data.module_group_id || null
   }
-  const res = toV5Record(await unwrap(v5Client.POST('/permission-actions', { body })))
+  const res = await unwrap(v5Client.POST('/permission-actions', { body }))
   return { id: `${res.id || ''}` }
 }
 
@@ -206,18 +171,14 @@ export async function fetchBatchUpdatePermissionActions(
     feature_group_id: data.featureGroupId,
     template_name: data.templateName
   }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.POST('/permission-actions/batch', {
       body
     })
   )
-  )
   return {
-    updatedCount: Number(res?.updatedCount ?? res?.updated_count ?? 0),
-    skippedIds: Array.isArray(res?.skippedIds || res?.skipped_ids)
-      ? res?.skippedIds || res?.skipped_ids
-      : []
+    updatedCount: Number(res?.updated_count ?? 0),
+    skippedIds: Array.isArray(res?.skipped_ids) ? res.skipped_ids : []
   }
 }
 
@@ -225,41 +186,22 @@ export async function fetchSavePermissionBatchTemplate(
   data: Partial<Api.SystemManage.PermissionBatchTemplateItem>
 ) {
   const body: V5RequestBody<'/permission-actions/templates', 'post'> = {
-    name: data.name,
+    name: data.name || '',
     description: data.description,
     payload: data.payload
   }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.POST('/permission-actions/templates', {
       body
     })
   )
-  )
-  return {
-    id: res?.id || '',
-    name: res?.name || '',
-    description: res?.description || '',
-    payload: res?.payload || {},
-    createdBy: res?.created_by || res?.createdBy || '',
-    createdAt: res?.created_at || res?.createdAt || '',
-    updatedAt: res?.updated_at || res?.updatedAt || ''
-  }
+  return normalizePermissionBatchTemplate(res)
 }
 
 export async function fetchGetPermissionBatchTemplates() {
   const res = await unwrap(v5Client.GET('/permission-actions/templates'))
-  const records = Array.isArray(res?.records) ? (res.records as PermissionBatchTemplateRecord[]) : []
   return {
-    records: records.map((item) => ({
-      id: item?.id || '',
-      name: item?.name || '',
-      description: item?.description || '',
-      payload: item?.payload || {},
-      createdBy: item?.created_by || item?.createdBy || '',
-      createdAt: item?.created_at || item?.createdAt || '',
-      updatedAt: item?.updated_at || item?.updatedAt || ''
-    })),
+    records: (res.records || []).map(normalizePermissionBatchTemplate),
     total: Number(res?.total || 0)
   }
 }
@@ -296,8 +238,16 @@ export async function fetchGetPermissionGroupList(
 export async function fetchCreatePermissionGroup(
   data: Api.SystemManage.PermissionGroupSaveParams
 ) {
-  const body: V5RequestBody<'/permission-actions/groups', 'post'> = toV5Body(data)
-  const res = toV5Record(await unwrap(v5Client.POST('/permission-actions/groups', { body })))
+  const body: V5RequestBody<'/permission-actions/groups', 'post'> = {
+    code: data.code,
+    name: data.name,
+    name_en: data.name_en,
+    description: data.description,
+    group_type: data.group_type,
+    status: data.status,
+    sort_order: data.sort_order
+  }
+  const res = await unwrap(v5Client.POST('/permission-actions/groups', { body }))
   return { id: `${res.id || ''}` }
 }
 
@@ -305,7 +255,15 @@ export async function fetchUpdatePermissionGroup(
   id: string,
   data: Api.SystemManage.PermissionGroupSaveParams
 ) {
-  const body: V5RequestBody<'/permission-actions/groups/{id}', 'put'> = toV5Body(data)
+  const body: V5RequestBody<'/permission-actions/groups/{id}', 'put'> = {
+    code: data.code,
+    name: data.name,
+    name_en: data.name_en,
+    description: data.description,
+    group_type: data.group_type,
+    status: data.status,
+    sort_order: data.sort_order
+  }
   const { error } = await v5Client.PUT('/permission-actions/groups/{id}', {
     params: { path: { id } },
     body
@@ -401,15 +359,13 @@ export async function fetchSetFeaturePackageChildren(
     : {
         ids: childPackageIds.child_package_ids
       }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/{id}/children', {
       params: query ? { path: { id }, query } : { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 获取功能包包含关系树 */
@@ -430,7 +386,7 @@ export async function fetchCreateFeaturePackage(
   data: Api.SystemManage.FeaturePackageCreateParams
 ) {
   const body: V5RequestBody<'/feature-packages', 'post'> = data
-  const res = toV5Record(await unwrap(v5Client.POST('/feature-packages', { body })))
+  const res = await unwrap(v5Client.POST('/feature-packages', { body }))
   return { id: `${res.id || ''}` }
 }
 
@@ -449,25 +405,21 @@ export async function fetchUpdateFeaturePackage(
     sort_order: data.sort_order,
     app_keys: data.app_keys
   }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/{id}', {
       params: { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 删除功能包 */
 export async function fetchDeleteFeaturePackage(id: string) {
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.DELETE('/feature-packages/{id}', { params: { path: { id } } })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 获取功能包包含的功能权限 */
@@ -503,15 +455,13 @@ export async function fetchSetFeaturePackageActions(
     : {
         ids: actionIds.action_ids
       }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/{id}/actions', {
       params: query ? { path: { id }, query } : { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 获取功能包包含的菜单 */
@@ -538,15 +488,13 @@ export async function fetchSetFeaturePackageMenus(
   const body: V5RequestBody<'/feature-packages/{id}/menus', 'put'> = {
     ids: menuIds
   }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/{id}/menus', {
       params: query ? { path: { id }, query } : { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 获取已开通当前功能包的协作空间 */
@@ -575,15 +523,13 @@ export async function fetchSetFeaturePackageCollaborationWorkspaces(
   const body: V5RequestBody<'/feature-packages/{id}/collaboration-workspaces', 'put'> = Array.isArray(collaborationWorkspaceIds)
     ? { ids: collaborationWorkspaceIds }
     : { ids: collaborationWorkspaceIds.collaboration_workspace_ids }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/{id}/collaboration-workspaces', {
       params: { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 /** 获取协作空间已开通的功能包 */
@@ -617,8 +563,7 @@ export async function fetchSetCollaborationWorkspaceFeaturePackages(
     appKey ? { app_key: appKey } : {}
   const body: V5RequestBody<'/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', 'put'> =
     Array.isArray(packageIds) ? { ids: packageIds } : { ids: packageIds.package_ids }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.PUT('/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', {
       params: {
         path: { collaborationWorkspaceId },
@@ -627,8 +572,7 @@ export async function fetchSetCollaborationWorkspaceFeaturePackages(
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 export async function fetchGetFeaturePackageImpactPreview(id: string) {
@@ -652,17 +596,32 @@ export async function fetchGetFeaturePackageVersions(id: string, current = 1, si
       params: { path: { id }, query }
     })
   )
-  const records = Array.isArray(res?.records) ? (res.records as FeaturePackageVersionRecord[]) : []
   return {
-    records: records.map((item) => ({
+    records: (res.records || []).map((item) => ({
       id: item?.id || '',
-      packageId: item?.package_id || item?.packageId || '',
-      versionNo: Number(item?.version_no ?? item?.versionNo ?? 0),
-      changeType: item?.change_type || item?.changeType || '',
-      snapshot: item?.snapshot || {},
-      operatorId: item?.operator_id || item?.operatorId || '',
-      requestId: item?.request_id || item?.requestId || '',
-      createdAt: item?.created_at || item?.createdAt || ''
+      packageId: item?.package_id || '',
+      versionNo: Number(item?.version_no ?? 0),
+      changeType: item?.change_type || '',
+      snapshot: {
+        package_id: item?.snapshot?.package_id || '',
+        package_key: item?.snapshot?.package_key || '',
+        package_type: item?.snapshot?.package_type || '',
+        name: item?.snapshot?.name || '',
+        description: item?.snapshot?.description || '',
+        workspace_scope: item?.snapshot?.workspace_scope || '',
+        context_type: item?.snapshot?.context_type || '',
+        app_keys: item?.snapshot?.app_keys || [],
+        status: item?.snapshot?.status || '',
+        sort_order: Number(item?.snapshot?.sort_order ?? 0),
+        child_package_ids: item?.snapshot?.child_package_ids || [],
+        action_ids: item?.snapshot?.action_ids || [],
+        menu_ids: item?.snapshot?.menu_ids || [],
+        collaboration_workspace_ids: item?.snapshot?.collaboration_workspace_ids || [],
+        snapshot_created_at: item?.snapshot?.snapshot_created_at || ''
+      },
+      operatorId: item?.operator_id || '',
+      requestId: item?.request_id || '',
+      createdAt: item?.created_at || ''
     })),
     total: Number(res?.total || 0)
   }
@@ -670,15 +629,13 @@ export async function fetchGetFeaturePackageVersions(id: string, current = 1, si
 
 export async function fetchRollbackFeaturePackage(id: string, versionId: string) {
   const body: V5RequestBody<'/feature-packages/{id}/rollback', 'post'> = { version_id: versionId }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.POST('/feature-packages/{id}/rollback', {
       params: { path: { id } },
       body
     })
   )
-  )
-  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
+  return normalizeRefreshStats(res?.refresh_stats || {})
 }
 
 export async function fetchGetFeaturePackageRiskAudits(id: string, current = 1, size = 20) {

@@ -277,8 +277,12 @@ export function useUserPermissionTestDrawer(
     try {
       const collaborationWorkspaceId =
         contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
+      await fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId)
       const [diagnosis, menus] = await Promise.all([
-        fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId),
+        fetchGetUserPermissionDiagnosis(userId, {
+          collaborationWorkspaceId,
+          permissionKey: permissionKey.value.trim() || undefined
+        }),
         fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
       ])
       diagnosisData.value = diagnosis

@@ -83,14 +83,17 @@ func (h *APIHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 	}, nil
 }
 
-func (h *APIHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+func (h *APIHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req *gen.CollaborationWorkspaceMemberAddRequest) (*gen.MutationResult, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var body dto.CollaborationWorkspaceAddMemberRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	body := dto.CollaborationWorkspaceAddMemberRequest{
+		UserID:   req.UserID.String(),
+		RoleCode: optString(req.RoleCode),
 	}
 	var invitedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
@@ -115,19 +118,15 @@ func (h *APIHandler) RemoveCurrentCollaborationWorkspaceMember(ctx context.Conte
 	return ok(), nil
 }
 
-func (h *APIHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req gen.AnyObject, params gen.UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *gen.CollaborationWorkspaceMemberRoleRequest, params gen.UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*gen.MutationResult, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var body struct {
-		RoleCode string `json:"role_code"`
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	if err := h.cwSvc.UpdateMemberRole(cwID, params.UserId, body.RoleCode); err != nil {
-		h.logger.Error("update current cw member role failed", zap.Error(err))
+	if err := h.cwSvc.UpdateMemberRole(cwID, params.UserId, req.RoleCode); err != nil {
 		return nil, err
 	}
 	return ok(), nil

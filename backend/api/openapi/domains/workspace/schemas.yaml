@@ -165,3 +165,60 @@ components:
         blocked_action_ids:
           type: array
           items: {type: string, format: uuid}
+    CollaborationWorkspaceSaveRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+        remark:
+          type: string
+        logo_url:
+          type: string
+        plan:
+          type: string
+        max_members:
+          type: integer
+        status:
+          type: string
+        admin_user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CollaborationWorkspaceMemberAddRequest:
+      type: object
+      required:
+      - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        role_code:
+          type: string
+    CollaborationWorkspaceMemberRoleRequest:
+      type: object
+      required:
+      - role_code
+      properties:
+        role_code:
+          type: string
+    CollaborationWorkspaceRoleSaveRequest:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        sort_order:
+          type: integer
+        priority:
+          type: integer
+        status:
+          type: string

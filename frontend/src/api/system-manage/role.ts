@@ -5,7 +5,6 @@ import {
   normalizeRole,
   normalizeFeaturePackage,
   normalizePermissionAction,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from './_shared'
@@ -70,12 +69,10 @@ export async function fetchDeleteRole(id: string) {
 /** 获取角色已分配的菜单 ID 列表（用于菜单权限配置） */
 export async function fetchGetRoleMenus(roleId: string, appKey?: string) {
   const query: V5Query<'/roles/{id}/menus', 'get'> = { app_key: appKey || '' }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/roles/{id}/menus', {
       params: { path: { id: roleId }, query }
     })
-  )
   )
   return {
     menu_ids: Array.isArray(res.menu_ids) ? res.menu_ids : [],
@@ -125,12 +122,10 @@ export async function fetchSetRoleMenus(roleId: string, menuIds: string[], appKe
 /** 获取角色功能权限 */
 export async function fetchGetRoleActions(roleId: string, appKey?: string) {
   const query: V5Query<'/roles/{id}/actions', 'get'> = { app_key: appKey || '' }
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/roles/{id}/actions', {
       params: { path: { id: roleId }, query }
     })
-  )
   )
   return {
     action_ids: Array.isArray(res.action_ids) ? res.action_ids : [],
@@ -155,15 +150,13 @@ export async function fetchSetRoleActions(roleId: string, actionIds: string[], a
 
 /** 获取角色数据权限 */
 export async function fetchGetRoleDataPermissions(roleId: string) {
-  const res = toV5Record(
-    await unwrap(
+  const res = await unwrap(
     v5Client.GET('/roles/{id}/data-permissions', { params: { path: { id: roleId } } })
   )
-  )
   return {
-    permissions: res?.permissions || [],
-    resources: res?.resources || [],
-    available_data_scopes: res?.data_scopes || res?.available_data_scopes || []
+    permissions: res.permissions || [],
+    resources: res.resources || [],
+    available_data_scopes: res.data_scopes || []
   } as {
     permissions: Array<{ resource_code: string; data_scope: string }>
     resources: Array<{ resource_code: string; resource_name: string }>

@@ -7,6 +7,93 @@ import {
   type V5RequestBody
 } from '@/api/system-manage/_shared'
 
+type V5PermissionGroupLike = {
+  id?: string
+  group_type?: string
+  code?: string
+  name?: string
+  name_en?: string
+  description?: string
+  status?: string
+  sort_order?: number
+  is_builtin?: boolean
+}
+
+type V5CollaborationWorkspaceLike = {
+  id?: string
+  collaboration_workspace_id?: string
+  name?: string
+  remark?: string
+  logo_url?: string
+  plan?: string
+  max_members?: number
+  status?: string
+  created_at?: string
+  updated_at?: string
+  admin_users?: string[]
+  admin_user_ids?: string[]
+  workspace_id?: string
+  workspace_type?: string
+  current_role_code?: string
+  member_status?: string
+}
+
+type V5PermissionActionLike = {
+  id?: string
+  permission_key?: string
+  module_code?: string
+  module_group_id?: string
+  feature_group_id?: string
+  module_group?: V5PermissionGroupLike
+  feature_group?: V5PermissionGroupLike
+  context_type?: string
+  feature_kind?: string
+  name?: string
+  description?: string
+  data_permission_code?: string
+  data_permission_name?: string
+  status?: string
+  sort_order?: number
+  is_builtin?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+type V5FeaturePackageLike = {
+  id?: string
+  package_key?: string
+  package_type?: string
+  name?: string
+  description?: string
+  workspace_scope?: string
+  app_key?: string
+  app_keys?: string[]
+  is_builtin?: boolean
+  action_count?: number
+  menu_count?: number
+  collaborationWorkspaceCount?: number
+  status?: string
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
+}
+
+type V5CollaborationWorkspaceMemberLike = {
+  id?: string
+  collaboration_workspace_id?: string
+  workspace_id?: string
+  workspace_type?: string
+  user_id?: string
+  role_code?: string
+  member_type?: string
+  status?: string
+  joined_at?: string
+  user_name?: string
+  nick_name?: string
+  user_email?: string
+  avatar?: string
+}
+
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
   if (target) {
@@ -68,7 +155,7 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
 }
 
 function normalizeCollaborationWorkspace(
-  item: any
+  item: V5CollaborationWorkspaceLike | undefined
 ): Api.SystemManage.CollaborationWorkspaceListItem {
   // V5：协作空间 ID 单一语义，CW 接口仅认 collaboration_workspace_id（spec 字段名）。
   // 旧 axios 返回 id / workspace_id 的兜底已废弃。
@@ -93,11 +180,13 @@ function normalizeCollaborationWorkspace(
   }
 }
 
-function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
+function normalizeAction(item: V5PermissionActionLike | undefined): Api.SystemManage.PermissionActionItem {
   const permissionKey = normalizePermissionKey(item?.permission_key)
   const legacy = derivePermissionSegments(permissionKey)
   const moduleCode = item?.module_code || legacy.resourceCode || ''
-  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
+  const normalizeGroup = (
+    value: V5PermissionGroupLike | undefined
+  ): Api.SystemManage.PermissionGroupItem | undefined =>
     value
       ? {
           id: value?.id || '',
@@ -137,11 +226,13 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
   }
 }
 
-function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
+function normalizeFeaturePackage(
+  item: V5FeaturePackageLike | undefined
+): Api.SystemManage.FeaturePackageItem {
   const packageKey = item?.package_key || ''
   const appKeysRaw = item?.app_keys || []
   const appKeys = Array.isArray(appKeysRaw)
-    ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+    ? appKeysRaw.map((value) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
     id: item?.id || '',
@@ -168,7 +259,7 @@ function normalizeRoleLabel(roleCode?: string) {
 }
 
 function normalizeCollaborationWorkspaceMember(
-  item: any
+  item: V5CollaborationWorkspaceMemberLike | undefined
 ): Api.SystemManage.CollaborationWorkspaceMemberItem {
   const roleCode = item?.role_code || ''
   return {
@@ -218,20 +309,35 @@ export async function fetchGetCollaborationWorkspace(id: string) {
   return normalizeCollaborationWorkspace(res)
 }
 
-export function fetchCreateCollaborationWorkspace(
+export async function fetchCreateCollaborationWorkspace(
   data: Api.SystemManage.CollaborationWorkspaceCreateParams
 ) {
-  const body: V5RequestBody<'/collaboration-workspaces', 'post'> = toV5Body(data)
-  return unwrap(
-    v5Client.POST('/collaboration-workspaces', { body })
-  ) as unknown as Promise<{ id: string }>
+  const body: V5RequestBody<'/collaboration-workspaces', 'post'> = {
+    name: data.name,
+    remark: data.remark,
+    logo_url: data.logo_url,
+    plan: data.plan,
+    max_members: data.max_members,
+    status: data.status,
+    admin_user_ids: data.admin_user_ids
+  }
+  const res = await unwrap(v5Client.POST('/collaboration-workspaces', { body }))
+  return { id: res.id }
 }
 
 export async function fetchUpdateCollaborationWorkspace(
   id: string,
   data: Api.SystemManage.CollaborationWorkspaceUpdateParams
 ) {
-  const body: V5RequestBody<'/collaboration-workspaces/{id}', 'put'> = toV5Body(data)
+  const body: V5RequestBody<'/collaboration-workspaces/{id}', 'put'> = {
+    name: data.name || '',
+    remark: data.remark,
+    logo_url: data.logo_url,
+    plan: data.plan,
+    max_members: data.max_members,
+    status: data.status,
+    admin_user_ids: data.admin_user_ids
+  }
   const { error } = await v5Client.PUT('/collaboration-workspaces/{id}', {
     params: { path: { id } },
     body
@@ -445,11 +551,18 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: str
   }))
 }
 
-export function fetchCreateMyCollaborationWorkspaceRole(data: Api.SystemManage.RoleCreateParams) {
-  const body: V5RequestBody<'/collaboration-workspaces/current/roles', 'post'> = toV5Body(data)
-  return unwrap(
-    v5Client.POST('/collaboration-workspaces/current/roles', { body })
-  ) as unknown as Promise<{ roleId: string }>
+export async function fetchCreateMyCollaborationWorkspaceRole(
+  data: Api.SystemManage.RoleCreateParams
+) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/roles', 'post'> = {
+    code: data.code,
+    name: data.name,
+    description: data.description,
+    sort_order: data.sort_order,
+    priority: data.priority,
+    status: data.status
+  }
+  return unwrap(v5Client.POST('/collaboration-workspaces/current/roles', { body }))
 }
 
 export async function fetchUpdateMyCollaborationWorkspaceRole(
@@ -457,7 +570,14 @@ export async function fetchUpdateMyCollaborationWorkspaceRole(
   data: Api.SystemManage.RoleUpdateParams
 ) {
   const body: V5RequestBody<'/collaboration-workspaces/current/boundary/roles/{roleId}', 'put'> =
-    toV5Body(data)
+    {
+      code: data.code || '',
+      name: data.name || '',
+      description: data.description,
+      sort_order: data.sort_order,
+      priority: data.priority,
+      status: data.status
+    }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/boundary/roles/{roleId}',
     {

@@ -13,6 +13,7 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
+	permissionrefresh "github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
 func (h *APIHandler) ListFeaturePackages(ctx context.Context, params gen.ListFeaturePackagesParams) (*gen.FeaturePackageList, error) {
@@ -124,7 +125,7 @@ func (h *APIHandler) CreateFeaturePackage(ctx context.Context, req *gen.FeatureP
 	return &gen.IDResult{ID: created.ID}, nil
 }
 
-func (h *APIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest, params gen.UpdateFeaturePackageParams) (*gen.MutationResult, error) {
+func (h *APIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest, params gen.UpdateFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -137,19 +138,21 @@ func (h *APIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeatureP
 		SortOrder:   optInt(req.SortOrder, 0),
 		AppKeys:     req.AppKeys,
 	}
-	if _, err := h.featurePkgSvc.Update(params.ID, dtoReq); err != nil {
+	stats, err := h.featurePkgSvc.Update(params.ID, dtoReq)
+	if err != nil {
 		h.logger.Error("update feature package failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) DeleteFeaturePackage(ctx context.Context, params gen.DeleteFeaturePackageParams) (*gen.MutationResult, error) {
-	if _, err := h.featurePkgSvc.Delete(params.ID); err != nil {
+func (h *APIHandler) DeleteFeaturePackage(ctx context.Context, params gen.DeleteFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
+	stats, err := h.featurePkgSvc.Delete(params.ID)
+	if err != nil {
 		h.logger.Error("delete feature package failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageChildren(ctx context.Context, params gen.GetFeaturePackageChildrenParams) (*gen.FeaturePackageAssignmentResponse, error) {
@@ -164,12 +167,13 @@ func (h *APIHandler) GetFeaturePackageChildren(ctx context.Context, params gen.G
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageChildren(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageChildrenParams) (*gen.MutationResult, error) {
-	if _, err := h.featurePkgSvc.SetPackageChildren(params.ID, uuidIDsFromRequest(req), ""); err != nil {
+func (h *APIHandler) SetFeaturePackageChildren(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageChildrenParams) (*gen.FeaturePackageMutationResult, error) {
+	stats, err := h.featurePkgSvc.SetPackageChildren(params.ID, uuidIDsFromRequest(req), "")
+	if err != nil {
 		h.logger.Error("set feature package children failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageActions(ctx context.Context, params gen.GetFeaturePackageActionsParams) (*gen.FeaturePackageActionsResponse, error) {
@@ -184,12 +188,13 @@ func (h *APIHandler) GetFeaturePackageActions(ctx context.Context, params gen.Ge
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageActionsParams) (*gen.MutationResult, error) {
-	if _, err := h.featurePkgSvc.SetPackageKeys(params.ID, uuidIDsFromRequest(req), ""); err != nil {
+func (h *APIHandler) SetFeaturePackageActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageActionsParams) (*gen.FeaturePackageMutationResult, error) {
+	stats, err := h.featurePkgSvc.SetPackageKeys(params.ID, uuidIDsFromRequest(req), "")
+	if err != nil {
 		h.logger.Error("set feature package actions failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageMenus(ctx context.Context, params gen.GetFeaturePackageMenusParams) (*gen.FeaturePackageMenusResponse, error) {
@@ -200,16 +205,17 @@ func (h *APIHandler) GetFeaturePackageMenus(ctx context.Context, params gen.GetF
 	}
 	return &gen.FeaturePackageMenusResponse{
 		MenuIds: ids,
-		Menus:   marshalList(menus),
+		Menus:   featurePackageMenuItemsFromModels(menus),
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageMenusParams) (*gen.MutationResult, error) {
-	if _, err := h.featurePkgSvc.SetPackageMenus(params.ID, uuidIDsFromRequest(req), ""); err != nil {
+func (h *APIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageMenusParams) (*gen.FeaturePackageMutationResult, error) {
+	stats, err := h.featurePkgSvc.SetPackageMenus(params.ID, uuidIDsFromRequest(req), "")
+	if err != nil {
 		h.logger.Error("set feature package menus failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageCollaborationWorkspaceList, error) {
@@ -225,16 +231,17 @@ func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	return &gen.FeaturePackageCollaborationWorkspaceList{Records: records, Total: int64(len(records))}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.MutationResult, error) {
+func (h *APIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageMutationResult, error) {
 	var grantedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		grantedBy = &uid
 	}
-	if _, err := h.featurePkgSvc.SetPackageCollaborationWorkspaces(params.ID, uuidIDsFromRequest(req), grantedBy, ""); err != nil {
+	stats, err := h.featurePkgSvc.SetPackageCollaborationWorkspaces(params.ID, uuidIDsFromRequest(req), grantedBy, "")
+	if err != nil {
 		h.logger.Error("set feature package cws failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageImpactPreview(ctx context.Context, params gen.GetFeaturePackageImpactPreviewParams) (*gen.FeaturePackageImpactPreview, error) {
@@ -266,7 +273,7 @@ func (h *APIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.
 			PackageID:  list[i].PackageID,
 			VersionNo:  list[i].VersionNo,
 			ChangeType: list[i].ChangeType,
-			Snapshot:   marshalAnyObject(list[i].Snapshot),
+			Snapshot:   featurePackageSnapshotFromModel(list[i].Snapshot),
 			RequestID:  list[i].RequestID,
 			CreatedAt:  list[i].CreatedAt,
 		}
@@ -285,4 +292,23 @@ func (h *APIHandler) ListFeaturePackageRiskAudits(ctx context.Context, params ge
 		return nil, err
 	}
 	return &gen.FeaturePackageRiskAuditList{Records: riskAuditItemsFromModels(list), Total: total}, nil
+}
+
+func featurePackageMutationResultFromStats(stats *permissionrefresh.RefreshStats) *gen.FeaturePackageMutationResult {
+	if stats == nil {
+		return &gen.FeaturePackageMutationResult{
+			RefreshStats: gen.RefreshStats{},
+		}
+	}
+	return &gen.FeaturePackageMutationResult{
+		RefreshStats: gen.RefreshStats{
+			RequestedPackageCount:       int64(stats.RequestedPackageCount),
+			ImpactedPackageCount:        int64(stats.ImpactedPackageCount),
+			RoleCount:                   int64(stats.RoleCount),
+			CollaborationWorkspaceCount: int64(stats.CollaborationWorkspaceCount),
+			UserCount:                   int64(stats.UserCount),
+			ElapsedMilliseconds:         stats.ElapsedMilliseconds,
+			FinishedAt:                  stats.FinishedAt,
+		},
+	}
 }

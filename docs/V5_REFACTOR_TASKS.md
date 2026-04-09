@@ -390,3 +390,127 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 继续向下收紧仍残留的弱类型单项响应，优先看 `AnyObject` 的 read-only 详情接口和 `permission/actions/{id}/endpoints` 这类还没有完全贴合 item schema 的路径。
 - 前端包装层里仍有少量针对老响应形态的 normalizer，后续可以按域继续压缩，减少手工猜字段和 `item: any` 断言。
+
+### 2026-04-09 OpenAPI 收口第二批：page/system/message 生成同步（Phase 12 续）
+
+**本次改动**
+- 继续收口 `message`、`page`、`system` 三域的 OpenAPI 契约，补齐 `InboxSummary`、`InboxDetail`、`InboxTodoActionRequest`、`MessageDispatchOptions`、`MessageDispatchRequest`、`MessageTemplateSaveRequest`、`MessageSenderSaveRequest`、`MessageRecipientGroupSaveRequest`、`MessageDispatchRecord`、`PageAccessTraceResponse`、`PageSaveRequest`、`PageSaveResult`、`SystemFastEnterConfig`、`SystemAppSaveRequest`、`SystemCurrentAppResponse`、`SystemAppHostBindingSaveRequest`、`SystemMenuSpaceEntryBindingSaveRequest`、`SystemCurrentMenuSpaceResponse`、`SystemMenuSpaceModeResponse`、`SystemMenuSpaceModeSaveRequest`、`SystemMenuSpaceSaveRequest`、`SystemMenuSpaceHostBindingSaveRequest` 等 schema。
+- 重新 bundle + `ogen` + `openapi-typescript`，同步刷新 `backend/api/gen` 与 `frontend/src/api/v5/schema.d.ts`，让前后端生成物都跟上这轮 spec 变化。
+- 验证上，`redocly lint` 只剩仓库既有的历史 warning，`go run github.com/ogen-go/ogen/cmd/ogen@latest ...` 与 `pnpm gen:api` 都已完成。
+
+### 2026-04-10 OpenAPI 收口第三批：message/system/page handler 签名对齐
+
+**本次改动**
+- 继续把生成后仍停留在 `AnyObject / AnyListResponse` 的 handler 收紧为 ogen 生成类型，重点覆盖 `message`、`page`、`system`、`phase4_extras`、`apiendpoint`、`collaboration-workspace`、`permission`、`media`、`menu`、`user`。
+- `backend/internal/api/handlers` 已通过 `go test ./internal/api/handlers`，说明这一批签名收口和返回体映射已能编译。
+
+**下次方向**
+- 继续追剩余历史弱契约接口，优先收 `apiendpoint`、`system` 其他写接口、`message` 剩余路径，并把前端调用层一并跟到生成 client。
+
+**下次方向**
+- 这一批 schema 里仍有少数定义为开放字典，ogen 生成后仍会落到 `AnyObject`，后续要继续把这些响应拆成字段明确的对象，才能真正把弱契约收干净。
+- 下一批建议继续推进 `collaboration-workspace`、`permission`、`user` 这些还保留较多对象透传的接口，把读接口的返回体也进一步结构化。
+### 2026-04-10 OpenAPI 收口第四批：前端 wrapper 与生成类型对齐
+
+**本次改动**
+- `frontend/src/api/system-manage/_shared.ts` 的 `toV5Body` 改为保留字段级类型信息，去掉把请求体统一压扁成 `Record<string, unknown>` 的弱化行为，消除新生成 schema 落地后的大部分 body 赋值错误。
+- `frontend/src/api/collaboration-workspace.ts`、`frontend/src/api/system-manage/api-endpoint.ts`、`frontend/src/api/system-manage/page.ts`、`frontend/src/api/system-manage/user.ts` 按最新 OpenAPI 生成类型补齐必填字段与 snake_case 请求体，`PUT /users/{id}/menus` 也从旧 `{ ids }` 迁到显式菜单裁剪结构。
+- 验证通过：`pnpm exec vue-tsc --noEmit` 已通过；`backend/api/gen/oas_server_gen.go` 当前已查不到 `AnyObject` / `AnyListResponse` 生成签名残留。
+
+**下次方向**
+- 继续把前端 API 包装层里仍依赖 `toV5Record` / `toV5ListResponse` 的读接口按域压缩，优先 `message`、`permission`、`collaboration-workspace`，减少 normalizer 对弱对象的兜底解析。
+- 在更大范围上补一轮联编守门，建议至少固定执行 `go test ./internal/api/handlers`、`pnpm exec vue-tsc --noEmit` 与生成链 diff 检查，防止后续再出现 spec 与 wrapper 漂移。
+### 2026-04-10 OpenAPI 收口第五批：message 域契约补强 + API endpoint 前端收紧
+
+**本次改动**
+- `backend/api/openapi/domains/message/{schemas,paths}.yaml` 补齐 `InboxListResponse`、`MessageDispatchResult`、`MessageTemplateItem/ListResponse`、`MessageSenderItem/ListResponse`、`MessageRecipientGroupItem/ListResponse`、`MessageDispatchRecordListResponse` 等显式 schema，`dispatch` 与模板/发送人/接收组写接口不再停留在 `MutationResult / AnyObject`。
+- `backend/internal/api/handlers/message.go` 按新 ogen 签名重写列表、详情、发送与保存返回体，统一改成强类型响应映射；`go test ./internal/api/handlers -count=1` 已通过。
+- `frontend/src/api/message.ts` 全量移除 `as unknown as`，按新生成 schema 补齐 inbox/dispatch/template/sender/recipient-group/record 的归一化；同时 `frontend/src/api/system-manage/api-endpoint.ts` 去掉了对 overview/list/category/stale/unregistered 的 `toV5Record / toV5ListResponse` 依赖。
+
+**下次方向**
+- 继续处理仍大量依赖 `toV5Record / toV5ListResponse` 的前端域，优先 `system-manage/app.ts`、`system-manage/permission.ts`、`system-manage/menu.ts`、`system-manage/user.ts`。
+- `message` 域虽然已经切到强响应，但部分 normalizer 还在兼容历史字段，后续可以继续把前端 `Api.Message` 类型和 OpenAPI 真相源进一步收拢，减少双份字段语义。
+
+### 2026-04-10 OpenAPI 收口第六批：system 写接口回正 + permission 批量治理结果显式化
+
+**本次改动**
+- `backend/api/openapi/domains/system/{schemas,paths}.yaml` 新增 `SystemAppItem/ListResponse`、`SystemAppHostBindingItem/ListResponse`、`SystemMenuSpaceEntryBindingItem/ListResponse`、`SystemMenuSpaceItem/ListResponse`、`SystemMenuSpaceHostBindingItem/ListResponse`、`SystemMenuSpaceInitializeResult`，并把 `saveApp/saveMenuSpace/save*Binding/saveMenuSpaceMode/updateFastEnterConfig` 这些前端实际消费对象的接口从 `MutationResult` 收回显式响应。
+- `backend/internal/api/handlers/system.go`、`phase4_extras.go`、`extras.go`、`permission.go` 同步对齐 ogen 新签名；`system` 域列表/当前态/初始化结果改成强类型映射，`permission-actions/cleanup-unused`、`/batch`、`/groups`、`/templates` 也补上显式结果返回。
+- `frontend/src/api/system-manage/app.ts`、`frontend/src/api/system-manage/permission.ts` 按新生成 schema 去掉一批弱契约解析，补齐 snake_case 字段消费；验证通过：`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit`。
+
+**下次方向**
+- 继续处理 `system` 域剩余仍保留开放 request schema 的写接口，尽量把 `System*SaveRequest` 也从 `additionalProperties: true` 收成显式字段，减少前后端对运行时 JSON 形状的猜测。
+- `permission.ts` 里功能包相关接口仍有多处 `toV5Record + refresh_stats` 兜底，下一轮优先把 feature package 域的写接口返回也结构化，继续压缩弱解析面。
+
+### 2026-04-10 OpenAPI 收口第七批：PageSaveRequest 显式化 + 生成链验证（Phase 12 续）
+
+**本次改动**
+- `backend/api/openapi/components/common.yaml` 将 `PageSaveRequest` 统一收敛为显式字段并加 `additionalProperties: false`，`backend/api/openapi/domains/page/paths.yaml` 的 `POST /pages`、`PUT /pages/{id}` 改为引用公共组件，消除 page 域内重复 schema 与旧定义撞名；重新执行 `bundle -> ogen -> gen:api` 后，`backend/api/gen/oas_schemas_gen.go` 中 `SchemasPageSaveRequest` 已生成强类型 struct。
+- `backend/internal/api/handlers/page.go` 的 `CreatePage` / `UpdatePage` 改为直接接收 `*gen.SchemasPageSaveRequest`，字段逐项映射到 `page.SaveRequest`，移除 `AnyObject` 反序列化桥接；同时 `frontend/src/api/system-manage/page.ts` 改为显式构造 pages create/update body，不再对 `app_key/appKey` 做弱兼容解析。
+- 顺手补齐 `frontend/src/api/system-manage/app.ts` 的 fast-enter 更新请求体映射，把可选 `FastEnter*Item` 收敛成符合生成 schema 的必填数组项，消除这轮类型收紧后暴露的前端编译错误。
+- 验证通过：`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit`、`redocly bundle`、`ogen`、`pnpm run gen:api` 全部通过。
+
+**下次方向**
+- 继续收 `frontend/src/api/system-manage/permission.ts` 和 `frontend/src/api/message.ts` 中仍依赖 `toV5Body` 的写接口，把 permission group、inbox todo、dispatch、template/sender/recipient-group 保存接口改成显式 body。
+- 评估是否继续把 `PageSaveResult` 与其他 page 读接口响应从开放对象收成显式 schema，进一步压缩 `normalizePageItem` 对弱响应形态的兼容路径。
+
+### 2026-04-10 OpenAPI 收口第八批：permission/message 写接口显式 body 清尾（Phase 12 续）
+
+**本次改动**
+- `frontend/src/api/system-manage/permission.ts` 的功能权限分组创建/更新已改为显式构造 `PermissionActionGroupSaveRequest`，不再通过 `toV5Body` 兜底透传。
+- `frontend/src/api/message.ts` 的 inbox todo、dispatch、message template、message sender、message recipient group 全部写接口已改成显式 `V5RequestBody`，字段逐项贴合生成 schema；`frontend/src/api/system-manage/user.ts` 里刷新权限快照的响应包装也去掉了 `toV5Body`。
+- 验证通过：`pnpm exec vue-tsc --noEmit`、`go test ./internal/api/handlers -count=1` 均通过；当前 `frontend/src/api` 下已查不到 `toV5Body(` 调用残留。
+
+**下次方向**
+- 若继续深挖，可把 `PageSaveResult`、`PermissionActionBatchUpdateRequest` 等仍保留开放对象的契约继续拆成显式 schema，进一步压缩 `_shared.ts` 中的弱类型辅助。
+- 同步审视 `toV5Record` / `AnyObject` 在 read-only normalizer 中的残留点，按域逐步替换为生成类型或显式 schema。
+
+### 2026-04-10 OpenAPI 收口第九批：PageSaveResult + PermissionActionBatchUpdateRequest 显式化（Phase 12 续）
+
+**本次改动**
+- `backend/api/openapi/components/common.yaml` 新增显式 `PageSaveResult` 与 `PermissionActionBatchUpdateRequest`，并将 `backend/api/openapi/domains/page/paths.yaml`、`backend/api/openapi/domains/permission/paths.yaml` 改为引用公共组件，移除 page/permission 域内同名开放对象定义；重新执行 `bundle -> ogen -> gen:api` 后，后端与前端生成物都已切到明确字段结构。
+- `backend/internal/api/handlers/page.go` 的 `GetPage`、`CreatePage`、`UpdatePage` 已对齐最新 ogen 指针签名，返回体改为显式映射 `gen.PageSaveResult`，不再通过 `marshalAnyObject` 兜底；`backend/internal/api/handlers/extras.go` 的 `BatchUpdatePermissionActions` 也改为直接接收 `*gen.PermissionActionBatchUpdateRequest`，移除 JSON 桥接。
+- 验证通过：`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit` 均通过，说明 `PageSaveResult` 与权限批量更新请求体这两条链路已经完成 `OpenAPI -> handler -> frontend 类型` 闭环。
+
+**下次方向**
+- 继续清理仍残留 JSON 桥接的权限写接口，优先 `SavePermissionActionBatchTemplate`，把 permission 域剩余写接口也完全贴到生成类型。
+- 继续收缩 page/system 的弱 meta 形态，评估 `PageSaveResult.meta`、system 若干 save request 中仍保留开放对象的字段是否要继续拆成显式结构。
+
+### 2026-04-10 OpenAPI 收口第十批：permission 批量模板与端点列表收口
+
+**本次改动**
+- `backend/api/openapi/domains/permission/schemas.yaml` 将 `PermissionActionBatchTemplateSaveRequest` 收敛为显式请求体，并新增 `PermissionActionEndpointListItem`，`PermissionActionEndpointList.records` 不再沿用开放对象。
+- `backend/internal/api/handlers/extras.go` 的 `SavePermissionActionBatchTemplate` 改为直接接收 `*gen.PermissionActionBatchTemplateSaveRequest`，只在 `payload` 边界保留动态字典转换；`backend/internal/api/handlers/permission.go` 的端点列表改成显式 item 映射。
+- `frontend/src/api/system-manage/permission.ts` 继续对齐生成 schema，修正批量模板写接口的必填字段；`redocly bundle`、`ogen`、`pnpm run gen:api`、`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit` 均通过。
+
+**下次方向**
+- 继续向下收 `permission` 域里还保留开放对象的项级字段，优先 `RiskAuditItem`、`PermissionActionBatchTemplateItem.payload`、`PermissionActionEndpointListItem.category` 这类边界字段。
+- 再往后就是继续压 `system/page` 的剩余 `meta` / `snapshot` 结构，确保 OpenAPI、handler、前端三层持续一致。
+
+### 2026-04-10 OpenAPI 收口第十一批：system/featurepackage/media 收尾 + 前端 normalizer 清尾
+
+**本次改动**
+- `backend/api/openapi/domains/system/schemas.yaml` 把 app / host binding / menu space 相关 `meta` 收敛成命名的 `SystemMeta` schema，`backend/internal/api/handlers/system.go` 改用 `optSystemMetaToMap` 适配 `gen.OptSystemMeta`，不再直接把 `meta` 当 `AnyObject` 处理。
+- `backend/api/openapi/components/common.yaml` 将 `FeaturePackageMenusResponse.menus` 收成显式 `FeaturePackageMenuItem`，`backend/api/openapi/domains/featurepackage/schemas.yaml` 新增 `FeaturePackageSnapshot` 命名 schema；`backend/internal/api/handlers/featurepackage.go` 不再用 `marshalAnyObject/marshalList` 透传菜单和快照。
+- `frontend/src/api/auth.ts` 去掉 login / refresh 的 `as unknown as` 双重断言，`frontend/src/api/system-manage/permission.ts` 清掉不再需要的 `toV5Record` 导入；当前 `frontend/src/api` 下业务层已无 `toV5Record/toV5ListResponse` 调用残留。
+
+**验证**
+- `redocly bundle`
+- `go run github.com/ogen-go/ogen/cmd/ogen@latest --target api\\gen --package gen --clean api\\openapi\\dist\\openapi.yaml`
+- `pnpm run gen:api`
+- `go test ./internal/api/handlers -count=1`
+- `pnpm exec vue-tsc --noEmit`
+
+**下次方向**
+- 当前任务树只剩最终收尾节点，若继续就是做一次最终对账：确认文档、生成物和 task-tree 的完成态一致。
+
+### 2026-04-10 OpenAPI 收口第十二批：审计补漏，修正 system meta 与 featurepackage snapshot 假收口
+
+**本次改动**
+- 审计发现第十一批存在“任务完成态先于源码收口”的问题：`backend/api/openapi/domains/system/schemas.yaml` 里 `SystemMenuSpaceEntryBindingItem`、`SystemMenuSpaceEntryBindingSaveRequest`、`SystemMenuSpaceItem`、`SystemMenuSpaceHostBindingSaveRequest` 仍残留 `AnyObject`。本次已统一改为 `SystemMeta`，并同步把 `backend/internal/api/handlers/system.go` 中 `SaveMenuSpaceEntryBinding`、`SaveMenuSpaceHostBinding` 切到 `optSystemMetaToMap(req.Meta)`。
+- `backend/api/openapi/domains/featurepackage/schemas.yaml` 的 `FeaturePackageSnapshot` 不再是单纯命名后的开放对象，而是改成显式字段结构；`backend/internal/api/handlers/openapi_response_helpers.go` 新增基于真实持久化结构的字段级映射，将 `package_id`、`child_package_ids`、`action_ids`、`menu_ids`、`collaboration_workspace_ids` 收成 `uuid.UUID` / `[]uuid.UUID`，`snapshot_created_at` 收成 `time.Time`，彻底移除对快照的整包 JSON 透传。
+- 重新执行 `redocly bundle`、`ogen`、`pnpm run gen:api` 后，`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit` 均通过；`backend/api/openapi/domains/system/schemas.yaml` 中已查不到 `AnyObject` 残留。
+
+**下次方向**
+- 当前仍有一个仓库卫生问题未处理：`docs/openapi-contract-closeout-temp.md` 是过期未跟踪临时文档，如要彻底收尾，需要在确认后删除，避免与 `docs/V5_REFACTOR_TASKS.md` 和 task-tree 的正式状态冲突。
+- task-tree 当前仍显示旧的 `100%` 完成事件文本，后续若继续依赖它做审计记录，建议补一条“审计补漏完成”的事件或新建修正子任务，避免再次出现文档与源码状态漂移。

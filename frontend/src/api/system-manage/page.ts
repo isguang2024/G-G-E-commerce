@@ -9,8 +9,6 @@ import {
   normalizePageBreadcrumbPreviewItem,
   normalizePageMenuOption,
   normalizePageAccessTraceResult,
-  toV5ListResponse,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from './_shared'
@@ -100,12 +98,10 @@ export async function fetchSyncPages(appKey: string) {
 
 /** 预览页面面包屑 */
 export async function fetchGetPageBreadcrumbPreview(id: string, appKey = '') {
-  const res = toV5ListResponse(
-    await unwrap(
-      v5Client.GET('/pages/{id}/breadcrumb-preview', {
-        params: { path: { id }, query: { app_key: appKey } }
-      })
-    )
+  const res = await unwrap(
+    v5Client.GET('/pages/{id}/breadcrumb-preview', {
+      params: { path: { id }, query: { app_key: appKey } }
+    })
   )
   return {
     items: (res.records || []).map(normalizePageBreadcrumbPreviewItem),
@@ -123,12 +119,32 @@ export async function fetchGetPage(id: string, appKey = '') {
 
 /** 创建页面 */
 export async function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
-  const payload = toV5Record(data)
-  const appKey =
-    (typeof payload.app_key === "string" ? payload.app_key : '') ||
-    (typeof payload.appKey === "string" ? payload.appKey : '')
-  const query: V5Query<'/pages', 'post'> = { app_key: appKey }
-  const body: V5RequestBody<'/pages', 'post'> = data
+  const query: V5Query<'/pages', 'post'> = { app_key: data.app_key }
+  const body: V5RequestBody<'/pages', 'post'> = {
+    page_key: data.page_key,
+    name: data.name,
+    route_name: data.route_name,
+    route_path: data.route_path,
+    component: data.component,
+    page_type: data.page_type,
+    source: data.source,
+    module_key: data.module_key,
+    sort_order: data.sort_order,
+    parent_menu_id: data.parent_menu_id,
+    parent_page_key: data.parent_page_key,
+    display_group_key: data.display_group_key,
+    active_menu_path: data.active_menu_path,
+    breadcrumb_mode: data.breadcrumb_mode,
+    access_mode: data.access_mode,
+    permission_key: data.permission_key,
+    inherit_permission: data.inherit_permission,
+    keep_alive: data.keep_alive,
+    is_full_page: data.is_full_page,
+    space_keys: data.space_keys,
+    visibility_scope: data.visibility_scope,
+    status: data.status,
+    meta: data.meta
+  }
   const res = await unwrap(
     v5Client.POST('/pages', {
       params: { query },
@@ -140,12 +156,32 @@ export async function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
 
 /** 更新页面 */
 export async function fetchUpdatePage(id: string, data: Api.SystemManage.PageSaveParams) {
-  const payload = toV5Record(data)
-  const appKey =
-    (typeof payload.app_key === "string" ? payload.app_key : '') ||
-    (typeof payload.appKey === "string" ? payload.appKey : '')
-  const query: V5Query<'/pages/{id}', 'put'> = { app_key: appKey }
-  const body: V5RequestBody<'/pages/{id}', 'put'> = data
+  const query: V5Query<'/pages/{id}', 'put'> = { app_key: data.app_key }
+  const body: V5RequestBody<'/pages/{id}', 'put'> = {
+    page_key: data.page_key,
+    name: data.name,
+    route_name: data.route_name,
+    route_path: data.route_path,
+    component: data.component,
+    page_type: data.page_type,
+    source: data.source,
+    module_key: data.module_key,
+    sort_order: data.sort_order,
+    parent_menu_id: data.parent_menu_id,
+    parent_page_key: data.parent_page_key,
+    display_group_key: data.display_group_key,
+    active_menu_path: data.active_menu_path,
+    breadcrumb_mode: data.breadcrumb_mode,
+    access_mode: data.access_mode,
+    permission_key: data.permission_key,
+    inherit_permission: data.inherit_permission,
+    keep_alive: data.keep_alive,
+    is_full_page: data.is_full_page,
+    space_keys: data.space_keys,
+    visibility_scope: data.visibility_scope,
+    status: data.status,
+    meta: data.meta
+  }
   const res = await unwrap(
     v5Client.PUT('/pages/{id}', {
       params: { path: { id }, query },

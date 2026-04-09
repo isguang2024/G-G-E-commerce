@@ -137,14 +137,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionGroupSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../components/common.yaml#/components/schemas/IDResult'
   /permission-actions/groups/{id}:
     put:
       operationId: updatePermissionActionGroup
@@ -165,7 +165,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionGroupSaveRequest'
       responses:
         '200':
           description: OK
@@ -234,7 +234,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionCleanupResult'
   /permission-actions/batch:
     post:
       operationId: batchUpdatePermissionActions
@@ -248,14 +248,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: '../../components/common.yaml#/components/schemas/PermissionActionBatchUpdateRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionBatchUpdateResult'
   /permission-actions/templates:
     get:
       operationId: listPermissionActionBatchTemplates
@@ -283,14 +283,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionBatchTemplateSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionBatchTemplateItem'
   /permission-actions/{id}:
     get:
       operationId: getPermissionAction
@@ -382,7 +382,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionEndpointList'
     post:
       operationId: addPermissionActionEndpoint
       summary: 新增功能权限关联接口
@@ -402,7 +402,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionEndpointAddRequest'
       responses:
         '200':
           description: OK

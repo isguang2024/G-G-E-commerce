@@ -324,7 +324,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/UserCollaborationWorkspacesResponse'
   /users/{id}/packages:
     get:
       operationId: getUserPackages
@@ -403,7 +403,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/UserMenusResponse'
     put:
       operationId: setUserMenus
       summary: 配置用户菜单裁剪
@@ -423,7 +423,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/UserMenusResponse'
       responses:
         '200':
           description: OK
@@ -456,7 +456,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/UserPermissionsResponse'
   /users/{id}/permission-diagnosis:
     get:
       operationId: getUserPermissionDiagnosis
@@ -490,7 +490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/UserPermissionDiagnosisResponse'
   /users/{id}/permission-refresh:
     post:
       operationId: refreshUserPermissionSnapshot

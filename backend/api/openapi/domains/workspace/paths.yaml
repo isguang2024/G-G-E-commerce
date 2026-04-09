@@ -178,7 +178,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceMemberAddRequest'
       responses:
         '200':
           description: OK
@@ -228,7 +228,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceMemberRoleRequest'
       responses:
         '200':
           description: OK
@@ -312,7 +312,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceRoleSaveRequest'
       responses:
         '200':
           description: OK
@@ -347,7 +347,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceRoleSaveRequest'
       responses:
         '200':
           description: OK
@@ -375,7 +375,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceRoleSaveRequest'
       responses:
         '200':
           description: OK
@@ -668,7 +668,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceSaveRequest'
       responses:
         '200':
           description: OK
@@ -717,7 +717,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceSaveRequest'
       responses:
         '200':
           description: OK
@@ -951,7 +951,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceMemberAddRequest'
       responses:
         '200':
           description: OK
@@ -1013,7 +1013,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/CollaborationWorkspaceMemberRoleRequest'
       responses:
         '200':
           description: OK

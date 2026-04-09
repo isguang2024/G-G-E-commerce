@@ -1,4 +1,5 @@
 import { v5Client } from '@/api/v5/client'
+import type { components } from '@/api/v5/schema'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
@@ -10,6 +11,100 @@ export type { V5Path, V5Method, V5PathParams, V5Query, V5RequestBody } from '@/a
 
 export { v5Client, normalizeMenuSpaceKey }
 export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
+
+type V5UserPermissionDiagnosisResponse = components['schemas']['UserPermissionDiagnosisResponse']
+type V5UserPermissionDiagnosisResult = components['schemas']['UserPermissionDiagnosisResult']
+type V5UserPermissionDiagnosisAction = components['schemas']['UserPermissionDiagnosisAction']
+type V5UserPermissionRoleResult = components['schemas']['UserPermissionRoleResult']
+type V5UserPermissionMenuTreeItem = components['schemas']['UserPermissionMenuTreeItem']
+type V5PermissionBatchTemplateItem = components['schemas']['PermissionActionBatchTemplateItem']
+type V5RiskAuditItem = components['schemas']['RiskAuditItem']
+type V5PageLike = {
+  id?: string
+  app_key?: string
+  page_key?: string
+  name?: string
+  route_name?: string
+  route_path?: string
+  component?: string
+  page_type?: string
+  visibility_scope?: string
+  source?: string
+  module_key?: string
+  sort_order?: number
+  parent_menu_id?: string
+  parent_menu_name?: string
+  parent_page_key?: string
+  parent_page_name?: string
+  display_group_key?: string
+  display_group_name?: string
+  active_menu_path?: string
+  breadcrumb_mode?: string
+  access_mode?: string
+  permission_key?: string
+  inherit_permission?: boolean
+  keep_alive?: boolean
+  is_full_page?: boolean
+  is_iframe?: boolean
+  is_hide_tab?: boolean
+  space_keys?: string[]
+  space_scope?: string
+  space_type?: string
+  host_key?: string
+  status?: string
+  meta?: {
+    spaceKeys?: string[]
+    spaceScope?: string
+    visibilityScope?: string
+    link?: string
+    isIframe?: boolean
+    isHideTab?: boolean
+    requiredAction?: string
+    requiredActions?: string[]
+    actionMatchMode?: string
+    actionVisibilityMode?: string
+    customParent?: string
+    breadcrumbChain?: string[]
+    hostKey?: string
+    spaceType?: string
+  }
+  created_at?: string
+  updated_at?: string
+}
+type V5PermissionActionLike = {
+  id?: string
+  resource_code?: string
+  action_code?: string
+  module_code?: string
+  action_key?: string
+  permission_key?: string
+  name?: string
+  description?: string | null
+  status?: string | null
+  group_id?: string | null
+  group_name?: string | null
+  module_group_id?: string | null
+  feature_group_id?: string | null
+  module_group?: { id?: string; code?: string; name?: string; name_en?: string } | null
+  feature_group?: { id?: string; code?: string; name?: string; name_en?: string } | null
+  consumer_types?: string[]
+  duplicate_keys?: string[]
+  data_policy?: string
+  data_permission_code?: string
+  data_permission_name?: string
+  api_count?: number
+  page_count?: number
+  package_count?: number
+  usage_pattern?: string
+  usage_note?: string
+  duplicate_pattern?: string
+  duplicate_group?: string
+  duplicate_note?: string
+  sort_order?: number
+  is_builtin?: boolean
+  created_at?: string | null
+  updated_at?: string | null
+}
 
 let unauthorizedHandling: Promise<void> | null = null
 
@@ -92,8 +187,12 @@ export type V5AnyListResponse = V5AnyRecord & {
   total: number
 }
 
-export function toV5Body<T extends object>(value: T): V5AnyRecord {
-  return { ...(value as V5AnyRecord) }
+export type V5BodyShape<T extends object> = {
+  [K in keyof T]: T[K]
+}
+
+export function toV5Body<T extends object>(value: T): V5BodyShape<T> {
+  return { ...value }
 }
 
 export function toV5Record(value: unknown): V5AnyRecord {
@@ -241,8 +340,8 @@ export function normalizePermissionGroup(value: any): Api.SystemManage.Permissio
   }
 }
 
-export function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
-  const permissionKey = normalizePermissionKey(item?.permission_key)
+export function normalizePermissionAction(item: V5PermissionActionLike): Api.SystemManage.PermissionActionItem {
+  const permissionKey = normalizePermissionKey(item?.permission_key || item?.action_key)
   const legacy = derivePermissionSegments(permissionKey)
   const consumerTypes = item?.consumer_types || []
   const duplicateKeys = item?.duplicate_keys || []
@@ -427,7 +526,7 @@ export function normalizeCollaborationWorkspace(
   }
 }
 
-export function normalizePageItem(item: any): Api.SystemManage.PageItem {
+export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
   const rawVisibilityScope =
     `${item?.visibility_scope || meta?.visibilityScope || ''}`.trim()
@@ -675,7 +774,7 @@ export function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats 
   }
 }
 
-export function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
+export function normalizeRiskAudit(item: V5RiskAuditItem): Api.SystemManage.RiskAuditItem {
   return {
     id: item?.id || '',
     operatorId: item?.operator_id || '',
@@ -687,6 +786,20 @@ export function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
     impactSummary: item?.impact_summary || {},
     requestId: item?.request_id || '',
     createdAt: item?.created_at || ''
+  }
+}
+
+export function normalizePermissionBatchTemplate(
+  item: V5PermissionBatchTemplateItem
+): Api.SystemManage.PermissionBatchTemplateItem {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    description: item?.description || '',
+    payload: item?.payload || {},
+    createdBy: item?.created_by || '',
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
@@ -1009,7 +1122,9 @@ export function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterC
   }
 }
 
-export function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.UserPermissionMenuNode {
+export function normalizeUserPermissionMenuTree(
+  item: V5UserPermissionMenuTreeItem
+): Api.SystemManage.UserPermissionMenuNode {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -1017,8 +1132,8 @@ export function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.Use
     path: item?.path || '',
     component: item?.component || '',
     hidden: Boolean(item?.hidden),
-    sort: item?.sort ?? 0,
-    children: (item?.children || []).map((child: any) => normalizeUserPermissionMenuTree(child))
+    sort: item?.sort_order ?? 0,
+    children: (item?.children || []).map((child) => normalizeUserPermissionMenuTree(child))
   }
 }
 
@@ -1043,12 +1158,15 @@ export function normalizeUserCollaborationWorkspaceItem(
 }
 
 export function normalizeUserPermissionDiagnosisResponse(
-  item: any
+  item: V5UserPermissionDiagnosisResponse
 ): Api.SystemManage.UserPermissionDiagnosisResponse {
-  const normalizePackages = (items: any[] | undefined) => (items || []).map(normalizeFeaturePackage)
-  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
-    value
-      ? {
+  const normalizePackages = (items: components['schemas']['FeaturePackageRef'][] | undefined) =>
+    (items || []).map(normalizeFeaturePackage)
+  const normalizeGroup = (
+    value: components['schemas']['PermissionGroupItem'] | undefined
+  ): Api.SystemManage.PermissionGroupItem | undefined =>
+      value
+        ? {
           id: value?.id || '',
           groupType: value?.group_type || '',
           code: value?.code || '',
@@ -1061,99 +1179,74 @@ export function normalizeUserPermissionDiagnosisResponse(
         }
       : undefined
 
+  const normalizeRoleResult = (
+    role: V5UserPermissionRoleResult
+  ): Api.SystemManage.UserPermissionRoleResult => ({
+    roleId: role?.role_id || '',
+    roleCode: role?.role_code || '',
+    roleName: role?.role_name || '',
+    inherited: Boolean(role?.inherited),
+    refreshedAt: role?.refreshed_at || '',
+    availableActionCount: role?.available_action_count ?? 0,
+    disabledActionCount: role?.disabled_action_count ?? 0,
+    effectiveActionCount: role?.effective_action_count ?? 0,
+    matched: Boolean(role?.matched),
+    disabled: Boolean(role?.disabled),
+    available: Boolean(role?.available),
+    sourcePackages: normalizePackages(role?.source_packages)
+  })
+
+  const normalizeAction = (
+    action: V5UserPermissionDiagnosisAction | undefined
+  ): Api.SystemManage.UserPermissionDiagnosisAction | null =>
+    action
+      ? {
+          id: action?.id || '',
+          permissionKey: action?.permission_key || '',
+          name: action?.name || '',
+          description: action?.description || '',
+          status: action?.status || '',
+          selfStatus: action?.self_status || '',
+          contextType: action?.context_type || '',
+          featureKind: action?.feature_kind || '',
+          moduleCode: action?.module_code || '',
+          moduleGroupStatus: action?.module_group_status || '',
+          featureGroupStatus: action?.feature_group_status || '',
+          moduleGroup: normalizeGroup(action?.module_group),
+          featureGroup: normalizeGroup(action?.feature_group)
+        }
+      : null
+
   const diagnosis = item?.diagnosis
     ? {
-        permissionKey: item.diagnosis?.permission_key || item.diagnosis?.permissionKey || '',
+        permissionKey: item.diagnosis?.permission_key || '',
         allowed: Boolean(item.diagnosis?.allowed),
-        reasonText: item.diagnosis?.reason_text || item.diagnosis?.reasonText || '',
+        reasonText: item.diagnosis?.reason_text || '',
         reasons: item.diagnosis?.reasons || [],
-        matchedInSnapshot: Boolean(
-          item.diagnosis?.matched_in_snapshot ?? item.diagnosis?.matchedInSnapshot
-        ),
-        bypassedBySuperAdmin: Boolean(
-          item.diagnosis?.bypassed_by_super_admin ?? item.diagnosis?.bypassedBySuperAdmin
-        ),
+        matchedInSnapshot: Boolean(item.diagnosis?.matched_in_snapshot),
+        bypassedBySuperAdmin: Boolean(item.diagnosis?.bypassed_by_super_admin),
         blockedByCollaborationWorkspace: Boolean(
-          item.diagnosis?.blocked_by_collaboration_workspace ??
-          item.diagnosis?.blockedByCollaborationWorkspace
+          item.diagnosis?.blocked_by_collaboration_workspace
         ),
-        denialStage: item.diagnosis?.denial_stage || item.diagnosis?.denialStage || '',
-        denialReason: item.diagnosis?.denial_reason || item.diagnosis?.denialReason || '',
-        memberStatus: item.diagnosis?.member_status || item.diagnosis?.memberStatus || '',
-        memberMatched: Boolean(item.diagnosis?.member_matched ?? item.diagnosis?.memberMatched),
-        boundaryState: item.diagnosis?.boundary_state || item.diagnosis?.boundaryState || '',
-        boundaryConfigured: Boolean(
-          item.diagnosis?.boundary_configured ?? item.diagnosis?.boundaryConfigured
-        ),
-        roleChainMatched: Boolean(
-          item.diagnosis?.role_chain_matched ?? item.diagnosis?.roleChainMatched
-        ),
-        roleChainDisabled: Boolean(
-          item.diagnosis?.role_chain_disabled ?? item.diagnosis?.roleChainDisabled
-        ),
-        roleChainAvailable: Boolean(
-          item.diagnosis?.role_chain_available ?? item.diagnosis?.roleChainAvailable
-        ),
-        action: item.diagnosis?.action
-          ? {
-              id: item.diagnosis.action?.id || '',
-              permissionKey:
-                item.diagnosis.action?.permission_key || item.diagnosis.action?.permissionKey || '',
-              name: item.diagnosis.action?.name || '',
-              description: item.diagnosis.action?.description || '',
-              status: item.diagnosis.action?.status || '',
-              selfStatus:
-                item.diagnosis.action?.self_status || item.diagnosis.action?.selfStatus || '',
-              contextType:
-                item.diagnosis.action?.context_type || item.diagnosis.action?.contextType || '',
-              featureKind:
-                item.diagnosis.action?.feature_kind || item.diagnosis.action?.featureKind || '',
-              moduleCode:
-                item.diagnosis.action?.module_code || item.diagnosis.action?.moduleCode || '',
-              moduleGroupStatus:
-                item.diagnosis.action?.module_group_status ||
-                item.diagnosis.action?.moduleGroupStatus ||
-                '',
-              featureGroupStatus:
-                item.diagnosis.action?.feature_group_status ||
-                item.diagnosis.action?.featureGroupStatus ||
-                '',
-              moduleGroup: normalizeGroup(
-                item.diagnosis.action?.module_group || item.diagnosis.action?.moduleGroup
-              ),
-              featureGroup: normalizeGroup(
-                item.diagnosis.action?.feature_group || item.diagnosis.action?.featureGroup
-              )
-            }
-          : null,
-        sourcePackages: normalizePackages(
-          item.diagnosis?.source_packages || item.diagnosis?.sourcePackages
-        ),
-        roleResults: (item.diagnosis?.role_results || item.diagnosis?.roleResults || []).map(
-          (role: any) => ({
-            roleId: role?.role_id || role?.roleId || '',
-            roleCode: role?.role_code || role?.roleCode || '',
-            roleName: role?.role_name || role?.roleName || '',
-            inherited: Boolean(role?.inherited),
-            refreshedAt: role?.refreshed_at || role?.refreshedAt || '',
-            availableActionCount: role?.available_action_count ?? role?.availableActionCount ?? 0,
-            disabledActionCount: role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
-            effectiveActionCount: role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
-            matched: Boolean(role?.matched),
-            disabled: Boolean(role?.disabled),
-            available: Boolean(role?.available),
-            sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
-          })
-        )
+        denialStage: item.diagnosis?.denial_stage || '',
+        denialReason: item.diagnosis?.denial_reason || '',
+        memberStatus: item.diagnosis?.member_status || '',
+        memberMatched: Boolean(item.diagnosis?.member_matched),
+        boundaryState: item.diagnosis?.boundary_state || '',
+        boundaryConfigured: Boolean(item.diagnosis?.boundary_configured),
+        roleChainMatched: Boolean(item.diagnosis?.role_chain_matched),
+        roleChainDisabled: Boolean(item.diagnosis?.role_chain_disabled),
+        roleChainAvailable: Boolean(item.diagnosis?.role_chain_available),
+        action: normalizeAction(item.diagnosis?.action),
+        sourcePackages: normalizePackages(item.diagnosis?.source_packages),
+        roleResults: (item.diagnosis?.role_results || []).map((role) => normalizeRoleResult(role))
       }
     : null
 
   const context = {
     type: item?.context?.type || 'personal',
-    collaborationWorkspaceId:
-      item?.context?.collaboration_workspace_id || '',
-    collaborationWorkspaceName:
-      item?.context?.collaboration_workspace_name || ''
+    collaborationWorkspaceId: item?.context?.current_collaboration_workspace_id || '',
+    collaborationWorkspaceName: item?.context?.current_collaboration_workspace_name || ''
   } as Api.SystemManage.UserPermissionContext & {
     collaborationWorkspaceName?: string
   }
@@ -1171,38 +1264,17 @@ export function normalizeUserPermissionDiagnosisResponse(
       refreshedAt: item?.snapshot?.refreshed_at || '',
       updatedAt: item?.snapshot?.updated_at || '',
       roleCount: item?.snapshot?.role_count ?? 0,
-      directPackageCount:
-        item?.snapshot?.direct_package_count ?? 0,
-      expandedPackageCount:
-        item?.snapshot?.expanded_package_count ?? 0,
+      directPackageCount: item?.snapshot?.direct_package_count ?? 0,
+      expandedPackageCount: item?.snapshot?.expanded_package_count ?? 0,
       actionCount: item?.snapshot?.action_count ?? 0,
-      disabledActionCount:
-        item?.snapshot?.disabled_action_count ?? 0,
+      disabledActionCount: item?.snapshot?.disabled_action_count ?? 0,
       menuCount: item?.snapshot?.menu_count ?? 0,
-      hasPackageConfig: Boolean(
-        item?.snapshot?.has_package_config
-      ),
-      derivedActionCount:
-        item?.snapshot?.derived_action_count ?? 0,
-      blockedActionCount:
-        item?.snapshot?.blocked_action_count ?? 0,
-      effectiveActionCount:
-        item?.snapshot?.effective_action_count ?? 0
+      hasPackageConfig: Boolean(item?.snapshot?.has_package_config),
+      derivedActionCount: item?.snapshot?.derived_action_count ?? 0,
+      blockedActionCount: item?.snapshot?.blocked_action_count ?? 0,
+      effectiveActionCount: item?.snapshot?.effective_action_count ?? 0
     },
-    roles: (item?.roles || []).map((role: any) => ({
-      roleId: role?.role_id || role?.roleId || '',
-      roleCode: role?.role_code || role?.roleCode || '',
-      roleName: role?.role_name || role?.roleName || '',
-      inherited: Boolean(role?.inherited),
-      refreshedAt: role?.refreshed_at || role?.refreshedAt || '',
-      availableActionCount: role?.available_action_count ?? role?.availableActionCount ?? 0,
-      disabledActionCount: role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
-      effectiveActionCount: role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
-      matched: Boolean(role?.matched),
-      disabled: Boolean(role?.disabled),
-      available: Boolean(role?.available),
-      sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
-    })),
+    roles: (item?.roles || []).map((role) => normalizeRoleResult(role)),
     collaborationWorkspaceMember: item?.collaboration_workspace_member
       ? {
           id: item?.collaboration_workspace_member?.id || '',
@@ -1216,6 +1288,6 @@ export function normalizeUserPermissionDiagnosisResponse(
       : null,
     collaborationWorkspacePackages: normalizePackages(item?.collaboration_workspace_packages),
     diagnosis,
-    menus: (item?.menus || []).map((menu: any) => normalizeUserPermissionMenuTree(menu))
+    menus: (item?.menus || []).map((menu) => normalizeUserPermissionMenuTree(menu))
   }
 }

@@ -53,10 +53,17 @@ func (h *APIHandler) GetCollaborationWorkspace(ctx context.Context, params gen.G
 	return &item, nil
 }
 
-func (h *APIHandler) CreateCollaborationWorkspace(ctx context.Context, req gen.AnyObject) (*gen.IDResult, error) {
-	var dtoReq dto.CollaborationWorkspaceCreateRequest
-	if err := unmarshalAnyObject(req, &dtoReq); err != nil {
-		return nil, err
+func (h *APIHandler) CreateCollaborationWorkspace(ctx context.Context, req *gen.CollaborationWorkspaceSaveRequest) (*gen.IDResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	dtoReq := dto.CollaborationWorkspaceCreateRequest{
+		Name:       req.Name,
+		Remark:     optString(req.Remark),
+		LogoURL:    optString(req.LogoURL),
+		Plan:       optString(req.Plan),
+		MaxMembers: optInt(req.MaxMembers, 0),
+		Status:     optString(req.Status),
 	}
 	var ownerID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
@@ -70,10 +77,17 @@ func (h *APIHandler) CreateCollaborationWorkspace(ctx context.Context, req gen.A
 	return &gen.IDResult{ID: created.ID}, nil
 }
 
-func (h *APIHandler) UpdateCollaborationWorkspace(ctx context.Context, req gen.AnyObject, params gen.UpdateCollaborationWorkspaceParams) (*gen.MutationResult, error) {
-	var dtoReq dto.CollaborationWorkspaceUpdateRequest
-	if err := unmarshalAnyObject(req, &dtoReq); err != nil {
-		return nil, err
+func (h *APIHandler) UpdateCollaborationWorkspace(ctx context.Context, req *gen.CollaborationWorkspaceSaveRequest, params gen.UpdateCollaborationWorkspaceParams) (*gen.MutationResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	dtoReq := dto.CollaborationWorkspaceUpdateRequest{
+		Name:       req.Name,
+		Remark:     optString(req.Remark),
+		LogoURL:    optString(req.LogoURL),
+		Plan:       optString(req.Plan),
+		MaxMembers: optInt(req.MaxMembers, 0),
+		Status:     optString(req.Status),
 	}
 	if err := h.cwSvc.Update(params.ID, &dtoReq); err != nil {
 		h.logger.Error("update collaboration workspace failed", zap.Error(err))
@@ -102,10 +116,13 @@ func (h *APIHandler) ListCollaborationWorkspaceMembers(ctx context.Context, para
 	}, nil
 }
 
-func (h *APIHandler) AddCollaborationWorkspaceMember(ctx context.Context, req gen.AnyObject, params gen.AddCollaborationWorkspaceMemberParams) (*gen.MutationResult, error) {
-	var dtoReq dto.CollaborationWorkspaceAddMemberRequest
-	if err := unmarshalAnyObject(req, &dtoReq); err != nil {
-		return nil, err
+func (h *APIHandler) AddCollaborationWorkspaceMember(ctx context.Context, req *gen.CollaborationWorkspaceMemberAddRequest, params gen.AddCollaborationWorkspaceMemberParams) (*gen.MutationResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	dtoReq := dto.CollaborationWorkspaceAddMemberRequest{
+		UserID:   req.UserID.String(),
+		RoleCode: optString(req.RoleCode),
 	}
 	var invitedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
@@ -126,12 +143,11 @@ func (h *APIHandler) RemoveCollaborationWorkspaceMember(ctx context.Context, par
 	return ok(), nil
 }
 
-func (h *APIHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req gen.AnyObject, params gen.UpdateCollaborationWorkspaceMemberRoleParams) (*gen.MutationResult, error) {
-	var body dto.CollaborationWorkspaceUpdateMemberRoleRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req *gen.CollaborationWorkspaceMemberRoleRequest, params gen.UpdateCollaborationWorkspaceMemberRoleParams) (*gen.MutationResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
-	if err := h.cwSvc.UpdateMemberRole(params.ID, params.UserId, body.RoleCode); err != nil {
+	if err := h.cwSvc.UpdateMemberRole(params.ID, params.UserId, req.RoleCode); err != nil {
 		h.logger.Error("update collaboration workspace member role failed", zap.Error(err))
 		return nil, err
 	}
@@ -150,16 +166,17 @@ func (h *APIHandler) GetCollaborationWorkspacePackages(ctx context.Context, para
 	}, nil
 }
 
-func (h *APIHandler) SetCollaborationWorkspacePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationWorkspacePackagesParams) (*gen.MutationResult, error) {
+func (h *APIHandler) SetCollaborationWorkspacePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationWorkspacePackagesParams) (*gen.FeaturePackageMutationResult, error) {
 	var grantedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		grantedBy = &uid
 	}
-	if _, err := h.featurePkgSvc.SetCollaborationWorkspacePackages(params.CollaborationWorkspaceId, uuidIDsFromRequest(req), grantedBy, optString(params.AppKey)); err != nil {
+	stats, err := h.featurePkgSvc.SetCollaborationWorkspacePackages(params.CollaborationWorkspaceId, uuidIDsFromRequest(req), grantedBy, optString(params.AppKey))
+	if err != nil {
 		h.logger.Error("set collaboration workspace packages failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 var _ = errors.New

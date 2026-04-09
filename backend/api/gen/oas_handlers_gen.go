@@ -200,7 +200,7 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceMemberAddRequest
 			Params   = AddCollaborationWorkspaceMemberParams
 			Response = *MutationResult
 		)
@@ -387,7 +387,7 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceMemberAddRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -589,7 +589,7 @@ func (s *Server) handleAddPermissionActionEndpointRequest(args [1]string, argsEs
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *PermissionActionEndpointAddRequest
 			Params   = AddPermissionActionEndpointParams
 			Response = *MutationResult
 		)
@@ -964,7 +964,7 @@ func (s *Server) handleBatchUpdatePermissionActionsRequest(args [0]string, argsE
 		}
 	}()
 
-	var response *MutationResult
+	var response *PermissionActionBatchUpdateResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -978,9 +978,9 @@ func (s *Server) handleBatchUpdatePermissionActionsRequest(args [0]string, argsE
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *PermissionActionBatchUpdateRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *PermissionActionBatchUpdateResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1165,7 +1165,7 @@ func (s *Server) handleCleanupStaleApiEndpointsRequest(args [0]string, argsEscap
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CleanupStaleRequest
 			Params   = struct{}
 			Response = CleanupStaleApiEndpointsRes
 		)
@@ -1323,7 +1323,7 @@ func (s *Server) handleCleanupUnusedPermissionActionsRequest(args [0]string, arg
 
 	var rawBody []byte
 
-	var response *MutationResult
+	var response *PermissionActionCleanupResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1339,7 +1339,7 @@ func (s *Server) handleCleanupUnusedPermissionActionsRequest(args [0]string, arg
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *PermissionActionCleanupResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1524,7 +1524,7 @@ func (s *Server) handleCreateApiEndpointCategoryRequest(args [0]string, argsEsca
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *ApiEndpointCategorySaveRequest
 			Params   = struct{}
 			Response = CreateApiEndpointCategoryRes
 		)
@@ -1711,7 +1711,7 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceSaveRequest
 			Params   = struct{}
 			Response = *IDResult
 		)
@@ -1898,7 +1898,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceRoleSaveRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -2085,7 +2085,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceRoleSaveRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -2632,7 +2632,7 @@ func (s *Server) handleCreateMessageRecipientGroupRequest(args [0]string, argsEs
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageRecipientGroupItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2646,9 +2646,9 @@ func (s *Server) handleCreateMessageRecipientGroupRequest(args [0]string, argsEs
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageRecipientGroupSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *MessageRecipientGroupItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2819,7 +2819,7 @@ func (s *Server) handleCreateMessageSenderRequest(args [0]string, argsEscaped bo
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageSenderItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2833,9 +2833,9 @@ func (s *Server) handleCreateMessageSenderRequest(args [0]string, argsEscaped bo
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageSenderSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *MessageSenderItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3006,7 +3006,7 @@ func (s *Server) handleCreateMessageTemplateRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageTemplateItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3020,9 +3020,9 @@ func (s *Server) handleCreateMessageTemplateRequest(args [0]string, argsEscaped 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageTemplateSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *MessageTemplateItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3203,7 +3203,7 @@ func (s *Server) handleCreatePageRequest(args [0]string, argsEscaped bool, w htt
 		}
 	}()
 
-	var response AnyObject
+	var response *PageSaveResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3224,7 +3224,7 @@ func (s *Server) handleCreatePageRequest(args [0]string, argsEscaped bool, w htt
 		type (
 			Request  = *PageSaveRequest
 			Params   = CreatePageParams
-			Response = AnyObject
+			Response = *PageSaveResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3582,7 +3582,7 @@ func (s *Server) handleCreatePermissionActionGroupRequest(args [0]string, argsEs
 		}
 	}()
 
-	var response *MutationResult
+	var response *IDResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3596,9 +3596,9 @@ func (s *Server) handleCreatePermissionActionGroupRequest(args [0]string, argsEs
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *PermissionActionGroupSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *IDResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5077,7 +5077,7 @@ func (s *Server) handleDeleteFeaturePackageRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5098,7 +5098,7 @@ func (s *Server) handleDeleteFeaturePackageRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = DeleteFeaturePackageParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7147,7 +7147,7 @@ func (s *Server) handleDispatchMessageRequest(args [0]string, argsEscaped bool, 
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageDispatchResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7161,9 +7161,9 @@ func (s *Server) handleDispatchMessageRequest(args [0]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageDispatchRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *MessageDispatchResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9001,7 +9001,7 @@ func (s *Server) handleGetCurrentAppRequest(args [0]string, argsEscaped bool, w 
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *SystemCurrentAppResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9022,7 +9022,7 @@ func (s *Server) handleGetCurrentAppRequest(args [0]string, argsEscaped bool, w 
 		type (
 			Request  = struct{}
 			Params   = GetCurrentAppParams
-			Response = AnyObject
+			Response = *SystemCurrentAppResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10968,7 +10968,7 @@ func (s *Server) handleGetCurrentMenuSpaceRequest(args [0]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *SystemCurrentMenuSpaceResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10993,7 +10993,7 @@ func (s *Server) handleGetCurrentMenuSpaceRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = GetCurrentMenuSpaceParams
-			Response = AnyObject
+			Response = *SystemCurrentMenuSpaceResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11321,7 +11321,7 @@ func (s *Server) handleGetFastEnterConfigRequest(args [0]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *SystemFastEnterConfig
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11337,7 +11337,7 @@ func (s *Server) handleGetFastEnterConfigRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *SystemFastEnterConfig
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12832,7 +12832,7 @@ func (s *Server) handleGetInboxDetailRequest(args [1]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *InboxItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12853,7 +12853,7 @@ func (s *Server) handleGetInboxDetailRequest(args [1]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = GetInboxDetailParams
-			Response = AnyObject
+			Response = *InboxItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13009,7 +13009,7 @@ func (s *Server) handleGetInboxSummaryRequest(args [0]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *InboxSummary
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13025,7 +13025,7 @@ func (s *Server) handleGetInboxSummaryRequest(args [0]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *InboxSummary
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13191,7 +13191,7 @@ func (s *Server) handleGetMenuDeletePreviewRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *MenuDeletePreviewResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13212,7 +13212,7 @@ func (s *Server) handleGetMenuDeletePreviewRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = GetMenuDeletePreviewParams
-			Response = AnyObject
+			Response = *MenuDeletePreviewResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13378,7 +13378,7 @@ func (s *Server) handleGetMenuSpaceModeRequest(args [0]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *SystemMenuSpaceModeResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13399,7 +13399,7 @@ func (s *Server) handleGetMenuSpaceModeRequest(args [0]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = GetMenuSpaceModeParams
-			Response = AnyObject
+			Response = *SystemMenuSpaceModeResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13750,7 +13750,7 @@ func (s *Server) handleGetMessageDispatchOptionsRequest(args [0]string, argsEsca
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *MessageDispatchOptions
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13766,7 +13766,7 @@ func (s *Server) handleGetMessageDispatchOptionsRequest(args [0]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *MessageDispatchOptions
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13932,7 +13932,7 @@ func (s *Server) handleGetMessageDispatchRecordRequest(args [1]string, argsEscap
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *MessageDispatchRecord
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13953,7 +13953,7 @@ func (s *Server) handleGetMessageDispatchRecordRequest(args [1]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = GetMessageDispatchRecordParams
-			Response = AnyObject
+			Response = *MessageDispatchRecord
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14310,7 +14310,7 @@ func (s *Server) handleGetPageRequest(args [1]string, argsEscaped bool, w http.R
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *PageSaveResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14335,7 +14335,7 @@ func (s *Server) handleGetPageRequest(args [1]string, argsEscaped bool, w http.R
 		type (
 			Request  = struct{}
 			Params   = GetPageParams
-			Response = AnyObject
+			Response = *PageSaveResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14501,7 +14501,7 @@ func (s *Server) handleGetPageAccessTraceRequest(args [0]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *PageAccessTraceResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14546,7 +14546,7 @@ func (s *Server) handleGetPageAccessTraceRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = GetPageAccessTraceParams
-			Response = AnyObject
+			Response = *PageAccessTraceResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16741,7 +16741,7 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *UserCollaborationWorkspacesResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16762,7 +16762,7 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 		type (
 			Request  = struct{}
 			Params   = GetUserCollaborationWorkspacesParams
-			Response = AnyObject
+			Response = *UserCollaborationWorkspacesResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16928,7 +16928,7 @@ func (s *Server) handleGetUserMenusRequest(args [1]string, argsEscaped bool, w h
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *UserMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16953,7 +16953,7 @@ func (s *Server) handleGetUserMenusRequest(args [1]string, argsEscaped bool, w h
 		type (
 			Request  = struct{}
 			Params   = GetUserMenusParams
-			Response = AnyObject
+			Response = *UserMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17310,7 +17310,7 @@ func (s *Server) handleGetUserPermissionDiagnosisRequest(args [1]string, argsEsc
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *UserPermissionDiagnosisResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17343,7 +17343,7 @@ func (s *Server) handleGetUserPermissionDiagnosisRequest(args [1]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = GetUserPermissionDiagnosisParams
-			Response = AnyObject
+			Response = *UserPermissionDiagnosisResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17509,7 +17509,7 @@ func (s *Server) handleGetUserPermissionsRequest(args [1]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *UserPermissionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17534,7 +17534,7 @@ func (s *Server) handleGetUserPermissionsRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = GetUserPermissionsParams
-			Response = AnyObject
+			Response = *UserPermissionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17921,7 +17921,7 @@ func (s *Server) handleHandleInboxTodoRequest(args [1]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *InboxTodoActionRequest
 			Params   = HandleInboxTodoParams
 			Response = *MutationResult
 		)
@@ -18089,7 +18089,7 @@ func (s *Server) handleInitializeMenuSpaceFromDefaultRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response *MutationResult
+	var response *SystemMenuSpaceInitializeResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18110,7 +18110,7 @@ func (s *Server) handleInitializeMenuSpaceFromDefaultRequest(args [1]string, arg
 		type (
 			Request  = struct{}
 			Params   = InitializeMenuSpaceFromDefaultParams
-			Response = *MutationResult
+			Response = *SystemMenuSpaceInitializeResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18675,7 +18675,7 @@ func (s *Server) handleListAppHostBindingsRequest(args [0]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response *SystemListResponse
+	var response *SystemAppHostBindingListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18696,7 +18696,7 @@ func (s *Server) handleListAppHostBindingsRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = ListAppHostBindingsParams
-			Response = *SystemListResponse
+			Response = *SystemAppHostBindingListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18852,7 +18852,7 @@ func (s *Server) handleListAppsRequest(args [0]string, argsEscaped bool, w http.
 
 	var rawBody []byte
 
-	var response *SystemListResponse
+	var response *SystemAppListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18868,7 +18868,7 @@ func (s *Server) handleListAppsRequest(args [0]string, argsEscaped bool, w http.
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *SystemListResponse
+			Response = *SystemAppListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21075,7 +21075,7 @@ func (s *Server) handleListInboxRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *MessageListResponse
+	var response *InboxListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21100,7 +21100,7 @@ func (s *Server) handleListInboxRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = ListInboxParams
-			Response = *MessageListResponse
+			Response = *InboxListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21438,7 +21438,7 @@ func (s *Server) handleListMenuSpaceEntryBindingsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *SystemListResponse
+	var response *SystemMenuSpaceEntryBindingListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21459,7 +21459,7 @@ func (s *Server) handleListMenuSpaceEntryBindingsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = ListMenuSpaceEntryBindingsParams
-			Response = *SystemListResponse
+			Response = *SystemMenuSpaceEntryBindingListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21615,7 +21615,7 @@ func (s *Server) handleListMenuSpaceHostBindingsRequest(args [0]string, argsEsca
 
 	var rawBody []byte
 
-	var response *SystemListResponse
+	var response *SystemMenuSpaceHostBindingListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21631,7 +21631,7 @@ func (s *Server) handleListMenuSpaceHostBindingsRequest(args [0]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *SystemListResponse
+			Response = *SystemMenuSpaceHostBindingListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21797,7 +21797,7 @@ func (s *Server) handleListMenuSpacesRequest(args [0]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response *SystemListResponse
+	var response *SystemMenuSpaceListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21818,7 +21818,7 @@ func (s *Server) handleListMenuSpacesRequest(args [0]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = ListMenuSpacesParams
-			Response = *SystemListResponse
+			Response = *SystemMenuSpaceListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21984,7 +21984,7 @@ func (s *Server) handleListMessageDispatchRecordsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *MessageListResponse
+	var response *MessageDispatchRecordListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22009,7 +22009,7 @@ func (s *Server) handleListMessageDispatchRecordsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = ListMessageDispatchRecordsParams
-			Response = *MessageListResponse
+			Response = *MessageDispatchRecordListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22165,7 +22165,7 @@ func (s *Server) handleListMessageRecipientGroupsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *MessageListResponse
+	var response *MessageRecipientGroupListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22181,7 +22181,7 @@ func (s *Server) handleListMessageRecipientGroupsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *MessageListResponse
+			Response = *MessageRecipientGroupListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22337,7 +22337,7 @@ func (s *Server) handleListMessageSendersRequest(args [0]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response *MessageListResponse
+	var response *MessageSenderListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22353,7 +22353,7 @@ func (s *Server) handleListMessageSendersRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *MessageListResponse
+			Response = *MessageSenderListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22509,7 +22509,7 @@ func (s *Server) handleListMessageTemplatesRequest(args [0]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response *MessageListResponse
+	var response *MessageTemplateListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22525,7 +22525,7 @@ func (s *Server) handleListMessageTemplatesRequest(args [0]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *MessageListResponse
+			Response = *MessageTemplateListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23796,7 +23796,7 @@ func (s *Server) handleListPermissionActionEndpointsRequest(args [1]string, args
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PermissionActionEndpointList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23817,7 +23817,7 @@ func (s *Server) handleListPermissionActionEndpointsRequest(args [1]string, args
 		type (
 			Request  = struct{}
 			Params   = ListPermissionActionEndpointsParams
-			Response = *AnyListResponse
+			Response = *PermissionActionEndpointList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27325,7 +27325,7 @@ func (s *Server) handlePreviewPageBreadcrumbRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *PageListResponse
+	var response *PageBreadcrumbPreviewListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27350,7 +27350,7 @@ func (s *Server) handlePreviewPageBreadcrumbRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = PreviewPageBreadcrumbParams
-			Response = *PageListResponse
+			Response = *PageBreadcrumbPreviewListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28573,7 +28573,7 @@ func (s *Server) handleRollbackFeaturePackageRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28594,7 +28594,7 @@ func (s *Server) handleRollbackFeaturePackageRequest(args [1]string, argsEscaped
 		type (
 			Request  = *RollbackRequest
 			Params   = RollbackFeaturePackageParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28765,7 +28765,7 @@ func (s *Server) handleSaveAppRequest(args [0]string, argsEscaped bool, w http.R
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemAppItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28779,9 +28779,9 @@ func (s *Server) handleSaveAppRequest(args [0]string, argsEscaped bool, w http.R
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemAppSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemAppItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28952,7 +28952,7 @@ func (s *Server) handleSaveAppHostBindingRequest(args [0]string, argsEscaped boo
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemAppHostBindingItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28966,9 +28966,9 @@ func (s *Server) handleSaveAppHostBindingRequest(args [0]string, argsEscaped boo
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemAppHostBindingSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemAppHostBindingItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29139,7 +29139,7 @@ func (s *Server) handleSaveMenuSpaceRequest(args [0]string, argsEscaped bool, w 
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemMenuSpaceItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29153,9 +29153,9 @@ func (s *Server) handleSaveMenuSpaceRequest(args [0]string, argsEscaped bool, w 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemMenuSpaceSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemMenuSpaceItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29326,7 +29326,7 @@ func (s *Server) handleSaveMenuSpaceEntryBindingRequest(args [0]string, argsEsca
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemMenuSpaceEntryBindingItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29340,9 +29340,9 @@ func (s *Server) handleSaveMenuSpaceEntryBindingRequest(args [0]string, argsEsca
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemMenuSpaceEntryBindingSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemMenuSpaceEntryBindingItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29513,7 +29513,7 @@ func (s *Server) handleSaveMenuSpaceHostBindingRequest(args [0]string, argsEscap
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemMenuSpaceHostBindingItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29527,9 +29527,9 @@ func (s *Server) handleSaveMenuSpaceHostBindingRequest(args [0]string, argsEscap
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemMenuSpaceHostBindingSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemMenuSpaceHostBindingItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29700,7 +29700,7 @@ func (s *Server) handleSaveMenuSpaceModeRequest(args [0]string, argsEscaped bool
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemMenuSpaceModeResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29714,9 +29714,9 @@ func (s *Server) handleSaveMenuSpaceModeRequest(args [0]string, argsEscaped bool
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemMenuSpaceModeSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemMenuSpaceModeResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29887,7 +29887,7 @@ func (s *Server) handleSavePermissionActionBatchTemplateRequest(args [0]string, 
 		}
 	}()
 
-	var response *MutationResult
+	var response *PermissionActionBatchTemplateItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29901,9 +29901,9 @@ func (s *Server) handleSavePermissionActionBatchTemplateRequest(args [0]string, 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *PermissionActionBatchTemplateSaveRequest
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *PermissionActionBatchTemplateItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30488,7 +30488,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30513,7 +30513,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 		type (
 			Request  = *UUIDListRequest
 			Params   = SetCollaborationWorkspacePackagesParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31502,7 +31502,7 @@ func (s *Server) handleSetFeaturePackageActionsRequest(args [1]string, argsEscap
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31527,7 +31527,7 @@ func (s *Server) handleSetFeaturePackageActionsRequest(args [1]string, argsEscap
 		type (
 			Request  = *UUIDListRequest
 			Params   = SetFeaturePackageActionsParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31708,7 +31708,7 @@ func (s *Server) handleSetFeaturePackageChildrenRequest(args [1]string, argsEsca
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31733,7 +31733,7 @@ func (s *Server) handleSetFeaturePackageChildrenRequest(args [1]string, argsEsca
 		type (
 			Request  = *UUIDListRequest
 			Params   = SetFeaturePackageChildrenParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31914,7 +31914,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31939,7 +31939,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		type (
 			Request  = *UUIDListRequest
 			Params   = SetFeaturePackageCollaborationWorkspacesParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32120,7 +32120,7 @@ func (s *Server) handleSetFeaturePackageMenusRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32145,7 +32145,7 @@ func (s *Server) handleSetFeaturePackageMenusRequest(args [1]string, argsEscaped
 		type (
 			Request  = *UUIDListRequest
 			Params   = SetFeaturePackageMenusParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33165,7 +33165,7 @@ func (s *Server) handleSetUserMenusRequest(args [1]string, argsEscaped bool, w h
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *UserMenusResponse
 			Params   = SetUserMenusParams
 			Response = *MutationResult
 		)
@@ -34115,7 +34115,7 @@ func (s *Server) handleUpdateApiEndpointRequest(args [1]string, argsEscaped bool
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *ApiEndpointSaveRequest
 			Params   = UpdateApiEndpointParams
 			Response = UpdateApiEndpointRes
 		)
@@ -34317,7 +34317,7 @@ func (s *Server) handleUpdateApiEndpointCategoryRequest(args [1]string, argsEsca
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *ApiEndpointCategorySaveRequest
 			Params   = UpdateApiEndpointCategoryParams
 			Response = UpdateApiEndpointCategoryRes
 		)
@@ -34519,7 +34519,7 @@ func (s *Server) handleUpdateApiEndpointContextScopeRequest(args [1]string, args
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *ApiEndpointSaveRequest
 			Params   = UpdateApiEndpointContextScopeParams
 			Response = UpdateApiEndpointContextScopeRes
 		)
@@ -34721,7 +34721,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceSaveRequest
 			Params   = UpdateCollaborationWorkspaceParams
 			Response = *MutationResult
 		)
@@ -34927,7 +34927,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceMemberRoleRequest
 			Params   = UpdateCollaborationWorkspaceMemberRoleParams
 			Response = *MutationResult
 		)
@@ -35129,7 +35129,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceRoleSaveRequest
 			Params   = UpdateCurrentCollaborationWorkspaceBoundaryRoleParams
 			Response = *MutationResult
 		)
@@ -35331,7 +35331,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *CollaborationWorkspaceMemberRoleRequest
 			Params   = UpdateCurrentCollaborationWorkspaceMemberRoleParams
 			Response = *MutationResult
 		)
@@ -35504,7 +35504,7 @@ func (s *Server) handleUpdateFastEnterConfigRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response *MutationResult
+	var response *SystemFastEnterConfig
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35518,9 +35518,9 @@ func (s *Server) handleUpdateFastEnterConfigRequest(args [0]string, argsEscaped 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *SystemFastEnterConfig
 			Params   = struct{}
-			Response = *MutationResult
+			Response = *SystemFastEnterConfig
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35701,7 +35701,7 @@ func (s *Server) handleUpdateFeaturePackageRequest(args [1]string, argsEscaped b
 		}
 	}()
 
-	var response *MutationResult
+	var response *FeaturePackageMutationResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35722,7 +35722,7 @@ func (s *Server) handleUpdateFeaturePackageRequest(args [1]string, argsEscaped b
 		type (
 			Request  = *FeaturePackageSaveRequest
 			Params   = UpdateFeaturePackageParams
-			Response = *MutationResult
+			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36105,7 +36105,7 @@ func (s *Server) handleUpdateMessageRecipientGroupRequest(args [1]string, argsEs
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageRecipientGroupItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36124,9 +36124,9 @@ func (s *Server) handleUpdateMessageRecipientGroupRequest(args [1]string, argsEs
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageRecipientGroupSaveRequest
 			Params   = UpdateMessageRecipientGroupParams
-			Response = *MutationResult
+			Response = *MessageRecipientGroupItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36307,7 +36307,7 @@ func (s *Server) handleUpdateMessageSenderRequest(args [1]string, argsEscaped bo
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageSenderItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36326,9 +36326,9 @@ func (s *Server) handleUpdateMessageSenderRequest(args [1]string, argsEscaped bo
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageSenderSaveRequest
 			Params   = UpdateMessageSenderParams
-			Response = *MutationResult
+			Response = *MessageSenderItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36509,7 +36509,7 @@ func (s *Server) handleUpdateMessageTemplateRequest(args [1]string, argsEscaped 
 		}
 	}()
 
-	var response *MutationResult
+	var response *MessageTemplateItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36528,9 +36528,9 @@ func (s *Server) handleUpdateMessageTemplateRequest(args [1]string, argsEscaped 
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *MessageTemplateSaveRequest
 			Params   = UpdateMessageTemplateParams
-			Response = *MutationResult
+			Response = *MessageTemplateItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36711,7 +36711,7 @@ func (s *Server) handleUpdatePageRequest(args [1]string, argsEscaped bool, w htt
 		}
 	}()
 
-	var response AnyObject
+	var response *PageSaveResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36736,7 +36736,7 @@ func (s *Server) handleUpdatePageRequest(args [1]string, argsEscaped bool, w htt
 		type (
 			Request  = *PageSaveRequest
 			Params   = UpdatePageParams
-			Response = AnyObject
+			Response = *PageSaveResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -37138,7 +37138,7 @@ func (s *Server) handleUpdatePermissionActionGroupRequest(args [1]string, argsEs
 		}
 
 		type (
-			Request  = AnyObject
+			Request  = *PermissionActionGroupSaveRequest
 			Params   = UpdatePermissionActionGroupParams
 			Response = *MutationResult
 		)

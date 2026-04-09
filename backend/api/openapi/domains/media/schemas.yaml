@@ -2,4 +2,26 @@
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    MediaUploadResponse:
+      type: object
+      required:
+      - url
+      properties:
+        url:
+          type: string
+    MediaItem:
+      type: object
+      additionalProperties: true
+    MediaListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaItem'
+        total:
+          type: integer

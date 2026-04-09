@@ -3,6 +3,133 @@
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
+    PageListItem:
+      type: object
+      additionalProperties: false
+      required:
+      - page_key
+      - name
+      - route_path
+      properties:
+        id:
+          type: string
+          format: uuid
+        app_key:
+          type: string
+        page_key:
+          type: string
+        name:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        component:
+          type: string
+        space_key:
+          type: string
+        space_keys:
+          type: array
+          items:
+            type: string
+        page_type:
+          type: string
+        visibility_scope:
+          type: string
+        source:
+          type: string
+        module_key:
+          type: string
+        sort_order:
+          type: integer
+        parent_menu_id:
+          type: string
+          format: uuid
+        parent_menu_name:
+          type: string
+        parent_page_key:
+          type: string
+        parent_page_name:
+          type: string
+        display_group_key:
+          type: string
+        display_group_name:
+          type: string
+        active_menu_path:
+          type: string
+        breadcrumb_mode:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        inherit_permission:
+          type: boolean
+        keep_alive:
+          type: boolean
+        is_full_page:
+          type: boolean
+        status:
+          type: string
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PageMeta:
+      type: object
+      additionalProperties: false
+      properties:
+        spaceKeys:
+          type: array
+          items: {type: string}
+        spaceScope: {type: string}
+        visibilityScope: {type: string}
+        link: {type: string}
+        isIframe: {type: boolean}
+        isHideTab: {type: boolean}
+        requiredAction: {type: string}
+        requiredActions:
+          type: array
+          items: {type: string}
+        actionMatchMode: {type: string}
+        actionVisibilityMode: {type: string}
+        customParent: {type: string}
+        breadcrumbChain:
+          type: array
+          items: {type: string}
+        hostKey: {type: string}
+        spaceType: {type: string}
+    PageBreadcrumbPreviewItem:
+      type: object
+      required:
+      - type
+      - title
+      - path
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        page_key:
+          type: string
+    PageBreadcrumbPreviewListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageBreadcrumbPreviewItem'
+        total:
+          type: integer
     PageListResponse:
       type: object
       required:
@@ -12,6 +139,245 @@ components:
         records:
           type: array
           items:
-            $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+            $ref: '#/components/schemas/PageListItem'
         total:
           type: integer
+    PageMenuOptionItem:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - title
+      - path
+      - children
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageMenuOptionItem'
+    PageMenuOptionsResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageMenuOptionItem'
+        total:
+          type: integer
+    PageUnregisteredListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageUnregisteredItem'
+        total:
+          type: integer
+    PageUnregisteredItem:
+      type: object
+      additionalProperties: false
+      required:
+      - file_path
+      - component
+      - page_key
+      - name
+      - route_name
+      - route_path
+      - page_type
+      - visibility_scope
+      - module_key
+      - parent_menu_id
+      - parent_menu_name
+      - active_menu_path
+      properties:
+        file_path:
+          type: string
+        component:
+          type: string
+        page_key:
+          type: string
+        name:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        page_type:
+          type: string
+        visibility_scope:
+          type: string
+        module_key:
+          type: string
+        parent_menu_id:
+          type: string
+        parent_menu_name:
+          type: string
+        active_menu_path:
+          type: string
+    PageUnregisteredPagesResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageUnregisteredItem'
+        total:
+          type: integer
+    PageAccessTraceRoleItem:
+      type: object
+      additionalProperties: false
+      required:
+      - role_id
+      - role_code
+      - role_name
+      - status
+      properties:
+        role_id:
+          type: string
+        role_code:
+          type: string
+        role_name:
+          type: string
+        status:
+          type: string
+    PageAccessTraceMenuItem:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - parent_id
+      - name
+      - title
+      - path
+      - full_path
+      - kind
+      - icon
+      - sort_order
+      - hidden
+      - visible
+      properties:
+        id:
+          type: string
+        parent_id:
+          type: string
+        name:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        full_path:
+          type: string
+        kind:
+          type: string
+        icon:
+          type: string
+        sort_order:
+          type: integer
+        hidden:
+          type: boolean
+        visible:
+          type: boolean
+    PageAccessTracePageItem:
+      type: object
+      additionalProperties: false
+      required:
+      - page_key
+      - page_name
+      - route_path
+      - access_mode
+      - permission_key
+      - parent_page_key
+      - parent_menu_id
+      - active_menu_path
+      - visible
+      - reason
+      - matched_action_key
+      - effective_chain
+      properties:
+        page_key:
+          type: string
+        page_name:
+          type: string
+        route_path:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        parent_page_key:
+          type: string
+        parent_menu_id:
+          type: string
+        active_menu_path:
+          type: string
+        visible:
+          type: boolean
+        reason:
+          type: string
+        matched_action_key:
+          type: string
+        effective_chain:
+          type: array
+          items:
+            type: string
+    PageAccessTraceResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - user_id
+      - space_key
+      - authenticated
+      - super_admin
+      - action_key_count
+      - visible_menu_ids
+      - menus
+      - roles
+      - pages
+      properties:
+        user_id:
+          type: string
+        collaboration_workspace_id:
+          type: string
+        space_key:
+          type: string
+        authenticated:
+          type: boolean
+        super_admin:
+          type: boolean
+        action_key_count:
+          type: integer
+        visible_menu_ids:
+          type: array
+          items:
+            type: string
+        menus:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageAccessTraceMenuItem'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageAccessTraceRoleItem'
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageAccessTracePageItem'

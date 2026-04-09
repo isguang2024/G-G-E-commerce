@@ -4,6 +4,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"encoding/json"
 	"strings"
 
@@ -18,19 +19,20 @@ import (
 
 // -------- feature package --------
 
-func (h *APIHandler) RollbackFeaturePackage(ctx context.Context, req *gen.RollbackRequest, params gen.RollbackFeaturePackageParams) (*gen.MutationResult, error) {
+func (h *APIHandler) RollbackFeaturePackage(ctx context.Context, req *gen.RollbackRequest, params gen.RollbackFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
 	if req == nil {
-		return ok(), nil
+		return featurePackageMutationResultFromStats(nil), nil
 	}
 	var operatorID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		operatorID = &uid
 	}
-	if _, err := h.featurePkgSvc.Rollback(params.ID, req.VersionID, operatorID, ""); err != nil {
+	stats, err := h.featurePkgSvc.Rollback(params.ID, req.VersionID, operatorID, "")
+	if err != nil {
 		h.logger.Error("rollback feature package failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return featurePackageMutationResultFromStats(stats), nil
 }
 
 func (h *APIHandler) GetFeaturePackageRelationTree(ctx context.Context, params gen.GetFeaturePackageRelationTreeParams) (*gen.FeaturePackageRelationTree, error) {
@@ -110,38 +112,74 @@ func buildRelationNodes(raw []map[string]interface{}) []gen.FeaturePackageRelati
 
 // -------- permission --------
 
-func (h *APIHandler) BatchUpdatePermissionActions(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
-	var body permission.PermissionBatchUpdateRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) BatchUpdatePermissionActions(ctx context.Context, req *gen.PermissionActionBatchUpdateRequest) (*gen.PermissionActionBatchUpdateResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	body := permission.PermissionBatchUpdateRequest{
+		IDs:          req.Ids,
+		TemplateName: optString(req.TemplateName),
+	}
+	if req.Status.Set {
+		value := req.Status.Value
+		body.Status = &value
+	}
+	if req.ModuleGroupID.Set {
+		value := req.ModuleGroupID.Value.String()
+		body.ModuleGroupID = &value
+	}
+	if req.FeatureGroupID.Set {
+		value := req.FeatureGroupID.Value.String()
+		body.FeatureGroupID = &value
 	}
 	var operatorID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		operatorID = &uid
 	}
-	if _, err := h.permSvc.BatchUpdate(&body, operatorID, ""); err != nil {
+	result, err := h.permSvc.BatchUpdate(&body, operatorID, "")
+	if err != nil {
 		h.logger.Error("batch update permission actions failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return &gen.PermissionActionBatchUpdateResult{
+		UpdatedCount: int64(result.UpdatedCount),
+		SkippedIds:   result.SkippedIDs,
+	}, nil
 }
 
-func (h *APIHandler) CreatePermissionActionGroup(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
-	var body dto.PermissionGroupSaveRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) CreatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest) (*gen.IDResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
 	}
-	if _, err := h.permSvc.CreateGroup(&body); err != nil {
+	body := dto.PermissionGroupSaveRequest{
+		Code:        req.Code,
+		Name:        req.Name,
+		NameEn:      optString(req.NameEn),
+		Description: optString(req.Description),
+		GroupType:   req.GroupType,
+		Status:      optString(req.Status),
+		SortOrder:   optInt(req.SortOrder, 0),
+	}
+	item, err := h.permSvc.CreateGroup(&body)
+	if err != nil {
 		h.logger.Error("create permission group failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	return &gen.IDResult{ID: item.ID}, nil
 }
 
-func (h *APIHandler) UpdatePermissionActionGroup(ctx context.Context, req gen.AnyObject, params gen.UpdatePermissionActionGroupParams) (*gen.MutationResult, error) {
-	var body dto.PermissionGroupSaveRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) UpdatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest, params gen.UpdatePermissionActionGroupParams) (*gen.MutationResult, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	body := dto.PermissionGroupSaveRequest{
+		Code:        req.Code,
+		Name:        req.Name,
+		NameEn:      optString(req.NameEn),
+		Description: optString(req.Description),
+		GroupType:   req.GroupType,
+		Status:      optString(req.Status),
+		SortOrder:   optInt(req.SortOrder, 0),
 	}
 	if err := h.permSvc.UpdateGroup(params.ID, &body); err != nil {
 		h.logger.Error("update permission group failed", zap.Error(err))
@@ -158,36 +196,59 @@ func (h *APIHandler) DeletePermissionActionGroup(ctx context.Context, params gen
 	return ok(), nil
 }
 
-func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
-	var body permission.PermissionBatchTemplateSaveRequest
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
+func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req *gen.PermissionActionBatchTemplateSaveRequest) (*gen.PermissionActionBatchTemplateItem, error) {
+	if req == nil {
+		return nil, errors.New("request body required")
+	}
+	body := permission.PermissionBatchTemplateSaveRequest{
+		Name:        req.Name,
+		Description: optString(req.Description),
+		Payload:     permissionBatchTemplatePayloadToMap(req.Payload),
 	}
 	var operatorID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		operatorID = &uid
 	}
-	if _, err := h.permSvc.SaveBatchTemplate(&body, operatorID); err != nil {
+	item, err := h.permSvc.SaveBatchTemplate(&body, operatorID)
+	if err != nil {
 		h.logger.Error("save permission batch template failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	out := permissionBatchTemplateItemFromModel(*item)
+	return &out, nil
+}
+
+func anyObjectToMap(src gen.AnyObject) map[string]interface{} {
+	if len(src) == 0 {
+		return nil
+	}
+	target := make(map[string]interface{}, len(src))
+	if err := unmarshalAnyObject(src, &target); err != nil {
+		return nil
+	}
+	return target
 }
 
 // -------- menu --------
 
-func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMenuDeletePreviewParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMenuDeletePreviewParams) (*gen.MenuDeletePreviewResponse, error) {
 	preview, err := h.menuSvc.DeletePreview(params.ID, "", nil)
 	if err != nil {
 		h.logger.Error("get menu delete preview failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(preview), nil
+	return &gen.MenuDeletePreviewResponse{
+		Mode:                  preview.Mode,
+		MenuCount:             preview.MenuCount,
+		ChildCount:            preview.ChildCount,
+		AffectedPageCount:     preview.AffectedPageCount,
+		AffectedRelationCount: preview.AffectedRelationCount,
+	}, nil
 }
 
 // -------- page --------
 
-func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageAccessTraceParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageAccessTraceParams) (*gen.PageAccessTraceResponse, error) {
 	req := &page.AccessTraceRequest{
 		AppKey: strings.TrimSpace(params.AppKey),
 		UserID: params.UserID.String(),
@@ -212,5 +273,9 @@ func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageA
 		h.logger.Error("get page access trace failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(result), nil
+	out, err := mapJSON[gen.PageAccessTraceResponse](result)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }

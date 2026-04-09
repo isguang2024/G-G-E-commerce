@@ -13,7 +13,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/InboxSummary'
   /messages/inbox:
     get:
       operationId: listInbox
@@ -38,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/MessageListResponse'
+                $ref: './schemas.yaml#/components/schemas/InboxListResponse'
   /messages/inbox/{deliveryId}:
     get:
       operationId: getInboxDetail
@@ -59,7 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/InboxDetail'
   /messages/inbox/{deliveryId}/read:
     post:
       operationId: markInboxRead
@@ -114,7 +114,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/InboxTodoActionRequest'
       responses:
         '200':
           description: OK
@@ -136,7 +136,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/MessageDispatchOptions'
   /messages/dispatch:
     post:
       operationId: dispatchMessage
@@ -150,14 +150,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageDispatchRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageDispatchResult'
   /messages/templates:
     get:
       operationId: listMessageTemplates
@@ -172,7 +172,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/MessageListResponse'
+                $ref: './schemas.yaml#/components/schemas/MessageTemplateListResponse'
     post:
       operationId: createMessageTemplate
       summary: 新建消息模板
@@ -185,14 +185,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageTemplateSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageTemplateItem'
   /messages/templates/{templateId}:
     put:
       operationId: updateMessageTemplate
@@ -213,14 +213,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageTemplateSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageTemplateItem'
   /messages/senders:
     get:
       operationId: listMessageSenders
@@ -235,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/MessageListResponse'
+                $ref: './schemas.yaml#/components/schemas/MessageSenderListResponse'
     post:
       operationId: createMessageSender
       summary: 新建消息发送人
@@ -248,14 +248,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageSenderSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageSenderItem'
   /messages/senders/{senderId}:
     put:
       operationId: updateMessageSender
@@ -276,14 +276,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageSenderSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageSenderItem'
   /messages/recipient-groups:
     get:
       operationId: listMessageRecipientGroups
@@ -298,7 +298,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/MessageListResponse'
+                $ref: './schemas.yaml#/components/schemas/MessageRecipientGroupListResponse'
     post:
       operationId: createMessageRecipientGroup
       summary: 新建消息接收组
@@ -311,14 +311,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageRecipientGroupSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageRecipientGroupItem'
   /messages/recipient-groups/{groupId}:
     put:
       operationId: updateMessageRecipientGroup
@@ -339,14 +339,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+              $ref: './schemas.yaml#/components/schemas/MessageRecipientGroupSaveRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/MessageRecipientGroupItem'
   /messages/records:
     get:
       operationId: listMessageDispatchRecords
@@ -372,7 +372,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/MessageListResponse'
+                $ref: './schemas.yaml#/components/schemas/MessageDispatchRecordListResponse'
   /messages/records/{recordId}:
     get:
       operationId: getMessageDispatchRecord
@@ -394,4 +394,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: './schemas.yaml#/components/schemas/MessageDispatchRecord'

@@ -37,34 +37,6 @@ func (s *ActionSourceEntry) SetPackageIds(val []uuid.UUID) {
 	s.PackageIds = val
 }
 
-// Ref: #/components/schemas/AnyListResponse
-type AnyListResponse struct {
-	Records []AnyObject `json:"records"`
-	Total   int         `json:"total"`
-}
-
-// GetRecords returns the value of Records.
-func (s *AnyListResponse) GetRecords() []AnyObject {
-	return s.Records
-}
-
-// GetTotal returns the value of Total.
-func (s *AnyListResponse) GetTotal() int {
-	return s.Total
-}
-
-// SetRecords sets the value of Records.
-func (s *AnyListResponse) SetRecords(val []AnyObject) {
-	s.Records = val
-}
-
-// SetTotal sets the value of Total.
-func (s *AnyListResponse) SetTotal(val int) {
-	s.Total = val
-}
-
-func (*AnyListResponse) listMediaRes() {}
-
 // Ref: #/components/schemas/AnyObject
 type AnyObject map[string]jx.Raw
 
@@ -76,14 +48,6 @@ func (s *AnyObject) init() AnyObject {
 	}
 	return m
 }
-
-func (*AnyObject) cleanupStaleApiEndpointsRes()      {}
-func (*AnyObject) createApiEndpointCategoryRes()     {}
-func (*AnyObject) getApiEndpointOverviewRes()        {}
-func (*AnyObject) updateApiEndpointCategoryRes()     {}
-func (*AnyObject) updateApiEndpointContextScopeRes() {}
-func (*AnyObject) updateApiEndpointRes()             {}
-func (*AnyObject) uploadMediaRes()                   {}
 
 // Ref: #/components/schemas/ApiEndpointCategoryItem
 type ApiEndpointCategoryItem struct {
@@ -155,6 +119,9 @@ func (s *ApiEndpointCategoryItem) SetStatus(val string) {
 	s.Status = val
 }
 
+func (*ApiEndpointCategoryItem) createApiEndpointCategoryRes() {}
+func (*ApiEndpointCategoryItem) updateApiEndpointCategoryRes() {}
+
 // Ref: #/components/schemas/ApiEndpointCategoryList
 type ApiEndpointCategoryList struct {
 	Records []ApiEndpointCategoryItem `json:"records"`
@@ -182,6 +149,65 @@ func (s *ApiEndpointCategoryList) SetTotal(val int64) {
 }
 
 func (*ApiEndpointCategoryList) listApiEndpointCategoriesRes() {}
+
+// Ref: #/components/schemas/ApiEndpointCategorySaveRequest
+type ApiEndpointCategorySaveRequest struct {
+	Code      string `json:"code"`
+	Name      string `json:"name"`
+	NameEn    string `json:"name_en"`
+	SortOrder int    `json:"sort_order"`
+	Status    string `json:"status"`
+}
+
+// GetCode returns the value of Code.
+func (s *ApiEndpointCategorySaveRequest) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *ApiEndpointCategorySaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetNameEn returns the value of NameEn.
+func (s *ApiEndpointCategorySaveRequest) GetNameEn() string {
+	return s.NameEn
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *ApiEndpointCategorySaveRequest) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetStatus returns the value of Status.
+func (s *ApiEndpointCategorySaveRequest) GetStatus() string {
+	return s.Status
+}
+
+// SetCode sets the value of Code.
+func (s *ApiEndpointCategorySaveRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *ApiEndpointCategorySaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetNameEn sets the value of NameEn.
+func (s *ApiEndpointCategorySaveRequest) SetNameEn(val string) {
+	s.NameEn = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *ApiEndpointCategorySaveRequest) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetStatus sets the value of Status.
+func (s *ApiEndpointCategorySaveRequest) SetStatus(val string) {
+	s.Status = val
+}
 
 // Ref: #/components/schemas/ApiEndpointItem
 type ApiEndpointItem struct {
@@ -374,6 +400,9 @@ func (s *ApiEndpointItem) SetUpdatedAt(val string) {
 	s.UpdatedAt = val
 }
 
+func (*ApiEndpointItem) updateApiEndpointContextScopeRes() {}
+func (*ApiEndpointItem) updateApiEndpointRes()             {}
+
 // Ref: #/components/schemas/ApiEndpointList
 type ApiEndpointList struct {
 	Records []ApiEndpointItem `json:"records"`
@@ -423,6 +452,206 @@ func (s *ApiEndpointList) SetSize(val int) {
 }
 
 func (*ApiEndpointList) listApiEndpointsRes() {}
+
+// Ref: #/components/schemas/ApiEndpointOverview
+type ApiEndpointOverview struct {
+	TotalCount              int64                                   `json:"total_count"`
+	UncategorizedCount      int64                                   `json:"uncategorized_count"`
+	StaleCount              int64                                   `json:"stale_count"`
+	NoPermissionCount       int64                                   `json:"no_permission_count"`
+	SharedPermissionCount   int64                                   `json:"shared_permission_count"`
+	CrossContextSharedCount int64                                   `json:"cross_context_shared_count"`
+	CategoryCounts          []ApiEndpointOverviewCategoryCountsItem `json:"category_counts"`
+}
+
+// GetTotalCount returns the value of TotalCount.
+func (s *ApiEndpointOverview) GetTotalCount() int64 {
+	return s.TotalCount
+}
+
+// GetUncategorizedCount returns the value of UncategorizedCount.
+func (s *ApiEndpointOverview) GetUncategorizedCount() int64 {
+	return s.UncategorizedCount
+}
+
+// GetStaleCount returns the value of StaleCount.
+func (s *ApiEndpointOverview) GetStaleCount() int64 {
+	return s.StaleCount
+}
+
+// GetNoPermissionCount returns the value of NoPermissionCount.
+func (s *ApiEndpointOverview) GetNoPermissionCount() int64 {
+	return s.NoPermissionCount
+}
+
+// GetSharedPermissionCount returns the value of SharedPermissionCount.
+func (s *ApiEndpointOverview) GetSharedPermissionCount() int64 {
+	return s.SharedPermissionCount
+}
+
+// GetCrossContextSharedCount returns the value of CrossContextSharedCount.
+func (s *ApiEndpointOverview) GetCrossContextSharedCount() int64 {
+	return s.CrossContextSharedCount
+}
+
+// GetCategoryCounts returns the value of CategoryCounts.
+func (s *ApiEndpointOverview) GetCategoryCounts() []ApiEndpointOverviewCategoryCountsItem {
+	return s.CategoryCounts
+}
+
+// SetTotalCount sets the value of TotalCount.
+func (s *ApiEndpointOverview) SetTotalCount(val int64) {
+	s.TotalCount = val
+}
+
+// SetUncategorizedCount sets the value of UncategorizedCount.
+func (s *ApiEndpointOverview) SetUncategorizedCount(val int64) {
+	s.UncategorizedCount = val
+}
+
+// SetStaleCount sets the value of StaleCount.
+func (s *ApiEndpointOverview) SetStaleCount(val int64) {
+	s.StaleCount = val
+}
+
+// SetNoPermissionCount sets the value of NoPermissionCount.
+func (s *ApiEndpointOverview) SetNoPermissionCount(val int64) {
+	s.NoPermissionCount = val
+}
+
+// SetSharedPermissionCount sets the value of SharedPermissionCount.
+func (s *ApiEndpointOverview) SetSharedPermissionCount(val int64) {
+	s.SharedPermissionCount = val
+}
+
+// SetCrossContextSharedCount sets the value of CrossContextSharedCount.
+func (s *ApiEndpointOverview) SetCrossContextSharedCount(val int64) {
+	s.CrossContextSharedCount = val
+}
+
+// SetCategoryCounts sets the value of CategoryCounts.
+func (s *ApiEndpointOverview) SetCategoryCounts(val []ApiEndpointOverviewCategoryCountsItem) {
+	s.CategoryCounts = val
+}
+
+func (*ApiEndpointOverview) getApiEndpointOverviewRes() {}
+
+type ApiEndpointOverviewCategoryCountsItem struct {
+	CategoryID string `json:"category_id"`
+	Count      int64  `json:"count"`
+}
+
+// GetCategoryID returns the value of CategoryID.
+func (s *ApiEndpointOverviewCategoryCountsItem) GetCategoryID() string {
+	return s.CategoryID
+}
+
+// GetCount returns the value of Count.
+func (s *ApiEndpointOverviewCategoryCountsItem) GetCount() int64 {
+	return s.Count
+}
+
+// SetCategoryID sets the value of CategoryID.
+func (s *ApiEndpointOverviewCategoryCountsItem) SetCategoryID(val string) {
+	s.CategoryID = val
+}
+
+// SetCount sets the value of Count.
+func (s *ApiEndpointOverviewCategoryCountsItem) SetCount(val int64) {
+	s.Count = val
+}
+
+// Ref: #/components/schemas/ApiEndpointSaveRequest
+type ApiEndpointSaveRequest struct {
+	Code           string       `json:"code"`
+	Method         string       `json:"method"`
+	Path           string       `json:"path"`
+	Summary        string       `json:"summary"`
+	CategoryID     OptNilString `json:"category_id"`
+	Status         string       `json:"status"`
+	Handler        string       `json:"handler"`
+	PermissionKeys []string     `json:"permission_keys"`
+}
+
+// GetCode returns the value of Code.
+func (s *ApiEndpointSaveRequest) GetCode() string {
+	return s.Code
+}
+
+// GetMethod returns the value of Method.
+func (s *ApiEndpointSaveRequest) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *ApiEndpointSaveRequest) GetPath() string {
+	return s.Path
+}
+
+// GetSummary returns the value of Summary.
+func (s *ApiEndpointSaveRequest) GetSummary() string {
+	return s.Summary
+}
+
+// GetCategoryID returns the value of CategoryID.
+func (s *ApiEndpointSaveRequest) GetCategoryID() OptNilString {
+	return s.CategoryID
+}
+
+// GetStatus returns the value of Status.
+func (s *ApiEndpointSaveRequest) GetStatus() string {
+	return s.Status
+}
+
+// GetHandler returns the value of Handler.
+func (s *ApiEndpointSaveRequest) GetHandler() string {
+	return s.Handler
+}
+
+// GetPermissionKeys returns the value of PermissionKeys.
+func (s *ApiEndpointSaveRequest) GetPermissionKeys() []string {
+	return s.PermissionKeys
+}
+
+// SetCode sets the value of Code.
+func (s *ApiEndpointSaveRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMethod sets the value of Method.
+func (s *ApiEndpointSaveRequest) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *ApiEndpointSaveRequest) SetPath(val string) {
+	s.Path = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *ApiEndpointSaveRequest) SetSummary(val string) {
+	s.Summary = val
+}
+
+// SetCategoryID sets the value of CategoryID.
+func (s *ApiEndpointSaveRequest) SetCategoryID(val OptNilString) {
+	s.CategoryID = val
+}
+
+// SetStatus sets the value of Status.
+func (s *ApiEndpointSaveRequest) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetHandler sets the value of Handler.
+func (s *ApiEndpointSaveRequest) SetHandler(val string) {
+	s.Handler = val
+}
+
+// SetPermissionKeys sets the value of PermissionKeys.
+func (s *ApiEndpointSaveRequest) SetPermissionKeys(val []string) {
+	s.PermissionKeys = val
+}
 
 type AssignUserRolesBadRequest Error
 
@@ -703,6 +932,38 @@ type CleanupStaleApiEndpointsUnauthorized Error
 
 func (*CleanupStaleApiEndpointsUnauthorized) cleanupStaleApiEndpointsRes() {}
 
+// Ref: #/components/schemas/CleanupStaleRequest
+type CleanupStaleRequest struct {
+	Ids []uuid.UUID `json:"ids"`
+}
+
+// GetIds returns the value of Ids.
+func (s *CleanupStaleRequest) GetIds() []uuid.UUID {
+	return s.Ids
+}
+
+// SetIds sets the value of Ids.
+func (s *CleanupStaleRequest) SetIds(val []uuid.UUID) {
+	s.Ids = val
+}
+
+// Ref: #/components/schemas/CleanupStaleResult
+type CleanupStaleResult struct {
+	DeletedCount int64 `json:"deleted_count"`
+}
+
+// GetDeletedCount returns the value of DeletedCount.
+func (s *CleanupStaleResult) GetDeletedCount() int64 {
+	return s.DeletedCount
+}
+
+// SetDeletedCount sets the value of DeletedCount.
+func (s *CleanupStaleResult) SetDeletedCount(val int64) {
+	s.DeletedCount = val
+}
+
+func (*CleanupStaleResult) cleanupStaleApiEndpointsRes() {}
+
 // Ref: #/components/schemas/CollaborationWorkspaceActionOriginsResponse
 type CollaborationWorkspaceActionOriginsResponse struct {
 	DerivedActionIds []uuid.UUID         `json:"derived_action_ids"`
@@ -943,6 +1204,32 @@ func (s *CollaborationWorkspaceList) SetTotal(val int) {
 	s.Total = val
 }
 
+// Ref: #/components/schemas/CollaborationWorkspaceMemberAddRequest
+type CollaborationWorkspaceMemberAddRequest struct {
+	UserID   uuid.UUID `json:"user_id"`
+	RoleCode OptString `json:"role_code"`
+}
+
+// GetUserID returns the value of UserID.
+func (s *CollaborationWorkspaceMemberAddRequest) GetUserID() uuid.UUID {
+	return s.UserID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *CollaborationWorkspaceMemberAddRequest) GetRoleCode() OptString {
+	return s.RoleCode
+}
+
+// SetUserID sets the value of UserID.
+func (s *CollaborationWorkspaceMemberAddRequest) SetUserID(val uuid.UUID) {
+	s.UserID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *CollaborationWorkspaceMemberAddRequest) SetRoleCode(val OptString) {
+	s.RoleCode = val
+}
+
 // Ref: #/components/schemas/CollaborationWorkspaceMemberItem
 type CollaborationWorkspaceMemberItem struct {
 	ID                       uuid.UUID  `json:"id"`
@@ -1081,6 +1368,21 @@ func (s *CollaborationWorkspaceMemberList) SetRecords(val []CollaborationWorkspa
 // SetTotal sets the value of Total.
 func (s *CollaborationWorkspaceMemberList) SetTotal(val int) {
 	s.Total = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMemberRoleRequest
+type CollaborationWorkspaceMemberRoleRequest struct {
+	RoleCode string `json:"role_code"`
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *CollaborationWorkspaceMemberRoleRequest) GetRoleCode() string {
+	return s.RoleCode
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *CollaborationWorkspaceMemberRoleRequest) SetRoleCode(val string) {
+	s.RoleCode = val
 }
 
 // Ref: #/components/schemas/CollaborationWorkspaceMemberRolesResponse
@@ -1323,6 +1625,157 @@ func (s *CollaborationWorkspaceRoleList) SetTotal(val int64) {
 	s.Total = val
 }
 
+// Ref: #/components/schemas/CollaborationWorkspaceRoleSaveRequest
+type CollaborationWorkspaceRoleSaveRequest struct {
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	Description OptString `json:"description"`
+	SortOrder   OptInt    `json:"sort_order"`
+	Priority    OptInt    `json:"priority"`
+	Status      OptString `json:"status"`
+}
+
+// GetCode returns the value of Code.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetPriority returns the value of Priority.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetPriority() OptInt {
+	return s.Priority
+}
+
+// GetStatus returns the value of Status.
+func (s *CollaborationWorkspaceRoleSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// SetCode sets the value of Code.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetPriority(val OptInt) {
+	s.Priority = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CollaborationWorkspaceRoleSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceSaveRequest
+type CollaborationWorkspaceSaveRequest struct {
+	Name         string      `json:"name"`
+	Remark       OptString   `json:"remark"`
+	LogoURL      OptString   `json:"logo_url"`
+	Plan         OptString   `json:"plan"`
+	MaxMembers   OptInt      `json:"max_members"`
+	Status       OptString   `json:"status"`
+	AdminUserIds []uuid.UUID `json:"admin_user_ids"`
+}
+
+// GetName returns the value of Name.
+func (s *CollaborationWorkspaceSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetRemark returns the value of Remark.
+func (s *CollaborationWorkspaceSaveRequest) GetRemark() OptString {
+	return s.Remark
+}
+
+// GetLogoURL returns the value of LogoURL.
+func (s *CollaborationWorkspaceSaveRequest) GetLogoURL() OptString {
+	return s.LogoURL
+}
+
+// GetPlan returns the value of Plan.
+func (s *CollaborationWorkspaceSaveRequest) GetPlan() OptString {
+	return s.Plan
+}
+
+// GetMaxMembers returns the value of MaxMembers.
+func (s *CollaborationWorkspaceSaveRequest) GetMaxMembers() OptInt {
+	return s.MaxMembers
+}
+
+// GetStatus returns the value of Status.
+func (s *CollaborationWorkspaceSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetAdminUserIds returns the value of AdminUserIds.
+func (s *CollaborationWorkspaceSaveRequest) GetAdminUserIds() []uuid.UUID {
+	return s.AdminUserIds
+}
+
+// SetName sets the value of Name.
+func (s *CollaborationWorkspaceSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetRemark sets the value of Remark.
+func (s *CollaborationWorkspaceSaveRequest) SetRemark(val OptString) {
+	s.Remark = val
+}
+
+// SetLogoURL sets the value of LogoURL.
+func (s *CollaborationWorkspaceSaveRequest) SetLogoURL(val OptString) {
+	s.LogoURL = val
+}
+
+// SetPlan sets the value of Plan.
+func (s *CollaborationWorkspaceSaveRequest) SetPlan(val OptString) {
+	s.Plan = val
+}
+
+// SetMaxMembers sets the value of MaxMembers.
+func (s *CollaborationWorkspaceSaveRequest) SetMaxMembers(val OptInt) {
+	s.MaxMembers = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CollaborationWorkspaceSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetAdminUserIds sets the value of AdminUserIds.
+func (s *CollaborationWorkspaceSaveRequest) SetAdminUserIds(val []uuid.UUID) {
+	s.AdminUserIds = val
+}
+
 type CreateApiEndpointCategoryInternalServerError Error
 
 func (*CreateApiEndpointCategoryInternalServerError) createApiEndpointCategoryRes() {}
@@ -1450,6 +1903,930 @@ func (*DeleteUserNotFound) deleteUserRes() {}
 type DeleteUserUnauthorized Error
 
 func (*DeleteUserUnauthorized) deleteUserRes() {}
+
+// Ref: #/components/schemas/DispatchAudienceOption
+type DispatchAudienceOption struct {
+	Value       string `json:"value"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+}
+
+// GetValue returns the value of Value.
+func (s *DispatchAudienceOption) GetValue() string {
+	return s.Value
+}
+
+// GetLabel returns the value of Label.
+func (s *DispatchAudienceOption) GetLabel() string {
+	return s.Label
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchAudienceOption) GetDescription() string {
+	return s.Description
+}
+
+// SetValue sets the value of Value.
+func (s *DispatchAudienceOption) SetValue(val string) {
+	s.Value = val
+}
+
+// SetLabel sets the value of Label.
+func (s *DispatchAudienceOption) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchAudienceOption) SetDescription(val string) {
+	s.Description = val
+}
+
+// Ref: #/components/schemas/DispatchCollaborationWorkspaceOption
+type DispatchCollaborationWorkspaceOption struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchCollaborationWorkspaceOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *DispatchCollaborationWorkspaceOption) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *DispatchCollaborationWorkspaceOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchCollaborationWorkspaceOption) SetName(val string) {
+	s.Name = val
+}
+
+// Ref: #/components/schemas/DispatchFeaturePackageOption
+type DispatchFeaturePackageOption struct {
+	ID          uuid.UUID `json:"id"`
+	PackageKey  string    `json:"package_key"`
+	Name        string    `json:"name"`
+	Description OptString `json:"description"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchFeaturePackageOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetPackageKey returns the value of PackageKey.
+func (s *DispatchFeaturePackageOption) GetPackageKey() string {
+	return s.PackageKey
+}
+
+// GetName returns the value of Name.
+func (s *DispatchFeaturePackageOption) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchFeaturePackageOption) GetDescription() OptString {
+	return s.Description
+}
+
+// SetID sets the value of ID.
+func (s *DispatchFeaturePackageOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetPackageKey sets the value of PackageKey.
+func (s *DispatchFeaturePackageOption) SetPackageKey(val string) {
+	s.PackageKey = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchFeaturePackageOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchFeaturePackageOption) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// Ref: #/components/schemas/DispatchRecipientGroupOption
+type DispatchRecipientGroupOption struct {
+	ID             uuid.UUID `json:"id"`
+	Name           string    `json:"name"`
+	Description    OptString `json:"description"`
+	MatchMode      OptString `json:"match_mode"`
+	EstimatedCount OptInt    `json:"estimated_count"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchRecipientGroupOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *DispatchRecipientGroupOption) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchRecipientGroupOption) GetDescription() OptString {
+	return s.Description
+}
+
+// GetMatchMode returns the value of MatchMode.
+func (s *DispatchRecipientGroupOption) GetMatchMode() OptString {
+	return s.MatchMode
+}
+
+// GetEstimatedCount returns the value of EstimatedCount.
+func (s *DispatchRecipientGroupOption) GetEstimatedCount() OptInt {
+	return s.EstimatedCount
+}
+
+// SetID sets the value of ID.
+func (s *DispatchRecipientGroupOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchRecipientGroupOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchRecipientGroupOption) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetMatchMode sets the value of MatchMode.
+func (s *DispatchRecipientGroupOption) SetMatchMode(val OptString) {
+	s.MatchMode = val
+}
+
+// SetEstimatedCount sets the value of EstimatedCount.
+func (s *DispatchRecipientGroupOption) SetEstimatedCount(val OptInt) {
+	s.EstimatedCount = val
+}
+
+// Ref: #/components/schemas/DispatchRecordDeliveryItem
+type DispatchRecordDeliveryItem struct {
+	ID                                  uuid.UUID   `json:"id"`
+	RecipientUserID                     uuid.UUID   `json:"recipient_user_id"`
+	RecipientName                       string      `json:"recipient_name"`
+	RecipientCollaborationWorkspaceID   OptUUID     `json:"recipient_collaboration_workspace_id"`
+	RecipientCollaborationWorkspaceName OptString   `json:"recipient_collaboration_workspace_name"`
+	DeliveryStatus                      string      `json:"delivery_status"`
+	TodoStatus                          OptString   `json:"todo_status"`
+	ReadAt                              OptDateTime `json:"read_at"`
+	DoneAt                              OptDateTime `json:"done_at"`
+	LastActionAt                        OptDateTime `json:"last_action_at"`
+	SourceGroupID                       OptUUID     `json:"source_group_id"`
+	SourceGroupName                     OptString   `json:"source_group_name"`
+	SourceRuleType                      OptString   `json:"source_rule_type"`
+	SourceRuleLabel                     OptString   `json:"source_rule_label"`
+	SourceTargetID                      OptUUID     `json:"source_target_id"`
+	SourceTargetType                    OptString   `json:"source_target_type"`
+	SourceTargetValue                   OptString   `json:"source_target_value"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchRecordDeliveryItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetRecipientUserID returns the value of RecipientUserID.
+func (s *DispatchRecordDeliveryItem) GetRecipientUserID() uuid.UUID {
+	return s.RecipientUserID
+}
+
+// GetRecipientName returns the value of RecipientName.
+func (s *DispatchRecordDeliveryItem) GetRecipientName() string {
+	return s.RecipientName
+}
+
+// GetRecipientCollaborationWorkspaceID returns the value of RecipientCollaborationWorkspaceID.
+func (s *DispatchRecordDeliveryItem) GetRecipientCollaborationWorkspaceID() OptUUID {
+	return s.RecipientCollaborationWorkspaceID
+}
+
+// GetRecipientCollaborationWorkspaceName returns the value of RecipientCollaborationWorkspaceName.
+func (s *DispatchRecordDeliveryItem) GetRecipientCollaborationWorkspaceName() OptString {
+	return s.RecipientCollaborationWorkspaceName
+}
+
+// GetDeliveryStatus returns the value of DeliveryStatus.
+func (s *DispatchRecordDeliveryItem) GetDeliveryStatus() string {
+	return s.DeliveryStatus
+}
+
+// GetTodoStatus returns the value of TodoStatus.
+func (s *DispatchRecordDeliveryItem) GetTodoStatus() OptString {
+	return s.TodoStatus
+}
+
+// GetReadAt returns the value of ReadAt.
+func (s *DispatchRecordDeliveryItem) GetReadAt() OptDateTime {
+	return s.ReadAt
+}
+
+// GetDoneAt returns the value of DoneAt.
+func (s *DispatchRecordDeliveryItem) GetDoneAt() OptDateTime {
+	return s.DoneAt
+}
+
+// GetLastActionAt returns the value of LastActionAt.
+func (s *DispatchRecordDeliveryItem) GetLastActionAt() OptDateTime {
+	return s.LastActionAt
+}
+
+// GetSourceGroupID returns the value of SourceGroupID.
+func (s *DispatchRecordDeliveryItem) GetSourceGroupID() OptUUID {
+	return s.SourceGroupID
+}
+
+// GetSourceGroupName returns the value of SourceGroupName.
+func (s *DispatchRecordDeliveryItem) GetSourceGroupName() OptString {
+	return s.SourceGroupName
+}
+
+// GetSourceRuleType returns the value of SourceRuleType.
+func (s *DispatchRecordDeliveryItem) GetSourceRuleType() OptString {
+	return s.SourceRuleType
+}
+
+// GetSourceRuleLabel returns the value of SourceRuleLabel.
+func (s *DispatchRecordDeliveryItem) GetSourceRuleLabel() OptString {
+	return s.SourceRuleLabel
+}
+
+// GetSourceTargetID returns the value of SourceTargetID.
+func (s *DispatchRecordDeliveryItem) GetSourceTargetID() OptUUID {
+	return s.SourceTargetID
+}
+
+// GetSourceTargetType returns the value of SourceTargetType.
+func (s *DispatchRecordDeliveryItem) GetSourceTargetType() OptString {
+	return s.SourceTargetType
+}
+
+// GetSourceTargetValue returns the value of SourceTargetValue.
+func (s *DispatchRecordDeliveryItem) GetSourceTargetValue() OptString {
+	return s.SourceTargetValue
+}
+
+// SetID sets the value of ID.
+func (s *DispatchRecordDeliveryItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetRecipientUserID sets the value of RecipientUserID.
+func (s *DispatchRecordDeliveryItem) SetRecipientUserID(val uuid.UUID) {
+	s.RecipientUserID = val
+}
+
+// SetRecipientName sets the value of RecipientName.
+func (s *DispatchRecordDeliveryItem) SetRecipientName(val string) {
+	s.RecipientName = val
+}
+
+// SetRecipientCollaborationWorkspaceID sets the value of RecipientCollaborationWorkspaceID.
+func (s *DispatchRecordDeliveryItem) SetRecipientCollaborationWorkspaceID(val OptUUID) {
+	s.RecipientCollaborationWorkspaceID = val
+}
+
+// SetRecipientCollaborationWorkspaceName sets the value of RecipientCollaborationWorkspaceName.
+func (s *DispatchRecordDeliveryItem) SetRecipientCollaborationWorkspaceName(val OptString) {
+	s.RecipientCollaborationWorkspaceName = val
+}
+
+// SetDeliveryStatus sets the value of DeliveryStatus.
+func (s *DispatchRecordDeliveryItem) SetDeliveryStatus(val string) {
+	s.DeliveryStatus = val
+}
+
+// SetTodoStatus sets the value of TodoStatus.
+func (s *DispatchRecordDeliveryItem) SetTodoStatus(val OptString) {
+	s.TodoStatus = val
+}
+
+// SetReadAt sets the value of ReadAt.
+func (s *DispatchRecordDeliveryItem) SetReadAt(val OptDateTime) {
+	s.ReadAt = val
+}
+
+// SetDoneAt sets the value of DoneAt.
+func (s *DispatchRecordDeliveryItem) SetDoneAt(val OptDateTime) {
+	s.DoneAt = val
+}
+
+// SetLastActionAt sets the value of LastActionAt.
+func (s *DispatchRecordDeliveryItem) SetLastActionAt(val OptDateTime) {
+	s.LastActionAt = val
+}
+
+// SetSourceGroupID sets the value of SourceGroupID.
+func (s *DispatchRecordDeliveryItem) SetSourceGroupID(val OptUUID) {
+	s.SourceGroupID = val
+}
+
+// SetSourceGroupName sets the value of SourceGroupName.
+func (s *DispatchRecordDeliveryItem) SetSourceGroupName(val OptString) {
+	s.SourceGroupName = val
+}
+
+// SetSourceRuleType sets the value of SourceRuleType.
+func (s *DispatchRecordDeliveryItem) SetSourceRuleType(val OptString) {
+	s.SourceRuleType = val
+}
+
+// SetSourceRuleLabel sets the value of SourceRuleLabel.
+func (s *DispatchRecordDeliveryItem) SetSourceRuleLabel(val OptString) {
+	s.SourceRuleLabel = val
+}
+
+// SetSourceTargetID sets the value of SourceTargetID.
+func (s *DispatchRecordDeliveryItem) SetSourceTargetID(val OptUUID) {
+	s.SourceTargetID = val
+}
+
+// SetSourceTargetType sets the value of SourceTargetType.
+func (s *DispatchRecordDeliveryItem) SetSourceTargetType(val OptString) {
+	s.SourceTargetType = val
+}
+
+// SetSourceTargetValue sets the value of SourceTargetValue.
+func (s *DispatchRecordDeliveryItem) SetSourceTargetValue(val OptString) {
+	s.SourceTargetValue = val
+}
+
+// Ref: #/components/schemas/DispatchRecordItem
+type DispatchRecordItem struct {
+	ID                               uuid.UUID   `json:"id"`
+	Title                            string      `json:"title"`
+	Summary                          OptString   `json:"summary"`
+	Content                          OptString   `json:"content"`
+	MessageType                      string      `json:"message_type"`
+	AudienceType                     string      `json:"audience_type"`
+	ScopeType                        string      `json:"scope_type"`
+	ScopeID                          OptUUID     `json:"scope_id"`
+	TargetCollaborationWorkspaceID   OptUUID     `json:"target_collaboration_workspace_id"`
+	TargetCollaborationWorkspaceName OptString   `json:"target_collaboration_workspace_name"`
+	SenderName                       OptString   `json:"sender_name"`
+	TemplateName                     OptString   `json:"template_name"`
+	Priority                         OptString   `json:"priority"`
+	Status                           OptString   `json:"status"`
+	PublishedAt                      OptDateTime `json:"published_at"`
+	CreatedAt                        time.Time   `json:"created_at"`
+	DeliveryCount                    int         `json:"delivery_count"`
+	ReadCount                        int         `json:"read_count"`
+	UnreadCount                      int         `json:"unread_count"`
+	PendingTodoCount                 int         `json:"pending_todo_count"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchRecordItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTitle returns the value of Title.
+func (s *DispatchRecordItem) GetTitle() string {
+	return s.Title
+}
+
+// GetSummary returns the value of Summary.
+func (s *DispatchRecordItem) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetContent returns the value of Content.
+func (s *DispatchRecordItem) GetContent() OptString {
+	return s.Content
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *DispatchRecordItem) GetMessageType() string {
+	return s.MessageType
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *DispatchRecordItem) GetAudienceType() string {
+	return s.AudienceType
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *DispatchRecordItem) GetScopeType() string {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *DispatchRecordItem) GetScopeID() OptUUID {
+	return s.ScopeID
+}
+
+// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
+func (s *DispatchRecordItem) GetTargetCollaborationWorkspaceID() OptUUID {
+	return s.TargetCollaborationWorkspaceID
+}
+
+// GetTargetCollaborationWorkspaceName returns the value of TargetCollaborationWorkspaceName.
+func (s *DispatchRecordItem) GetTargetCollaborationWorkspaceName() OptString {
+	return s.TargetCollaborationWorkspaceName
+}
+
+// GetSenderName returns the value of SenderName.
+func (s *DispatchRecordItem) GetSenderName() OptString {
+	return s.SenderName
+}
+
+// GetTemplateName returns the value of TemplateName.
+func (s *DispatchRecordItem) GetTemplateName() OptString {
+	return s.TemplateName
+}
+
+// GetPriority returns the value of Priority.
+func (s *DispatchRecordItem) GetPriority() OptString {
+	return s.Priority
+}
+
+// GetStatus returns the value of Status.
+func (s *DispatchRecordItem) GetStatus() OptString {
+	return s.Status
+}
+
+// GetPublishedAt returns the value of PublishedAt.
+func (s *DispatchRecordItem) GetPublishedAt() OptDateTime {
+	return s.PublishedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *DispatchRecordItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetDeliveryCount returns the value of DeliveryCount.
+func (s *DispatchRecordItem) GetDeliveryCount() int {
+	return s.DeliveryCount
+}
+
+// GetReadCount returns the value of ReadCount.
+func (s *DispatchRecordItem) GetReadCount() int {
+	return s.ReadCount
+}
+
+// GetUnreadCount returns the value of UnreadCount.
+func (s *DispatchRecordItem) GetUnreadCount() int {
+	return s.UnreadCount
+}
+
+// GetPendingTodoCount returns the value of PendingTodoCount.
+func (s *DispatchRecordItem) GetPendingTodoCount() int {
+	return s.PendingTodoCount
+}
+
+// SetID sets the value of ID.
+func (s *DispatchRecordItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *DispatchRecordItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *DispatchRecordItem) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetContent sets the value of Content.
+func (s *DispatchRecordItem) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *DispatchRecordItem) SetMessageType(val string) {
+	s.MessageType = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *DispatchRecordItem) SetAudienceType(val string) {
+	s.AudienceType = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *DispatchRecordItem) SetScopeType(val string) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *DispatchRecordItem) SetScopeID(val OptUUID) {
+	s.ScopeID = val
+}
+
+// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
+func (s *DispatchRecordItem) SetTargetCollaborationWorkspaceID(val OptUUID) {
+	s.TargetCollaborationWorkspaceID = val
+}
+
+// SetTargetCollaborationWorkspaceName sets the value of TargetCollaborationWorkspaceName.
+func (s *DispatchRecordItem) SetTargetCollaborationWorkspaceName(val OptString) {
+	s.TargetCollaborationWorkspaceName = val
+}
+
+// SetSenderName sets the value of SenderName.
+func (s *DispatchRecordItem) SetSenderName(val OptString) {
+	s.SenderName = val
+}
+
+// SetTemplateName sets the value of TemplateName.
+func (s *DispatchRecordItem) SetTemplateName(val OptString) {
+	s.TemplateName = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *DispatchRecordItem) SetPriority(val OptString) {
+	s.Priority = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DispatchRecordItem) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetPublishedAt sets the value of PublishedAt.
+func (s *DispatchRecordItem) SetPublishedAt(val OptDateTime) {
+	s.PublishedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *DispatchRecordItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetDeliveryCount sets the value of DeliveryCount.
+func (s *DispatchRecordItem) SetDeliveryCount(val int) {
+	s.DeliveryCount = val
+}
+
+// SetReadCount sets the value of ReadCount.
+func (s *DispatchRecordItem) SetReadCount(val int) {
+	s.ReadCount = val
+}
+
+// SetUnreadCount sets the value of UnreadCount.
+func (s *DispatchRecordItem) SetUnreadCount(val int) {
+	s.UnreadCount = val
+}
+
+// SetPendingTodoCount sets the value of PendingTodoCount.
+func (s *DispatchRecordItem) SetPendingTodoCount(val int) {
+	s.PendingTodoCount = val
+}
+
+// Ref: #/components/schemas/DispatchRecordSummary
+type DispatchRecordSummary struct {
+	TotalMessages   int `json:"total_messages"`
+	TotalDeliveries int `json:"total_deliveries"`
+	ReadDeliveries  int `json:"read_deliveries"`
+	TodoMessages    int `json:"todo_messages"`
+}
+
+// GetTotalMessages returns the value of TotalMessages.
+func (s *DispatchRecordSummary) GetTotalMessages() int {
+	return s.TotalMessages
+}
+
+// GetTotalDeliveries returns the value of TotalDeliveries.
+func (s *DispatchRecordSummary) GetTotalDeliveries() int {
+	return s.TotalDeliveries
+}
+
+// GetReadDeliveries returns the value of ReadDeliveries.
+func (s *DispatchRecordSummary) GetReadDeliveries() int {
+	return s.ReadDeliveries
+}
+
+// GetTodoMessages returns the value of TodoMessages.
+func (s *DispatchRecordSummary) GetTodoMessages() int {
+	return s.TodoMessages
+}
+
+// SetTotalMessages sets the value of TotalMessages.
+func (s *DispatchRecordSummary) SetTotalMessages(val int) {
+	s.TotalMessages = val
+}
+
+// SetTotalDeliveries sets the value of TotalDeliveries.
+func (s *DispatchRecordSummary) SetTotalDeliveries(val int) {
+	s.TotalDeliveries = val
+}
+
+// SetReadDeliveries sets the value of ReadDeliveries.
+func (s *DispatchRecordSummary) SetReadDeliveries(val int) {
+	s.ReadDeliveries = val
+}
+
+// SetTodoMessages sets the value of TodoMessages.
+func (s *DispatchRecordSummary) SetTodoMessages(val int) {
+	s.TodoMessages = val
+}
+
+// Ref: #/components/schemas/DispatchRoleOption
+type DispatchRoleOption struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	Description OptString `json:"description"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchRoleOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *DispatchRoleOption) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *DispatchRoleOption) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchRoleOption) GetDescription() OptString {
+	return s.Description
+}
+
+// SetID sets the value of ID.
+func (s *DispatchRoleOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *DispatchRoleOption) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchRoleOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchRoleOption) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// Ref: #/components/schemas/DispatchSenderOption
+type DispatchSenderOption struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description OptString `json:"description"`
+	AvatarURL   OptString `json:"avatar_url"`
+	IsDefault   OptBool   `json:"is_default"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchSenderOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *DispatchSenderOption) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchSenderOption) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAvatarURL returns the value of AvatarURL.
+func (s *DispatchSenderOption) GetAvatarURL() OptString {
+	return s.AvatarURL
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *DispatchSenderOption) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// SetID sets the value of ID.
+func (s *DispatchSenderOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchSenderOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchSenderOption) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAvatarURL sets the value of AvatarURL.
+func (s *DispatchSenderOption) SetAvatarURL(val OptString) {
+	s.AvatarURL = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *DispatchSenderOption) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// Ref: #/components/schemas/DispatchTemplateOption
+type DispatchTemplateOption struct {
+	ID              uuid.UUID `json:"id"`
+	TemplateKey     string    `json:"template_key"`
+	Name            string    `json:"name"`
+	Description     string    `json:"description"`
+	MessageType     string    `json:"message_type"`
+	OwnerScope      string    `json:"owner_scope"`
+	AudienceType    string    `json:"audience_type"`
+	TitleTemplate   OptString `json:"title_template"`
+	SummaryTemplate OptString `json:"summary_template"`
+	ContentTemplate OptString `json:"content_template"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchTemplateOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *DispatchTemplateOption) GetTemplateKey() string {
+	return s.TemplateKey
+}
+
+// GetName returns the value of Name.
+func (s *DispatchTemplateOption) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchTemplateOption) GetDescription() string {
+	return s.Description
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *DispatchTemplateOption) GetMessageType() string {
+	return s.MessageType
+}
+
+// GetOwnerScope returns the value of OwnerScope.
+func (s *DispatchTemplateOption) GetOwnerScope() string {
+	return s.OwnerScope
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *DispatchTemplateOption) GetAudienceType() string {
+	return s.AudienceType
+}
+
+// GetTitleTemplate returns the value of TitleTemplate.
+func (s *DispatchTemplateOption) GetTitleTemplate() OptString {
+	return s.TitleTemplate
+}
+
+// GetSummaryTemplate returns the value of SummaryTemplate.
+func (s *DispatchTemplateOption) GetSummaryTemplate() OptString {
+	return s.SummaryTemplate
+}
+
+// GetContentTemplate returns the value of ContentTemplate.
+func (s *DispatchTemplateOption) GetContentTemplate() OptString {
+	return s.ContentTemplate
+}
+
+// SetID sets the value of ID.
+func (s *DispatchTemplateOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *DispatchTemplateOption) SetTemplateKey(val string) {
+	s.TemplateKey = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchTemplateOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchTemplateOption) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *DispatchTemplateOption) SetMessageType(val string) {
+	s.MessageType = val
+}
+
+// SetOwnerScope sets the value of OwnerScope.
+func (s *DispatchTemplateOption) SetOwnerScope(val string) {
+	s.OwnerScope = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *DispatchTemplateOption) SetAudienceType(val string) {
+	s.AudienceType = val
+}
+
+// SetTitleTemplate sets the value of TitleTemplate.
+func (s *DispatchTemplateOption) SetTitleTemplate(val OptString) {
+	s.TitleTemplate = val
+}
+
+// SetSummaryTemplate sets the value of SummaryTemplate.
+func (s *DispatchTemplateOption) SetSummaryTemplate(val OptString) {
+	s.SummaryTemplate = val
+}
+
+// SetContentTemplate sets the value of ContentTemplate.
+func (s *DispatchTemplateOption) SetContentTemplate(val OptString) {
+	s.ContentTemplate = val
+}
+
+// Ref: #/components/schemas/DispatchUserOption
+type DispatchUserOption struct {
+	ID                         uuid.UUID `json:"id"`
+	Name                       string    `json:"name"`
+	DisplayName                string    `json:"display_name"`
+	Description                OptString `json:"description"`
+	CollaborationWorkspaceID   OptUUID   `json:"collaboration_workspace_id"`
+	CollaborationWorkspaceName OptString `json:"collaboration_workspace_name"`
+}
+
+// GetID returns the value of ID.
+func (s *DispatchUserOption) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *DispatchUserOption) GetName() string {
+	return s.Name
+}
+
+// GetDisplayName returns the value of DisplayName.
+func (s *DispatchUserOption) GetDisplayName() string {
+	return s.DisplayName
+}
+
+// GetDescription returns the value of Description.
+func (s *DispatchUserOption) GetDescription() OptString {
+	return s.Description
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *DispatchUserOption) GetCollaborationWorkspaceID() OptUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetCollaborationWorkspaceName returns the value of CollaborationWorkspaceName.
+func (s *DispatchUserOption) GetCollaborationWorkspaceName() OptString {
+	return s.CollaborationWorkspaceName
+}
+
+// SetID sets the value of ID.
+func (s *DispatchUserOption) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *DispatchUserOption) SetName(val string) {
+	s.Name = val
+}
+
+// SetDisplayName sets the value of DisplayName.
+func (s *DispatchUserOption) SetDisplayName(val string) {
+	s.DisplayName = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DispatchUserOption) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *DispatchUserOption) SetCollaborationWorkspaceID(val OptUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetCollaborationWorkspaceName sets the value of CollaborationWorkspaceName.
+func (s *DispatchUserOption) SetCollaborationWorkspaceName(val OptString) {
+	s.CollaborationWorkspaceName = val
+}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -1734,10 +3111,146 @@ func (s *FeaturePackageList) SetSize(val int) {
 	s.Size = val
 }
 
+// Ref: #/components/schemas/FeaturePackageMenuItem
+type FeaturePackageMenuItem struct {
+	ID        uuid.UUID  `json:"id"`
+	ParentID  OptNilUUID `json:"parent_id"`
+	AppKey    string     `json:"app_key"`
+	SpaceKey  string     `json:"space_key"`
+	Kind      string     `json:"kind"`
+	Path      OptString  `json:"path"`
+	Name      string     `json:"name"`
+	Component OptString  `json:"component"`
+	Title     string     `json:"title"`
+	Icon      OptString  `json:"icon"`
+	SortOrder int        `json:"sort_order"`
+	Hidden    bool       `json:"hidden"`
+}
+
+// GetID returns the value of ID.
+func (s *FeaturePackageMenuItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetParentID returns the value of ParentID.
+func (s *FeaturePackageMenuItem) GetParentID() OptNilUUID {
+	return s.ParentID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *FeaturePackageMenuItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *FeaturePackageMenuItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetKind returns the value of Kind.
+func (s *FeaturePackageMenuItem) GetKind() string {
+	return s.Kind
+}
+
+// GetPath returns the value of Path.
+func (s *FeaturePackageMenuItem) GetPath() OptString {
+	return s.Path
+}
+
+// GetName returns the value of Name.
+func (s *FeaturePackageMenuItem) GetName() string {
+	return s.Name
+}
+
+// GetComponent returns the value of Component.
+func (s *FeaturePackageMenuItem) GetComponent() OptString {
+	return s.Component
+}
+
+// GetTitle returns the value of Title.
+func (s *FeaturePackageMenuItem) GetTitle() string {
+	return s.Title
+}
+
+// GetIcon returns the value of Icon.
+func (s *FeaturePackageMenuItem) GetIcon() OptString {
+	return s.Icon
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *FeaturePackageMenuItem) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetHidden returns the value of Hidden.
+func (s *FeaturePackageMenuItem) GetHidden() bool {
+	return s.Hidden
+}
+
+// SetID sets the value of ID.
+func (s *FeaturePackageMenuItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetParentID sets the value of ParentID.
+func (s *FeaturePackageMenuItem) SetParentID(val OptNilUUID) {
+	s.ParentID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *FeaturePackageMenuItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *FeaturePackageMenuItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetKind sets the value of Kind.
+func (s *FeaturePackageMenuItem) SetKind(val string) {
+	s.Kind = val
+}
+
+// SetPath sets the value of Path.
+func (s *FeaturePackageMenuItem) SetPath(val OptString) {
+	s.Path = val
+}
+
+// SetName sets the value of Name.
+func (s *FeaturePackageMenuItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetComponent sets the value of Component.
+func (s *FeaturePackageMenuItem) SetComponent(val OptString) {
+	s.Component = val
+}
+
+// SetTitle sets the value of Title.
+func (s *FeaturePackageMenuItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetIcon sets the value of Icon.
+func (s *FeaturePackageMenuItem) SetIcon(val OptString) {
+	s.Icon = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *FeaturePackageMenuItem) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetHidden sets the value of Hidden.
+func (s *FeaturePackageMenuItem) SetHidden(val bool) {
+	s.Hidden = val
+}
+
 // Ref: #/components/schemas/FeaturePackageMenusResponse
 type FeaturePackageMenusResponse struct {
-	MenuIds []uuid.UUID `json:"menu_ids"`
-	Menus   []AnyObject `json:"menus"`
+	MenuIds []uuid.UUID              `json:"menu_ids"`
+	Menus   []FeaturePackageMenuItem `json:"menus"`
 }
 
 // GetMenuIds returns the value of MenuIds.
@@ -1746,7 +3259,7 @@ func (s *FeaturePackageMenusResponse) GetMenuIds() []uuid.UUID {
 }
 
 // GetMenus returns the value of Menus.
-func (s *FeaturePackageMenusResponse) GetMenus() []AnyObject {
+func (s *FeaturePackageMenusResponse) GetMenus() []FeaturePackageMenuItem {
 	return s.Menus
 }
 
@@ -1756,8 +3269,23 @@ func (s *FeaturePackageMenusResponse) SetMenuIds(val []uuid.UUID) {
 }
 
 // SetMenus sets the value of Menus.
-func (s *FeaturePackageMenusResponse) SetMenus(val []AnyObject) {
+func (s *FeaturePackageMenusResponse) SetMenus(val []FeaturePackageMenuItem) {
 	s.Menus = val
+}
+
+// Ref: #/components/schemas/FeaturePackageMutationResult
+type FeaturePackageMutationResult struct {
+	RefreshStats RefreshStats `json:"refresh_stats"`
+}
+
+// GetRefreshStats returns the value of RefreshStats.
+func (s *FeaturePackageMutationResult) GetRefreshStats() RefreshStats {
+	return s.RefreshStats
+}
+
+// SetRefreshStats sets the value of RefreshStats.
+func (s *FeaturePackageMutationResult) SetRefreshStats(val RefreshStats) {
+	s.RefreshStats = val
 }
 
 // Ref: #/components/schemas/FeaturePackageOptions
@@ -2136,6 +3664,175 @@ func (s *FeaturePackageSaveRequest) SetAppKeys(val []string) {
 	s.AppKeys = val
 }
 
+// Ref: #/components/schemas/FeaturePackageSnapshot
+type FeaturePackageSnapshot struct {
+	PackageID                 uuid.UUID   `json:"package_id"`
+	PackageKey                string      `json:"package_key"`
+	PackageType               string      `json:"package_type"`
+	Name                      string      `json:"name"`
+	Description               string      `json:"description"`
+	WorkspaceScope            string      `json:"workspace_scope"`
+	ContextType               string      `json:"context_type"`
+	AppKeys                   []string    `json:"app_keys"`
+	Status                    string      `json:"status"`
+	SortOrder                 int         `json:"sort_order"`
+	ChildPackageIds           []uuid.UUID `json:"child_package_ids"`
+	ActionIds                 []uuid.UUID `json:"action_ids"`
+	MenuIds                   []uuid.UUID `json:"menu_ids"`
+	CollaborationWorkspaceIds []uuid.UUID `json:"collaboration_workspace_ids"`
+	SnapshotCreatedAt         time.Time   `json:"snapshot_created_at"`
+}
+
+// GetPackageID returns the value of PackageID.
+func (s *FeaturePackageSnapshot) GetPackageID() uuid.UUID {
+	return s.PackageID
+}
+
+// GetPackageKey returns the value of PackageKey.
+func (s *FeaturePackageSnapshot) GetPackageKey() string {
+	return s.PackageKey
+}
+
+// GetPackageType returns the value of PackageType.
+func (s *FeaturePackageSnapshot) GetPackageType() string {
+	return s.PackageType
+}
+
+// GetName returns the value of Name.
+func (s *FeaturePackageSnapshot) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *FeaturePackageSnapshot) GetDescription() string {
+	return s.Description
+}
+
+// GetWorkspaceScope returns the value of WorkspaceScope.
+func (s *FeaturePackageSnapshot) GetWorkspaceScope() string {
+	return s.WorkspaceScope
+}
+
+// GetContextType returns the value of ContextType.
+func (s *FeaturePackageSnapshot) GetContextType() string {
+	return s.ContextType
+}
+
+// GetAppKeys returns the value of AppKeys.
+func (s *FeaturePackageSnapshot) GetAppKeys() []string {
+	return s.AppKeys
+}
+
+// GetStatus returns the value of Status.
+func (s *FeaturePackageSnapshot) GetStatus() string {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *FeaturePackageSnapshot) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetChildPackageIds returns the value of ChildPackageIds.
+func (s *FeaturePackageSnapshot) GetChildPackageIds() []uuid.UUID {
+	return s.ChildPackageIds
+}
+
+// GetActionIds returns the value of ActionIds.
+func (s *FeaturePackageSnapshot) GetActionIds() []uuid.UUID {
+	return s.ActionIds
+}
+
+// GetMenuIds returns the value of MenuIds.
+func (s *FeaturePackageSnapshot) GetMenuIds() []uuid.UUID {
+	return s.MenuIds
+}
+
+// GetCollaborationWorkspaceIds returns the value of CollaborationWorkspaceIds.
+func (s *FeaturePackageSnapshot) GetCollaborationWorkspaceIds() []uuid.UUID {
+	return s.CollaborationWorkspaceIds
+}
+
+// GetSnapshotCreatedAt returns the value of SnapshotCreatedAt.
+func (s *FeaturePackageSnapshot) GetSnapshotCreatedAt() time.Time {
+	return s.SnapshotCreatedAt
+}
+
+// SetPackageID sets the value of PackageID.
+func (s *FeaturePackageSnapshot) SetPackageID(val uuid.UUID) {
+	s.PackageID = val
+}
+
+// SetPackageKey sets the value of PackageKey.
+func (s *FeaturePackageSnapshot) SetPackageKey(val string) {
+	s.PackageKey = val
+}
+
+// SetPackageType sets the value of PackageType.
+func (s *FeaturePackageSnapshot) SetPackageType(val string) {
+	s.PackageType = val
+}
+
+// SetName sets the value of Name.
+func (s *FeaturePackageSnapshot) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *FeaturePackageSnapshot) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetWorkspaceScope sets the value of WorkspaceScope.
+func (s *FeaturePackageSnapshot) SetWorkspaceScope(val string) {
+	s.WorkspaceScope = val
+}
+
+// SetContextType sets the value of ContextType.
+func (s *FeaturePackageSnapshot) SetContextType(val string) {
+	s.ContextType = val
+}
+
+// SetAppKeys sets the value of AppKeys.
+func (s *FeaturePackageSnapshot) SetAppKeys(val []string) {
+	s.AppKeys = val
+}
+
+// SetStatus sets the value of Status.
+func (s *FeaturePackageSnapshot) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *FeaturePackageSnapshot) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetChildPackageIds sets the value of ChildPackageIds.
+func (s *FeaturePackageSnapshot) SetChildPackageIds(val []uuid.UUID) {
+	s.ChildPackageIds = val
+}
+
+// SetActionIds sets the value of ActionIds.
+func (s *FeaturePackageSnapshot) SetActionIds(val []uuid.UUID) {
+	s.ActionIds = val
+}
+
+// SetMenuIds sets the value of MenuIds.
+func (s *FeaturePackageSnapshot) SetMenuIds(val []uuid.UUID) {
+	s.MenuIds = val
+}
+
+// SetCollaborationWorkspaceIds sets the value of CollaborationWorkspaceIds.
+func (s *FeaturePackageSnapshot) SetCollaborationWorkspaceIds(val []uuid.UUID) {
+	s.CollaborationWorkspaceIds = val
+}
+
+// SetSnapshotCreatedAt sets the value of SnapshotCreatedAt.
+func (s *FeaturePackageSnapshot) SetSnapshotCreatedAt(val time.Time) {
+	s.SnapshotCreatedAt = val
+}
+
 // Ref: #/components/schemas/FeaturePackageSummary
 type FeaturePackageSummary struct {
 	ID                          uuid.UUID    `json:"id"`
@@ -2274,14 +3971,14 @@ func (s *FeaturePackageSummary) SetCollaborationWorkspaceCount(val OptInt64) {
 
 // Ref: #/components/schemas/FeaturePackageVersionItem
 type FeaturePackageVersionItem struct {
-	ID         uuid.UUID  `json:"id"`
-	PackageID  uuid.UUID  `json:"package_id"`
-	VersionNo  int        `json:"version_no"`
-	ChangeType string     `json:"change_type"`
-	Snapshot   AnyObject  `json:"snapshot"`
-	OperatorID OptNilUUID `json:"operator_id"`
-	RequestID  string     `json:"request_id"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID         uuid.UUID              `json:"id"`
+	PackageID  uuid.UUID              `json:"package_id"`
+	VersionNo  int                    `json:"version_no"`
+	ChangeType string                 `json:"change_type"`
+	Snapshot   FeaturePackageSnapshot `json:"snapshot"`
+	OperatorID OptNilUUID             `json:"operator_id"`
+	RequestID  string                 `json:"request_id"`
+	CreatedAt  time.Time              `json:"created_at"`
 }
 
 // GetID returns the value of ID.
@@ -2305,7 +4002,7 @@ func (s *FeaturePackageVersionItem) GetChangeType() string {
 }
 
 // GetSnapshot returns the value of Snapshot.
-func (s *FeaturePackageVersionItem) GetSnapshot() AnyObject {
+func (s *FeaturePackageVersionItem) GetSnapshot() FeaturePackageSnapshot {
 	return s.Snapshot
 }
 
@@ -2345,7 +4042,7 @@ func (s *FeaturePackageVersionItem) SetChangeType(val string) {
 }
 
 // SetSnapshot sets the value of Snapshot.
-func (s *FeaturePackageVersionItem) SetSnapshot(val AnyObject) {
+func (s *FeaturePackageVersionItem) SetSnapshot(val FeaturePackageSnapshot) {
 	s.Snapshot = val
 }
 
@@ -2431,6 +4128,462 @@ func (s *IDResult) GetID() uuid.UUID {
 // SetID sets the value of ID.
 func (s *IDResult) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// Ref: #/components/schemas/InboxItem
+type InboxItem struct {
+	ID                                uuid.UUID        `json:"id"`
+	MessageID                         uuid.UUID        `json:"message_id"`
+	BoxType                           string           `json:"box_type"`
+	DeliveryStatus                    string           `json:"delivery_status"`
+	TodoStatus                        OptString        `json:"todo_status"`
+	ReadAt                            OptDateTime      `json:"read_at"`
+	DoneAt                            OptDateTime      `json:"done_at"`
+	LastActionAt                      OptDateTime      `json:"last_action_at"`
+	RecipientCollaborationWorkspaceID OptUUID          `json:"recipient_collaboration_workspace_id"`
+	Title                             string           `json:"title"`
+	Summary                           OptString        `json:"summary"`
+	Content                           OptString        `json:"content"`
+	Priority                          OptString        `json:"priority"`
+	ActionType                        OptString        `json:"action_type"`
+	ActionTarget                      OptString        `json:"action_target"`
+	MessageType                       OptString        `json:"message_type"`
+	BizType                           OptString        `json:"biz_type"`
+	ScopeType                         OptString        `json:"scope_type"`
+	ScopeID                           OptUUID          `json:"scope_id"`
+	SenderType                        OptString        `json:"sender_type"`
+	SenderNameSnapshot                OptString        `json:"sender_name_snapshot"`
+	SenderAvatarSnapshot              OptString        `json:"sender_avatar_snapshot"`
+	SenderServiceKey                  OptString        `json:"sender_service_key"`
+	AudienceType                      OptString        `json:"audience_type"`
+	AudienceScope                     OptString        `json:"audience_scope"`
+	TargetCollaborationWorkspaceID    OptUUID          `json:"target_collaboration_workspace_id"`
+	PublishedAt                       OptDateTime      `json:"published_at"`
+	ExpiredAt                         OptDateTime      `json:"expired_at"`
+	CreatedAt                         time.Time        `json:"created_at"`
+	Meta                              OptInboxItemMeta `json:"meta"`
+}
+
+// GetID returns the value of ID.
+func (s *InboxItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetMessageID returns the value of MessageID.
+func (s *InboxItem) GetMessageID() uuid.UUID {
+	return s.MessageID
+}
+
+// GetBoxType returns the value of BoxType.
+func (s *InboxItem) GetBoxType() string {
+	return s.BoxType
+}
+
+// GetDeliveryStatus returns the value of DeliveryStatus.
+func (s *InboxItem) GetDeliveryStatus() string {
+	return s.DeliveryStatus
+}
+
+// GetTodoStatus returns the value of TodoStatus.
+func (s *InboxItem) GetTodoStatus() OptString {
+	return s.TodoStatus
+}
+
+// GetReadAt returns the value of ReadAt.
+func (s *InboxItem) GetReadAt() OptDateTime {
+	return s.ReadAt
+}
+
+// GetDoneAt returns the value of DoneAt.
+func (s *InboxItem) GetDoneAt() OptDateTime {
+	return s.DoneAt
+}
+
+// GetLastActionAt returns the value of LastActionAt.
+func (s *InboxItem) GetLastActionAt() OptDateTime {
+	return s.LastActionAt
+}
+
+// GetRecipientCollaborationWorkspaceID returns the value of RecipientCollaborationWorkspaceID.
+func (s *InboxItem) GetRecipientCollaborationWorkspaceID() OptUUID {
+	return s.RecipientCollaborationWorkspaceID
+}
+
+// GetTitle returns the value of Title.
+func (s *InboxItem) GetTitle() string {
+	return s.Title
+}
+
+// GetSummary returns the value of Summary.
+func (s *InboxItem) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetContent returns the value of Content.
+func (s *InboxItem) GetContent() OptString {
+	return s.Content
+}
+
+// GetPriority returns the value of Priority.
+func (s *InboxItem) GetPriority() OptString {
+	return s.Priority
+}
+
+// GetActionType returns the value of ActionType.
+func (s *InboxItem) GetActionType() OptString {
+	return s.ActionType
+}
+
+// GetActionTarget returns the value of ActionTarget.
+func (s *InboxItem) GetActionTarget() OptString {
+	return s.ActionTarget
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *InboxItem) GetMessageType() OptString {
+	return s.MessageType
+}
+
+// GetBizType returns the value of BizType.
+func (s *InboxItem) GetBizType() OptString {
+	return s.BizType
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *InboxItem) GetScopeType() OptString {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *InboxItem) GetScopeID() OptUUID {
+	return s.ScopeID
+}
+
+// GetSenderType returns the value of SenderType.
+func (s *InboxItem) GetSenderType() OptString {
+	return s.SenderType
+}
+
+// GetSenderNameSnapshot returns the value of SenderNameSnapshot.
+func (s *InboxItem) GetSenderNameSnapshot() OptString {
+	return s.SenderNameSnapshot
+}
+
+// GetSenderAvatarSnapshot returns the value of SenderAvatarSnapshot.
+func (s *InboxItem) GetSenderAvatarSnapshot() OptString {
+	return s.SenderAvatarSnapshot
+}
+
+// GetSenderServiceKey returns the value of SenderServiceKey.
+func (s *InboxItem) GetSenderServiceKey() OptString {
+	return s.SenderServiceKey
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *InboxItem) GetAudienceType() OptString {
+	return s.AudienceType
+}
+
+// GetAudienceScope returns the value of AudienceScope.
+func (s *InboxItem) GetAudienceScope() OptString {
+	return s.AudienceScope
+}
+
+// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
+func (s *InboxItem) GetTargetCollaborationWorkspaceID() OptUUID {
+	return s.TargetCollaborationWorkspaceID
+}
+
+// GetPublishedAt returns the value of PublishedAt.
+func (s *InboxItem) GetPublishedAt() OptDateTime {
+	return s.PublishedAt
+}
+
+// GetExpiredAt returns the value of ExpiredAt.
+func (s *InboxItem) GetExpiredAt() OptDateTime {
+	return s.ExpiredAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *InboxItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetMeta returns the value of Meta.
+func (s *InboxItem) GetMeta() OptInboxItemMeta {
+	return s.Meta
+}
+
+// SetID sets the value of ID.
+func (s *InboxItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetMessageID sets the value of MessageID.
+func (s *InboxItem) SetMessageID(val uuid.UUID) {
+	s.MessageID = val
+}
+
+// SetBoxType sets the value of BoxType.
+func (s *InboxItem) SetBoxType(val string) {
+	s.BoxType = val
+}
+
+// SetDeliveryStatus sets the value of DeliveryStatus.
+func (s *InboxItem) SetDeliveryStatus(val string) {
+	s.DeliveryStatus = val
+}
+
+// SetTodoStatus sets the value of TodoStatus.
+func (s *InboxItem) SetTodoStatus(val OptString) {
+	s.TodoStatus = val
+}
+
+// SetReadAt sets the value of ReadAt.
+func (s *InboxItem) SetReadAt(val OptDateTime) {
+	s.ReadAt = val
+}
+
+// SetDoneAt sets the value of DoneAt.
+func (s *InboxItem) SetDoneAt(val OptDateTime) {
+	s.DoneAt = val
+}
+
+// SetLastActionAt sets the value of LastActionAt.
+func (s *InboxItem) SetLastActionAt(val OptDateTime) {
+	s.LastActionAt = val
+}
+
+// SetRecipientCollaborationWorkspaceID sets the value of RecipientCollaborationWorkspaceID.
+func (s *InboxItem) SetRecipientCollaborationWorkspaceID(val OptUUID) {
+	s.RecipientCollaborationWorkspaceID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *InboxItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *InboxItem) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetContent sets the value of Content.
+func (s *InboxItem) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *InboxItem) SetPriority(val OptString) {
+	s.Priority = val
+}
+
+// SetActionType sets the value of ActionType.
+func (s *InboxItem) SetActionType(val OptString) {
+	s.ActionType = val
+}
+
+// SetActionTarget sets the value of ActionTarget.
+func (s *InboxItem) SetActionTarget(val OptString) {
+	s.ActionTarget = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *InboxItem) SetMessageType(val OptString) {
+	s.MessageType = val
+}
+
+// SetBizType sets the value of BizType.
+func (s *InboxItem) SetBizType(val OptString) {
+	s.BizType = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *InboxItem) SetScopeType(val OptString) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *InboxItem) SetScopeID(val OptUUID) {
+	s.ScopeID = val
+}
+
+// SetSenderType sets the value of SenderType.
+func (s *InboxItem) SetSenderType(val OptString) {
+	s.SenderType = val
+}
+
+// SetSenderNameSnapshot sets the value of SenderNameSnapshot.
+func (s *InboxItem) SetSenderNameSnapshot(val OptString) {
+	s.SenderNameSnapshot = val
+}
+
+// SetSenderAvatarSnapshot sets the value of SenderAvatarSnapshot.
+func (s *InboxItem) SetSenderAvatarSnapshot(val OptString) {
+	s.SenderAvatarSnapshot = val
+}
+
+// SetSenderServiceKey sets the value of SenderServiceKey.
+func (s *InboxItem) SetSenderServiceKey(val OptString) {
+	s.SenderServiceKey = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *InboxItem) SetAudienceType(val OptString) {
+	s.AudienceType = val
+}
+
+// SetAudienceScope sets the value of AudienceScope.
+func (s *InboxItem) SetAudienceScope(val OptString) {
+	s.AudienceScope = val
+}
+
+// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
+func (s *InboxItem) SetTargetCollaborationWorkspaceID(val OptUUID) {
+	s.TargetCollaborationWorkspaceID = val
+}
+
+// SetPublishedAt sets the value of PublishedAt.
+func (s *InboxItem) SetPublishedAt(val OptDateTime) {
+	s.PublishedAt = val
+}
+
+// SetExpiredAt sets the value of ExpiredAt.
+func (s *InboxItem) SetExpiredAt(val OptDateTime) {
+	s.ExpiredAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *InboxItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *InboxItem) SetMeta(val OptInboxItemMeta) {
+	s.Meta = val
+}
+
+type InboxItemMeta map[string]jx.Raw
+
+func (s *InboxItemMeta) init() InboxItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/InboxListResponse
+type InboxListResponse struct {
+	Records []InboxItem `json:"records"`
+	Total   int         `json:"total"`
+	Current OptInt      `json:"current"`
+	Size    OptInt      `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *InboxListResponse) GetRecords() []InboxItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *InboxListResponse) GetTotal() int {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *InboxListResponse) GetCurrent() OptInt {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *InboxListResponse) GetSize() OptInt {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *InboxListResponse) SetRecords(val []InboxItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *InboxListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *InboxListResponse) SetCurrent(val OptInt) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *InboxListResponse) SetSize(val OptInt) {
+	s.Size = val
+}
+
+// Ref: #/components/schemas/InboxSummary
+type InboxSummary struct {
+	UnreadTotal  int64 `json:"unread_total"`
+	NoticeCount  int64 `json:"notice_count"`
+	MessageCount int64 `json:"message_count"`
+	TodoCount    int64 `json:"todo_count"`
+}
+
+// GetUnreadTotal returns the value of UnreadTotal.
+func (s *InboxSummary) GetUnreadTotal() int64 {
+	return s.UnreadTotal
+}
+
+// GetNoticeCount returns the value of NoticeCount.
+func (s *InboxSummary) GetNoticeCount() int64 {
+	return s.NoticeCount
+}
+
+// GetMessageCount returns the value of MessageCount.
+func (s *InboxSummary) GetMessageCount() int64 {
+	return s.MessageCount
+}
+
+// GetTodoCount returns the value of TodoCount.
+func (s *InboxSummary) GetTodoCount() int64 {
+	return s.TodoCount
+}
+
+// SetUnreadTotal sets the value of UnreadTotal.
+func (s *InboxSummary) SetUnreadTotal(val int64) {
+	s.UnreadTotal = val
+}
+
+// SetNoticeCount sets the value of NoticeCount.
+func (s *InboxSummary) SetNoticeCount(val int64) {
+	s.NoticeCount = val
+}
+
+// SetMessageCount sets the value of MessageCount.
+func (s *InboxSummary) SetMessageCount(val int64) {
+	s.MessageCount = val
+}
+
+// SetTodoCount sets the value of TodoCount.
+func (s *InboxSummary) SetTodoCount(val int64) {
+	s.TodoCount = val
+}
+
+// Ref: #/components/schemas/InboxTodoActionRequest
+type InboxTodoActionRequest struct {
+	Action string `json:"action"`
+}
+
+// GetAction returns the value of Action.
+func (s *InboxTodoActionRequest) GetAction() string {
+	return s.Action
+}
+
+// SetAction sets the value of Action.
+func (s *InboxTodoActionRequest) SetAction(val string) {
+	s.Action = val
 }
 
 type ListApiEndpointCategoriesInternalServerError Error
@@ -2636,23 +4789,138 @@ type LoginUnauthorized Error
 
 func (*LoginUnauthorized) loginRes() {}
 
+// Ref: #/components/schemas/MediaItem
+type MediaItem map[string]jx.Raw
+
+func (s *MediaItem) init() MediaItem {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MediaListResponse
+type MediaListResponse struct {
+	Records []MediaItem `json:"records"`
+	Total   int         `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MediaListResponse) GetRecords() []MediaItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *MediaListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *MediaListResponse) SetRecords(val []MediaItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *MediaListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*MediaListResponse) listMediaRes() {}
+
+// Ref: #/components/schemas/MediaUploadResponse
+type MediaUploadResponse struct {
+	URL string `json:"url"`
+}
+
+// GetURL returns the value of URL.
+func (s *MediaUploadResponse) GetURL() string {
+	return s.URL
+}
+
+// SetURL sets the value of URL.
+func (s *MediaUploadResponse) SetURL(val string) {
+	s.URL = val
+}
+
+func (*MediaUploadResponse) uploadMediaRes() {}
+
+// Ref: #/components/schemas/MenuDeletePreviewResponse
+type MenuDeletePreviewResponse struct {
+	Mode                  string `json:"mode"`
+	MenuCount             int    `json:"menu_count"`
+	ChildCount            int    `json:"child_count"`
+	AffectedPageCount     int    `json:"affected_page_count"`
+	AffectedRelationCount int    `json:"affected_relation_count"`
+}
+
+// GetMode returns the value of Mode.
+func (s *MenuDeletePreviewResponse) GetMode() string {
+	return s.Mode
+}
+
+// GetMenuCount returns the value of MenuCount.
+func (s *MenuDeletePreviewResponse) GetMenuCount() int {
+	return s.MenuCount
+}
+
+// GetChildCount returns the value of ChildCount.
+func (s *MenuDeletePreviewResponse) GetChildCount() int {
+	return s.ChildCount
+}
+
+// GetAffectedPageCount returns the value of AffectedPageCount.
+func (s *MenuDeletePreviewResponse) GetAffectedPageCount() int {
+	return s.AffectedPageCount
+}
+
+// GetAffectedRelationCount returns the value of AffectedRelationCount.
+func (s *MenuDeletePreviewResponse) GetAffectedRelationCount() int {
+	return s.AffectedRelationCount
+}
+
+// SetMode sets the value of Mode.
+func (s *MenuDeletePreviewResponse) SetMode(val string) {
+	s.Mode = val
+}
+
+// SetMenuCount sets the value of MenuCount.
+func (s *MenuDeletePreviewResponse) SetMenuCount(val int) {
+	s.MenuCount = val
+}
+
+// SetChildCount sets the value of ChildCount.
+func (s *MenuDeletePreviewResponse) SetChildCount(val int) {
+	s.ChildCount = val
+}
+
+// SetAffectedPageCount sets the value of AffectedPageCount.
+func (s *MenuDeletePreviewResponse) SetAffectedPageCount(val int) {
+	s.AffectedPageCount = val
+}
+
+// SetAffectedRelationCount sets the value of AffectedRelationCount.
+func (s *MenuDeletePreviewResponse) SetAffectedRelationCount(val int) {
+	s.AffectedRelationCount = val
+}
+
 // Ref: #/components/schemas/MenuSaveRequest
 type MenuSaveRequest struct {
-	Name           string     `json:"name"`
-	ParentID       OptNilUUID `json:"parent_id"`
-	Icon           OptString  `json:"icon"`
-	Path           OptString  `json:"path"`
-	Component      OptString  `json:"component"`
-	Kind           string     `json:"kind"`
-	RouteType      OptString  `json:"route_type"`
-	RouteName      OptString  `json:"route_name"`
-	RoutePath      OptString  `json:"route_path"`
-	AppKeys        []string   `json:"app_keys"`
-	AppKey         OptString  `json:"app_key"`
-	SpaceKey       OptString  `json:"space_key"`
-	SortOrder      OptInt     `json:"sort_order"`
-	Status         OptString  `json:"status"`
-	PermissionKeys []string   `json:"permission_keys"`
+	Name      string     `json:"name"`
+	ParentID  OptNilUUID `json:"parent_id"`
+	Icon      OptString  `json:"icon"`
+	Path      OptString  `json:"path"`
+	Component OptString  `json:"component"`
+	Kind      string     `json:"kind"`
+	RouteType OptString  `json:"route_type"`
+	RouteName OptString  `json:"route_name"`
+	RoutePath OptString  `json:"route_path"`
+	AppKeys   []string   `json:"app_keys"`
+	AppKey    OptString  `json:"app_key"`
+	SpaceKey  OptString  `json:"space_key"`
+	SortOrder OptInt     `json:"sort_order"`
+	Status    OptString  `json:"status"`
 }
 
 // GetName returns the value of Name.
@@ -2725,11 +4993,6 @@ func (s *MenuSaveRequest) GetStatus() OptString {
 	return s.Status
 }
 
-// GetPermissionKeys returns the value of PermissionKeys.
-func (s *MenuSaveRequest) GetPermissionKeys() []string {
-	return s.PermissionKeys
-}
-
 // SetName sets the value of Name.
 func (s *MenuSaveRequest) SetName(val string) {
 	s.Name = val
@@ -2800,11 +5063,6 @@ func (s *MenuSaveRequest) SetStatus(val OptString) {
 	s.Status = val
 }
 
-// SetPermissionKeys sets the value of PermissionKeys.
-func (s *MenuSaveRequest) SetPermissionKeys(val []string) {
-	s.PermissionKeys = val
-}
-
 // Ref: #/components/schemas/MenuSourceEntry
 type MenuSourceEntry struct {
 	MenuID     uuid.UUID   `json:"menu_id"`
@@ -2831,45 +5089,2104 @@ func (s *MenuSourceEntry) SetPackageIds(val []uuid.UUID) {
 	s.PackageIds = val
 }
 
+// Ref: #/components/schemas/MenuTreeItem
+type MenuTreeItem struct {
+	ID        uuid.UUID      `json:"id"`
+	ParentID  OptNilUUID     `json:"parent_id"`
+	AppKey    string         `json:"app_key"`
+	SpaceKey  string         `json:"space_key"`
+	Kind      string         `json:"kind"`
+	Path      string         `json:"path"`
+	Name      string         `json:"name"`
+	Component string         `json:"component"`
+	Title     OptString      `json:"title"`
+	Icon      OptString      `json:"icon"`
+	Hidden    OptBool        `json:"hidden"`
+	Meta      MenuTreeMeta   `json:"meta"`
+	SortOrder int            `json:"sort_order"`
+	Children  []MenuTreeItem `json:"children"`
+}
+
+// GetID returns the value of ID.
+func (s *MenuTreeItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetParentID returns the value of ParentID.
+func (s *MenuTreeItem) GetParentID() OptNilUUID {
+	return s.ParentID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *MenuTreeItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *MenuTreeItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetKind returns the value of Kind.
+func (s *MenuTreeItem) GetKind() string {
+	return s.Kind
+}
+
+// GetPath returns the value of Path.
+func (s *MenuTreeItem) GetPath() string {
+	return s.Path
+}
+
+// GetName returns the value of Name.
+func (s *MenuTreeItem) GetName() string {
+	return s.Name
+}
+
+// GetComponent returns the value of Component.
+func (s *MenuTreeItem) GetComponent() string {
+	return s.Component
+}
+
+// GetTitle returns the value of Title.
+func (s *MenuTreeItem) GetTitle() OptString {
+	return s.Title
+}
+
+// GetIcon returns the value of Icon.
+func (s *MenuTreeItem) GetIcon() OptString {
+	return s.Icon
+}
+
+// GetHidden returns the value of Hidden.
+func (s *MenuTreeItem) GetHidden() OptBool {
+	return s.Hidden
+}
+
+// GetMeta returns the value of Meta.
+func (s *MenuTreeItem) GetMeta() MenuTreeMeta {
+	return s.Meta
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *MenuTreeItem) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetChildren returns the value of Children.
+func (s *MenuTreeItem) GetChildren() []MenuTreeItem {
+	return s.Children
+}
+
+// SetID sets the value of ID.
+func (s *MenuTreeItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetParentID sets the value of ParentID.
+func (s *MenuTreeItem) SetParentID(val OptNilUUID) {
+	s.ParentID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *MenuTreeItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *MenuTreeItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetKind sets the value of Kind.
+func (s *MenuTreeItem) SetKind(val string) {
+	s.Kind = val
+}
+
+// SetPath sets the value of Path.
+func (s *MenuTreeItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetName sets the value of Name.
+func (s *MenuTreeItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetComponent sets the value of Component.
+func (s *MenuTreeItem) SetComponent(val string) {
+	s.Component = val
+}
+
+// SetTitle sets the value of Title.
+func (s *MenuTreeItem) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetIcon sets the value of Icon.
+func (s *MenuTreeItem) SetIcon(val OptString) {
+	s.Icon = val
+}
+
+// SetHidden sets the value of Hidden.
+func (s *MenuTreeItem) SetHidden(val OptBool) {
+	s.Hidden = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MenuTreeItem) SetMeta(val MenuTreeMeta) {
+	s.Meta = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *MenuTreeItem) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetChildren sets the value of Children.
+func (s *MenuTreeItem) SetChildren(val []MenuTreeItem) {
+	s.Children = val
+}
+
+// Ref: #/components/schemas/MenuTreeMeta
+type MenuTreeMeta struct {
+	Title      string    `json:"title"`
+	Icon       OptString `json:"icon"`
+	AccessMode OptString `json:"accessMode"`
+	Link       OptString `json:"link"`
+	ActivePath OptString `json:"activePath"`
+	Roles      []string  `json:"roles"`
+	IsEnable   OptBool   `json:"isEnable"`
+	IsHide     OptBool   `json:"isHide"`
+	IsIframe   OptBool   `json:"isIframe"`
+	IsHideTab  OptBool   `json:"isHideTab"`
+	KeepAlive  OptBool   `json:"keepAlive"`
+	FixedTab   OptBool   `json:"fixedTab"`
+	IsFullPage OptBool   `json:"isFullPage"`
+}
+
+// GetTitle returns the value of Title.
+func (s *MenuTreeMeta) GetTitle() string {
+	return s.Title
+}
+
+// GetIcon returns the value of Icon.
+func (s *MenuTreeMeta) GetIcon() OptString {
+	return s.Icon
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *MenuTreeMeta) GetAccessMode() OptString {
+	return s.AccessMode
+}
+
+// GetLink returns the value of Link.
+func (s *MenuTreeMeta) GetLink() OptString {
+	return s.Link
+}
+
+// GetActivePath returns the value of ActivePath.
+func (s *MenuTreeMeta) GetActivePath() OptString {
+	return s.ActivePath
+}
+
+// GetRoles returns the value of Roles.
+func (s *MenuTreeMeta) GetRoles() []string {
+	return s.Roles
+}
+
+// GetIsEnable returns the value of IsEnable.
+func (s *MenuTreeMeta) GetIsEnable() OptBool {
+	return s.IsEnable
+}
+
+// GetIsHide returns the value of IsHide.
+func (s *MenuTreeMeta) GetIsHide() OptBool {
+	return s.IsHide
+}
+
+// GetIsIframe returns the value of IsIframe.
+func (s *MenuTreeMeta) GetIsIframe() OptBool {
+	return s.IsIframe
+}
+
+// GetIsHideTab returns the value of IsHideTab.
+func (s *MenuTreeMeta) GetIsHideTab() OptBool {
+	return s.IsHideTab
+}
+
+// GetKeepAlive returns the value of KeepAlive.
+func (s *MenuTreeMeta) GetKeepAlive() OptBool {
+	return s.KeepAlive
+}
+
+// GetFixedTab returns the value of FixedTab.
+func (s *MenuTreeMeta) GetFixedTab() OptBool {
+	return s.FixedTab
+}
+
+// GetIsFullPage returns the value of IsFullPage.
+func (s *MenuTreeMeta) GetIsFullPage() OptBool {
+	return s.IsFullPage
+}
+
+// SetTitle sets the value of Title.
+func (s *MenuTreeMeta) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetIcon sets the value of Icon.
+func (s *MenuTreeMeta) SetIcon(val OptString) {
+	s.Icon = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *MenuTreeMeta) SetAccessMode(val OptString) {
+	s.AccessMode = val
+}
+
+// SetLink sets the value of Link.
+func (s *MenuTreeMeta) SetLink(val OptString) {
+	s.Link = val
+}
+
+// SetActivePath sets the value of ActivePath.
+func (s *MenuTreeMeta) SetActivePath(val OptString) {
+	s.ActivePath = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *MenuTreeMeta) SetRoles(val []string) {
+	s.Roles = val
+}
+
+// SetIsEnable sets the value of IsEnable.
+func (s *MenuTreeMeta) SetIsEnable(val OptBool) {
+	s.IsEnable = val
+}
+
+// SetIsHide sets the value of IsHide.
+func (s *MenuTreeMeta) SetIsHide(val OptBool) {
+	s.IsHide = val
+}
+
+// SetIsIframe sets the value of IsIframe.
+func (s *MenuTreeMeta) SetIsIframe(val OptBool) {
+	s.IsIframe = val
+}
+
+// SetIsHideTab sets the value of IsHideTab.
+func (s *MenuTreeMeta) SetIsHideTab(val OptBool) {
+	s.IsHideTab = val
+}
+
+// SetKeepAlive sets the value of KeepAlive.
+func (s *MenuTreeMeta) SetKeepAlive(val OptBool) {
+	s.KeepAlive = val
+}
+
+// SetFixedTab sets the value of FixedTab.
+func (s *MenuTreeMeta) SetFixedTab(val OptBool) {
+	s.FixedTab = val
+}
+
+// SetIsFullPage sets the value of IsFullPage.
+func (s *MenuTreeMeta) SetIsFullPage(val OptBool) {
+	s.IsFullPage = val
+}
+
 // Ref: #/components/schemas/MenuTreeResponse
 type MenuTreeResponse struct {
-	Records []AnyObject `json:"records"`
+	Records []MenuTreeItem `json:"records"`
 }
 
 // GetRecords returns the value of Records.
-func (s *MenuTreeResponse) GetRecords() []AnyObject {
+func (s *MenuTreeResponse) GetRecords() []MenuTreeItem {
 	return s.Records
 }
 
 // SetRecords sets the value of Records.
-func (s *MenuTreeResponse) SetRecords(val []AnyObject) {
+func (s *MenuTreeResponse) SetRecords(val []MenuTreeItem) {
 	s.Records = val
 }
 
-// Ref: #/components/schemas/MessageListResponse
-type MessageListResponse struct {
-	Records []AnyObject `json:"records"`
-	Total   int         `json:"total"`
+// Ref: #/components/schemas/MessageDispatchOptions
+type MessageDispatchOptions struct {
+	SenderScope                       string                                 `json:"sender_scope"`
+	CurrentCollaborationWorkspaceID   OptString                              `json:"current_collaboration_workspace_id"`
+	CurrentCollaborationWorkspaceName OptString                              `json:"current_collaboration_workspace_name"`
+	SenderOptions                     []DispatchSenderOption                 `json:"sender_options"`
+	DefaultSenderID                   OptString                              `json:"default_sender_id"`
+	AudienceOptions                   []DispatchAudienceOption               `json:"audience_options"`
+	TemplateOptions                   []DispatchTemplateOption               `json:"template_options"`
+	CollaborationWorkspaces           []DispatchCollaborationWorkspaceOption `json:"collaboration_workspaces"`
+	Users                             []DispatchUserOption                   `json:"users"`
+	RecipientGroups                   []DispatchRecipientGroupOption         `json:"recipient_groups"`
+	Roles                             []DispatchRoleOption                   `json:"roles"`
+	FeaturePackages                   []DispatchFeaturePackageOption         `json:"feature_packages"`
+	DefaultMessageType                string                                 `json:"default_message_type"`
+	DefaultAudienceType               string                                 `json:"default_audience_type"`
+	DefaultPriority                   string                                 `json:"default_priority"`
+	SupportsExternalLink              bool                                   `json:"supports_external_link"`
+}
+
+// GetSenderScope returns the value of SenderScope.
+func (s *MessageDispatchOptions) GetSenderScope() string {
+	return s.SenderScope
+}
+
+// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
+func (s *MessageDispatchOptions) GetCurrentCollaborationWorkspaceID() OptString {
+	return s.CurrentCollaborationWorkspaceID
+}
+
+// GetCurrentCollaborationWorkspaceName returns the value of CurrentCollaborationWorkspaceName.
+func (s *MessageDispatchOptions) GetCurrentCollaborationWorkspaceName() OptString {
+	return s.CurrentCollaborationWorkspaceName
+}
+
+// GetSenderOptions returns the value of SenderOptions.
+func (s *MessageDispatchOptions) GetSenderOptions() []DispatchSenderOption {
+	return s.SenderOptions
+}
+
+// GetDefaultSenderID returns the value of DefaultSenderID.
+func (s *MessageDispatchOptions) GetDefaultSenderID() OptString {
+	return s.DefaultSenderID
+}
+
+// GetAudienceOptions returns the value of AudienceOptions.
+func (s *MessageDispatchOptions) GetAudienceOptions() []DispatchAudienceOption {
+	return s.AudienceOptions
+}
+
+// GetTemplateOptions returns the value of TemplateOptions.
+func (s *MessageDispatchOptions) GetTemplateOptions() []DispatchTemplateOption {
+	return s.TemplateOptions
+}
+
+// GetCollaborationWorkspaces returns the value of CollaborationWorkspaces.
+func (s *MessageDispatchOptions) GetCollaborationWorkspaces() []DispatchCollaborationWorkspaceOption {
+	return s.CollaborationWorkspaces
+}
+
+// GetUsers returns the value of Users.
+func (s *MessageDispatchOptions) GetUsers() []DispatchUserOption {
+	return s.Users
+}
+
+// GetRecipientGroups returns the value of RecipientGroups.
+func (s *MessageDispatchOptions) GetRecipientGroups() []DispatchRecipientGroupOption {
+	return s.RecipientGroups
+}
+
+// GetRoles returns the value of Roles.
+func (s *MessageDispatchOptions) GetRoles() []DispatchRoleOption {
+	return s.Roles
+}
+
+// GetFeaturePackages returns the value of FeaturePackages.
+func (s *MessageDispatchOptions) GetFeaturePackages() []DispatchFeaturePackageOption {
+	return s.FeaturePackages
+}
+
+// GetDefaultMessageType returns the value of DefaultMessageType.
+func (s *MessageDispatchOptions) GetDefaultMessageType() string {
+	return s.DefaultMessageType
+}
+
+// GetDefaultAudienceType returns the value of DefaultAudienceType.
+func (s *MessageDispatchOptions) GetDefaultAudienceType() string {
+	return s.DefaultAudienceType
+}
+
+// GetDefaultPriority returns the value of DefaultPriority.
+func (s *MessageDispatchOptions) GetDefaultPriority() string {
+	return s.DefaultPriority
+}
+
+// GetSupportsExternalLink returns the value of SupportsExternalLink.
+func (s *MessageDispatchOptions) GetSupportsExternalLink() bool {
+	return s.SupportsExternalLink
+}
+
+// SetSenderScope sets the value of SenderScope.
+func (s *MessageDispatchOptions) SetSenderScope(val string) {
+	s.SenderScope = val
+}
+
+// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
+func (s *MessageDispatchOptions) SetCurrentCollaborationWorkspaceID(val OptString) {
+	s.CurrentCollaborationWorkspaceID = val
+}
+
+// SetCurrentCollaborationWorkspaceName sets the value of CurrentCollaborationWorkspaceName.
+func (s *MessageDispatchOptions) SetCurrentCollaborationWorkspaceName(val OptString) {
+	s.CurrentCollaborationWorkspaceName = val
+}
+
+// SetSenderOptions sets the value of SenderOptions.
+func (s *MessageDispatchOptions) SetSenderOptions(val []DispatchSenderOption) {
+	s.SenderOptions = val
+}
+
+// SetDefaultSenderID sets the value of DefaultSenderID.
+func (s *MessageDispatchOptions) SetDefaultSenderID(val OptString) {
+	s.DefaultSenderID = val
+}
+
+// SetAudienceOptions sets the value of AudienceOptions.
+func (s *MessageDispatchOptions) SetAudienceOptions(val []DispatchAudienceOption) {
+	s.AudienceOptions = val
+}
+
+// SetTemplateOptions sets the value of TemplateOptions.
+func (s *MessageDispatchOptions) SetTemplateOptions(val []DispatchTemplateOption) {
+	s.TemplateOptions = val
+}
+
+// SetCollaborationWorkspaces sets the value of CollaborationWorkspaces.
+func (s *MessageDispatchOptions) SetCollaborationWorkspaces(val []DispatchCollaborationWorkspaceOption) {
+	s.CollaborationWorkspaces = val
+}
+
+// SetUsers sets the value of Users.
+func (s *MessageDispatchOptions) SetUsers(val []DispatchUserOption) {
+	s.Users = val
+}
+
+// SetRecipientGroups sets the value of RecipientGroups.
+func (s *MessageDispatchOptions) SetRecipientGroups(val []DispatchRecipientGroupOption) {
+	s.RecipientGroups = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *MessageDispatchOptions) SetRoles(val []DispatchRoleOption) {
+	s.Roles = val
+}
+
+// SetFeaturePackages sets the value of FeaturePackages.
+func (s *MessageDispatchOptions) SetFeaturePackages(val []DispatchFeaturePackageOption) {
+	s.FeaturePackages = val
+}
+
+// SetDefaultMessageType sets the value of DefaultMessageType.
+func (s *MessageDispatchOptions) SetDefaultMessageType(val string) {
+	s.DefaultMessageType = val
+}
+
+// SetDefaultAudienceType sets the value of DefaultAudienceType.
+func (s *MessageDispatchOptions) SetDefaultAudienceType(val string) {
+	s.DefaultAudienceType = val
+}
+
+// SetDefaultPriority sets the value of DefaultPriority.
+func (s *MessageDispatchOptions) SetDefaultPriority(val string) {
+	s.DefaultPriority = val
+}
+
+// SetSupportsExternalLink sets the value of SupportsExternalLink.
+func (s *MessageDispatchOptions) SetSupportsExternalLink(val bool) {
+	s.SupportsExternalLink = val
+}
+
+// Merged schema.
+// Ref: #/components/schemas/MessageDispatchRecord
+type MessageDispatchRecord struct {
+	ID                               uuid.UUID                    `json:"id"`
+	Title                            string                       `json:"title"`
+	Summary                          OptString                    `json:"summary"`
+	Content                          OptString                    `json:"content"`
+	MessageType                      string                       `json:"message_type"`
+	AudienceType                     string                       `json:"audience_type"`
+	ScopeType                        string                       `json:"scope_type"`
+	ScopeID                          OptUUID                      `json:"scope_id"`
+	TargetCollaborationWorkspaceID   OptUUID                      `json:"target_collaboration_workspace_id"`
+	TargetCollaborationWorkspaceName OptString                    `json:"target_collaboration_workspace_name"`
+	SenderName                       OptString                    `json:"sender_name"`
+	TemplateName                     OptString                    `json:"template_name"`
+	Priority                         OptString                    `json:"priority"`
+	Status                           OptString                    `json:"status"`
+	PublishedAt                      OptDateTime                  `json:"published_at"`
+	CreatedAt                        time.Time                    `json:"created_at"`
+	DeliveryCount                    int                          `json:"delivery_count"`
+	ReadCount                        int                          `json:"read_count"`
+	UnreadCount                      int                          `json:"unread_count"`
+	PendingTodoCount                 int                          `json:"pending_todo_count"`
+	Deliveries                       []DispatchRecordDeliveryItem `json:"deliveries"`
+}
+
+// GetID returns the value of ID.
+func (s *MessageDispatchRecord) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTitle returns the value of Title.
+func (s *MessageDispatchRecord) GetTitle() string {
+	return s.Title
+}
+
+// GetSummary returns the value of Summary.
+func (s *MessageDispatchRecord) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetContent returns the value of Content.
+func (s *MessageDispatchRecord) GetContent() OptString {
+	return s.Content
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *MessageDispatchRecord) GetMessageType() string {
+	return s.MessageType
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *MessageDispatchRecord) GetAudienceType() string {
+	return s.AudienceType
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *MessageDispatchRecord) GetScopeType() string {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *MessageDispatchRecord) GetScopeID() OptUUID {
+	return s.ScopeID
+}
+
+// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
+func (s *MessageDispatchRecord) GetTargetCollaborationWorkspaceID() OptUUID {
+	return s.TargetCollaborationWorkspaceID
+}
+
+// GetTargetCollaborationWorkspaceName returns the value of TargetCollaborationWorkspaceName.
+func (s *MessageDispatchRecord) GetTargetCollaborationWorkspaceName() OptString {
+	return s.TargetCollaborationWorkspaceName
+}
+
+// GetSenderName returns the value of SenderName.
+func (s *MessageDispatchRecord) GetSenderName() OptString {
+	return s.SenderName
+}
+
+// GetTemplateName returns the value of TemplateName.
+func (s *MessageDispatchRecord) GetTemplateName() OptString {
+	return s.TemplateName
+}
+
+// GetPriority returns the value of Priority.
+func (s *MessageDispatchRecord) GetPriority() OptString {
+	return s.Priority
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageDispatchRecord) GetStatus() OptString {
+	return s.Status
+}
+
+// GetPublishedAt returns the value of PublishedAt.
+func (s *MessageDispatchRecord) GetPublishedAt() OptDateTime {
+	return s.PublishedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *MessageDispatchRecord) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetDeliveryCount returns the value of DeliveryCount.
+func (s *MessageDispatchRecord) GetDeliveryCount() int {
+	return s.DeliveryCount
+}
+
+// GetReadCount returns the value of ReadCount.
+func (s *MessageDispatchRecord) GetReadCount() int {
+	return s.ReadCount
+}
+
+// GetUnreadCount returns the value of UnreadCount.
+func (s *MessageDispatchRecord) GetUnreadCount() int {
+	return s.UnreadCount
+}
+
+// GetPendingTodoCount returns the value of PendingTodoCount.
+func (s *MessageDispatchRecord) GetPendingTodoCount() int {
+	return s.PendingTodoCount
+}
+
+// GetDeliveries returns the value of Deliveries.
+func (s *MessageDispatchRecord) GetDeliveries() []DispatchRecordDeliveryItem {
+	return s.Deliveries
+}
+
+// SetID sets the value of ID.
+func (s *MessageDispatchRecord) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *MessageDispatchRecord) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *MessageDispatchRecord) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetContent sets the value of Content.
+func (s *MessageDispatchRecord) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *MessageDispatchRecord) SetMessageType(val string) {
+	s.MessageType = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *MessageDispatchRecord) SetAudienceType(val string) {
+	s.AudienceType = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *MessageDispatchRecord) SetScopeType(val string) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *MessageDispatchRecord) SetScopeID(val OptUUID) {
+	s.ScopeID = val
+}
+
+// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
+func (s *MessageDispatchRecord) SetTargetCollaborationWorkspaceID(val OptUUID) {
+	s.TargetCollaborationWorkspaceID = val
+}
+
+// SetTargetCollaborationWorkspaceName sets the value of TargetCollaborationWorkspaceName.
+func (s *MessageDispatchRecord) SetTargetCollaborationWorkspaceName(val OptString) {
+	s.TargetCollaborationWorkspaceName = val
+}
+
+// SetSenderName sets the value of SenderName.
+func (s *MessageDispatchRecord) SetSenderName(val OptString) {
+	s.SenderName = val
+}
+
+// SetTemplateName sets the value of TemplateName.
+func (s *MessageDispatchRecord) SetTemplateName(val OptString) {
+	s.TemplateName = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *MessageDispatchRecord) SetPriority(val OptString) {
+	s.Priority = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageDispatchRecord) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetPublishedAt sets the value of PublishedAt.
+func (s *MessageDispatchRecord) SetPublishedAt(val OptDateTime) {
+	s.PublishedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *MessageDispatchRecord) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetDeliveryCount sets the value of DeliveryCount.
+func (s *MessageDispatchRecord) SetDeliveryCount(val int) {
+	s.DeliveryCount = val
+}
+
+// SetReadCount sets the value of ReadCount.
+func (s *MessageDispatchRecord) SetReadCount(val int) {
+	s.ReadCount = val
+}
+
+// SetUnreadCount sets the value of UnreadCount.
+func (s *MessageDispatchRecord) SetUnreadCount(val int) {
+	s.UnreadCount = val
+}
+
+// SetPendingTodoCount sets the value of PendingTodoCount.
+func (s *MessageDispatchRecord) SetPendingTodoCount(val int) {
+	s.PendingTodoCount = val
+}
+
+// SetDeliveries sets the value of Deliveries.
+func (s *MessageDispatchRecord) SetDeliveries(val []DispatchRecordDeliveryItem) {
+	s.Deliveries = val
+}
+
+// Ref: #/components/schemas/MessageDispatchRecordListResponse
+type MessageDispatchRecordListResponse struct {
+	Records []DispatchRecordItem  `json:"records"`
+	Total   int                   `json:"total"`
+	Current OptInt                `json:"current"`
+	Size    OptInt                `json:"size"`
+	Summary DispatchRecordSummary `json:"summary"`
 }
 
 // GetRecords returns the value of Records.
-func (s *MessageListResponse) GetRecords() []AnyObject {
+func (s *MessageDispatchRecordListResponse) GetRecords() []DispatchRecordItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *MessageListResponse) GetTotal() int {
+func (s *MessageDispatchRecordListResponse) GetTotal() int {
 	return s.Total
 }
 
+// GetCurrent returns the value of Current.
+func (s *MessageDispatchRecordListResponse) GetCurrent() OptInt {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *MessageDispatchRecordListResponse) GetSize() OptInt {
+	return s.Size
+}
+
+// GetSummary returns the value of Summary.
+func (s *MessageDispatchRecordListResponse) GetSummary() DispatchRecordSummary {
+	return s.Summary
+}
+
 // SetRecords sets the value of Records.
-func (s *MessageListResponse) SetRecords(val []AnyObject) {
+func (s *MessageDispatchRecordListResponse) SetRecords(val []DispatchRecordItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *MessageListResponse) SetTotal(val int) {
+func (s *MessageDispatchRecordListResponse) SetTotal(val int) {
 	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *MessageDispatchRecordListResponse) SetCurrent(val OptInt) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *MessageDispatchRecordListResponse) SetSize(val OptInt) {
+	s.Size = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *MessageDispatchRecordListResponse) SetSummary(val DispatchRecordSummary) {
+	s.Summary = val
+}
+
+// Ref: #/components/schemas/MessageDispatchRequest
+type MessageDispatchRequest struct {
+	SenderID                        OptString `json:"sender_id"`
+	TemplateID                      OptString `json:"template_id"`
+	TemplateKey                     OptString `json:"template_key"`
+	MessageType                     OptString `json:"message_type"`
+	AudienceType                    OptString `json:"audience_type"`
+	TargetCollaborationWorkspaceIds []string  `json:"target_collaboration_workspace_ids"`
+	TargetUserIds                   []string  `json:"target_user_ids"`
+	TargetGroupIds                  []string  `json:"target_group_ids"`
+	Title                           OptString `json:"title"`
+	Summary                         OptString `json:"summary"`
+	Content                         OptString `json:"content"`
+	Priority                        OptString `json:"priority"`
+	ActionType                      OptString `json:"action_type"`
+	ActionTarget                    OptString `json:"action_target"`
+	BizType                         OptString `json:"biz_type"`
+	ExpiredAt                       OptString `json:"expired_at"`
+}
+
+// GetSenderID returns the value of SenderID.
+func (s *MessageDispatchRequest) GetSenderID() OptString {
+	return s.SenderID
+}
+
+// GetTemplateID returns the value of TemplateID.
+func (s *MessageDispatchRequest) GetTemplateID() OptString {
+	return s.TemplateID
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *MessageDispatchRequest) GetTemplateKey() OptString {
+	return s.TemplateKey
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *MessageDispatchRequest) GetMessageType() OptString {
+	return s.MessageType
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *MessageDispatchRequest) GetAudienceType() OptString {
+	return s.AudienceType
+}
+
+// GetTargetCollaborationWorkspaceIds returns the value of TargetCollaborationWorkspaceIds.
+func (s *MessageDispatchRequest) GetTargetCollaborationWorkspaceIds() []string {
+	return s.TargetCollaborationWorkspaceIds
+}
+
+// GetTargetUserIds returns the value of TargetUserIds.
+func (s *MessageDispatchRequest) GetTargetUserIds() []string {
+	return s.TargetUserIds
+}
+
+// GetTargetGroupIds returns the value of TargetGroupIds.
+func (s *MessageDispatchRequest) GetTargetGroupIds() []string {
+	return s.TargetGroupIds
+}
+
+// GetTitle returns the value of Title.
+func (s *MessageDispatchRequest) GetTitle() OptString {
+	return s.Title
+}
+
+// GetSummary returns the value of Summary.
+func (s *MessageDispatchRequest) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetContent returns the value of Content.
+func (s *MessageDispatchRequest) GetContent() OptString {
+	return s.Content
+}
+
+// GetPriority returns the value of Priority.
+func (s *MessageDispatchRequest) GetPriority() OptString {
+	return s.Priority
+}
+
+// GetActionType returns the value of ActionType.
+func (s *MessageDispatchRequest) GetActionType() OptString {
+	return s.ActionType
+}
+
+// GetActionTarget returns the value of ActionTarget.
+func (s *MessageDispatchRequest) GetActionTarget() OptString {
+	return s.ActionTarget
+}
+
+// GetBizType returns the value of BizType.
+func (s *MessageDispatchRequest) GetBizType() OptString {
+	return s.BizType
+}
+
+// GetExpiredAt returns the value of ExpiredAt.
+func (s *MessageDispatchRequest) GetExpiredAt() OptString {
+	return s.ExpiredAt
+}
+
+// SetSenderID sets the value of SenderID.
+func (s *MessageDispatchRequest) SetSenderID(val OptString) {
+	s.SenderID = val
+}
+
+// SetTemplateID sets the value of TemplateID.
+func (s *MessageDispatchRequest) SetTemplateID(val OptString) {
+	s.TemplateID = val
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *MessageDispatchRequest) SetTemplateKey(val OptString) {
+	s.TemplateKey = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *MessageDispatchRequest) SetMessageType(val OptString) {
+	s.MessageType = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *MessageDispatchRequest) SetAudienceType(val OptString) {
+	s.AudienceType = val
+}
+
+// SetTargetCollaborationWorkspaceIds sets the value of TargetCollaborationWorkspaceIds.
+func (s *MessageDispatchRequest) SetTargetCollaborationWorkspaceIds(val []string) {
+	s.TargetCollaborationWorkspaceIds = val
+}
+
+// SetTargetUserIds sets the value of TargetUserIds.
+func (s *MessageDispatchRequest) SetTargetUserIds(val []string) {
+	s.TargetUserIds = val
+}
+
+// SetTargetGroupIds sets the value of TargetGroupIds.
+func (s *MessageDispatchRequest) SetTargetGroupIds(val []string) {
+	s.TargetGroupIds = val
+}
+
+// SetTitle sets the value of Title.
+func (s *MessageDispatchRequest) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *MessageDispatchRequest) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetContent sets the value of Content.
+func (s *MessageDispatchRequest) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *MessageDispatchRequest) SetPriority(val OptString) {
+	s.Priority = val
+}
+
+// SetActionType sets the value of ActionType.
+func (s *MessageDispatchRequest) SetActionType(val OptString) {
+	s.ActionType = val
+}
+
+// SetActionTarget sets the value of ActionTarget.
+func (s *MessageDispatchRequest) SetActionTarget(val OptString) {
+	s.ActionTarget = val
+}
+
+// SetBizType sets the value of BizType.
+func (s *MessageDispatchRequest) SetBizType(val OptString) {
+	s.BizType = val
+}
+
+// SetExpiredAt sets the value of ExpiredAt.
+func (s *MessageDispatchRequest) SetExpiredAt(val OptString) {
+	s.ExpiredAt = val
+}
+
+// Ref: #/components/schemas/MessageDispatchResult
+type MessageDispatchResult struct {
+	MessageID      uuid.UUID `json:"message_id"`
+	DeliveryCount  int       `json:"delivery_count"`
+	DispatchStatus string    `json:"dispatch_status"`
+}
+
+// GetMessageID returns the value of MessageID.
+func (s *MessageDispatchResult) GetMessageID() uuid.UUID {
+	return s.MessageID
+}
+
+// GetDeliveryCount returns the value of DeliveryCount.
+func (s *MessageDispatchResult) GetDeliveryCount() int {
+	return s.DeliveryCount
+}
+
+// GetDispatchStatus returns the value of DispatchStatus.
+func (s *MessageDispatchResult) GetDispatchStatus() string {
+	return s.DispatchStatus
+}
+
+// SetMessageID sets the value of MessageID.
+func (s *MessageDispatchResult) SetMessageID(val uuid.UUID) {
+	s.MessageID = val
+}
+
+// SetDeliveryCount sets the value of DeliveryCount.
+func (s *MessageDispatchResult) SetDeliveryCount(val int) {
+	s.DeliveryCount = val
+}
+
+// SetDispatchStatus sets the value of DispatchStatus.
+func (s *MessageDispatchResult) SetDispatchStatus(val string) {
+	s.DispatchStatus = val
+}
+
+// Ref: #/components/schemas/MessageRecipientGroupItem
+type MessageRecipientGroupItem struct {
+	ID             uuid.UUID                         `json:"id"`
+	ScopeType      string                            `json:"scope_type"`
+	ScopeID        OptUUID                           `json:"scope_id"`
+	Name           string                            `json:"name"`
+	Description    OptString                         `json:"description"`
+	MatchMode      OptString                         `json:"match_mode"`
+	Status         string                            `json:"status"`
+	Editable       bool                              `json:"editable"`
+	EstimatedCount OptInt                            `json:"estimated_count"`
+	Meta           OptMessageRecipientGroupItemMeta  `json:"meta"`
+	Targets        []MessageRecipientGroupTargetItem `json:"targets"`
+	CreatedAt      OptDateTime                       `json:"created_at"`
+	UpdatedAt      OptDateTime                       `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *MessageRecipientGroupItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *MessageRecipientGroupItem) GetScopeType() string {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *MessageRecipientGroupItem) GetScopeID() OptUUID {
+	return s.ScopeID
+}
+
+// GetName returns the value of Name.
+func (s *MessageRecipientGroupItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageRecipientGroupItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetMatchMode returns the value of MatchMode.
+func (s *MessageRecipientGroupItem) GetMatchMode() OptString {
+	return s.MatchMode
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageRecipientGroupItem) GetStatus() string {
+	return s.Status
+}
+
+// GetEditable returns the value of Editable.
+func (s *MessageRecipientGroupItem) GetEditable() bool {
+	return s.Editable
+}
+
+// GetEstimatedCount returns the value of EstimatedCount.
+func (s *MessageRecipientGroupItem) GetEstimatedCount() OptInt {
+	return s.EstimatedCount
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageRecipientGroupItem) GetMeta() OptMessageRecipientGroupItemMeta {
+	return s.Meta
+}
+
+// GetTargets returns the value of Targets.
+func (s *MessageRecipientGroupItem) GetTargets() []MessageRecipientGroupTargetItem {
+	return s.Targets
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *MessageRecipientGroupItem) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *MessageRecipientGroupItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *MessageRecipientGroupItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *MessageRecipientGroupItem) SetScopeType(val string) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *MessageRecipientGroupItem) SetScopeID(val OptUUID) {
+	s.ScopeID = val
+}
+
+// SetName sets the value of Name.
+func (s *MessageRecipientGroupItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageRecipientGroupItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetMatchMode sets the value of MatchMode.
+func (s *MessageRecipientGroupItem) SetMatchMode(val OptString) {
+	s.MatchMode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageRecipientGroupItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetEditable sets the value of Editable.
+func (s *MessageRecipientGroupItem) SetEditable(val bool) {
+	s.Editable = val
+}
+
+// SetEstimatedCount sets the value of EstimatedCount.
+func (s *MessageRecipientGroupItem) SetEstimatedCount(val OptInt) {
+	s.EstimatedCount = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageRecipientGroupItem) SetMeta(val OptMessageRecipientGroupItemMeta) {
+	s.Meta = val
+}
+
+// SetTargets sets the value of Targets.
+func (s *MessageRecipientGroupItem) SetTargets(val []MessageRecipientGroupTargetItem) {
+	s.Targets = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *MessageRecipientGroupItem) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *MessageRecipientGroupItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+type MessageRecipientGroupItemMeta map[string]jx.Raw
+
+func (s *MessageRecipientGroupItemMeta) init() MessageRecipientGroupItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageRecipientGroupListResponse
+type MessageRecipientGroupListResponse struct {
+	Records []MessageRecipientGroupItem `json:"records"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MessageRecipientGroupListResponse) GetRecords() []MessageRecipientGroupItem {
+	return s.Records
+}
+
+// SetRecords sets the value of Records.
+func (s *MessageRecipientGroupListResponse) SetRecords(val []MessageRecipientGroupItem) {
+	s.Records = val
+}
+
+// Ref: #/components/schemas/MessageRecipientGroupSaveRequest
+type MessageRecipientGroupSaveRequest struct {
+	Name        string                                        `json:"name"`
+	Description OptString                                     `json:"description"`
+	MatchMode   OptString                                     `json:"match_mode"`
+	Status      OptString                                     `json:"status"`
+	Meta        OptMessageRecipientGroupSaveRequestMeta       `json:"meta"`
+	Targets     []MessageRecipientGroupSaveRequestTargetsItem `json:"targets"`
+}
+
+// GetName returns the value of Name.
+func (s *MessageRecipientGroupSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageRecipientGroupSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetMatchMode returns the value of MatchMode.
+func (s *MessageRecipientGroupSaveRequest) GetMatchMode() OptString {
+	return s.MatchMode
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageRecipientGroupSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageRecipientGroupSaveRequest) GetMeta() OptMessageRecipientGroupSaveRequestMeta {
+	return s.Meta
+}
+
+// GetTargets returns the value of Targets.
+func (s *MessageRecipientGroupSaveRequest) GetTargets() []MessageRecipientGroupSaveRequestTargetsItem {
+	return s.Targets
+}
+
+// SetName sets the value of Name.
+func (s *MessageRecipientGroupSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageRecipientGroupSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetMatchMode sets the value of MatchMode.
+func (s *MessageRecipientGroupSaveRequest) SetMatchMode(val OptString) {
+	s.MatchMode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageRecipientGroupSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageRecipientGroupSaveRequest) SetMeta(val OptMessageRecipientGroupSaveRequestMeta) {
+	s.Meta = val
+}
+
+// SetTargets sets the value of Targets.
+func (s *MessageRecipientGroupSaveRequest) SetTargets(val []MessageRecipientGroupSaveRequestTargetsItem) {
+	s.Targets = val
+}
+
+type MessageRecipientGroupSaveRequestMeta map[string]jx.Raw
+
+func (s *MessageRecipientGroupSaveRequestMeta) init() MessageRecipientGroupSaveRequestMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type MessageRecipientGroupSaveRequestTargetsItem struct {
+	TargetType               string                                             `json:"target_type"`
+	UserID                   OptUUID                                            `json:"user_id"`
+	CollaborationWorkspaceID OptUUID                                            `json:"collaboration_workspace_id"`
+	RoleCode                 OptString                                          `json:"role_code"`
+	PackageKey               OptString                                          `json:"package_key"`
+	SortOrder                OptInt                                             `json:"sort_order"`
+	Meta                     OptMessageRecipientGroupSaveRequestTargetsItemMeta `json:"meta"`
+}
+
+// GetTargetType returns the value of TargetType.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetTargetType() string {
+	return s.TargetType
+}
+
+// GetUserID returns the value of UserID.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetUserID() OptUUID {
+	return s.UserID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetCollaborationWorkspaceID() OptUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetRoleCode() OptString {
+	return s.RoleCode
+}
+
+// GetPackageKey returns the value of PackageKey.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetPackageKey() OptString {
+	return s.PackageKey
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) GetMeta() OptMessageRecipientGroupSaveRequestTargetsItemMeta {
+	return s.Meta
+}
+
+// SetTargetType sets the value of TargetType.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetTargetType(val string) {
+	s.TargetType = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetUserID(val OptUUID) {
+	s.UserID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetCollaborationWorkspaceID(val OptUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetRoleCode(val OptString) {
+	s.RoleCode = val
+}
+
+// SetPackageKey sets the value of PackageKey.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetPackageKey(val OptString) {
+	s.PackageKey = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageRecipientGroupSaveRequestTargetsItem) SetMeta(val OptMessageRecipientGroupSaveRequestTargetsItemMeta) {
+	s.Meta = val
+}
+
+type MessageRecipientGroupSaveRequestTargetsItemMeta map[string]jx.Raw
+
+func (s *MessageRecipientGroupSaveRequestTargetsItemMeta) init() MessageRecipientGroupSaveRequestTargetsItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageRecipientGroupTargetItem
+type MessageRecipientGroupTargetItem struct {
+	ID                         uuid.UUID                              `json:"id"`
+	TargetType                 string                                 `json:"target_type"`
+	UserID                     OptUUID                                `json:"user_id"`
+	UserName                   OptString                              `json:"user_name"`
+	CollaborationWorkspaceID   OptUUID                                `json:"collaboration_workspace_id"`
+	CollaborationWorkspaceName OptString                              `json:"collaboration_workspace_name"`
+	RoleCode                   OptString                              `json:"role_code"`
+	RoleName                   OptString                              `json:"role_name"`
+	PackageKey                 OptString                              `json:"package_key"`
+	PackageName                OptString                              `json:"package_name"`
+	SortOrder                  OptInt                                 `json:"sort_order"`
+	Meta                       OptMessageRecipientGroupTargetItemMeta `json:"meta"`
+}
+
+// GetID returns the value of ID.
+func (s *MessageRecipientGroupTargetItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTargetType returns the value of TargetType.
+func (s *MessageRecipientGroupTargetItem) GetTargetType() string {
+	return s.TargetType
+}
+
+// GetUserID returns the value of UserID.
+func (s *MessageRecipientGroupTargetItem) GetUserID() OptUUID {
+	return s.UserID
+}
+
+// GetUserName returns the value of UserName.
+func (s *MessageRecipientGroupTargetItem) GetUserName() OptString {
+	return s.UserName
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *MessageRecipientGroupTargetItem) GetCollaborationWorkspaceID() OptUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetCollaborationWorkspaceName returns the value of CollaborationWorkspaceName.
+func (s *MessageRecipientGroupTargetItem) GetCollaborationWorkspaceName() OptString {
+	return s.CollaborationWorkspaceName
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *MessageRecipientGroupTargetItem) GetRoleCode() OptString {
+	return s.RoleCode
+}
+
+// GetRoleName returns the value of RoleName.
+func (s *MessageRecipientGroupTargetItem) GetRoleName() OptString {
+	return s.RoleName
+}
+
+// GetPackageKey returns the value of PackageKey.
+func (s *MessageRecipientGroupTargetItem) GetPackageKey() OptString {
+	return s.PackageKey
+}
+
+// GetPackageName returns the value of PackageName.
+func (s *MessageRecipientGroupTargetItem) GetPackageName() OptString {
+	return s.PackageName
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *MessageRecipientGroupTargetItem) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageRecipientGroupTargetItem) GetMeta() OptMessageRecipientGroupTargetItemMeta {
+	return s.Meta
+}
+
+// SetID sets the value of ID.
+func (s *MessageRecipientGroupTargetItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTargetType sets the value of TargetType.
+func (s *MessageRecipientGroupTargetItem) SetTargetType(val string) {
+	s.TargetType = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *MessageRecipientGroupTargetItem) SetUserID(val OptUUID) {
+	s.UserID = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *MessageRecipientGroupTargetItem) SetUserName(val OptString) {
+	s.UserName = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *MessageRecipientGroupTargetItem) SetCollaborationWorkspaceID(val OptUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetCollaborationWorkspaceName sets the value of CollaborationWorkspaceName.
+func (s *MessageRecipientGroupTargetItem) SetCollaborationWorkspaceName(val OptString) {
+	s.CollaborationWorkspaceName = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *MessageRecipientGroupTargetItem) SetRoleCode(val OptString) {
+	s.RoleCode = val
+}
+
+// SetRoleName sets the value of RoleName.
+func (s *MessageRecipientGroupTargetItem) SetRoleName(val OptString) {
+	s.RoleName = val
+}
+
+// SetPackageKey sets the value of PackageKey.
+func (s *MessageRecipientGroupTargetItem) SetPackageKey(val OptString) {
+	s.PackageKey = val
+}
+
+// SetPackageName sets the value of PackageName.
+func (s *MessageRecipientGroupTargetItem) SetPackageName(val OptString) {
+	s.PackageName = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *MessageRecipientGroupTargetItem) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageRecipientGroupTargetItem) SetMeta(val OptMessageRecipientGroupTargetItemMeta) {
+	s.Meta = val
+}
+
+type MessageRecipientGroupTargetItemMeta map[string]jx.Raw
+
+func (s *MessageRecipientGroupTargetItemMeta) init() MessageRecipientGroupTargetItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageSenderItem
+type MessageSenderItem struct {
+	ID          uuid.UUID                `json:"id"`
+	ScopeType   string                   `json:"scope_type"`
+	ScopeID     OptUUID                  `json:"scope_id"`
+	Name        string                   `json:"name"`
+	Description OptString                `json:"description"`
+	AvatarURL   OptString                `json:"avatar_url"`
+	IsDefault   OptBool                  `json:"is_default"`
+	Status      string                   `json:"status"`
+	Editable    bool                     `json:"editable"`
+	Meta        OptMessageSenderItemMeta `json:"meta"`
+	CreatedAt   OptDateTime              `json:"created_at"`
+	UpdatedAt   OptDateTime              `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *MessageSenderItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *MessageSenderItem) GetScopeType() string {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *MessageSenderItem) GetScopeID() OptUUID {
+	return s.ScopeID
+}
+
+// GetName returns the value of Name.
+func (s *MessageSenderItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageSenderItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAvatarURL returns the value of AvatarURL.
+func (s *MessageSenderItem) GetAvatarURL() OptString {
+	return s.AvatarURL
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *MessageSenderItem) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageSenderItem) GetStatus() string {
+	return s.Status
+}
+
+// GetEditable returns the value of Editable.
+func (s *MessageSenderItem) GetEditable() bool {
+	return s.Editable
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageSenderItem) GetMeta() OptMessageSenderItemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *MessageSenderItem) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *MessageSenderItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *MessageSenderItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *MessageSenderItem) SetScopeType(val string) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *MessageSenderItem) SetScopeID(val OptUUID) {
+	s.ScopeID = val
+}
+
+// SetName sets the value of Name.
+func (s *MessageSenderItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageSenderItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAvatarURL sets the value of AvatarURL.
+func (s *MessageSenderItem) SetAvatarURL(val OptString) {
+	s.AvatarURL = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *MessageSenderItem) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageSenderItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetEditable sets the value of Editable.
+func (s *MessageSenderItem) SetEditable(val bool) {
+	s.Editable = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageSenderItem) SetMeta(val OptMessageSenderItemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *MessageSenderItem) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *MessageSenderItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+type MessageSenderItemMeta map[string]jx.Raw
+
+func (s *MessageSenderItemMeta) init() MessageSenderItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageSenderListResponse
+type MessageSenderListResponse struct {
+	Records []MessageSenderItem `json:"records"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MessageSenderListResponse) GetRecords() []MessageSenderItem {
+	return s.Records
+}
+
+// SetRecords sets the value of Records.
+func (s *MessageSenderListResponse) SetRecords(val []MessageSenderItem) {
+	s.Records = val
+}
+
+// Ref: #/components/schemas/MessageSenderSaveRequest
+type MessageSenderSaveRequest struct {
+	Name        string                          `json:"name"`
+	Description OptString                       `json:"description"`
+	AvatarURL   OptString                       `json:"avatar_url"`
+	IsDefault   OptBool                         `json:"is_default"`
+	Status      OptString                       `json:"status"`
+	Meta        OptMessageSenderSaveRequestMeta `json:"meta"`
+}
+
+// GetName returns the value of Name.
+func (s *MessageSenderSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageSenderSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAvatarURL returns the value of AvatarURL.
+func (s *MessageSenderSaveRequest) GetAvatarURL() OptString {
+	return s.AvatarURL
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *MessageSenderSaveRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageSenderSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageSenderSaveRequest) GetMeta() OptMessageSenderSaveRequestMeta {
+	return s.Meta
+}
+
+// SetName sets the value of Name.
+func (s *MessageSenderSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageSenderSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAvatarURL sets the value of AvatarURL.
+func (s *MessageSenderSaveRequest) SetAvatarURL(val OptString) {
+	s.AvatarURL = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *MessageSenderSaveRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageSenderSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageSenderSaveRequest) SetMeta(val OptMessageSenderSaveRequestMeta) {
+	s.Meta = val
+}
+
+type MessageSenderSaveRequestMeta map[string]jx.Raw
+
+func (s *MessageSenderSaveRequestMeta) init() MessageSenderSaveRequestMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageTemplateItem
+type MessageTemplateItem struct {
+	ID                              uuid.UUID                  `json:"id"`
+	TemplateKey                     string                     `json:"template_key"`
+	Name                            string                     `json:"name"`
+	Description                     OptString                  `json:"description"`
+	MessageType                     string                     `json:"message_type"`
+	OwnerScope                      string                     `json:"owner_scope"`
+	OwnerCollaborationWorkspaceID   OptUUID                    `json:"owner_collaboration_workspace_id"`
+	OwnerCollaborationWorkspaceName OptString                  `json:"owner_collaboration_workspace_name"`
+	AudienceType                    string                     `json:"audience_type"`
+	TitleTemplate                   OptString                  `json:"title_template"`
+	SummaryTemplate                 OptString                  `json:"summary_template"`
+	ContentTemplate                 OptString                  `json:"content_template"`
+	Status                          string                     `json:"status"`
+	Editable                        bool                       `json:"editable"`
+	Meta                            OptMessageTemplateItemMeta `json:"meta"`
+	CreatedAt                       OptDateTime                `json:"created_at"`
+	UpdatedAt                       OptDateTime                `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *MessageTemplateItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *MessageTemplateItem) GetTemplateKey() string {
+	return s.TemplateKey
+}
+
+// GetName returns the value of Name.
+func (s *MessageTemplateItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageTemplateItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *MessageTemplateItem) GetMessageType() string {
+	return s.MessageType
+}
+
+// GetOwnerScope returns the value of OwnerScope.
+func (s *MessageTemplateItem) GetOwnerScope() string {
+	return s.OwnerScope
+}
+
+// GetOwnerCollaborationWorkspaceID returns the value of OwnerCollaborationWorkspaceID.
+func (s *MessageTemplateItem) GetOwnerCollaborationWorkspaceID() OptUUID {
+	return s.OwnerCollaborationWorkspaceID
+}
+
+// GetOwnerCollaborationWorkspaceName returns the value of OwnerCollaborationWorkspaceName.
+func (s *MessageTemplateItem) GetOwnerCollaborationWorkspaceName() OptString {
+	return s.OwnerCollaborationWorkspaceName
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *MessageTemplateItem) GetAudienceType() string {
+	return s.AudienceType
+}
+
+// GetTitleTemplate returns the value of TitleTemplate.
+func (s *MessageTemplateItem) GetTitleTemplate() OptString {
+	return s.TitleTemplate
+}
+
+// GetSummaryTemplate returns the value of SummaryTemplate.
+func (s *MessageTemplateItem) GetSummaryTemplate() OptString {
+	return s.SummaryTemplate
+}
+
+// GetContentTemplate returns the value of ContentTemplate.
+func (s *MessageTemplateItem) GetContentTemplate() OptString {
+	return s.ContentTemplate
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageTemplateItem) GetStatus() string {
+	return s.Status
+}
+
+// GetEditable returns the value of Editable.
+func (s *MessageTemplateItem) GetEditable() bool {
+	return s.Editable
+}
+
+// GetMeta returns the value of Meta.
+func (s *MessageTemplateItem) GetMeta() OptMessageTemplateItemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *MessageTemplateItem) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *MessageTemplateItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *MessageTemplateItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *MessageTemplateItem) SetTemplateKey(val string) {
+	s.TemplateKey = val
+}
+
+// SetName sets the value of Name.
+func (s *MessageTemplateItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageTemplateItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *MessageTemplateItem) SetMessageType(val string) {
+	s.MessageType = val
+}
+
+// SetOwnerScope sets the value of OwnerScope.
+func (s *MessageTemplateItem) SetOwnerScope(val string) {
+	s.OwnerScope = val
+}
+
+// SetOwnerCollaborationWorkspaceID sets the value of OwnerCollaborationWorkspaceID.
+func (s *MessageTemplateItem) SetOwnerCollaborationWorkspaceID(val OptUUID) {
+	s.OwnerCollaborationWorkspaceID = val
+}
+
+// SetOwnerCollaborationWorkspaceName sets the value of OwnerCollaborationWorkspaceName.
+func (s *MessageTemplateItem) SetOwnerCollaborationWorkspaceName(val OptString) {
+	s.OwnerCollaborationWorkspaceName = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *MessageTemplateItem) SetAudienceType(val string) {
+	s.AudienceType = val
+}
+
+// SetTitleTemplate sets the value of TitleTemplate.
+func (s *MessageTemplateItem) SetTitleTemplate(val OptString) {
+	s.TitleTemplate = val
+}
+
+// SetSummaryTemplate sets the value of SummaryTemplate.
+func (s *MessageTemplateItem) SetSummaryTemplate(val OptString) {
+	s.SummaryTemplate = val
+}
+
+// SetContentTemplate sets the value of ContentTemplate.
+func (s *MessageTemplateItem) SetContentTemplate(val OptString) {
+	s.ContentTemplate = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageTemplateItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetEditable sets the value of Editable.
+func (s *MessageTemplateItem) SetEditable(val bool) {
+	s.Editable = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *MessageTemplateItem) SetMeta(val OptMessageTemplateItemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *MessageTemplateItem) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *MessageTemplateItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+type MessageTemplateItemMeta map[string]jx.Raw
+
+func (s *MessageTemplateItemMeta) init() MessageTemplateItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/MessageTemplateListResponse
+type MessageTemplateListResponse struct {
+	Records []MessageTemplateItem `json:"records"`
+	Total   int                   `json:"total"`
+	Current OptInt                `json:"current"`
+	Size    OptInt                `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MessageTemplateListResponse) GetRecords() []MessageTemplateItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *MessageTemplateListResponse) GetTotal() int {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *MessageTemplateListResponse) GetCurrent() OptInt {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *MessageTemplateListResponse) GetSize() OptInt {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *MessageTemplateListResponse) SetRecords(val []MessageTemplateItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *MessageTemplateListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *MessageTemplateListResponse) SetCurrent(val OptInt) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *MessageTemplateListResponse) SetSize(val OptInt) {
+	s.Size = val
+}
+
+// Ref: #/components/schemas/MessageTemplateSaveRequest
+type MessageTemplateSaveRequest struct {
+	TemplateKey     OptString `json:"template_key"`
+	Name            string    `json:"name"`
+	Description     OptString `json:"description"`
+	MessageType     string    `json:"message_type"`
+	AudienceType    string    `json:"audience_type"`
+	TitleTemplate   OptString `json:"title_template"`
+	SummaryTemplate OptString `json:"summary_template"`
+	ContentTemplate OptString `json:"content_template"`
+	Status          OptString `json:"status"`
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *MessageTemplateSaveRequest) GetTemplateKey() OptString {
+	return s.TemplateKey
+}
+
+// GetName returns the value of Name.
+func (s *MessageTemplateSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *MessageTemplateSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetMessageType returns the value of MessageType.
+func (s *MessageTemplateSaveRequest) GetMessageType() string {
+	return s.MessageType
+}
+
+// GetAudienceType returns the value of AudienceType.
+func (s *MessageTemplateSaveRequest) GetAudienceType() string {
+	return s.AudienceType
+}
+
+// GetTitleTemplate returns the value of TitleTemplate.
+func (s *MessageTemplateSaveRequest) GetTitleTemplate() OptString {
+	return s.TitleTemplate
+}
+
+// GetSummaryTemplate returns the value of SummaryTemplate.
+func (s *MessageTemplateSaveRequest) GetSummaryTemplate() OptString {
+	return s.SummaryTemplate
+}
+
+// GetContentTemplate returns the value of ContentTemplate.
+func (s *MessageTemplateSaveRequest) GetContentTemplate() OptString {
+	return s.ContentTemplate
+}
+
+// GetStatus returns the value of Status.
+func (s *MessageTemplateSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *MessageTemplateSaveRequest) SetTemplateKey(val OptString) {
+	s.TemplateKey = val
+}
+
+// SetName sets the value of Name.
+func (s *MessageTemplateSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *MessageTemplateSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetMessageType sets the value of MessageType.
+func (s *MessageTemplateSaveRequest) SetMessageType(val string) {
+	s.MessageType = val
+}
+
+// SetAudienceType sets the value of AudienceType.
+func (s *MessageTemplateSaveRequest) SetAudienceType(val string) {
+	s.AudienceType = val
+}
+
+// SetTitleTemplate sets the value of TitleTemplate.
+func (s *MessageTemplateSaveRequest) SetTitleTemplate(val OptString) {
+	s.TitleTemplate = val
+}
+
+// SetSummaryTemplate sets the value of SummaryTemplate.
+func (s *MessageTemplateSaveRequest) SetSummaryTemplate(val OptString) {
+	s.SummaryTemplate = val
+}
+
+// SetContentTemplate sets the value of ContentTemplate.
+func (s *MessageTemplateSaveRequest) SetContentTemplate(val OptString) {
+	s.ContentTemplate = val
+}
+
+// SetStatus sets the value of Status.
+func (s *MessageTemplateSaveRequest) SetStatus(val OptString) {
+	s.Status = val
 }
 
 // Ref: #/components/schemas/MutationResult
@@ -2890,15 +7207,140 @@ func (s *MutationResult) SetSuccess(val bool) {
 func (*MutationResult) deleteMediaRes()      {}
 func (*MutationResult) syncApiEndpointsRes() {}
 
+// Ref: #/components/schemas/NavigationContext
+type NavigationContext struct {
+	AppKey                   string  `json:"app_key"`
+	SpaceKey                 string  `json:"space_key"`
+	RequestHost              string  `json:"request_host"`
+	RequestedSpaceKey        string  `json:"requested_space_key"`
+	Authenticated            bool    `json:"authenticated"`
+	SuperAdmin               bool    `json:"super_admin"`
+	VisibleMenuCount         int     `json:"visible_menu_count"`
+	ManagedPageCount         int     `json:"managed_page_count"`
+	ActionKeyCount           int     `json:"action_key_count"`
+	UserID                   OptUUID `json:"user_id"`
+	CollaborationWorkspaceID OptUUID `json:"collaboration_workspace_id"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *NavigationContext) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *NavigationContext) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetRequestHost returns the value of RequestHost.
+func (s *NavigationContext) GetRequestHost() string {
+	return s.RequestHost
+}
+
+// GetRequestedSpaceKey returns the value of RequestedSpaceKey.
+func (s *NavigationContext) GetRequestedSpaceKey() string {
+	return s.RequestedSpaceKey
+}
+
+// GetAuthenticated returns the value of Authenticated.
+func (s *NavigationContext) GetAuthenticated() bool {
+	return s.Authenticated
+}
+
+// GetSuperAdmin returns the value of SuperAdmin.
+func (s *NavigationContext) GetSuperAdmin() bool {
+	return s.SuperAdmin
+}
+
+// GetVisibleMenuCount returns the value of VisibleMenuCount.
+func (s *NavigationContext) GetVisibleMenuCount() int {
+	return s.VisibleMenuCount
+}
+
+// GetManagedPageCount returns the value of ManagedPageCount.
+func (s *NavigationContext) GetManagedPageCount() int {
+	return s.ManagedPageCount
+}
+
+// GetActionKeyCount returns the value of ActionKeyCount.
+func (s *NavigationContext) GetActionKeyCount() int {
+	return s.ActionKeyCount
+}
+
+// GetUserID returns the value of UserID.
+func (s *NavigationContext) GetUserID() OptUUID {
+	return s.UserID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *NavigationContext) GetCollaborationWorkspaceID() OptUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *NavigationContext) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *NavigationContext) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetRequestHost sets the value of RequestHost.
+func (s *NavigationContext) SetRequestHost(val string) {
+	s.RequestHost = val
+}
+
+// SetRequestedSpaceKey sets the value of RequestedSpaceKey.
+func (s *NavigationContext) SetRequestedSpaceKey(val string) {
+	s.RequestedSpaceKey = val
+}
+
+// SetAuthenticated sets the value of Authenticated.
+func (s *NavigationContext) SetAuthenticated(val bool) {
+	s.Authenticated = val
+}
+
+// SetSuperAdmin sets the value of SuperAdmin.
+func (s *NavigationContext) SetSuperAdmin(val bool) {
+	s.SuperAdmin = val
+}
+
+// SetVisibleMenuCount sets the value of VisibleMenuCount.
+func (s *NavigationContext) SetVisibleMenuCount(val int) {
+	s.VisibleMenuCount = val
+}
+
+// SetManagedPageCount sets the value of ManagedPageCount.
+func (s *NavigationContext) SetManagedPageCount(val int) {
+	s.ManagedPageCount = val
+}
+
+// SetActionKeyCount sets the value of ActionKeyCount.
+func (s *NavigationContext) SetActionKeyCount(val int) {
+	s.ActionKeyCount = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *NavigationContext) SetUserID(val OptUUID) {
+	s.UserID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *NavigationContext) SetCollaborationWorkspaceID(val OptUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
 // Ref: #/components/schemas/NavigationManifest
 type NavigationManifest struct {
-	VersionStamp string       `json:"version_stamp"`
-	CurrentApp   OptAnyObject `json:"current_app"`
-	CurrentSpace OptAnyObject `json:"current_space"`
-	Context      OptAnyObject `json:"context"`
-	MenuTree     []AnyObject  `json:"menu_tree"`
-	EntryRoutes  []AnyObject  `json:"entry_routes"`
-	ManagedPages []AnyObject  `json:"managed_pages"`
+	VersionStamp string                            `json:"version_stamp"`
+	CurrentApp   OptSystemCurrentAppResponse       `json:"current_app"`
+	CurrentSpace OptSystemCurrentMenuSpaceResponse `json:"current_space"`
+	Context      OptNavigationContext              `json:"context"`
+	MenuTree     []MenuTreeItem                    `json:"menu_tree"`
+	EntryRoutes  []MenuTreeItem                    `json:"entry_routes"`
+	ManagedPages []PageListItem                    `json:"managed_pages"`
 }
 
 // GetVersionStamp returns the value of VersionStamp.
@@ -2907,32 +7349,32 @@ func (s *NavigationManifest) GetVersionStamp() string {
 }
 
 // GetCurrentApp returns the value of CurrentApp.
-func (s *NavigationManifest) GetCurrentApp() OptAnyObject {
+func (s *NavigationManifest) GetCurrentApp() OptSystemCurrentAppResponse {
 	return s.CurrentApp
 }
 
 // GetCurrentSpace returns the value of CurrentSpace.
-func (s *NavigationManifest) GetCurrentSpace() OptAnyObject {
+func (s *NavigationManifest) GetCurrentSpace() OptSystemCurrentMenuSpaceResponse {
 	return s.CurrentSpace
 }
 
 // GetContext returns the value of Context.
-func (s *NavigationManifest) GetContext() OptAnyObject {
+func (s *NavigationManifest) GetContext() OptNavigationContext {
 	return s.Context
 }
 
 // GetMenuTree returns the value of MenuTree.
-func (s *NavigationManifest) GetMenuTree() []AnyObject {
+func (s *NavigationManifest) GetMenuTree() []MenuTreeItem {
 	return s.MenuTree
 }
 
 // GetEntryRoutes returns the value of EntryRoutes.
-func (s *NavigationManifest) GetEntryRoutes() []AnyObject {
+func (s *NavigationManifest) GetEntryRoutes() []MenuTreeItem {
 	return s.EntryRoutes
 }
 
 // GetManagedPages returns the value of ManagedPages.
-func (s *NavigationManifest) GetManagedPages() []AnyObject {
+func (s *NavigationManifest) GetManagedPages() []PageListItem {
 	return s.ManagedPages
 }
 
@@ -2942,32 +7384,32 @@ func (s *NavigationManifest) SetVersionStamp(val string) {
 }
 
 // SetCurrentApp sets the value of CurrentApp.
-func (s *NavigationManifest) SetCurrentApp(val OptAnyObject) {
+func (s *NavigationManifest) SetCurrentApp(val OptSystemCurrentAppResponse) {
 	s.CurrentApp = val
 }
 
 // SetCurrentSpace sets the value of CurrentSpace.
-func (s *NavigationManifest) SetCurrentSpace(val OptAnyObject) {
+func (s *NavigationManifest) SetCurrentSpace(val OptSystemCurrentMenuSpaceResponse) {
 	s.CurrentSpace = val
 }
 
 // SetContext sets the value of Context.
-func (s *NavigationManifest) SetContext(val OptAnyObject) {
+func (s *NavigationManifest) SetContext(val OptNavigationContext) {
 	s.Context = val
 }
 
 // SetMenuTree sets the value of MenuTree.
-func (s *NavigationManifest) SetMenuTree(val []AnyObject) {
+func (s *NavigationManifest) SetMenuTree(val []MenuTreeItem) {
 	s.MenuTree = val
 }
 
 // SetEntryRoutes sets the value of EntryRoutes.
-func (s *NavigationManifest) SetEntryRoutes(val []AnyObject) {
+func (s *NavigationManifest) SetEntryRoutes(val []MenuTreeItem) {
 	s.EntryRoutes = val
 }
 
 // SetManagedPages sets the value of ManagedPages.
-func (s *NavigationManifest) SetManagedPages(val []AnyObject) {
+func (s *NavigationManifest) SetManagedPages(val []PageListItem) {
 	s.ManagedPages = val
 }
 
@@ -3154,6 +7596,52 @@ func (o OptDateTime) Or(d time.Time) time.Time {
 	return d
 }
 
+// NewOptInboxItemMeta returns new OptInboxItemMeta with value set to v.
+func NewOptInboxItemMeta(v InboxItemMeta) OptInboxItemMeta {
+	return OptInboxItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptInboxItemMeta is optional InboxItemMeta.
+type OptInboxItemMeta struct {
+	Value InboxItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptInboxItemMeta was set.
+func (o OptInboxItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptInboxItemMeta) Reset() {
+	var v InboxItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptInboxItemMeta) SetTo(v InboxItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptInboxItemMeta) Get() (v InboxItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptInboxItemMeta) Or(d InboxItemMeta) InboxItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt returns new OptInt with value set to v.
 func NewOptInt(v int) OptInt {
 	return OptInt{
@@ -3246,6 +7734,328 @@ func (o OptInt64) Or(d int64) int64 {
 	return d
 }
 
+// NewOptMessageRecipientGroupItemMeta returns new OptMessageRecipientGroupItemMeta with value set to v.
+func NewOptMessageRecipientGroupItemMeta(v MessageRecipientGroupItemMeta) OptMessageRecipientGroupItemMeta {
+	return OptMessageRecipientGroupItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageRecipientGroupItemMeta is optional MessageRecipientGroupItemMeta.
+type OptMessageRecipientGroupItemMeta struct {
+	Value MessageRecipientGroupItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageRecipientGroupItemMeta was set.
+func (o OptMessageRecipientGroupItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageRecipientGroupItemMeta) Reset() {
+	var v MessageRecipientGroupItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageRecipientGroupItemMeta) SetTo(v MessageRecipientGroupItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageRecipientGroupItemMeta) Get() (v MessageRecipientGroupItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageRecipientGroupItemMeta) Or(d MessageRecipientGroupItemMeta) MessageRecipientGroupItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageRecipientGroupSaveRequestMeta returns new OptMessageRecipientGroupSaveRequestMeta with value set to v.
+func NewOptMessageRecipientGroupSaveRequestMeta(v MessageRecipientGroupSaveRequestMeta) OptMessageRecipientGroupSaveRequestMeta {
+	return OptMessageRecipientGroupSaveRequestMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageRecipientGroupSaveRequestMeta is optional MessageRecipientGroupSaveRequestMeta.
+type OptMessageRecipientGroupSaveRequestMeta struct {
+	Value MessageRecipientGroupSaveRequestMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageRecipientGroupSaveRequestMeta was set.
+func (o OptMessageRecipientGroupSaveRequestMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageRecipientGroupSaveRequestMeta) Reset() {
+	var v MessageRecipientGroupSaveRequestMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageRecipientGroupSaveRequestMeta) SetTo(v MessageRecipientGroupSaveRequestMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageRecipientGroupSaveRequestMeta) Get() (v MessageRecipientGroupSaveRequestMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageRecipientGroupSaveRequestMeta) Or(d MessageRecipientGroupSaveRequestMeta) MessageRecipientGroupSaveRequestMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageRecipientGroupSaveRequestTargetsItemMeta returns new OptMessageRecipientGroupSaveRequestTargetsItemMeta with value set to v.
+func NewOptMessageRecipientGroupSaveRequestTargetsItemMeta(v MessageRecipientGroupSaveRequestTargetsItemMeta) OptMessageRecipientGroupSaveRequestTargetsItemMeta {
+	return OptMessageRecipientGroupSaveRequestTargetsItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageRecipientGroupSaveRequestTargetsItemMeta is optional MessageRecipientGroupSaveRequestTargetsItemMeta.
+type OptMessageRecipientGroupSaveRequestTargetsItemMeta struct {
+	Value MessageRecipientGroupSaveRequestTargetsItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageRecipientGroupSaveRequestTargetsItemMeta was set.
+func (o OptMessageRecipientGroupSaveRequestTargetsItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageRecipientGroupSaveRequestTargetsItemMeta) Reset() {
+	var v MessageRecipientGroupSaveRequestTargetsItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageRecipientGroupSaveRequestTargetsItemMeta) SetTo(v MessageRecipientGroupSaveRequestTargetsItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageRecipientGroupSaveRequestTargetsItemMeta) Get() (v MessageRecipientGroupSaveRequestTargetsItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageRecipientGroupSaveRequestTargetsItemMeta) Or(d MessageRecipientGroupSaveRequestTargetsItemMeta) MessageRecipientGroupSaveRequestTargetsItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageRecipientGroupTargetItemMeta returns new OptMessageRecipientGroupTargetItemMeta with value set to v.
+func NewOptMessageRecipientGroupTargetItemMeta(v MessageRecipientGroupTargetItemMeta) OptMessageRecipientGroupTargetItemMeta {
+	return OptMessageRecipientGroupTargetItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageRecipientGroupTargetItemMeta is optional MessageRecipientGroupTargetItemMeta.
+type OptMessageRecipientGroupTargetItemMeta struct {
+	Value MessageRecipientGroupTargetItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageRecipientGroupTargetItemMeta was set.
+func (o OptMessageRecipientGroupTargetItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageRecipientGroupTargetItemMeta) Reset() {
+	var v MessageRecipientGroupTargetItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageRecipientGroupTargetItemMeta) SetTo(v MessageRecipientGroupTargetItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageRecipientGroupTargetItemMeta) Get() (v MessageRecipientGroupTargetItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageRecipientGroupTargetItemMeta) Or(d MessageRecipientGroupTargetItemMeta) MessageRecipientGroupTargetItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageSenderItemMeta returns new OptMessageSenderItemMeta with value set to v.
+func NewOptMessageSenderItemMeta(v MessageSenderItemMeta) OptMessageSenderItemMeta {
+	return OptMessageSenderItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageSenderItemMeta is optional MessageSenderItemMeta.
+type OptMessageSenderItemMeta struct {
+	Value MessageSenderItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageSenderItemMeta was set.
+func (o OptMessageSenderItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageSenderItemMeta) Reset() {
+	var v MessageSenderItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageSenderItemMeta) SetTo(v MessageSenderItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageSenderItemMeta) Get() (v MessageSenderItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageSenderItemMeta) Or(d MessageSenderItemMeta) MessageSenderItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageSenderSaveRequestMeta returns new OptMessageSenderSaveRequestMeta with value set to v.
+func NewOptMessageSenderSaveRequestMeta(v MessageSenderSaveRequestMeta) OptMessageSenderSaveRequestMeta {
+	return OptMessageSenderSaveRequestMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageSenderSaveRequestMeta is optional MessageSenderSaveRequestMeta.
+type OptMessageSenderSaveRequestMeta struct {
+	Value MessageSenderSaveRequestMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageSenderSaveRequestMeta was set.
+func (o OptMessageSenderSaveRequestMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageSenderSaveRequestMeta) Reset() {
+	var v MessageSenderSaveRequestMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageSenderSaveRequestMeta) SetTo(v MessageSenderSaveRequestMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageSenderSaveRequestMeta) Get() (v MessageSenderSaveRequestMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageSenderSaveRequestMeta) Or(d MessageSenderSaveRequestMeta) MessageSenderSaveRequestMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageTemplateItemMeta returns new OptMessageTemplateItemMeta with value set to v.
+func NewOptMessageTemplateItemMeta(v MessageTemplateItemMeta) OptMessageTemplateItemMeta {
+	return OptMessageTemplateItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageTemplateItemMeta is optional MessageTemplateItemMeta.
+type OptMessageTemplateItemMeta struct {
+	Value MessageTemplateItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptMessageTemplateItemMeta was set.
+func (o OptMessageTemplateItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageTemplateItemMeta) Reset() {
+	var v MessageTemplateItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageTemplateItemMeta) SetTo(v MessageTemplateItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageTemplateItemMeta) Get() (v MessageTemplateItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageTemplateItemMeta) Or(d MessageTemplateItemMeta) MessageTemplateItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptMultipartFile returns new OptMultipartFile with value set to v.
 func NewOptMultipartFile(v ht.MultipartFile) OptMultipartFile {
 	return OptMultipartFile{
@@ -3286,6 +8096,52 @@ func (o OptMultipartFile) Get() (v ht.MultipartFile, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptMultipartFile) Or(d ht.MultipartFile) ht.MultipartFile {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNavigationContext returns new OptNavigationContext with value set to v.
+func NewOptNavigationContext(v NavigationContext) OptNavigationContext {
+	return OptNavigationContext{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNavigationContext is optional NavigationContext.
+type OptNavigationContext struct {
+	Value NavigationContext
+	Set   bool
+}
+
+// IsSet returns true if OptNavigationContext was set.
+func (o OptNavigationContext) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNavigationContext) Reset() {
+	var v NavigationContext
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptNavigationContext) SetTo(v NavigationContext) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNavigationContext) Get() (v NavigationContext, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNavigationContext) Or(d NavigationContext) NavigationContext {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3922,6 +8778,98 @@ func (o OptNilUUID) Or(d uuid.UUID) uuid.UUID {
 	return d
 }
 
+// NewOptPageListItemMeta returns new OptPageListItemMeta with value set to v.
+func NewOptPageListItemMeta(v PageListItemMeta) OptPageListItemMeta {
+	return OptPageListItemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPageListItemMeta is optional PageListItemMeta.
+type OptPageListItemMeta struct {
+	Value PageListItemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptPageListItemMeta was set.
+func (o OptPageListItemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPageListItemMeta) Reset() {
+	var v PageListItemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPageListItemMeta) SetTo(v PageListItemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPageListItemMeta) Get() (v PageListItemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPageListItemMeta) Or(d PageListItemMeta) PageListItemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptPageSaveRequestMeta returns new OptPageSaveRequestMeta with value set to v.
+func NewOptPageSaveRequestMeta(v PageSaveRequestMeta) OptPageSaveRequestMeta {
+	return OptPageSaveRequestMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPageSaveRequestMeta is optional PageSaveRequestMeta.
+type OptPageSaveRequestMeta struct {
+	Value PageSaveRequestMeta
+	Set   bool
+}
+
+// IsSet returns true if OptPageSaveRequestMeta was set.
+func (o OptPageSaveRequestMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPageSaveRequestMeta) Reset() {
+	var v PageSaveRequestMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPageSaveRequestMeta) SetTo(v PageSaveRequestMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPageSaveRequestMeta) Get() (v PageSaveRequestMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPageSaveRequestMeta) Or(d PageSaveRequestMeta) PageSaveRequestMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptPermissionExplanationFeaturePackageSources returns new OptPermissionExplanationFeaturePackageSources with value set to v.
 func NewOptPermissionExplanationFeaturePackageSources(v PermissionExplanationFeaturePackageSources) OptPermissionExplanationFeaturePackageSources {
 	return OptPermissionExplanationFeaturePackageSources{
@@ -4014,6 +8962,52 @@ func (o OptPermissionExplanationRoleSources) Or(d PermissionExplanationRoleSourc
 	return d
 }
 
+// NewOptPermissionGroupItem returns new OptPermissionGroupItem with value set to v.
+func NewOptPermissionGroupItem(v PermissionGroupItem) OptPermissionGroupItem {
+	return OptPermissionGroupItem{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPermissionGroupItem is optional PermissionGroupItem.
+type OptPermissionGroupItem struct {
+	Value PermissionGroupItem
+	Set   bool
+}
+
+// IsSet returns true if OptPermissionGroupItem was set.
+func (o OptPermissionGroupItem) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPermissionGroupItem) Reset() {
+	var v PermissionGroupItem
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPermissionGroupItem) SetTo(v PermissionGroupItem) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPermissionGroupItem) Get() (v PermissionGroupItem, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPermissionGroupItem) Or(d PermissionGroupItem) PermissionGroupItem {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -4054,6 +9048,236 @@ func (o OptString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSystemAppHostBindingItem returns new OptSystemAppHostBindingItem with value set to v.
+func NewOptSystemAppHostBindingItem(v SystemAppHostBindingItem) OptSystemAppHostBindingItem {
+	return OptSystemAppHostBindingItem{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemAppHostBindingItem is optional SystemAppHostBindingItem.
+type OptSystemAppHostBindingItem struct {
+	Value SystemAppHostBindingItem
+	Set   bool
+}
+
+// IsSet returns true if OptSystemAppHostBindingItem was set.
+func (o OptSystemAppHostBindingItem) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemAppHostBindingItem) Reset() {
+	var v SystemAppHostBindingItem
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemAppHostBindingItem) SetTo(v SystemAppHostBindingItem) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemAppHostBindingItem) Get() (v SystemAppHostBindingItem, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemAppHostBindingItem) Or(d SystemAppHostBindingItem) SystemAppHostBindingItem {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSystemCurrentAppResponse returns new OptSystemCurrentAppResponse with value set to v.
+func NewOptSystemCurrentAppResponse(v SystemCurrentAppResponse) OptSystemCurrentAppResponse {
+	return OptSystemCurrentAppResponse{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemCurrentAppResponse is optional SystemCurrentAppResponse.
+type OptSystemCurrentAppResponse struct {
+	Value SystemCurrentAppResponse
+	Set   bool
+}
+
+// IsSet returns true if OptSystemCurrentAppResponse was set.
+func (o OptSystemCurrentAppResponse) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemCurrentAppResponse) Reset() {
+	var v SystemCurrentAppResponse
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemCurrentAppResponse) SetTo(v SystemCurrentAppResponse) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemCurrentAppResponse) Get() (v SystemCurrentAppResponse, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemCurrentAppResponse) Or(d SystemCurrentAppResponse) SystemCurrentAppResponse {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSystemCurrentMenuSpaceResponse returns new OptSystemCurrentMenuSpaceResponse with value set to v.
+func NewOptSystemCurrentMenuSpaceResponse(v SystemCurrentMenuSpaceResponse) OptSystemCurrentMenuSpaceResponse {
+	return OptSystemCurrentMenuSpaceResponse{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemCurrentMenuSpaceResponse is optional SystemCurrentMenuSpaceResponse.
+type OptSystemCurrentMenuSpaceResponse struct {
+	Value SystemCurrentMenuSpaceResponse
+	Set   bool
+}
+
+// IsSet returns true if OptSystemCurrentMenuSpaceResponse was set.
+func (o OptSystemCurrentMenuSpaceResponse) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemCurrentMenuSpaceResponse) Reset() {
+	var v SystemCurrentMenuSpaceResponse
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemCurrentMenuSpaceResponse) SetTo(v SystemCurrentMenuSpaceResponse) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemCurrentMenuSpaceResponse) Get() (v SystemCurrentMenuSpaceResponse, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemCurrentMenuSpaceResponse) Or(d SystemCurrentMenuSpaceResponse) SystemCurrentMenuSpaceResponse {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSystemMenuSpaceHostBindingItem returns new OptSystemMenuSpaceHostBindingItem with value set to v.
+func NewOptSystemMenuSpaceHostBindingItem(v SystemMenuSpaceHostBindingItem) OptSystemMenuSpaceHostBindingItem {
+	return OptSystemMenuSpaceHostBindingItem{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemMenuSpaceHostBindingItem is optional SystemMenuSpaceHostBindingItem.
+type OptSystemMenuSpaceHostBindingItem struct {
+	Value SystemMenuSpaceHostBindingItem
+	Set   bool
+}
+
+// IsSet returns true if OptSystemMenuSpaceHostBindingItem was set.
+func (o OptSystemMenuSpaceHostBindingItem) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemMenuSpaceHostBindingItem) Reset() {
+	var v SystemMenuSpaceHostBindingItem
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemMenuSpaceHostBindingItem) SetTo(v SystemMenuSpaceHostBindingItem) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemMenuSpaceHostBindingItem) Get() (v SystemMenuSpaceHostBindingItem, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemMenuSpaceHostBindingItem) Or(d SystemMenuSpaceHostBindingItem) SystemMenuSpaceHostBindingItem {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSystemMeta returns new OptSystemMeta with value set to v.
+func NewOptSystemMeta(v SystemMeta) OptSystemMeta {
+	return OptSystemMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemMeta is optional SystemMeta.
+type OptSystemMeta struct {
+	Value SystemMeta
+	Set   bool
+}
+
+// IsSet returns true if OptSystemMeta was set.
+func (o OptSystemMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemMeta) Reset() {
+	var v SystemMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemMeta) SetTo(v SystemMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemMeta) Get() (v SystemMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemMeta) Or(d SystemMeta) SystemMeta {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4106,14 +9330,1005 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	return d
 }
 
-// Ref: #/components/schemas/PageListResponse
-type PageListResponse struct {
-	Records []AnyObject `json:"records"`
-	Total   int         `json:"total"`
+// NewOptUserPermissionCollaborationMember returns new OptUserPermissionCollaborationMember with value set to v.
+func NewOptUserPermissionCollaborationMember(v UserPermissionCollaborationMember) OptUserPermissionCollaborationMember {
+	return OptUserPermissionCollaborationMember{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUserPermissionCollaborationMember is optional UserPermissionCollaborationMember.
+type OptUserPermissionCollaborationMember struct {
+	Value UserPermissionCollaborationMember
+	Set   bool
+}
+
+// IsSet returns true if OptUserPermissionCollaborationMember was set.
+func (o OptUserPermissionCollaborationMember) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUserPermissionCollaborationMember) Reset() {
+	var v UserPermissionCollaborationMember
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUserPermissionCollaborationMember) SetTo(v UserPermissionCollaborationMember) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUserPermissionCollaborationMember) Get() (v UserPermissionCollaborationMember, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUserPermissionCollaborationMember) Or(d UserPermissionCollaborationMember) UserPermissionCollaborationMember {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUserPermissionDiagnosisAction returns new OptUserPermissionDiagnosisAction with value set to v.
+func NewOptUserPermissionDiagnosisAction(v UserPermissionDiagnosisAction) OptUserPermissionDiagnosisAction {
+	return OptUserPermissionDiagnosisAction{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUserPermissionDiagnosisAction is optional UserPermissionDiagnosisAction.
+type OptUserPermissionDiagnosisAction struct {
+	Value UserPermissionDiagnosisAction
+	Set   bool
+}
+
+// IsSet returns true if OptUserPermissionDiagnosisAction was set.
+func (o OptUserPermissionDiagnosisAction) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUserPermissionDiagnosisAction) Reset() {
+	var v UserPermissionDiagnosisAction
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUserPermissionDiagnosisAction) SetTo(v UserPermissionDiagnosisAction) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUserPermissionDiagnosisAction) Get() (v UserPermissionDiagnosisAction, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUserPermissionDiagnosisAction) Or(d UserPermissionDiagnosisAction) UserPermissionDiagnosisAction {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUserPermissionDiagnosisResult returns new OptUserPermissionDiagnosisResult with value set to v.
+func NewOptUserPermissionDiagnosisResult(v UserPermissionDiagnosisResult) OptUserPermissionDiagnosisResult {
+	return OptUserPermissionDiagnosisResult{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUserPermissionDiagnosisResult is optional UserPermissionDiagnosisResult.
+type OptUserPermissionDiagnosisResult struct {
+	Value UserPermissionDiagnosisResult
+	Set   bool
+}
+
+// IsSet returns true if OptUserPermissionDiagnosisResult was set.
+func (o OptUserPermissionDiagnosisResult) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUserPermissionDiagnosisResult) Reset() {
+	var v UserPermissionDiagnosisResult
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUserPermissionDiagnosisResult) SetTo(v UserPermissionDiagnosisResult) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUserPermissionDiagnosisResult) Get() (v UserPermissionDiagnosisResult, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUserPermissionDiagnosisResult) Or(d UserPermissionDiagnosisResult) UserPermissionDiagnosisResult {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// Ref: #/components/schemas/PageAccessTraceMenuItem
+type PageAccessTraceMenuItem struct {
+	ID        string `json:"id"`
+	ParentID  string `json:"parent_id"`
+	Name      string `json:"name"`
+	Title     string `json:"title"`
+	Path      string `json:"path"`
+	FullPath  string `json:"full_path"`
+	Kind      string `json:"kind"`
+	Icon      string `json:"icon"`
+	SortOrder int    `json:"sort_order"`
+	Hidden    bool   `json:"hidden"`
+	Visible   bool   `json:"visible"`
+}
+
+// GetID returns the value of ID.
+func (s *PageAccessTraceMenuItem) GetID() string {
+	return s.ID
+}
+
+// GetParentID returns the value of ParentID.
+func (s *PageAccessTraceMenuItem) GetParentID() string {
+	return s.ParentID
+}
+
+// GetName returns the value of Name.
+func (s *PageAccessTraceMenuItem) GetName() string {
+	return s.Name
+}
+
+// GetTitle returns the value of Title.
+func (s *PageAccessTraceMenuItem) GetTitle() string {
+	return s.Title
+}
+
+// GetPath returns the value of Path.
+func (s *PageAccessTraceMenuItem) GetPath() string {
+	return s.Path
+}
+
+// GetFullPath returns the value of FullPath.
+func (s *PageAccessTraceMenuItem) GetFullPath() string {
+	return s.FullPath
+}
+
+// GetKind returns the value of Kind.
+func (s *PageAccessTraceMenuItem) GetKind() string {
+	return s.Kind
+}
+
+// GetIcon returns the value of Icon.
+func (s *PageAccessTraceMenuItem) GetIcon() string {
+	return s.Icon
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PageAccessTraceMenuItem) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetHidden returns the value of Hidden.
+func (s *PageAccessTraceMenuItem) GetHidden() bool {
+	return s.Hidden
+}
+
+// GetVisible returns the value of Visible.
+func (s *PageAccessTraceMenuItem) GetVisible() bool {
+	return s.Visible
+}
+
+// SetID sets the value of ID.
+func (s *PageAccessTraceMenuItem) SetID(val string) {
+	s.ID = val
+}
+
+// SetParentID sets the value of ParentID.
+func (s *PageAccessTraceMenuItem) SetParentID(val string) {
+	s.ParentID = val
+}
+
+// SetName sets the value of Name.
+func (s *PageAccessTraceMenuItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetTitle sets the value of Title.
+func (s *PageAccessTraceMenuItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetPath sets the value of Path.
+func (s *PageAccessTraceMenuItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetFullPath sets the value of FullPath.
+func (s *PageAccessTraceMenuItem) SetFullPath(val string) {
+	s.FullPath = val
+}
+
+// SetKind sets the value of Kind.
+func (s *PageAccessTraceMenuItem) SetKind(val string) {
+	s.Kind = val
+}
+
+// SetIcon sets the value of Icon.
+func (s *PageAccessTraceMenuItem) SetIcon(val string) {
+	s.Icon = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PageAccessTraceMenuItem) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetHidden sets the value of Hidden.
+func (s *PageAccessTraceMenuItem) SetHidden(val bool) {
+	s.Hidden = val
+}
+
+// SetVisible sets the value of Visible.
+func (s *PageAccessTraceMenuItem) SetVisible(val bool) {
+	s.Visible = val
+}
+
+// Ref: #/components/schemas/PageAccessTracePageItem
+type PageAccessTracePageItem struct {
+	PageKey          string   `json:"page_key"`
+	PageName         string   `json:"page_name"`
+	RoutePath        string   `json:"route_path"`
+	AccessMode       string   `json:"access_mode"`
+	PermissionKey    string   `json:"permission_key"`
+	ParentPageKey    string   `json:"parent_page_key"`
+	ParentMenuID     string   `json:"parent_menu_id"`
+	ActiveMenuPath   string   `json:"active_menu_path"`
+	Visible          bool     `json:"visible"`
+	Reason           string   `json:"reason"`
+	MatchedActionKey string   `json:"matched_action_key"`
+	EffectiveChain   []string `json:"effective_chain"`
+}
+
+// GetPageKey returns the value of PageKey.
+func (s *PageAccessTracePageItem) GetPageKey() string {
+	return s.PageKey
+}
+
+// GetPageName returns the value of PageName.
+func (s *PageAccessTracePageItem) GetPageName() string {
+	return s.PageName
+}
+
+// GetRoutePath returns the value of RoutePath.
+func (s *PageAccessTracePageItem) GetRoutePath() string {
+	return s.RoutePath
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *PageAccessTracePageItem) GetAccessMode() string {
+	return s.AccessMode
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PageAccessTracePageItem) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetParentPageKey returns the value of ParentPageKey.
+func (s *PageAccessTracePageItem) GetParentPageKey() string {
+	return s.ParentPageKey
+}
+
+// GetParentMenuID returns the value of ParentMenuID.
+func (s *PageAccessTracePageItem) GetParentMenuID() string {
+	return s.ParentMenuID
+}
+
+// GetActiveMenuPath returns the value of ActiveMenuPath.
+func (s *PageAccessTracePageItem) GetActiveMenuPath() string {
+	return s.ActiveMenuPath
+}
+
+// GetVisible returns the value of Visible.
+func (s *PageAccessTracePageItem) GetVisible() bool {
+	return s.Visible
+}
+
+// GetReason returns the value of Reason.
+func (s *PageAccessTracePageItem) GetReason() string {
+	return s.Reason
+}
+
+// GetMatchedActionKey returns the value of MatchedActionKey.
+func (s *PageAccessTracePageItem) GetMatchedActionKey() string {
+	return s.MatchedActionKey
+}
+
+// GetEffectiveChain returns the value of EffectiveChain.
+func (s *PageAccessTracePageItem) GetEffectiveChain() []string {
+	return s.EffectiveChain
+}
+
+// SetPageKey sets the value of PageKey.
+func (s *PageAccessTracePageItem) SetPageKey(val string) {
+	s.PageKey = val
+}
+
+// SetPageName sets the value of PageName.
+func (s *PageAccessTracePageItem) SetPageName(val string) {
+	s.PageName = val
+}
+
+// SetRoutePath sets the value of RoutePath.
+func (s *PageAccessTracePageItem) SetRoutePath(val string) {
+	s.RoutePath = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *PageAccessTracePageItem) SetAccessMode(val string) {
+	s.AccessMode = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PageAccessTracePageItem) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetParentPageKey sets the value of ParentPageKey.
+func (s *PageAccessTracePageItem) SetParentPageKey(val string) {
+	s.ParentPageKey = val
+}
+
+// SetParentMenuID sets the value of ParentMenuID.
+func (s *PageAccessTracePageItem) SetParentMenuID(val string) {
+	s.ParentMenuID = val
+}
+
+// SetActiveMenuPath sets the value of ActiveMenuPath.
+func (s *PageAccessTracePageItem) SetActiveMenuPath(val string) {
+	s.ActiveMenuPath = val
+}
+
+// SetVisible sets the value of Visible.
+func (s *PageAccessTracePageItem) SetVisible(val bool) {
+	s.Visible = val
+}
+
+// SetReason sets the value of Reason.
+func (s *PageAccessTracePageItem) SetReason(val string) {
+	s.Reason = val
+}
+
+// SetMatchedActionKey sets the value of MatchedActionKey.
+func (s *PageAccessTracePageItem) SetMatchedActionKey(val string) {
+	s.MatchedActionKey = val
+}
+
+// SetEffectiveChain sets the value of EffectiveChain.
+func (s *PageAccessTracePageItem) SetEffectiveChain(val []string) {
+	s.EffectiveChain = val
+}
+
+// Ref: #/components/schemas/PageAccessTraceResponse
+type PageAccessTraceResponse struct {
+	UserID                   string                    `json:"user_id"`
+	CollaborationWorkspaceID OptString                 `json:"collaboration_workspace_id"`
+	SpaceKey                 string                    `json:"space_key"`
+	Authenticated            bool                      `json:"authenticated"`
+	SuperAdmin               bool                      `json:"super_admin"`
+	ActionKeyCount           int                       `json:"action_key_count"`
+	VisibleMenuIds           []string                  `json:"visible_menu_ids"`
+	Menus                    []PageAccessTraceMenuItem `json:"menus"`
+	Roles                    []PageAccessTraceRoleItem `json:"roles"`
+	Pages                    []PageAccessTracePageItem `json:"pages"`
+}
+
+// GetUserID returns the value of UserID.
+func (s *PageAccessTraceResponse) GetUserID() string {
+	return s.UserID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *PageAccessTraceResponse) GetCollaborationWorkspaceID() OptString {
+	return s.CollaborationWorkspaceID
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *PageAccessTraceResponse) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetAuthenticated returns the value of Authenticated.
+func (s *PageAccessTraceResponse) GetAuthenticated() bool {
+	return s.Authenticated
+}
+
+// GetSuperAdmin returns the value of SuperAdmin.
+func (s *PageAccessTraceResponse) GetSuperAdmin() bool {
+	return s.SuperAdmin
+}
+
+// GetActionKeyCount returns the value of ActionKeyCount.
+func (s *PageAccessTraceResponse) GetActionKeyCount() int {
+	return s.ActionKeyCount
+}
+
+// GetVisibleMenuIds returns the value of VisibleMenuIds.
+func (s *PageAccessTraceResponse) GetVisibleMenuIds() []string {
+	return s.VisibleMenuIds
+}
+
+// GetMenus returns the value of Menus.
+func (s *PageAccessTraceResponse) GetMenus() []PageAccessTraceMenuItem {
+	return s.Menus
+}
+
+// GetRoles returns the value of Roles.
+func (s *PageAccessTraceResponse) GetRoles() []PageAccessTraceRoleItem {
+	return s.Roles
+}
+
+// GetPages returns the value of Pages.
+func (s *PageAccessTraceResponse) GetPages() []PageAccessTracePageItem {
+	return s.Pages
+}
+
+// SetUserID sets the value of UserID.
+func (s *PageAccessTraceResponse) SetUserID(val string) {
+	s.UserID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *PageAccessTraceResponse) SetCollaborationWorkspaceID(val OptString) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *PageAccessTraceResponse) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetAuthenticated sets the value of Authenticated.
+func (s *PageAccessTraceResponse) SetAuthenticated(val bool) {
+	s.Authenticated = val
+}
+
+// SetSuperAdmin sets the value of SuperAdmin.
+func (s *PageAccessTraceResponse) SetSuperAdmin(val bool) {
+	s.SuperAdmin = val
+}
+
+// SetActionKeyCount sets the value of ActionKeyCount.
+func (s *PageAccessTraceResponse) SetActionKeyCount(val int) {
+	s.ActionKeyCount = val
+}
+
+// SetVisibleMenuIds sets the value of VisibleMenuIds.
+func (s *PageAccessTraceResponse) SetVisibleMenuIds(val []string) {
+	s.VisibleMenuIds = val
+}
+
+// SetMenus sets the value of Menus.
+func (s *PageAccessTraceResponse) SetMenus(val []PageAccessTraceMenuItem) {
+	s.Menus = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *PageAccessTraceResponse) SetRoles(val []PageAccessTraceRoleItem) {
+	s.Roles = val
+}
+
+// SetPages sets the value of Pages.
+func (s *PageAccessTraceResponse) SetPages(val []PageAccessTracePageItem) {
+	s.Pages = val
+}
+
+// Ref: #/components/schemas/PageAccessTraceRoleItem
+type PageAccessTraceRoleItem struct {
+	RoleID   string `json:"role_id"`
+	RoleCode string `json:"role_code"`
+	RoleName string `json:"role_name"`
+	Status   string `json:"status"`
+}
+
+// GetRoleID returns the value of RoleID.
+func (s *PageAccessTraceRoleItem) GetRoleID() string {
+	return s.RoleID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *PageAccessTraceRoleItem) GetRoleCode() string {
+	return s.RoleCode
+}
+
+// GetRoleName returns the value of RoleName.
+func (s *PageAccessTraceRoleItem) GetRoleName() string {
+	return s.RoleName
+}
+
+// GetStatus returns the value of Status.
+func (s *PageAccessTraceRoleItem) GetStatus() string {
+	return s.Status
+}
+
+// SetRoleID sets the value of RoleID.
+func (s *PageAccessTraceRoleItem) SetRoleID(val string) {
+	s.RoleID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *PageAccessTraceRoleItem) SetRoleCode(val string) {
+	s.RoleCode = val
+}
+
+// SetRoleName sets the value of RoleName.
+func (s *PageAccessTraceRoleItem) SetRoleName(val string) {
+	s.RoleName = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PageAccessTraceRoleItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// Ref: #/components/schemas/PageBreadcrumbPreviewItem
+type PageBreadcrumbPreviewItem struct {
+	Type    string    `json:"type"`
+	Title   string    `json:"title"`
+	Path    string    `json:"path"`
+	PageKey OptString `json:"page_key"`
+}
+
+// GetType returns the value of Type.
+func (s *PageBreadcrumbPreviewItem) GetType() string {
+	return s.Type
+}
+
+// GetTitle returns the value of Title.
+func (s *PageBreadcrumbPreviewItem) GetTitle() string {
+	return s.Title
+}
+
+// GetPath returns the value of Path.
+func (s *PageBreadcrumbPreviewItem) GetPath() string {
+	return s.Path
+}
+
+// GetPageKey returns the value of PageKey.
+func (s *PageBreadcrumbPreviewItem) GetPageKey() OptString {
+	return s.PageKey
+}
+
+// SetType sets the value of Type.
+func (s *PageBreadcrumbPreviewItem) SetType(val string) {
+	s.Type = val
+}
+
+// SetTitle sets the value of Title.
+func (s *PageBreadcrumbPreviewItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetPath sets the value of Path.
+func (s *PageBreadcrumbPreviewItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetPageKey sets the value of PageKey.
+func (s *PageBreadcrumbPreviewItem) SetPageKey(val OptString) {
+	s.PageKey = val
+}
+
+// Ref: #/components/schemas/PageBreadcrumbPreviewListResponse
+type PageBreadcrumbPreviewListResponse struct {
+	Records []PageBreadcrumbPreviewItem `json:"records"`
+	Total   int                         `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *PageListResponse) GetRecords() []AnyObject {
+func (s *PageBreadcrumbPreviewListResponse) GetRecords() []PageBreadcrumbPreviewItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PageBreadcrumbPreviewListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PageBreadcrumbPreviewListResponse) SetRecords(val []PageBreadcrumbPreviewItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PageBreadcrumbPreviewListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/PageListItem
+type PageListItem struct {
+	ID                OptUUID             `json:"id"`
+	AppKey            OptString           `json:"app_key"`
+	PageKey           string              `json:"page_key"`
+	Name              string              `json:"name"`
+	RouteName         OptString           `json:"route_name"`
+	RoutePath         string              `json:"route_path"`
+	Component         OptString           `json:"component"`
+	SpaceKey          OptString           `json:"space_key"`
+	SpaceKeys         []string            `json:"space_keys"`
+	PageType          OptString           `json:"page_type"`
+	VisibilityScope   OptString           `json:"visibility_scope"`
+	Source            OptString           `json:"source"`
+	ModuleKey         OptString           `json:"module_key"`
+	SortOrder         OptInt              `json:"sort_order"`
+	ParentMenuID      OptUUID             `json:"parent_menu_id"`
+	ParentMenuName    OptString           `json:"parent_menu_name"`
+	ParentPageKey     OptString           `json:"parent_page_key"`
+	ParentPageName    OptString           `json:"parent_page_name"`
+	DisplayGroupKey   OptString           `json:"display_group_key"`
+	DisplayGroupName  OptString           `json:"display_group_name"`
+	ActiveMenuPath    OptString           `json:"active_menu_path"`
+	BreadcrumbMode    OptString           `json:"breadcrumb_mode"`
+	AccessMode        OptString           `json:"access_mode"`
+	PermissionKey     OptString           `json:"permission_key"`
+	InheritPermission OptBool             `json:"inherit_permission"`
+	KeepAlive         OptBool             `json:"keep_alive"`
+	IsFullPage        OptBool             `json:"is_full_page"`
+	Status            OptString           `json:"status"`
+	Meta              OptPageListItemMeta `json:"meta"`
+	CreatedAt         OptDateTime         `json:"created_at"`
+	UpdatedAt         OptDateTime         `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *PageListItem) GetID() OptUUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *PageListItem) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetPageKey returns the value of PageKey.
+func (s *PageListItem) GetPageKey() string {
+	return s.PageKey
+}
+
+// GetName returns the value of Name.
+func (s *PageListItem) GetName() string {
+	return s.Name
+}
+
+// GetRouteName returns the value of RouteName.
+func (s *PageListItem) GetRouteName() OptString {
+	return s.RouteName
+}
+
+// GetRoutePath returns the value of RoutePath.
+func (s *PageListItem) GetRoutePath() string {
+	return s.RoutePath
+}
+
+// GetComponent returns the value of Component.
+func (s *PageListItem) GetComponent() OptString {
+	return s.Component
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *PageListItem) GetSpaceKey() OptString {
+	return s.SpaceKey
+}
+
+// GetSpaceKeys returns the value of SpaceKeys.
+func (s *PageListItem) GetSpaceKeys() []string {
+	return s.SpaceKeys
+}
+
+// GetPageType returns the value of PageType.
+func (s *PageListItem) GetPageType() OptString {
+	return s.PageType
+}
+
+// GetVisibilityScope returns the value of VisibilityScope.
+func (s *PageListItem) GetVisibilityScope() OptString {
+	return s.VisibilityScope
+}
+
+// GetSource returns the value of Source.
+func (s *PageListItem) GetSource() OptString {
+	return s.Source
+}
+
+// GetModuleKey returns the value of ModuleKey.
+func (s *PageListItem) GetModuleKey() OptString {
+	return s.ModuleKey
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PageListItem) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetParentMenuID returns the value of ParentMenuID.
+func (s *PageListItem) GetParentMenuID() OptUUID {
+	return s.ParentMenuID
+}
+
+// GetParentMenuName returns the value of ParentMenuName.
+func (s *PageListItem) GetParentMenuName() OptString {
+	return s.ParentMenuName
+}
+
+// GetParentPageKey returns the value of ParentPageKey.
+func (s *PageListItem) GetParentPageKey() OptString {
+	return s.ParentPageKey
+}
+
+// GetParentPageName returns the value of ParentPageName.
+func (s *PageListItem) GetParentPageName() OptString {
+	return s.ParentPageName
+}
+
+// GetDisplayGroupKey returns the value of DisplayGroupKey.
+func (s *PageListItem) GetDisplayGroupKey() OptString {
+	return s.DisplayGroupKey
+}
+
+// GetDisplayGroupName returns the value of DisplayGroupName.
+func (s *PageListItem) GetDisplayGroupName() OptString {
+	return s.DisplayGroupName
+}
+
+// GetActiveMenuPath returns the value of ActiveMenuPath.
+func (s *PageListItem) GetActiveMenuPath() OptString {
+	return s.ActiveMenuPath
+}
+
+// GetBreadcrumbMode returns the value of BreadcrumbMode.
+func (s *PageListItem) GetBreadcrumbMode() OptString {
+	return s.BreadcrumbMode
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *PageListItem) GetAccessMode() OptString {
+	return s.AccessMode
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PageListItem) GetPermissionKey() OptString {
+	return s.PermissionKey
+}
+
+// GetInheritPermission returns the value of InheritPermission.
+func (s *PageListItem) GetInheritPermission() OptBool {
+	return s.InheritPermission
+}
+
+// GetKeepAlive returns the value of KeepAlive.
+func (s *PageListItem) GetKeepAlive() OptBool {
+	return s.KeepAlive
+}
+
+// GetIsFullPage returns the value of IsFullPage.
+func (s *PageListItem) GetIsFullPage() OptBool {
+	return s.IsFullPage
+}
+
+// GetStatus returns the value of Status.
+func (s *PageListItem) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *PageListItem) GetMeta() OptPageListItemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PageListItem) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *PageListItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *PageListItem) SetID(val OptUUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *PageListItem) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetPageKey sets the value of PageKey.
+func (s *PageListItem) SetPageKey(val string) {
+	s.PageKey = val
+}
+
+// SetName sets the value of Name.
+func (s *PageListItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetRouteName sets the value of RouteName.
+func (s *PageListItem) SetRouteName(val OptString) {
+	s.RouteName = val
+}
+
+// SetRoutePath sets the value of RoutePath.
+func (s *PageListItem) SetRoutePath(val string) {
+	s.RoutePath = val
+}
+
+// SetComponent sets the value of Component.
+func (s *PageListItem) SetComponent(val OptString) {
+	s.Component = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *PageListItem) SetSpaceKey(val OptString) {
+	s.SpaceKey = val
+}
+
+// SetSpaceKeys sets the value of SpaceKeys.
+func (s *PageListItem) SetSpaceKeys(val []string) {
+	s.SpaceKeys = val
+}
+
+// SetPageType sets the value of PageType.
+func (s *PageListItem) SetPageType(val OptString) {
+	s.PageType = val
+}
+
+// SetVisibilityScope sets the value of VisibilityScope.
+func (s *PageListItem) SetVisibilityScope(val OptString) {
+	s.VisibilityScope = val
+}
+
+// SetSource sets the value of Source.
+func (s *PageListItem) SetSource(val OptString) {
+	s.Source = val
+}
+
+// SetModuleKey sets the value of ModuleKey.
+func (s *PageListItem) SetModuleKey(val OptString) {
+	s.ModuleKey = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PageListItem) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetParentMenuID sets the value of ParentMenuID.
+func (s *PageListItem) SetParentMenuID(val OptUUID) {
+	s.ParentMenuID = val
+}
+
+// SetParentMenuName sets the value of ParentMenuName.
+func (s *PageListItem) SetParentMenuName(val OptString) {
+	s.ParentMenuName = val
+}
+
+// SetParentPageKey sets the value of ParentPageKey.
+func (s *PageListItem) SetParentPageKey(val OptString) {
+	s.ParentPageKey = val
+}
+
+// SetParentPageName sets the value of ParentPageName.
+func (s *PageListItem) SetParentPageName(val OptString) {
+	s.ParentPageName = val
+}
+
+// SetDisplayGroupKey sets the value of DisplayGroupKey.
+func (s *PageListItem) SetDisplayGroupKey(val OptString) {
+	s.DisplayGroupKey = val
+}
+
+// SetDisplayGroupName sets the value of DisplayGroupName.
+func (s *PageListItem) SetDisplayGroupName(val OptString) {
+	s.DisplayGroupName = val
+}
+
+// SetActiveMenuPath sets the value of ActiveMenuPath.
+func (s *PageListItem) SetActiveMenuPath(val OptString) {
+	s.ActiveMenuPath = val
+}
+
+// SetBreadcrumbMode sets the value of BreadcrumbMode.
+func (s *PageListItem) SetBreadcrumbMode(val OptString) {
+	s.BreadcrumbMode = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *PageListItem) SetAccessMode(val OptString) {
+	s.AccessMode = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PageListItem) SetPermissionKey(val OptString) {
+	s.PermissionKey = val
+}
+
+// SetInheritPermission sets the value of InheritPermission.
+func (s *PageListItem) SetInheritPermission(val OptBool) {
+	s.InheritPermission = val
+}
+
+// SetKeepAlive sets the value of KeepAlive.
+func (s *PageListItem) SetKeepAlive(val OptBool) {
+	s.KeepAlive = val
+}
+
+// SetIsFullPage sets the value of IsFullPage.
+func (s *PageListItem) SetIsFullPage(val OptBool) {
+	s.IsFullPage = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PageListItem) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *PageListItem) SetMeta(val OptPageListItemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PageListItem) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *PageListItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+type PageListItemMeta map[string]jx.Raw
+
+func (s *PageListItemMeta) init() PageListItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/PageListResponse
+type PageListResponse struct {
+	Records []PageListResponseRecordsItem `json:"records"`
+	Total   int                           `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PageListResponse) GetRecords() []PageListResponseRecordsItem {
 	return s.Records
 }
 
@@ -4123,7 +10338,7 @@ func (s *PageListResponse) GetTotal() int {
 }
 
 // SetRecords sets the value of Records.
-func (s *PageListResponse) SetRecords(val []AnyObject) {
+func (s *PageListResponse) SetRecords(val []PageListResponseRecordsItem) {
 	s.Records = val
 }
 
@@ -4132,55 +10347,66 @@ func (s *PageListResponse) SetTotal(val int) {
 	s.Total = val
 }
 
+type PageListResponseRecordsItem map[string]jx.Raw
+
+func (s *PageListResponseRecordsItem) init() PageListResponseRecordsItem {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
 // Ref: #/components/schemas/PageSaveRequest
 type PageSaveRequest struct {
-	PageKey           OptString    `json:"page_key"`
-	Name              OptString    `json:"name"`
-	RouteName         OptString    `json:"route_name"`
-	RoutePath         OptString    `json:"route_path"`
-	Component         OptString    `json:"component"`
-	SpaceKeys         []string     `json:"space_keys"`
-	PageType          OptString    `json:"page_type"`
-	VisibilityScope   OptString    `json:"visibility_scope"`
-	Source            OptString    `json:"source"`
-	ModuleKey         OptString    `json:"module_key"`
-	SortOrder         OptInt       `json:"sort_order"`
-	ParentMenuID      OptString    `json:"parent_menu_id"`
-	ParentPageKey     OptString    `json:"parent_page_key"`
-	DisplayGroupKey   OptString    `json:"display_group_key"`
-	ActiveMenuPath    OptString    `json:"active_menu_path"`
-	BreadcrumbMode    OptString    `json:"breadcrumb_mode"`
-	AccessMode        OptString    `json:"access_mode"`
-	PermissionKey     OptString    `json:"permission_key"`
-	InheritPermission OptBool      `json:"inherit_permission"`
-	KeepAlive         OptBool      `json:"keep_alive"`
-	IsFullPage        OptBool      `json:"is_full_page"`
-	Meta              OptAnyObject `json:"meta"`
-	Status            OptString    `json:"status"`
+	PageKey           string                 `json:"page_key"`
+	Name              string                 `json:"name"`
+	RouteName         string                 `json:"route_name"`
+	RoutePath         string                 `json:"route_path"`
+	Component         string                 `json:"component"`
+	SpaceKeys         []string               `json:"space_keys"`
+	PageType          OptString              `json:"page_type"`
+	VisibilityScope   OptString              `json:"visibility_scope"`
+	Source            OptString              `json:"source"`
+	ModuleKey         OptString              `json:"module_key"`
+	SortOrder         OptInt                 `json:"sort_order"`
+	ParentMenuID      OptString              `json:"parent_menu_id"`
+	ParentPageKey     OptString              `json:"parent_page_key"`
+	DisplayGroupKey   OptString              `json:"display_group_key"`
+	ActiveMenuPath    OptString              `json:"active_menu_path"`
+	BreadcrumbMode    OptString              `json:"breadcrumb_mode"`
+	AccessMode        OptString              `json:"access_mode"`
+	PermissionKey     OptString              `json:"permission_key"`
+	InheritPermission OptBool                `json:"inherit_permission"`
+	KeepAlive         OptBool                `json:"keep_alive"`
+	IsFullPage        OptBool                `json:"is_full_page"`
+	Meta              OptPageSaveRequestMeta `json:"meta"`
+	Status            OptString              `json:"status"`
 }
 
 // GetPageKey returns the value of PageKey.
-func (s *PageSaveRequest) GetPageKey() OptString {
+func (s *PageSaveRequest) GetPageKey() string {
 	return s.PageKey
 }
 
 // GetName returns the value of Name.
-func (s *PageSaveRequest) GetName() OptString {
+func (s *PageSaveRequest) GetName() string {
 	return s.Name
 }
 
 // GetRouteName returns the value of RouteName.
-func (s *PageSaveRequest) GetRouteName() OptString {
+func (s *PageSaveRequest) GetRouteName() string {
 	return s.RouteName
 }
 
 // GetRoutePath returns the value of RoutePath.
-func (s *PageSaveRequest) GetRoutePath() OptString {
+func (s *PageSaveRequest) GetRoutePath() string {
 	return s.RoutePath
 }
 
 // GetComponent returns the value of Component.
-func (s *PageSaveRequest) GetComponent() OptString {
+func (s *PageSaveRequest) GetComponent() string {
 	return s.Component
 }
 
@@ -4265,7 +10491,7 @@ func (s *PageSaveRequest) GetIsFullPage() OptBool {
 }
 
 // GetMeta returns the value of Meta.
-func (s *PageSaveRequest) GetMeta() OptAnyObject {
+func (s *PageSaveRequest) GetMeta() OptPageSaveRequestMeta {
 	return s.Meta
 }
 
@@ -4275,27 +10501,27 @@ func (s *PageSaveRequest) GetStatus() OptString {
 }
 
 // SetPageKey sets the value of PageKey.
-func (s *PageSaveRequest) SetPageKey(val OptString) {
+func (s *PageSaveRequest) SetPageKey(val string) {
 	s.PageKey = val
 }
 
 // SetName sets the value of Name.
-func (s *PageSaveRequest) SetName(val OptString) {
+func (s *PageSaveRequest) SetName(val string) {
 	s.Name = val
 }
 
 // SetRouteName sets the value of RouteName.
-func (s *PageSaveRequest) SetRouteName(val OptString) {
+func (s *PageSaveRequest) SetRouteName(val string) {
 	s.RouteName = val
 }
 
 // SetRoutePath sets the value of RoutePath.
-func (s *PageSaveRequest) SetRoutePath(val OptString) {
+func (s *PageSaveRequest) SetRoutePath(val string) {
 	s.RoutePath = val
 }
 
 // SetComponent sets the value of Component.
-func (s *PageSaveRequest) SetComponent(val OptString) {
+func (s *PageSaveRequest) SetComponent(val string) {
 	s.Component = val
 }
 
@@ -4380,13 +10606,380 @@ func (s *PageSaveRequest) SetIsFullPage(val OptBool) {
 }
 
 // SetMeta sets the value of Meta.
-func (s *PageSaveRequest) SetMeta(val OptAnyObject) {
+func (s *PageSaveRequest) SetMeta(val OptPageSaveRequestMeta) {
 	s.Meta = val
 }
 
 // SetStatus sets the value of Status.
 func (s *PageSaveRequest) SetStatus(val OptString) {
 	s.Status = val
+}
+
+type PageSaveRequestMeta map[string]jx.Raw
+
+func (s *PageSaveRequestMeta) init() PageSaveRequestMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/PageSaveResult
+type PageSaveResult struct {
+	ID                uuid.UUID          `json:"id"`
+	AppKey            string             `json:"app_key"`
+	PageKey           string             `json:"page_key"`
+	Name              string             `json:"name"`
+	RouteName         string             `json:"route_name"`
+	RoutePath         string             `json:"route_path"`
+	Component         string             `json:"component"`
+	SpaceKey          string             `json:"space_key"`
+	SpaceKeys         []string           `json:"space_keys"`
+	PageType          string             `json:"page_type"`
+	VisibilityScope   string             `json:"visibility_scope"`
+	Source            string             `json:"source"`
+	ModuleKey         string             `json:"module_key"`
+	SortOrder         int                `json:"sort_order"`
+	ParentMenuID      OptUUID            `json:"parent_menu_id"`
+	ParentMenuName    OptString          `json:"parent_menu_name"`
+	ParentPageKey     string             `json:"parent_page_key"`
+	ParentPageName    OptString          `json:"parent_page_name"`
+	DisplayGroupKey   string             `json:"display_group_key"`
+	DisplayGroupName  OptString          `json:"display_group_name"`
+	ActiveMenuPath    string             `json:"active_menu_path"`
+	BreadcrumbMode    string             `json:"breadcrumb_mode"`
+	AccessMode        string             `json:"access_mode"`
+	PermissionKey     string             `json:"permission_key"`
+	InheritPermission bool               `json:"inherit_permission"`
+	KeepAlive         bool               `json:"keep_alive"`
+	IsFullPage        bool               `json:"is_full_page"`
+	Status            string             `json:"status"`
+	Meta              PageSaveResultMeta `json:"meta"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *PageSaveResult) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *PageSaveResult) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetPageKey returns the value of PageKey.
+func (s *PageSaveResult) GetPageKey() string {
+	return s.PageKey
+}
+
+// GetName returns the value of Name.
+func (s *PageSaveResult) GetName() string {
+	return s.Name
+}
+
+// GetRouteName returns the value of RouteName.
+func (s *PageSaveResult) GetRouteName() string {
+	return s.RouteName
+}
+
+// GetRoutePath returns the value of RoutePath.
+func (s *PageSaveResult) GetRoutePath() string {
+	return s.RoutePath
+}
+
+// GetComponent returns the value of Component.
+func (s *PageSaveResult) GetComponent() string {
+	return s.Component
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *PageSaveResult) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetSpaceKeys returns the value of SpaceKeys.
+func (s *PageSaveResult) GetSpaceKeys() []string {
+	return s.SpaceKeys
+}
+
+// GetPageType returns the value of PageType.
+func (s *PageSaveResult) GetPageType() string {
+	return s.PageType
+}
+
+// GetVisibilityScope returns the value of VisibilityScope.
+func (s *PageSaveResult) GetVisibilityScope() string {
+	return s.VisibilityScope
+}
+
+// GetSource returns the value of Source.
+func (s *PageSaveResult) GetSource() string {
+	return s.Source
+}
+
+// GetModuleKey returns the value of ModuleKey.
+func (s *PageSaveResult) GetModuleKey() string {
+	return s.ModuleKey
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PageSaveResult) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetParentMenuID returns the value of ParentMenuID.
+func (s *PageSaveResult) GetParentMenuID() OptUUID {
+	return s.ParentMenuID
+}
+
+// GetParentMenuName returns the value of ParentMenuName.
+func (s *PageSaveResult) GetParentMenuName() OptString {
+	return s.ParentMenuName
+}
+
+// GetParentPageKey returns the value of ParentPageKey.
+func (s *PageSaveResult) GetParentPageKey() string {
+	return s.ParentPageKey
+}
+
+// GetParentPageName returns the value of ParentPageName.
+func (s *PageSaveResult) GetParentPageName() OptString {
+	return s.ParentPageName
+}
+
+// GetDisplayGroupKey returns the value of DisplayGroupKey.
+func (s *PageSaveResult) GetDisplayGroupKey() string {
+	return s.DisplayGroupKey
+}
+
+// GetDisplayGroupName returns the value of DisplayGroupName.
+func (s *PageSaveResult) GetDisplayGroupName() OptString {
+	return s.DisplayGroupName
+}
+
+// GetActiveMenuPath returns the value of ActiveMenuPath.
+func (s *PageSaveResult) GetActiveMenuPath() string {
+	return s.ActiveMenuPath
+}
+
+// GetBreadcrumbMode returns the value of BreadcrumbMode.
+func (s *PageSaveResult) GetBreadcrumbMode() string {
+	return s.BreadcrumbMode
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *PageSaveResult) GetAccessMode() string {
+	return s.AccessMode
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PageSaveResult) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetInheritPermission returns the value of InheritPermission.
+func (s *PageSaveResult) GetInheritPermission() bool {
+	return s.InheritPermission
+}
+
+// GetKeepAlive returns the value of KeepAlive.
+func (s *PageSaveResult) GetKeepAlive() bool {
+	return s.KeepAlive
+}
+
+// GetIsFullPage returns the value of IsFullPage.
+func (s *PageSaveResult) GetIsFullPage() bool {
+	return s.IsFullPage
+}
+
+// GetStatus returns the value of Status.
+func (s *PageSaveResult) GetStatus() string {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *PageSaveResult) GetMeta() PageSaveResultMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PageSaveResult) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *PageSaveResult) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *PageSaveResult) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *PageSaveResult) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetPageKey sets the value of PageKey.
+func (s *PageSaveResult) SetPageKey(val string) {
+	s.PageKey = val
+}
+
+// SetName sets the value of Name.
+func (s *PageSaveResult) SetName(val string) {
+	s.Name = val
+}
+
+// SetRouteName sets the value of RouteName.
+func (s *PageSaveResult) SetRouteName(val string) {
+	s.RouteName = val
+}
+
+// SetRoutePath sets the value of RoutePath.
+func (s *PageSaveResult) SetRoutePath(val string) {
+	s.RoutePath = val
+}
+
+// SetComponent sets the value of Component.
+func (s *PageSaveResult) SetComponent(val string) {
+	s.Component = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *PageSaveResult) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetSpaceKeys sets the value of SpaceKeys.
+func (s *PageSaveResult) SetSpaceKeys(val []string) {
+	s.SpaceKeys = val
+}
+
+// SetPageType sets the value of PageType.
+func (s *PageSaveResult) SetPageType(val string) {
+	s.PageType = val
+}
+
+// SetVisibilityScope sets the value of VisibilityScope.
+func (s *PageSaveResult) SetVisibilityScope(val string) {
+	s.VisibilityScope = val
+}
+
+// SetSource sets the value of Source.
+func (s *PageSaveResult) SetSource(val string) {
+	s.Source = val
+}
+
+// SetModuleKey sets the value of ModuleKey.
+func (s *PageSaveResult) SetModuleKey(val string) {
+	s.ModuleKey = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PageSaveResult) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetParentMenuID sets the value of ParentMenuID.
+func (s *PageSaveResult) SetParentMenuID(val OptUUID) {
+	s.ParentMenuID = val
+}
+
+// SetParentMenuName sets the value of ParentMenuName.
+func (s *PageSaveResult) SetParentMenuName(val OptString) {
+	s.ParentMenuName = val
+}
+
+// SetParentPageKey sets the value of ParentPageKey.
+func (s *PageSaveResult) SetParentPageKey(val string) {
+	s.ParentPageKey = val
+}
+
+// SetParentPageName sets the value of ParentPageName.
+func (s *PageSaveResult) SetParentPageName(val OptString) {
+	s.ParentPageName = val
+}
+
+// SetDisplayGroupKey sets the value of DisplayGroupKey.
+func (s *PageSaveResult) SetDisplayGroupKey(val string) {
+	s.DisplayGroupKey = val
+}
+
+// SetDisplayGroupName sets the value of DisplayGroupName.
+func (s *PageSaveResult) SetDisplayGroupName(val OptString) {
+	s.DisplayGroupName = val
+}
+
+// SetActiveMenuPath sets the value of ActiveMenuPath.
+func (s *PageSaveResult) SetActiveMenuPath(val string) {
+	s.ActiveMenuPath = val
+}
+
+// SetBreadcrumbMode sets the value of BreadcrumbMode.
+func (s *PageSaveResult) SetBreadcrumbMode(val string) {
+	s.BreadcrumbMode = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *PageSaveResult) SetAccessMode(val string) {
+	s.AccessMode = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PageSaveResult) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetInheritPermission sets the value of InheritPermission.
+func (s *PageSaveResult) SetInheritPermission(val bool) {
+	s.InheritPermission = val
+}
+
+// SetKeepAlive sets the value of KeepAlive.
+func (s *PageSaveResult) SetKeepAlive(val bool) {
+	s.KeepAlive = val
+}
+
+// SetIsFullPage sets the value of IsFullPage.
+func (s *PageSaveResult) SetIsFullPage(val bool) {
+	s.IsFullPage = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PageSaveResult) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *PageSaveResult) SetMeta(val PageSaveResultMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PageSaveResult) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *PageSaveResult) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+type PageSaveResultMeta map[string]jx.Raw
+
+func (s *PageSaveResultMeta) init() PageSaveResultMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Ref: #/components/schemas/PageSyncResult
@@ -4623,6 +11216,154 @@ func (s *PermissionActionBatchTemplateList) SetRecords(val []PermissionActionBat
 // SetTotal sets the value of Total.
 func (s *PermissionActionBatchTemplateList) SetTotal(val int64) {
 	s.Total = val
+}
+
+// Ref: #/components/schemas/PermissionActionBatchTemplateSaveRequest
+type PermissionActionBatchTemplateSaveRequest struct {
+	Name        string       `json:"name"`
+	Description OptString    `json:"description"`
+	Payload     OptAnyObject `json:"payload"`
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionBatchTemplateSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *PermissionActionBatchTemplateSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetPayload returns the value of Payload.
+func (s *PermissionActionBatchTemplateSaveRequest) GetPayload() OptAnyObject {
+	return s.Payload
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionBatchTemplateSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PermissionActionBatchTemplateSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetPayload sets the value of Payload.
+func (s *PermissionActionBatchTemplateSaveRequest) SetPayload(val OptAnyObject) {
+	s.Payload = val
+}
+
+// Ref: #/components/schemas/PermissionActionBatchUpdateRequest
+type PermissionActionBatchUpdateRequest struct {
+	Ids            []string  `json:"ids"`
+	Status         OptString `json:"status"`
+	ModuleGroupID  OptUUID   `json:"module_group_id"`
+	FeatureGroupID OptUUID   `json:"feature_group_id"`
+	TemplateName   OptString `json:"template_name"`
+}
+
+// GetIds returns the value of Ids.
+func (s *PermissionActionBatchUpdateRequest) GetIds() []string {
+	return s.Ids
+}
+
+// GetStatus returns the value of Status.
+func (s *PermissionActionBatchUpdateRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetModuleGroupID returns the value of ModuleGroupID.
+func (s *PermissionActionBatchUpdateRequest) GetModuleGroupID() OptUUID {
+	return s.ModuleGroupID
+}
+
+// GetFeatureGroupID returns the value of FeatureGroupID.
+func (s *PermissionActionBatchUpdateRequest) GetFeatureGroupID() OptUUID {
+	return s.FeatureGroupID
+}
+
+// GetTemplateName returns the value of TemplateName.
+func (s *PermissionActionBatchUpdateRequest) GetTemplateName() OptString {
+	return s.TemplateName
+}
+
+// SetIds sets the value of Ids.
+func (s *PermissionActionBatchUpdateRequest) SetIds(val []string) {
+	s.Ids = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PermissionActionBatchUpdateRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetModuleGroupID sets the value of ModuleGroupID.
+func (s *PermissionActionBatchUpdateRequest) SetModuleGroupID(val OptUUID) {
+	s.ModuleGroupID = val
+}
+
+// SetFeatureGroupID sets the value of FeatureGroupID.
+func (s *PermissionActionBatchUpdateRequest) SetFeatureGroupID(val OptUUID) {
+	s.FeatureGroupID = val
+}
+
+// SetTemplateName sets the value of TemplateName.
+func (s *PermissionActionBatchUpdateRequest) SetTemplateName(val OptString) {
+	s.TemplateName = val
+}
+
+// Ref: #/components/schemas/PermissionActionBatchUpdateResult
+type PermissionActionBatchUpdateResult struct {
+	UpdatedCount int64    `json:"updated_count"`
+	SkippedIds   []string `json:"skipped_ids"`
+}
+
+// GetUpdatedCount returns the value of UpdatedCount.
+func (s *PermissionActionBatchUpdateResult) GetUpdatedCount() int64 {
+	return s.UpdatedCount
+}
+
+// GetSkippedIds returns the value of SkippedIds.
+func (s *PermissionActionBatchUpdateResult) GetSkippedIds() []string {
+	return s.SkippedIds
+}
+
+// SetUpdatedCount sets the value of UpdatedCount.
+func (s *PermissionActionBatchUpdateResult) SetUpdatedCount(val int64) {
+	s.UpdatedCount = val
+}
+
+// SetSkippedIds sets the value of SkippedIds.
+func (s *PermissionActionBatchUpdateResult) SetSkippedIds(val []string) {
+	s.SkippedIds = val
+}
+
+// Ref: #/components/schemas/PermissionActionCleanupResult
+type PermissionActionCleanupResult struct {
+	DeletedCount int64    `json:"deleted_count"`
+	DeletedKeys  []string `json:"deleted_keys"`
+}
+
+// GetDeletedCount returns the value of DeletedCount.
+func (s *PermissionActionCleanupResult) GetDeletedCount() int64 {
+	return s.DeletedCount
+}
+
+// GetDeletedKeys returns the value of DeletedKeys.
+func (s *PermissionActionCleanupResult) GetDeletedKeys() []string {
+	return s.DeletedKeys
+}
+
+// SetDeletedCount sets the value of DeletedCount.
+func (s *PermissionActionCleanupResult) SetDeletedCount(val int64) {
+	s.DeletedCount = val
+}
+
+// SetDeletedKeys sets the value of DeletedKeys.
+func (s *PermissionActionCleanupResult) SetDeletedKeys(val []string) {
+	s.DeletedKeys = val
 }
 
 // Ref: #/components/schemas/PermissionActionConsumerAPIItem
@@ -4979,6 +11720,227 @@ func (s *PermissionActionDetail) SetCreatedAt(val OptNilString) {
 	s.CreatedAt = val
 }
 
+// Ref: #/components/schemas/PermissionActionEndpointAddRequest
+type PermissionActionEndpointAddRequest struct {
+	EndpointCode string `json:"endpoint_code"`
+}
+
+// GetEndpointCode returns the value of EndpointCode.
+func (s *PermissionActionEndpointAddRequest) GetEndpointCode() string {
+	return s.EndpointCode
+}
+
+// SetEndpointCode sets the value of EndpointCode.
+func (s *PermissionActionEndpointAddRequest) SetEndpointCode(val string) {
+	s.EndpointCode = val
+}
+
+// Ref: #/components/schemas/PermissionActionEndpointList
+type PermissionActionEndpointList struct {
+	Records []PermissionActionEndpointListItem `json:"records"`
+	Total   int64                              `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PermissionActionEndpointList) GetRecords() []PermissionActionEndpointListItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PermissionActionEndpointList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PermissionActionEndpointList) SetRecords(val []PermissionActionEndpointListItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PermissionActionEndpointList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/PermissionActionEndpointListItem
+type PermissionActionEndpointListItem struct {
+	ID                    uuid.UUID    `json:"id"`
+	Code                  string       `json:"code"`
+	Method                string       `json:"method"`
+	Path                  string       `json:"path"`
+	Handler               string       `json:"handler"`
+	Summary               string       `json:"summary"`
+	AccessMode            string       `json:"access_mode"`
+	PermissionKey         OptString    `json:"permission_key"`
+	PermissionKeys        []string     `json:"permission_keys"`
+	PermissionContexts    []string     `json:"permission_contexts"`
+	PermissionBindingMode OptString    `json:"permission_binding_mode"`
+	SharedAcrossContexts  OptBool      `json:"shared_across_contexts"`
+	PermissionNote        OptString    `json:"permission_note"`
+	AuthMode              OptString    `json:"auth_mode"`
+	CategoryID            OptUUID      `json:"category_id"`
+	Category              OptAnyObject `json:"category"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionActionEndpointListItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *PermissionActionEndpointListItem) GetCode() string {
+	return s.Code
+}
+
+// GetMethod returns the value of Method.
+func (s *PermissionActionEndpointListItem) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *PermissionActionEndpointListItem) GetPath() string {
+	return s.Path
+}
+
+// GetHandler returns the value of Handler.
+func (s *PermissionActionEndpointListItem) GetHandler() string {
+	return s.Handler
+}
+
+// GetSummary returns the value of Summary.
+func (s *PermissionActionEndpointListItem) GetSummary() string {
+	return s.Summary
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *PermissionActionEndpointListItem) GetAccessMode() string {
+	return s.AccessMode
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PermissionActionEndpointListItem) GetPermissionKey() OptString {
+	return s.PermissionKey
+}
+
+// GetPermissionKeys returns the value of PermissionKeys.
+func (s *PermissionActionEndpointListItem) GetPermissionKeys() []string {
+	return s.PermissionKeys
+}
+
+// GetPermissionContexts returns the value of PermissionContexts.
+func (s *PermissionActionEndpointListItem) GetPermissionContexts() []string {
+	return s.PermissionContexts
+}
+
+// GetPermissionBindingMode returns the value of PermissionBindingMode.
+func (s *PermissionActionEndpointListItem) GetPermissionBindingMode() OptString {
+	return s.PermissionBindingMode
+}
+
+// GetSharedAcrossContexts returns the value of SharedAcrossContexts.
+func (s *PermissionActionEndpointListItem) GetSharedAcrossContexts() OptBool {
+	return s.SharedAcrossContexts
+}
+
+// GetPermissionNote returns the value of PermissionNote.
+func (s *PermissionActionEndpointListItem) GetPermissionNote() OptString {
+	return s.PermissionNote
+}
+
+// GetAuthMode returns the value of AuthMode.
+func (s *PermissionActionEndpointListItem) GetAuthMode() OptString {
+	return s.AuthMode
+}
+
+// GetCategoryID returns the value of CategoryID.
+func (s *PermissionActionEndpointListItem) GetCategoryID() OptUUID {
+	return s.CategoryID
+}
+
+// GetCategory returns the value of Category.
+func (s *PermissionActionEndpointListItem) GetCategory() OptAnyObject {
+	return s.Category
+}
+
+// SetID sets the value of ID.
+func (s *PermissionActionEndpointListItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *PermissionActionEndpointListItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMethod sets the value of Method.
+func (s *PermissionActionEndpointListItem) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *PermissionActionEndpointListItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetHandler sets the value of Handler.
+func (s *PermissionActionEndpointListItem) SetHandler(val string) {
+	s.Handler = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *PermissionActionEndpointListItem) SetSummary(val string) {
+	s.Summary = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *PermissionActionEndpointListItem) SetAccessMode(val string) {
+	s.AccessMode = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PermissionActionEndpointListItem) SetPermissionKey(val OptString) {
+	s.PermissionKey = val
+}
+
+// SetPermissionKeys sets the value of PermissionKeys.
+func (s *PermissionActionEndpointListItem) SetPermissionKeys(val []string) {
+	s.PermissionKeys = val
+}
+
+// SetPermissionContexts sets the value of PermissionContexts.
+func (s *PermissionActionEndpointListItem) SetPermissionContexts(val []string) {
+	s.PermissionContexts = val
+}
+
+// SetPermissionBindingMode sets the value of PermissionBindingMode.
+func (s *PermissionActionEndpointListItem) SetPermissionBindingMode(val OptString) {
+	s.PermissionBindingMode = val
+}
+
+// SetSharedAcrossContexts sets the value of SharedAcrossContexts.
+func (s *PermissionActionEndpointListItem) SetSharedAcrossContexts(val OptBool) {
+	s.SharedAcrossContexts = val
+}
+
+// SetPermissionNote sets the value of PermissionNote.
+func (s *PermissionActionEndpointListItem) SetPermissionNote(val OptString) {
+	s.PermissionNote = val
+}
+
+// SetAuthMode sets the value of AuthMode.
+func (s *PermissionActionEndpointListItem) SetAuthMode(val OptString) {
+	s.AuthMode = val
+}
+
+// SetCategoryID sets the value of CategoryID.
+func (s *PermissionActionEndpointListItem) SetCategoryID(val OptUUID) {
+	s.CategoryID = val
+}
+
+// SetCategory sets the value of Category.
+func (s *PermissionActionEndpointListItem) SetCategory(val OptAnyObject) {
+	s.Category = val
+}
+
 // Ref: #/components/schemas/PermissionActionGroupList
 type PermissionActionGroupList struct {
 	Records []PermissionGroupItem `json:"records"`
@@ -5003,6 +11965,87 @@ func (s *PermissionActionGroupList) SetRecords(val []PermissionGroupItem) {
 // SetTotal sets the value of Total.
 func (s *PermissionActionGroupList) SetTotal(val int64) {
 	s.Total = val
+}
+
+// Ref: #/components/schemas/PermissionActionGroupSaveRequest
+type PermissionActionGroupSaveRequest struct {
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	NameEn      OptString `json:"name_en"`
+	Description OptString `json:"description"`
+	GroupType   string    `json:"group_type"`
+	Status      OptString `json:"status"`
+	SortOrder   OptInt    `json:"sort_order"`
+}
+
+// GetCode returns the value of Code.
+func (s *PermissionActionGroupSaveRequest) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionGroupSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetNameEn returns the value of NameEn.
+func (s *PermissionActionGroupSaveRequest) GetNameEn() OptString {
+	return s.NameEn
+}
+
+// GetDescription returns the value of Description.
+func (s *PermissionActionGroupSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetGroupType returns the value of GroupType.
+func (s *PermissionActionGroupSaveRequest) GetGroupType() string {
+	return s.GroupType
+}
+
+// GetStatus returns the value of Status.
+func (s *PermissionActionGroupSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PermissionActionGroupSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// SetCode sets the value of Code.
+func (s *PermissionActionGroupSaveRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionGroupSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetNameEn sets the value of NameEn.
+func (s *PermissionActionGroupSaveRequest) SetNameEn(val OptString) {
+	s.NameEn = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PermissionActionGroupSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetGroupType sets the value of GroupType.
+func (s *PermissionActionGroupSaveRequest) SetGroupType(val string) {
+	s.GroupType = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PermissionActionGroupSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PermissionActionGroupSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
 }
 
 // Ref: #/components/schemas/PermissionActionImpactPreview
@@ -5774,6 +12817,87 @@ func (s *PermissionGroupItem) SetCreatedAt(val time.Time) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *PermissionGroupItem) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/RefreshStats
+type RefreshStats struct {
+	RequestedPackageCount       int64     `json:"requested_package_count"`
+	ImpactedPackageCount        int64     `json:"impacted_package_count"`
+	RoleCount                   int64     `json:"role_count"`
+	CollaborationWorkspaceCount int64     `json:"collaboration_workspace_count"`
+	UserCount                   int64     `json:"user_count"`
+	ElapsedMilliseconds         int64     `json:"elapsed_milliseconds"`
+	FinishedAt                  time.Time `json:"finished_at"`
+}
+
+// GetRequestedPackageCount returns the value of RequestedPackageCount.
+func (s *RefreshStats) GetRequestedPackageCount() int64 {
+	return s.RequestedPackageCount
+}
+
+// GetImpactedPackageCount returns the value of ImpactedPackageCount.
+func (s *RefreshStats) GetImpactedPackageCount() int64 {
+	return s.ImpactedPackageCount
+}
+
+// GetRoleCount returns the value of RoleCount.
+func (s *RefreshStats) GetRoleCount() int64 {
+	return s.RoleCount
+}
+
+// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
+func (s *RefreshStats) GetCollaborationWorkspaceCount() int64 {
+	return s.CollaborationWorkspaceCount
+}
+
+// GetUserCount returns the value of UserCount.
+func (s *RefreshStats) GetUserCount() int64 {
+	return s.UserCount
+}
+
+// GetElapsedMilliseconds returns the value of ElapsedMilliseconds.
+func (s *RefreshStats) GetElapsedMilliseconds() int64 {
+	return s.ElapsedMilliseconds
+}
+
+// GetFinishedAt returns the value of FinishedAt.
+func (s *RefreshStats) GetFinishedAt() time.Time {
+	return s.FinishedAt
+}
+
+// SetRequestedPackageCount sets the value of RequestedPackageCount.
+func (s *RefreshStats) SetRequestedPackageCount(val int64) {
+	s.RequestedPackageCount = val
+}
+
+// SetImpactedPackageCount sets the value of ImpactedPackageCount.
+func (s *RefreshStats) SetImpactedPackageCount(val int64) {
+	s.ImpactedPackageCount = val
+}
+
+// SetRoleCount sets the value of RoleCount.
+func (s *RefreshStats) SetRoleCount(val int64) {
+	s.RoleCount = val
+}
+
+// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
+func (s *RefreshStats) SetCollaborationWorkspaceCount(val int64) {
+	s.CollaborationWorkspaceCount = val
+}
+
+// SetUserCount sets the value of UserCount.
+func (s *RefreshStats) SetUserCount(val int64) {
+	s.UserCount = val
+}
+
+// SetElapsedMilliseconds sets the value of ElapsedMilliseconds.
+func (s *RefreshStats) SetElapsedMilliseconds(val int64) {
+	s.ElapsedMilliseconds = val
+}
+
+// SetFinishedAt sets the value of FinishedAt.
+func (s *RefreshStats) SetFinishedAt(val time.Time) {
+	s.FinishedAt = val
 }
 
 // Ref: #/components/schemas/RefreshTokenRequest
@@ -7920,30 +15044,1989 @@ type SyncApiEndpointsUnauthorized Error
 
 func (*SyncApiEndpointsUnauthorized) syncApiEndpointsRes() {}
 
-// Ref: #/components/schemas/SystemListResponse
-type SystemListResponse struct {
-	Records []AnyObject `json:"records"`
-	Total   int         `json:"total"`
+// Ref: #/components/schemas/SystemAppHostBindingItem
+type SystemAppHostBindingItem struct {
+	ID              uuid.UUID  `json:"id"`
+	AppKey          string     `json:"app_key"`
+	AppName         string     `json:"app_name"`
+	MatchType       string     `json:"match_type"`
+	Host            string     `json:"host"`
+	PathPattern     string     `json:"path_pattern"`
+	Priority        int64      `json:"priority"`
+	Description     string     `json:"description"`
+	IsPrimary       bool       `json:"is_primary"`
+	DefaultSpaceKey string     `json:"default_space_key"`
+	Status          string     `json:"status"`
+	Meta            SystemMeta `json:"meta"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemAppHostBindingItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemAppHostBindingItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetAppName returns the value of AppName.
+func (s *SystemAppHostBindingItem) GetAppName() string {
+	return s.AppName
+}
+
+// GetMatchType returns the value of MatchType.
+func (s *SystemAppHostBindingItem) GetMatchType() string {
+	return s.MatchType
+}
+
+// GetHost returns the value of Host.
+func (s *SystemAppHostBindingItem) GetHost() string {
+	return s.Host
+}
+
+// GetPathPattern returns the value of PathPattern.
+func (s *SystemAppHostBindingItem) GetPathPattern() string {
+	return s.PathPattern
+}
+
+// GetPriority returns the value of Priority.
+func (s *SystemAppHostBindingItem) GetPriority() int64 {
+	return s.Priority
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemAppHostBindingItem) GetDescription() string {
+	return s.Description
+}
+
+// GetIsPrimary returns the value of IsPrimary.
+func (s *SystemAppHostBindingItem) GetIsPrimary() bool {
+	return s.IsPrimary
+}
+
+// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
+func (s *SystemAppHostBindingItem) GetDefaultSpaceKey() string {
+	return s.DefaultSpaceKey
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemAppHostBindingItem) GetStatus() string {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemAppHostBindingItem) GetMeta() SystemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SystemAppHostBindingItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SystemAppHostBindingItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SystemAppHostBindingItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemAppHostBindingItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetAppName sets the value of AppName.
+func (s *SystemAppHostBindingItem) SetAppName(val string) {
+	s.AppName = val
+}
+
+// SetMatchType sets the value of MatchType.
+func (s *SystemAppHostBindingItem) SetMatchType(val string) {
+	s.MatchType = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemAppHostBindingItem) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPathPattern sets the value of PathPattern.
+func (s *SystemAppHostBindingItem) SetPathPattern(val string) {
+	s.PathPattern = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *SystemAppHostBindingItem) SetPriority(val int64) {
+	s.Priority = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemAppHostBindingItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetIsPrimary sets the value of IsPrimary.
+func (s *SystemAppHostBindingItem) SetIsPrimary(val bool) {
+	s.IsPrimary = val
+}
+
+// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
+func (s *SystemAppHostBindingItem) SetDefaultSpaceKey(val string) {
+	s.DefaultSpaceKey = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemAppHostBindingItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemAppHostBindingItem) SetMeta(val SystemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SystemAppHostBindingItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SystemAppHostBindingItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/SystemAppHostBindingListResponse
+type SystemAppHostBindingListResponse struct {
+	Records []SystemAppHostBindingItem `json:"records"`
+	Total   int64                      `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *SystemListResponse) GetRecords() []AnyObject {
+func (s *SystemAppHostBindingListResponse) GetRecords() []SystemAppHostBindingItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *SystemListResponse) GetTotal() int {
+func (s *SystemAppHostBindingListResponse) GetTotal() int64 {
 	return s.Total
 }
 
 // SetRecords sets the value of Records.
-func (s *SystemListResponse) SetRecords(val []AnyObject) {
+func (s *SystemAppHostBindingListResponse) SetRecords(val []SystemAppHostBindingItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *SystemListResponse) SetTotal(val int) {
+func (s *SystemAppHostBindingListResponse) SetTotal(val int64) {
 	s.Total = val
+}
+
+// Ref: #/components/schemas/SystemAppHostBindingSaveRequest
+type SystemAppHostBindingSaveRequest struct {
+	ID              OptString     `json:"id"`
+	AppKey          string        `json:"app_key"`
+	MatchType       OptString     `json:"match_type"`
+	Host            string        `json:"host"`
+	PathPattern     OptString     `json:"path_pattern"`
+	Priority        OptInt        `json:"priority"`
+	Description     OptString     `json:"description"`
+	IsPrimary       OptBool       `json:"is_primary"`
+	DefaultSpaceKey OptString     `json:"default_space_key"`
+	Status          OptString     `json:"status"`
+	Meta            OptSystemMeta `json:"meta"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemAppHostBindingSaveRequest) GetID() OptString {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemAppHostBindingSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetMatchType returns the value of MatchType.
+func (s *SystemAppHostBindingSaveRequest) GetMatchType() OptString {
+	return s.MatchType
+}
+
+// GetHost returns the value of Host.
+func (s *SystemAppHostBindingSaveRequest) GetHost() string {
+	return s.Host
+}
+
+// GetPathPattern returns the value of PathPattern.
+func (s *SystemAppHostBindingSaveRequest) GetPathPattern() OptString {
+	return s.PathPattern
+}
+
+// GetPriority returns the value of Priority.
+func (s *SystemAppHostBindingSaveRequest) GetPriority() OptInt {
+	return s.Priority
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemAppHostBindingSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetIsPrimary returns the value of IsPrimary.
+func (s *SystemAppHostBindingSaveRequest) GetIsPrimary() OptBool {
+	return s.IsPrimary
+}
+
+// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
+func (s *SystemAppHostBindingSaveRequest) GetDefaultSpaceKey() OptString {
+	return s.DefaultSpaceKey
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemAppHostBindingSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemAppHostBindingSaveRequest) GetMeta() OptSystemMeta {
+	return s.Meta
+}
+
+// SetID sets the value of ID.
+func (s *SystemAppHostBindingSaveRequest) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemAppHostBindingSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetMatchType sets the value of MatchType.
+func (s *SystemAppHostBindingSaveRequest) SetMatchType(val OptString) {
+	s.MatchType = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemAppHostBindingSaveRequest) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPathPattern sets the value of PathPattern.
+func (s *SystemAppHostBindingSaveRequest) SetPathPattern(val OptString) {
+	s.PathPattern = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *SystemAppHostBindingSaveRequest) SetPriority(val OptInt) {
+	s.Priority = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemAppHostBindingSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetIsPrimary sets the value of IsPrimary.
+func (s *SystemAppHostBindingSaveRequest) SetIsPrimary(val OptBool) {
+	s.IsPrimary = val
+}
+
+// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
+func (s *SystemAppHostBindingSaveRequest) SetDefaultSpaceKey(val OptString) {
+	s.DefaultSpaceKey = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemAppHostBindingSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemAppHostBindingSaveRequest) SetMeta(val OptSystemMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/SystemAppItem
+type SystemAppItem struct {
+	ID              uuid.UUID  `json:"id"`
+	AppKey          string     `json:"app_key"`
+	Name            string     `json:"name"`
+	Description     string     `json:"description"`
+	DefaultSpaceKey string     `json:"default_space_key"`
+	SpaceMode       string     `json:"space_mode"`
+	AuthMode        OptString  `json:"auth_mode"`
+	IsDefault       bool       `json:"is_default"`
+	Status          string     `json:"status"`
+	HostCount       int64      `json:"host_count"`
+	SpaceCount      int64      `json:"space_count"`
+	MenuCount       int64      `json:"menu_count"`
+	PageCount       int64      `json:"page_count"`
+	PrimaryHosts    []string   `json:"primary_hosts"`
+	Meta            SystemMeta `json:"meta"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemAppItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemAppItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetName returns the value of Name.
+func (s *SystemAppItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemAppItem) GetDescription() string {
+	return s.Description
+}
+
+// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
+func (s *SystemAppItem) GetDefaultSpaceKey() string {
+	return s.DefaultSpaceKey
+}
+
+// GetSpaceMode returns the value of SpaceMode.
+func (s *SystemAppItem) GetSpaceMode() string {
+	return s.SpaceMode
+}
+
+// GetAuthMode returns the value of AuthMode.
+func (s *SystemAppItem) GetAuthMode() OptString {
+	return s.AuthMode
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemAppItem) GetIsDefault() bool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemAppItem) GetStatus() string {
+	return s.Status
+}
+
+// GetHostCount returns the value of HostCount.
+func (s *SystemAppItem) GetHostCount() int64 {
+	return s.HostCount
+}
+
+// GetSpaceCount returns the value of SpaceCount.
+func (s *SystemAppItem) GetSpaceCount() int64 {
+	return s.SpaceCount
+}
+
+// GetMenuCount returns the value of MenuCount.
+func (s *SystemAppItem) GetMenuCount() int64 {
+	return s.MenuCount
+}
+
+// GetPageCount returns the value of PageCount.
+func (s *SystemAppItem) GetPageCount() int64 {
+	return s.PageCount
+}
+
+// GetPrimaryHosts returns the value of PrimaryHosts.
+func (s *SystemAppItem) GetPrimaryHosts() []string {
+	return s.PrimaryHosts
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemAppItem) GetMeta() SystemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SystemAppItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SystemAppItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SystemAppItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemAppItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemAppItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemAppItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
+func (s *SystemAppItem) SetDefaultSpaceKey(val string) {
+	s.DefaultSpaceKey = val
+}
+
+// SetSpaceMode sets the value of SpaceMode.
+func (s *SystemAppItem) SetSpaceMode(val string) {
+	s.SpaceMode = val
+}
+
+// SetAuthMode sets the value of AuthMode.
+func (s *SystemAppItem) SetAuthMode(val OptString) {
+	s.AuthMode = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemAppItem) SetIsDefault(val bool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemAppItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetHostCount sets the value of HostCount.
+func (s *SystemAppItem) SetHostCount(val int64) {
+	s.HostCount = val
+}
+
+// SetSpaceCount sets the value of SpaceCount.
+func (s *SystemAppItem) SetSpaceCount(val int64) {
+	s.SpaceCount = val
+}
+
+// SetMenuCount sets the value of MenuCount.
+func (s *SystemAppItem) SetMenuCount(val int64) {
+	s.MenuCount = val
+}
+
+// SetPageCount sets the value of PageCount.
+func (s *SystemAppItem) SetPageCount(val int64) {
+	s.PageCount = val
+}
+
+// SetPrimaryHosts sets the value of PrimaryHosts.
+func (s *SystemAppItem) SetPrimaryHosts(val []string) {
+	s.PrimaryHosts = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemAppItem) SetMeta(val SystemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SystemAppItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SystemAppItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/SystemAppListResponse
+type SystemAppListResponse struct {
+	Records []SystemAppItem `json:"records"`
+	Total   int64           `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SystemAppListResponse) GetRecords() []SystemAppItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SystemAppListResponse) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SystemAppListResponse) SetRecords(val []SystemAppItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SystemAppListResponse) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/SystemAppSaveRequest
+type SystemAppSaveRequest struct {
+	AppKey          string        `json:"app_key"`
+	Name            string        `json:"name"`
+	Description     OptString     `json:"description"`
+	SpaceMode       OptString     `json:"space_mode"`
+	DefaultSpaceKey OptString     `json:"default_space_key"`
+	AuthMode        OptString     `json:"auth_mode"`
+	Status          OptString     `json:"status"`
+	IsDefault       OptBool       `json:"is_default"`
+	Meta            OptSystemMeta `json:"meta"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemAppSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetName returns the value of Name.
+func (s *SystemAppSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemAppSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSpaceMode returns the value of SpaceMode.
+func (s *SystemAppSaveRequest) GetSpaceMode() OptString {
+	return s.SpaceMode
+}
+
+// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
+func (s *SystemAppSaveRequest) GetDefaultSpaceKey() OptString {
+	return s.DefaultSpaceKey
+}
+
+// GetAuthMode returns the value of AuthMode.
+func (s *SystemAppSaveRequest) GetAuthMode() OptString {
+	return s.AuthMode
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemAppSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemAppSaveRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemAppSaveRequest) GetMeta() OptSystemMeta {
+	return s.Meta
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemAppSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemAppSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemAppSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSpaceMode sets the value of SpaceMode.
+func (s *SystemAppSaveRequest) SetSpaceMode(val OptString) {
+	s.SpaceMode = val
+}
+
+// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
+func (s *SystemAppSaveRequest) SetDefaultSpaceKey(val OptString) {
+	s.DefaultSpaceKey = val
+}
+
+// SetAuthMode sets the value of AuthMode.
+func (s *SystemAppSaveRequest) SetAuthMode(val OptString) {
+	s.AuthMode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemAppSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemAppSaveRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemAppSaveRequest) SetMeta(val OptSystemMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/SystemCurrentAppResponse
+type SystemCurrentAppResponse struct {
+	App         SystemAppItem               `json:"app"`
+	Binding     OptSystemAppHostBindingItem `json:"binding"`
+	ResolvedBy  string                      `json:"resolved_by"`
+	RequestHost string                      `json:"request_host"`
+}
+
+// GetApp returns the value of App.
+func (s *SystemCurrentAppResponse) GetApp() SystemAppItem {
+	return s.App
+}
+
+// GetBinding returns the value of Binding.
+func (s *SystemCurrentAppResponse) GetBinding() OptSystemAppHostBindingItem {
+	return s.Binding
+}
+
+// GetResolvedBy returns the value of ResolvedBy.
+func (s *SystemCurrentAppResponse) GetResolvedBy() string {
+	return s.ResolvedBy
+}
+
+// GetRequestHost returns the value of RequestHost.
+func (s *SystemCurrentAppResponse) GetRequestHost() string {
+	return s.RequestHost
+}
+
+// SetApp sets the value of App.
+func (s *SystemCurrentAppResponse) SetApp(val SystemAppItem) {
+	s.App = val
+}
+
+// SetBinding sets the value of Binding.
+func (s *SystemCurrentAppResponse) SetBinding(val OptSystemAppHostBindingItem) {
+	s.Binding = val
+}
+
+// SetResolvedBy sets the value of ResolvedBy.
+func (s *SystemCurrentAppResponse) SetResolvedBy(val string) {
+	s.ResolvedBy = val
+}
+
+// SetRequestHost sets the value of RequestHost.
+func (s *SystemCurrentAppResponse) SetRequestHost(val string) {
+	s.RequestHost = val
+}
+
+// Ref: #/components/schemas/SystemCurrentMenuSpaceResponse
+type SystemCurrentMenuSpaceResponse struct {
+	Space         SystemMenuSpaceItem               `json:"space"`
+	Binding       OptSystemMenuSpaceHostBindingItem `json:"binding"`
+	ResolvedBy    string                            `json:"resolved_by"`
+	RequestHost   string                            `json:"request_host"`
+	AccessGranted bool                              `json:"access_granted"`
+}
+
+// GetSpace returns the value of Space.
+func (s *SystemCurrentMenuSpaceResponse) GetSpace() SystemMenuSpaceItem {
+	return s.Space
+}
+
+// GetBinding returns the value of Binding.
+func (s *SystemCurrentMenuSpaceResponse) GetBinding() OptSystemMenuSpaceHostBindingItem {
+	return s.Binding
+}
+
+// GetResolvedBy returns the value of ResolvedBy.
+func (s *SystemCurrentMenuSpaceResponse) GetResolvedBy() string {
+	return s.ResolvedBy
+}
+
+// GetRequestHost returns the value of RequestHost.
+func (s *SystemCurrentMenuSpaceResponse) GetRequestHost() string {
+	return s.RequestHost
+}
+
+// GetAccessGranted returns the value of AccessGranted.
+func (s *SystemCurrentMenuSpaceResponse) GetAccessGranted() bool {
+	return s.AccessGranted
+}
+
+// SetSpace sets the value of Space.
+func (s *SystemCurrentMenuSpaceResponse) SetSpace(val SystemMenuSpaceItem) {
+	s.Space = val
+}
+
+// SetBinding sets the value of Binding.
+func (s *SystemCurrentMenuSpaceResponse) SetBinding(val OptSystemMenuSpaceHostBindingItem) {
+	s.Binding = val
+}
+
+// SetResolvedBy sets the value of ResolvedBy.
+func (s *SystemCurrentMenuSpaceResponse) SetResolvedBy(val string) {
+	s.ResolvedBy = val
+}
+
+// SetRequestHost sets the value of RequestHost.
+func (s *SystemCurrentMenuSpaceResponse) SetRequestHost(val string) {
+	s.RequestHost = val
+}
+
+// SetAccessGranted sets the value of AccessGranted.
+func (s *SystemCurrentMenuSpaceResponse) SetAccessGranted(val bool) {
+	s.AccessGranted = val
+}
+
+// Ref: #/components/schemas/SystemFastEnterApplication
+type SystemFastEnterApplication struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Icon        string    `json:"icon"`
+	IconColor   string    `json:"iconColor"`
+	Enabled     bool      `json:"enabled"`
+	Order       int       `json:"order"`
+	RouteName   OptString `json:"routeName"`
+	Link        OptString `json:"link"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemFastEnterApplication) GetID() string {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SystemFastEnterApplication) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemFastEnterApplication) GetDescription() string {
+	return s.Description
+}
+
+// GetIcon returns the value of Icon.
+func (s *SystemFastEnterApplication) GetIcon() string {
+	return s.Icon
+}
+
+// GetIconColor returns the value of IconColor.
+func (s *SystemFastEnterApplication) GetIconColor() string {
+	return s.IconColor
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SystemFastEnterApplication) GetEnabled() bool {
+	return s.Enabled
+}
+
+// GetOrder returns the value of Order.
+func (s *SystemFastEnterApplication) GetOrder() int {
+	return s.Order
+}
+
+// GetRouteName returns the value of RouteName.
+func (s *SystemFastEnterApplication) GetRouteName() OptString {
+	return s.RouteName
+}
+
+// GetLink returns the value of Link.
+func (s *SystemFastEnterApplication) GetLink() OptString {
+	return s.Link
+}
+
+// SetID sets the value of ID.
+func (s *SystemFastEnterApplication) SetID(val string) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemFastEnterApplication) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemFastEnterApplication) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetIcon sets the value of Icon.
+func (s *SystemFastEnterApplication) SetIcon(val string) {
+	s.Icon = val
+}
+
+// SetIconColor sets the value of IconColor.
+func (s *SystemFastEnterApplication) SetIconColor(val string) {
+	s.IconColor = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SystemFastEnterApplication) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// SetOrder sets the value of Order.
+func (s *SystemFastEnterApplication) SetOrder(val int) {
+	s.Order = val
+}
+
+// SetRouteName sets the value of RouteName.
+func (s *SystemFastEnterApplication) SetRouteName(val OptString) {
+	s.RouteName = val
+}
+
+// SetLink sets the value of Link.
+func (s *SystemFastEnterApplication) SetLink(val OptString) {
+	s.Link = val
+}
+
+// Ref: #/components/schemas/SystemFastEnterConfig
+type SystemFastEnterConfig struct {
+	Applications []SystemFastEnterApplication `json:"applications"`
+	QuickLinks   []SystemFastEnterQuickLink   `json:"quickLinks"`
+	MinWidth     OptInt                       `json:"minWidth"`
+}
+
+// GetApplications returns the value of Applications.
+func (s *SystemFastEnterConfig) GetApplications() []SystemFastEnterApplication {
+	return s.Applications
+}
+
+// GetQuickLinks returns the value of QuickLinks.
+func (s *SystemFastEnterConfig) GetQuickLinks() []SystemFastEnterQuickLink {
+	return s.QuickLinks
+}
+
+// GetMinWidth returns the value of MinWidth.
+func (s *SystemFastEnterConfig) GetMinWidth() OptInt {
+	return s.MinWidth
+}
+
+// SetApplications sets the value of Applications.
+func (s *SystemFastEnterConfig) SetApplications(val []SystemFastEnterApplication) {
+	s.Applications = val
+}
+
+// SetQuickLinks sets the value of QuickLinks.
+func (s *SystemFastEnterConfig) SetQuickLinks(val []SystemFastEnterQuickLink) {
+	s.QuickLinks = val
+}
+
+// SetMinWidth sets the value of MinWidth.
+func (s *SystemFastEnterConfig) SetMinWidth(val OptInt) {
+	s.MinWidth = val
+}
+
+// Ref: #/components/schemas/SystemFastEnterQuickLink
+type SystemFastEnterQuickLink struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Enabled   bool      `json:"enabled"`
+	Order     int       `json:"order"`
+	RouteName OptString `json:"routeName"`
+	Link      OptString `json:"link"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemFastEnterQuickLink) GetID() string {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SystemFastEnterQuickLink) GetName() string {
+	return s.Name
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SystemFastEnterQuickLink) GetEnabled() bool {
+	return s.Enabled
+}
+
+// GetOrder returns the value of Order.
+func (s *SystemFastEnterQuickLink) GetOrder() int {
+	return s.Order
+}
+
+// GetRouteName returns the value of RouteName.
+func (s *SystemFastEnterQuickLink) GetRouteName() OptString {
+	return s.RouteName
+}
+
+// GetLink returns the value of Link.
+func (s *SystemFastEnterQuickLink) GetLink() OptString {
+	return s.Link
+}
+
+// SetID sets the value of ID.
+func (s *SystemFastEnterQuickLink) SetID(val string) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemFastEnterQuickLink) SetName(val string) {
+	s.Name = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SystemFastEnterQuickLink) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// SetOrder sets the value of Order.
+func (s *SystemFastEnterQuickLink) SetOrder(val int) {
+	s.Order = val
+}
+
+// SetRouteName sets the value of RouteName.
+func (s *SystemFastEnterQuickLink) SetRouteName(val OptString) {
+	s.RouteName = val
+}
+
+// SetLink sets the value of Link.
+func (s *SystemFastEnterQuickLink) SetLink(val OptString) {
+	s.Link = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceEntryBindingItem
+type SystemMenuSpaceEntryBindingItem struct {
+	ID          uuid.UUID  `json:"id"`
+	AppKey      string     `json:"app_key"`
+	AppName     string     `json:"app_name"`
+	SpaceKey    string     `json:"space_key"`
+	SpaceName   string     `json:"space_name"`
+	MatchType   string     `json:"match_type"`
+	Host        string     `json:"host"`
+	PathPattern string     `json:"path_pattern"`
+	Priority    int64      `json:"priority"`
+	IsPrimary   bool       `json:"is_primary"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	Meta        SystemMeta `json:"meta"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemMenuSpaceEntryBindingItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceEntryBindingItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetAppName returns the value of AppName.
+func (s *SystemMenuSpaceEntryBindingItem) GetAppName() string {
+	return s.AppName
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceEntryBindingItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetSpaceName returns the value of SpaceName.
+func (s *SystemMenuSpaceEntryBindingItem) GetSpaceName() string {
+	return s.SpaceName
+}
+
+// GetMatchType returns the value of MatchType.
+func (s *SystemMenuSpaceEntryBindingItem) GetMatchType() string {
+	return s.MatchType
+}
+
+// GetHost returns the value of Host.
+func (s *SystemMenuSpaceEntryBindingItem) GetHost() string {
+	return s.Host
+}
+
+// GetPathPattern returns the value of PathPattern.
+func (s *SystemMenuSpaceEntryBindingItem) GetPathPattern() string {
+	return s.PathPattern
+}
+
+// GetPriority returns the value of Priority.
+func (s *SystemMenuSpaceEntryBindingItem) GetPriority() int64 {
+	return s.Priority
+}
+
+// GetIsPrimary returns the value of IsPrimary.
+func (s *SystemMenuSpaceEntryBindingItem) GetIsPrimary() bool {
+	return s.IsPrimary
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceEntryBindingItem) GetDescription() string {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceEntryBindingItem) GetStatus() string {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceEntryBindingItem) GetMeta() SystemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SystemMenuSpaceEntryBindingItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SystemMenuSpaceEntryBindingItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SystemMenuSpaceEntryBindingItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceEntryBindingItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetAppName sets the value of AppName.
+func (s *SystemMenuSpaceEntryBindingItem) SetAppName(val string) {
+	s.AppName = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceEntryBindingItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetSpaceName sets the value of SpaceName.
+func (s *SystemMenuSpaceEntryBindingItem) SetSpaceName(val string) {
+	s.SpaceName = val
+}
+
+// SetMatchType sets the value of MatchType.
+func (s *SystemMenuSpaceEntryBindingItem) SetMatchType(val string) {
+	s.MatchType = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemMenuSpaceEntryBindingItem) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPathPattern sets the value of PathPattern.
+func (s *SystemMenuSpaceEntryBindingItem) SetPathPattern(val string) {
+	s.PathPattern = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *SystemMenuSpaceEntryBindingItem) SetPriority(val int64) {
+	s.Priority = val
+}
+
+// SetIsPrimary sets the value of IsPrimary.
+func (s *SystemMenuSpaceEntryBindingItem) SetIsPrimary(val bool) {
+	s.IsPrimary = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceEntryBindingItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceEntryBindingItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceEntryBindingItem) SetMeta(val SystemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SystemMenuSpaceEntryBindingItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SystemMenuSpaceEntryBindingItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceEntryBindingListResponse
+type SystemMenuSpaceEntryBindingListResponse struct {
+	Records []SystemMenuSpaceEntryBindingItem `json:"records"`
+	Total   int64                             `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SystemMenuSpaceEntryBindingListResponse) GetRecords() []SystemMenuSpaceEntryBindingItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SystemMenuSpaceEntryBindingListResponse) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SystemMenuSpaceEntryBindingListResponse) SetRecords(val []SystemMenuSpaceEntryBindingItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SystemMenuSpaceEntryBindingListResponse) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceEntryBindingSaveRequest
+type SystemMenuSpaceEntryBindingSaveRequest struct {
+	ID          OptString     `json:"id"`
+	AppKey      string        `json:"app_key"`
+	SpaceKey    string        `json:"space_key"`
+	MatchType   OptString     `json:"match_type"`
+	Host        string        `json:"host"`
+	PathPattern OptString     `json:"path_pattern"`
+	Priority    OptInt        `json:"priority"`
+	Description OptString     `json:"description"`
+	IsPrimary   OptBool       `json:"is_primary"`
+	Status      OptString     `json:"status"`
+	Meta        OptSystemMeta `json:"meta"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetID() OptString {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetMatchType returns the value of MatchType.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetMatchType() OptString {
+	return s.MatchType
+}
+
+// GetHost returns the value of Host.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetHost() string {
+	return s.Host
+}
+
+// GetPathPattern returns the value of PathPattern.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetPathPattern() OptString {
+	return s.PathPattern
+}
+
+// GetPriority returns the value of Priority.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetPriority() OptInt {
+	return s.Priority
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetIsPrimary returns the value of IsPrimary.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetIsPrimary() OptBool {
+	return s.IsPrimary
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetMeta() OptSystemMeta {
+	return s.Meta
+}
+
+// SetID sets the value of ID.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetMatchType sets the value of MatchType.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetMatchType(val OptString) {
+	s.MatchType = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPathPattern sets the value of PathPattern.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetPathPattern(val OptString) {
+	s.PathPattern = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetPriority(val OptInt) {
+	s.Priority = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetIsPrimary sets the value of IsPrimary.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetIsPrimary(val OptBool) {
+	s.IsPrimary = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetMeta(val OptSystemMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceHostBindingItem
+type SystemMenuSpaceHostBindingItem struct {
+	ID          uuid.UUID  `json:"id"`
+	AppKey      string     `json:"app_key"`
+	Host        string     `json:"host"`
+	SpaceKey    string     `json:"space_key"`
+	SpaceName   string     `json:"space_name"`
+	Description string     `json:"description"`
+	IsDefault   bool       `json:"is_default"`
+	Status      string     `json:"status"`
+	Meta        SystemMeta `json:"meta"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemMenuSpaceHostBindingItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceHostBindingItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetHost returns the value of Host.
+func (s *SystemMenuSpaceHostBindingItem) GetHost() string {
+	return s.Host
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceHostBindingItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetSpaceName returns the value of SpaceName.
+func (s *SystemMenuSpaceHostBindingItem) GetSpaceName() string {
+	return s.SpaceName
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceHostBindingItem) GetDescription() string {
+	return s.Description
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemMenuSpaceHostBindingItem) GetIsDefault() bool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceHostBindingItem) GetStatus() string {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceHostBindingItem) GetMeta() SystemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SystemMenuSpaceHostBindingItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SystemMenuSpaceHostBindingItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SystemMenuSpaceHostBindingItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceHostBindingItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemMenuSpaceHostBindingItem) SetHost(val string) {
+	s.Host = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceHostBindingItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetSpaceName sets the value of SpaceName.
+func (s *SystemMenuSpaceHostBindingItem) SetSpaceName(val string) {
+	s.SpaceName = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceHostBindingItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemMenuSpaceHostBindingItem) SetIsDefault(val bool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceHostBindingItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceHostBindingItem) SetMeta(val SystemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SystemMenuSpaceHostBindingItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SystemMenuSpaceHostBindingItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceHostBindingListResponse
+type SystemMenuSpaceHostBindingListResponse struct {
+	Records []SystemMenuSpaceHostBindingItem `json:"records"`
+	Total   int64                            `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SystemMenuSpaceHostBindingListResponse) GetRecords() []SystemMenuSpaceHostBindingItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SystemMenuSpaceHostBindingListResponse) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SystemMenuSpaceHostBindingListResponse) SetRecords(val []SystemMenuSpaceHostBindingItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SystemMenuSpaceHostBindingListResponse) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceHostBindingSaveRequest
+type SystemMenuSpaceHostBindingSaveRequest struct {
+	AppKey      string        `json:"app_key"`
+	Host        string        `json:"host"`
+	SpaceKey    string        `json:"space_key"`
+	Description OptString     `json:"description"`
+	IsDefault   OptBool       `json:"is_default"`
+	Status      OptString     `json:"status"`
+	Meta        OptSystemMeta `json:"meta"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetHost returns the value of Host.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetHost() string {
+	return s.Host
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetMeta() OptSystemMeta {
+	return s.Meta
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetHost sets the value of Host.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetHost(val string) {
+	s.Host = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetMeta(val OptSystemMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceInitializeResult
+type SystemMenuSpaceInitializeResult struct {
+	SourceSpaceKey              string `json:"source_space_key"`
+	TargetSpaceKey              string `json:"target_space_key"`
+	ForceReinitialized          bool   `json:"force_reinitialized"`
+	ClearedMenuCount            int64  `json:"cleared_menu_count"`
+	ClearedPageCount            int64  `json:"cleared_page_count"`
+	ClearedPackageMenuLinkCount int64  `json:"cleared_package_menu_link_count"`
+	CreatedMenuCount            int64  `json:"created_menu_count"`
+	CreatedPageCount            int64  `json:"created_page_count"`
+	CreatedPackageMenuLinkCount int64  `json:"created_package_menu_link_count"`
+}
+
+// GetSourceSpaceKey returns the value of SourceSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) GetSourceSpaceKey() string {
+	return s.SourceSpaceKey
+}
+
+// GetTargetSpaceKey returns the value of TargetSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) GetTargetSpaceKey() string {
+	return s.TargetSpaceKey
+}
+
+// GetForceReinitialized returns the value of ForceReinitialized.
+func (s *SystemMenuSpaceInitializeResult) GetForceReinitialized() bool {
+	return s.ForceReinitialized
+}
+
+// GetClearedMenuCount returns the value of ClearedMenuCount.
+func (s *SystemMenuSpaceInitializeResult) GetClearedMenuCount() int64 {
+	return s.ClearedMenuCount
+}
+
+// GetClearedPageCount returns the value of ClearedPageCount.
+func (s *SystemMenuSpaceInitializeResult) GetClearedPageCount() int64 {
+	return s.ClearedPageCount
+}
+
+// GetClearedPackageMenuLinkCount returns the value of ClearedPackageMenuLinkCount.
+func (s *SystemMenuSpaceInitializeResult) GetClearedPackageMenuLinkCount() int64 {
+	return s.ClearedPackageMenuLinkCount
+}
+
+// GetCreatedMenuCount returns the value of CreatedMenuCount.
+func (s *SystemMenuSpaceInitializeResult) GetCreatedMenuCount() int64 {
+	return s.CreatedMenuCount
+}
+
+// GetCreatedPageCount returns the value of CreatedPageCount.
+func (s *SystemMenuSpaceInitializeResult) GetCreatedPageCount() int64 {
+	return s.CreatedPageCount
+}
+
+// GetCreatedPackageMenuLinkCount returns the value of CreatedPackageMenuLinkCount.
+func (s *SystemMenuSpaceInitializeResult) GetCreatedPackageMenuLinkCount() int64 {
+	return s.CreatedPackageMenuLinkCount
+}
+
+// SetSourceSpaceKey sets the value of SourceSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) SetSourceSpaceKey(val string) {
+	s.SourceSpaceKey = val
+}
+
+// SetTargetSpaceKey sets the value of TargetSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) SetTargetSpaceKey(val string) {
+	s.TargetSpaceKey = val
+}
+
+// SetForceReinitialized sets the value of ForceReinitialized.
+func (s *SystemMenuSpaceInitializeResult) SetForceReinitialized(val bool) {
+	s.ForceReinitialized = val
+}
+
+// SetClearedMenuCount sets the value of ClearedMenuCount.
+func (s *SystemMenuSpaceInitializeResult) SetClearedMenuCount(val int64) {
+	s.ClearedMenuCount = val
+}
+
+// SetClearedPageCount sets the value of ClearedPageCount.
+func (s *SystemMenuSpaceInitializeResult) SetClearedPageCount(val int64) {
+	s.ClearedPageCount = val
+}
+
+// SetClearedPackageMenuLinkCount sets the value of ClearedPackageMenuLinkCount.
+func (s *SystemMenuSpaceInitializeResult) SetClearedPackageMenuLinkCount(val int64) {
+	s.ClearedPackageMenuLinkCount = val
+}
+
+// SetCreatedMenuCount sets the value of CreatedMenuCount.
+func (s *SystemMenuSpaceInitializeResult) SetCreatedMenuCount(val int64) {
+	s.CreatedMenuCount = val
+}
+
+// SetCreatedPageCount sets the value of CreatedPageCount.
+func (s *SystemMenuSpaceInitializeResult) SetCreatedPageCount(val int64) {
+	s.CreatedPageCount = val
+}
+
+// SetCreatedPackageMenuLinkCount sets the value of CreatedPackageMenuLinkCount.
+func (s *SystemMenuSpaceInitializeResult) SetCreatedPackageMenuLinkCount(val int64) {
+	s.CreatedPackageMenuLinkCount = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceItem
+type SystemMenuSpaceItem struct {
+	ID               uuid.UUID  `json:"id"`
+	AppKey           string     `json:"app_key"`
+	SpaceKey         string     `json:"space_key"`
+	Name             string     `json:"name"`
+	Description      string     `json:"description"`
+	DefaultHomePath  string     `json:"default_home_path"`
+	IsDefault        bool       `json:"is_default"`
+	Status           string     `json:"status"`
+	HostCount        int64      `json:"host_count"`
+	Hosts            []string   `json:"hosts"`
+	MenuCount        int64      `json:"menu_count"`
+	PageCount        int64      `json:"page_count"`
+	AccessMode       string     `json:"access_mode"`
+	AllowedRoleCodes []string   `json:"allowed_role_codes"`
+	Meta             SystemMeta `json:"meta"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SystemMenuSpaceItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceItem) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetName returns the value of Name.
+func (s *SystemMenuSpaceItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceItem) GetDescription() string {
+	return s.Description
+}
+
+// GetDefaultHomePath returns the value of DefaultHomePath.
+func (s *SystemMenuSpaceItem) GetDefaultHomePath() string {
+	return s.DefaultHomePath
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemMenuSpaceItem) GetIsDefault() bool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceItem) GetStatus() string {
+	return s.Status
+}
+
+// GetHostCount returns the value of HostCount.
+func (s *SystemMenuSpaceItem) GetHostCount() int64 {
+	return s.HostCount
+}
+
+// GetHosts returns the value of Hosts.
+func (s *SystemMenuSpaceItem) GetHosts() []string {
+	return s.Hosts
+}
+
+// GetMenuCount returns the value of MenuCount.
+func (s *SystemMenuSpaceItem) GetMenuCount() int64 {
+	return s.MenuCount
+}
+
+// GetPageCount returns the value of PageCount.
+func (s *SystemMenuSpaceItem) GetPageCount() int64 {
+	return s.PageCount
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *SystemMenuSpaceItem) GetAccessMode() string {
+	return s.AccessMode
+}
+
+// GetAllowedRoleCodes returns the value of AllowedRoleCodes.
+func (s *SystemMenuSpaceItem) GetAllowedRoleCodes() []string {
+	return s.AllowedRoleCodes
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceItem) GetMeta() SystemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SystemMenuSpaceItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SystemMenuSpaceItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SystemMenuSpaceItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceItem) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemMenuSpaceItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetDefaultHomePath sets the value of DefaultHomePath.
+func (s *SystemMenuSpaceItem) SetDefaultHomePath(val string) {
+	s.DefaultHomePath = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemMenuSpaceItem) SetIsDefault(val bool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetHostCount sets the value of HostCount.
+func (s *SystemMenuSpaceItem) SetHostCount(val int64) {
+	s.HostCount = val
+}
+
+// SetHosts sets the value of Hosts.
+func (s *SystemMenuSpaceItem) SetHosts(val []string) {
+	s.Hosts = val
+}
+
+// SetMenuCount sets the value of MenuCount.
+func (s *SystemMenuSpaceItem) SetMenuCount(val int64) {
+	s.MenuCount = val
+}
+
+// SetPageCount sets the value of PageCount.
+func (s *SystemMenuSpaceItem) SetPageCount(val int64) {
+	s.PageCount = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *SystemMenuSpaceItem) SetAccessMode(val string) {
+	s.AccessMode = val
+}
+
+// SetAllowedRoleCodes sets the value of AllowedRoleCodes.
+func (s *SystemMenuSpaceItem) SetAllowedRoleCodes(val []string) {
+	s.AllowedRoleCodes = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceItem) SetMeta(val SystemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SystemMenuSpaceItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SystemMenuSpaceItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceListResponse
+type SystemMenuSpaceListResponse struct {
+	Records []SystemMenuSpaceItem `json:"records"`
+	Total   int64                 `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SystemMenuSpaceListResponse) GetRecords() []SystemMenuSpaceItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SystemMenuSpaceListResponse) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SystemMenuSpaceListResponse) SetRecords(val []SystemMenuSpaceItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SystemMenuSpaceListResponse) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceModeResponse
+type SystemMenuSpaceModeResponse struct {
+	Mode string `json:"mode"`
+}
+
+// GetMode returns the value of Mode.
+func (s *SystemMenuSpaceModeResponse) GetMode() string {
+	return s.Mode
+}
+
+// SetMode sets the value of Mode.
+func (s *SystemMenuSpaceModeResponse) SetMode(val string) {
+	s.Mode = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceModeSaveRequest
+type SystemMenuSpaceModeSaveRequest struct {
+	AppKey string `json:"app_key"`
+	Mode   string `json:"mode"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceModeSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetMode returns the value of Mode.
+func (s *SystemMenuSpaceModeSaveRequest) GetMode() string {
+	return s.Mode
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceModeSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetMode sets the value of Mode.
+func (s *SystemMenuSpaceModeSaveRequest) SetMode(val string) {
+	s.Mode = val
+}
+
+// Ref: #/components/schemas/SystemMenuSpaceSaveRequest
+type SystemMenuSpaceSaveRequest struct {
+	AppKey           string        `json:"app_key"`
+	SpaceKey         string        `json:"space_key"`
+	Name             string        `json:"name"`
+	Description      OptString     `json:"description"`
+	DefaultHomePath  OptString     `json:"default_home_path"`
+	IsDefault        OptBool       `json:"is_default"`
+	Status           OptString     `json:"status"`
+	AccessMode       OptString     `json:"access_mode"`
+	AllowedRoleCodes []string      `json:"allowed_role_codes"`
+	Meta             OptSystemMeta `json:"meta"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemMenuSpaceSaveRequest) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *SystemMenuSpaceSaveRequest) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetName returns the value of Name.
+func (s *SystemMenuSpaceSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SystemMenuSpaceSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetDefaultHomePath returns the value of DefaultHomePath.
+func (s *SystemMenuSpaceSaveRequest) GetDefaultHomePath() OptString {
+	return s.DefaultHomePath
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *SystemMenuSpaceSaveRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *SystemMenuSpaceSaveRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *SystemMenuSpaceSaveRequest) GetAccessMode() OptString {
+	return s.AccessMode
+}
+
+// GetAllowedRoleCodes returns the value of AllowedRoleCodes.
+func (s *SystemMenuSpaceSaveRequest) GetAllowedRoleCodes() []string {
+	return s.AllowedRoleCodes
+}
+
+// GetMeta returns the value of Meta.
+func (s *SystemMenuSpaceSaveRequest) GetMeta() OptSystemMeta {
+	return s.Meta
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemMenuSpaceSaveRequest) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *SystemMenuSpaceSaveRequest) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemMenuSpaceSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SystemMenuSpaceSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetDefaultHomePath sets the value of DefaultHomePath.
+func (s *SystemMenuSpaceSaveRequest) SetDefaultHomePath(val OptString) {
+	s.DefaultHomePath = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *SystemMenuSpaceSaveRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SystemMenuSpaceSaveRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *SystemMenuSpaceSaveRequest) SetAccessMode(val OptString) {
+	s.AccessMode = val
+}
+
+// SetAllowedRoleCodes sets the value of AllowedRoleCodes.
+func (s *SystemMenuSpaceSaveRequest) SetAllowedRoleCodes(val []string) {
+	s.AllowedRoleCodes = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *SystemMenuSpaceSaveRequest) SetMeta(val OptSystemMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/SystemMeta
+type SystemMeta map[string]jx.Raw
+
+func (s *SystemMeta) init() SystemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Ref: #/components/schemas/TokenResponse
@@ -8254,6 +17337,57 @@ func (s *UserAssignRolesRequest) GetRoleIds() []string {
 // SetRoleIds sets the value of RoleIds.
 func (s *UserAssignRolesRequest) SetRoleIds(val []string) {
 	s.RoleIds = val
+}
+
+// Ref: #/components/schemas/UserCollaborationWorkspacesResponse
+type UserCollaborationWorkspacesResponse struct {
+	Records []UserCollaborationWorkspacesResponseRecordsItem `json:"records"`
+}
+
+// GetRecords returns the value of Records.
+func (s *UserCollaborationWorkspacesResponse) GetRecords() []UserCollaborationWorkspacesResponseRecordsItem {
+	return s.Records
+}
+
+// SetRecords sets the value of Records.
+func (s *UserCollaborationWorkspacesResponse) SetRecords(val []UserCollaborationWorkspacesResponseRecordsItem) {
+	s.Records = val
+}
+
+type UserCollaborationWorkspacesResponseRecordsItem struct {
+	ID     uuid.UUID `json:"id"`
+	Name   string    `json:"name"`
+	Status string    `json:"status"`
+}
+
+// GetID returns the value of ID.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) GetName() string {
+	return s.Name
+}
+
+// GetStatus returns the value of Status.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) GetStatus() string {
+	return s.Status
+}
+
+// SetID sets the value of ID.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserCollaborationWorkspacesResponseRecordsItem) SetStatus(val string) {
+	s.Status = val
 }
 
 // Ref: #/components/schemas/UserCreateRequest
@@ -8586,6 +17720,102 @@ func (s *UserList) SetSize(val int) {
 
 func (*UserList) listUsersRes() {}
 
+// Ref: #/components/schemas/UserMenuDerivedSourceItem
+type UserMenuDerivedSourceItem struct {
+	MenuID     uuid.UUID   `json:"menu_id"`
+	PackageIds []uuid.UUID `json:"package_ids"`
+}
+
+// GetMenuID returns the value of MenuID.
+func (s *UserMenuDerivedSourceItem) GetMenuID() uuid.UUID {
+	return s.MenuID
+}
+
+// GetPackageIds returns the value of PackageIds.
+func (s *UserMenuDerivedSourceItem) GetPackageIds() []uuid.UUID {
+	return s.PackageIds
+}
+
+// SetMenuID sets the value of MenuID.
+func (s *UserMenuDerivedSourceItem) SetMenuID(val uuid.UUID) {
+	s.MenuID = val
+}
+
+// SetPackageIds sets the value of PackageIds.
+func (s *UserMenuDerivedSourceItem) SetPackageIds(val []uuid.UUID) {
+	s.PackageIds = val
+}
+
+// Ref: #/components/schemas/UserMenusResponse
+type UserMenusResponse struct {
+	MenuIds            []uuid.UUID                 `json:"menu_ids"`
+	AvailableMenuIds   []uuid.UUID                 `json:"available_menu_ids"`
+	HiddenMenuIds      []uuid.UUID                 `json:"hidden_menu_ids"`
+	ExpandedPackageIds []uuid.UUID                 `json:"expanded_package_ids"`
+	DerivedSources     []UserMenuDerivedSourceItem `json:"derived_sources"`
+	HasPackageConfig   bool                        `json:"has_package_config"`
+}
+
+// GetMenuIds returns the value of MenuIds.
+func (s *UserMenusResponse) GetMenuIds() []uuid.UUID {
+	return s.MenuIds
+}
+
+// GetAvailableMenuIds returns the value of AvailableMenuIds.
+func (s *UserMenusResponse) GetAvailableMenuIds() []uuid.UUID {
+	return s.AvailableMenuIds
+}
+
+// GetHiddenMenuIds returns the value of HiddenMenuIds.
+func (s *UserMenusResponse) GetHiddenMenuIds() []uuid.UUID {
+	return s.HiddenMenuIds
+}
+
+// GetExpandedPackageIds returns the value of ExpandedPackageIds.
+func (s *UserMenusResponse) GetExpandedPackageIds() []uuid.UUID {
+	return s.ExpandedPackageIds
+}
+
+// GetDerivedSources returns the value of DerivedSources.
+func (s *UserMenusResponse) GetDerivedSources() []UserMenuDerivedSourceItem {
+	return s.DerivedSources
+}
+
+// GetHasPackageConfig returns the value of HasPackageConfig.
+func (s *UserMenusResponse) GetHasPackageConfig() bool {
+	return s.HasPackageConfig
+}
+
+// SetMenuIds sets the value of MenuIds.
+func (s *UserMenusResponse) SetMenuIds(val []uuid.UUID) {
+	s.MenuIds = val
+}
+
+// SetAvailableMenuIds sets the value of AvailableMenuIds.
+func (s *UserMenusResponse) SetAvailableMenuIds(val []uuid.UUID) {
+	s.AvailableMenuIds = val
+}
+
+// SetHiddenMenuIds sets the value of HiddenMenuIds.
+func (s *UserMenusResponse) SetHiddenMenuIds(val []uuid.UUID) {
+	s.HiddenMenuIds = val
+}
+
+// SetExpandedPackageIds sets the value of ExpandedPackageIds.
+func (s *UserMenusResponse) SetExpandedPackageIds(val []uuid.UUID) {
+	s.ExpandedPackageIds = val
+}
+
+// SetDerivedSources sets the value of DerivedSources.
+func (s *UserMenusResponse) SetDerivedSources(val []UserMenuDerivedSourceItem) {
+	s.DerivedSources = val
+}
+
+// SetHasPackageConfig sets the value of HasPackageConfig.
+func (s *UserMenusResponse) SetHasPackageConfig(val bool) {
+	s.HasPackageConfig = val
+}
+
 // Ref: #/components/schemas/UserMutationResult
 type UserMutationResult struct {
 	Success bool `json:"success"`
@@ -8629,6 +17859,1036 @@ func (s *UserPackagesResponse) SetPackageIds(val []uuid.UUID) {
 // SetPackages sets the value of Packages.
 func (s *UserPackagesResponse) SetPackages(val []FeaturePackageRef) {
 	s.Packages = val
+}
+
+// Ref: #/components/schemas/UserPermissionCollaborationMember
+type UserPermissionCollaborationMember struct {
+	ID                       string `json:"id"`
+	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
+	UserID                   string `json:"user_id"`
+	RoleCode                 string `json:"role_code"`
+	Status                   string `json:"status"`
+	Matched                  bool   `json:"matched"`
+}
+
+// GetID returns the value of ID.
+func (s *UserPermissionCollaborationMember) GetID() string {
+	return s.ID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *UserPermissionCollaborationMember) GetCollaborationWorkspaceID() string {
+	return s.CollaborationWorkspaceID
+}
+
+// GetUserID returns the value of UserID.
+func (s *UserPermissionCollaborationMember) GetUserID() string {
+	return s.UserID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *UserPermissionCollaborationMember) GetRoleCode() string {
+	return s.RoleCode
+}
+
+// GetStatus returns the value of Status.
+func (s *UserPermissionCollaborationMember) GetStatus() string {
+	return s.Status
+}
+
+// GetMatched returns the value of Matched.
+func (s *UserPermissionCollaborationMember) GetMatched() bool {
+	return s.Matched
+}
+
+// SetID sets the value of ID.
+func (s *UserPermissionCollaborationMember) SetID(val string) {
+	s.ID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *UserPermissionCollaborationMember) SetCollaborationWorkspaceID(val string) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *UserPermissionCollaborationMember) SetUserID(val string) {
+	s.UserID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *UserPermissionCollaborationMember) SetRoleCode(val string) {
+	s.RoleCode = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserPermissionCollaborationMember) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetMatched sets the value of Matched.
+func (s *UserPermissionCollaborationMember) SetMatched(val bool) {
+	s.Matched = val
+}
+
+// Ref: #/components/schemas/UserPermissionDiagnosisAction
+type UserPermissionDiagnosisAction struct {
+	ID                 OptUUID                    `json:"id"`
+	PermissionKey      string                     `json:"permission_key"`
+	Name               OptString                  `json:"name"`
+	Description        OptString                  `json:"description"`
+	Status             OptString                  `json:"status"`
+	SelfStatus         OptString                  `json:"self_status"`
+	ContextType        OptString                  `json:"context_type"`
+	FeatureKind        OptString                  `json:"feature_kind"`
+	ModuleCode         OptString                  `json:"module_code"`
+	ModuleGroupStatus  OptString                  `json:"module_group_status"`
+	FeatureGroupStatus OptString                  `json:"feature_group_status"`
+	ModuleGroup        OptPermissionGroupItem     `json:"module_group"`
+	FeatureGroup       OptPermissionGroupItem     `json:"feature_group"`
+	SourcePackages     []FeaturePackageRef        `json:"source_packages"`
+	RoleResults        []UserPermissionRoleResult `json:"role_results"`
+}
+
+// GetID returns the value of ID.
+func (s *UserPermissionDiagnosisAction) GetID() OptUUID {
+	return s.ID
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *UserPermissionDiagnosisAction) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetName returns the value of Name.
+func (s *UserPermissionDiagnosisAction) GetName() OptString {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *UserPermissionDiagnosisAction) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *UserPermissionDiagnosisAction) GetStatus() OptString {
+	return s.Status
+}
+
+// GetSelfStatus returns the value of SelfStatus.
+func (s *UserPermissionDiagnosisAction) GetSelfStatus() OptString {
+	return s.SelfStatus
+}
+
+// GetContextType returns the value of ContextType.
+func (s *UserPermissionDiagnosisAction) GetContextType() OptString {
+	return s.ContextType
+}
+
+// GetFeatureKind returns the value of FeatureKind.
+func (s *UserPermissionDiagnosisAction) GetFeatureKind() OptString {
+	return s.FeatureKind
+}
+
+// GetModuleCode returns the value of ModuleCode.
+func (s *UserPermissionDiagnosisAction) GetModuleCode() OptString {
+	return s.ModuleCode
+}
+
+// GetModuleGroupStatus returns the value of ModuleGroupStatus.
+func (s *UserPermissionDiagnosisAction) GetModuleGroupStatus() OptString {
+	return s.ModuleGroupStatus
+}
+
+// GetFeatureGroupStatus returns the value of FeatureGroupStatus.
+func (s *UserPermissionDiagnosisAction) GetFeatureGroupStatus() OptString {
+	return s.FeatureGroupStatus
+}
+
+// GetModuleGroup returns the value of ModuleGroup.
+func (s *UserPermissionDiagnosisAction) GetModuleGroup() OptPermissionGroupItem {
+	return s.ModuleGroup
+}
+
+// GetFeatureGroup returns the value of FeatureGroup.
+func (s *UserPermissionDiagnosisAction) GetFeatureGroup() OptPermissionGroupItem {
+	return s.FeatureGroup
+}
+
+// GetSourcePackages returns the value of SourcePackages.
+func (s *UserPermissionDiagnosisAction) GetSourcePackages() []FeaturePackageRef {
+	return s.SourcePackages
+}
+
+// GetRoleResults returns the value of RoleResults.
+func (s *UserPermissionDiagnosisAction) GetRoleResults() []UserPermissionRoleResult {
+	return s.RoleResults
+}
+
+// SetID sets the value of ID.
+func (s *UserPermissionDiagnosisAction) SetID(val OptUUID) {
+	s.ID = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *UserPermissionDiagnosisAction) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetName sets the value of Name.
+func (s *UserPermissionDiagnosisAction) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *UserPermissionDiagnosisAction) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserPermissionDiagnosisAction) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetSelfStatus sets the value of SelfStatus.
+func (s *UserPermissionDiagnosisAction) SetSelfStatus(val OptString) {
+	s.SelfStatus = val
+}
+
+// SetContextType sets the value of ContextType.
+func (s *UserPermissionDiagnosisAction) SetContextType(val OptString) {
+	s.ContextType = val
+}
+
+// SetFeatureKind sets the value of FeatureKind.
+func (s *UserPermissionDiagnosisAction) SetFeatureKind(val OptString) {
+	s.FeatureKind = val
+}
+
+// SetModuleCode sets the value of ModuleCode.
+func (s *UserPermissionDiagnosisAction) SetModuleCode(val OptString) {
+	s.ModuleCode = val
+}
+
+// SetModuleGroupStatus sets the value of ModuleGroupStatus.
+func (s *UserPermissionDiagnosisAction) SetModuleGroupStatus(val OptString) {
+	s.ModuleGroupStatus = val
+}
+
+// SetFeatureGroupStatus sets the value of FeatureGroupStatus.
+func (s *UserPermissionDiagnosisAction) SetFeatureGroupStatus(val OptString) {
+	s.FeatureGroupStatus = val
+}
+
+// SetModuleGroup sets the value of ModuleGroup.
+func (s *UserPermissionDiagnosisAction) SetModuleGroup(val OptPermissionGroupItem) {
+	s.ModuleGroup = val
+}
+
+// SetFeatureGroup sets the value of FeatureGroup.
+func (s *UserPermissionDiagnosisAction) SetFeatureGroup(val OptPermissionGroupItem) {
+	s.FeatureGroup = val
+}
+
+// SetSourcePackages sets the value of SourcePackages.
+func (s *UserPermissionDiagnosisAction) SetSourcePackages(val []FeaturePackageRef) {
+	s.SourcePackages = val
+}
+
+// SetRoleResults sets the value of RoleResults.
+func (s *UserPermissionDiagnosisAction) SetRoleResults(val []UserPermissionRoleResult) {
+	s.RoleResults = val
+}
+
+// Ref: #/components/schemas/UserPermissionDiagnosisContext
+type UserPermissionDiagnosisContext struct {
+	Type                              string `json:"type"`
+	BindingWorkspaceID                string `json:"binding_workspace_id"`
+	CurrentCollaborationWorkspaceID   string `json:"current_collaboration_workspace_id"`
+	CurrentCollaborationWorkspaceName string `json:"current_collaboration_workspace_name"`
+}
+
+// GetType returns the value of Type.
+func (s *UserPermissionDiagnosisContext) GetType() string {
+	return s.Type
+}
+
+// GetBindingWorkspaceID returns the value of BindingWorkspaceID.
+func (s *UserPermissionDiagnosisContext) GetBindingWorkspaceID() string {
+	return s.BindingWorkspaceID
+}
+
+// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
+func (s *UserPermissionDiagnosisContext) GetCurrentCollaborationWorkspaceID() string {
+	return s.CurrentCollaborationWorkspaceID
+}
+
+// GetCurrentCollaborationWorkspaceName returns the value of CurrentCollaborationWorkspaceName.
+func (s *UserPermissionDiagnosisContext) GetCurrentCollaborationWorkspaceName() string {
+	return s.CurrentCollaborationWorkspaceName
+}
+
+// SetType sets the value of Type.
+func (s *UserPermissionDiagnosisContext) SetType(val string) {
+	s.Type = val
+}
+
+// SetBindingWorkspaceID sets the value of BindingWorkspaceID.
+func (s *UserPermissionDiagnosisContext) SetBindingWorkspaceID(val string) {
+	s.BindingWorkspaceID = val
+}
+
+// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
+func (s *UserPermissionDiagnosisContext) SetCurrentCollaborationWorkspaceID(val string) {
+	s.CurrentCollaborationWorkspaceID = val
+}
+
+// SetCurrentCollaborationWorkspaceName sets the value of CurrentCollaborationWorkspaceName.
+func (s *UserPermissionDiagnosisContext) SetCurrentCollaborationWorkspaceName(val string) {
+	s.CurrentCollaborationWorkspaceName = val
+}
+
+// Ref: #/components/schemas/UserPermissionDiagnosisResponse
+type UserPermissionDiagnosisResponse struct {
+	User                           UserPermissionDiagnosisUser          `json:"user"`
+	Context                        UserPermissionDiagnosisContext       `json:"context"`
+	Snapshot                       UserPermissionSnapshotSummary        `json:"snapshot"`
+	Roles                          []UserPermissionRoleResult           `json:"roles"`
+	CollaborationWorkspaceMember   OptUserPermissionCollaborationMember `json:"collaboration_workspace_member"`
+	CollaborationWorkspacePackages []FeaturePackageRef                  `json:"collaboration_workspace_packages"`
+	Diagnosis                      OptUserPermissionDiagnosisResult     `json:"diagnosis"`
+	Menus                          []UserPermissionMenuTreeItem         `json:"menus"`
+}
+
+// GetUser returns the value of User.
+func (s *UserPermissionDiagnosisResponse) GetUser() UserPermissionDiagnosisUser {
+	return s.User
+}
+
+// GetContext returns the value of Context.
+func (s *UserPermissionDiagnosisResponse) GetContext() UserPermissionDiagnosisContext {
+	return s.Context
+}
+
+// GetSnapshot returns the value of Snapshot.
+func (s *UserPermissionDiagnosisResponse) GetSnapshot() UserPermissionSnapshotSummary {
+	return s.Snapshot
+}
+
+// GetRoles returns the value of Roles.
+func (s *UserPermissionDiagnosisResponse) GetRoles() []UserPermissionRoleResult {
+	return s.Roles
+}
+
+// GetCollaborationWorkspaceMember returns the value of CollaborationWorkspaceMember.
+func (s *UserPermissionDiagnosisResponse) GetCollaborationWorkspaceMember() OptUserPermissionCollaborationMember {
+	return s.CollaborationWorkspaceMember
+}
+
+// GetCollaborationWorkspacePackages returns the value of CollaborationWorkspacePackages.
+func (s *UserPermissionDiagnosisResponse) GetCollaborationWorkspacePackages() []FeaturePackageRef {
+	return s.CollaborationWorkspacePackages
+}
+
+// GetDiagnosis returns the value of Diagnosis.
+func (s *UserPermissionDiagnosisResponse) GetDiagnosis() OptUserPermissionDiagnosisResult {
+	return s.Diagnosis
+}
+
+// GetMenus returns the value of Menus.
+func (s *UserPermissionDiagnosisResponse) GetMenus() []UserPermissionMenuTreeItem {
+	return s.Menus
+}
+
+// SetUser sets the value of User.
+func (s *UserPermissionDiagnosisResponse) SetUser(val UserPermissionDiagnosisUser) {
+	s.User = val
+}
+
+// SetContext sets the value of Context.
+func (s *UserPermissionDiagnosisResponse) SetContext(val UserPermissionDiagnosisContext) {
+	s.Context = val
+}
+
+// SetSnapshot sets the value of Snapshot.
+func (s *UserPermissionDiagnosisResponse) SetSnapshot(val UserPermissionSnapshotSummary) {
+	s.Snapshot = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *UserPermissionDiagnosisResponse) SetRoles(val []UserPermissionRoleResult) {
+	s.Roles = val
+}
+
+// SetCollaborationWorkspaceMember sets the value of CollaborationWorkspaceMember.
+func (s *UserPermissionDiagnosisResponse) SetCollaborationWorkspaceMember(val OptUserPermissionCollaborationMember) {
+	s.CollaborationWorkspaceMember = val
+}
+
+// SetCollaborationWorkspacePackages sets the value of CollaborationWorkspacePackages.
+func (s *UserPermissionDiagnosisResponse) SetCollaborationWorkspacePackages(val []FeaturePackageRef) {
+	s.CollaborationWorkspacePackages = val
+}
+
+// SetDiagnosis sets the value of Diagnosis.
+func (s *UserPermissionDiagnosisResponse) SetDiagnosis(val OptUserPermissionDiagnosisResult) {
+	s.Diagnosis = val
+}
+
+// SetMenus sets the value of Menus.
+func (s *UserPermissionDiagnosisResponse) SetMenus(val []UserPermissionMenuTreeItem) {
+	s.Menus = val
+}
+
+// Ref: #/components/schemas/UserPermissionDiagnosisResult
+type UserPermissionDiagnosisResult struct {
+	PermissionKey                   string                           `json:"permission_key"`
+	Allowed                         bool                             `json:"allowed"`
+	ReasonText                      OptString                        `json:"reason_text"`
+	Reasons                         []string                         `json:"reasons"`
+	MatchedInSnapshot               bool                             `json:"matched_in_snapshot"`
+	BypassedBySuperAdmin            bool                             `json:"bypassed_by_super_admin"`
+	BlockedByCollaborationWorkspace bool                             `json:"blocked_by_collaboration_workspace"`
+	DenialStage                     OptString                        `json:"denial_stage"`
+	DenialReason                    OptString                        `json:"denial_reason"`
+	MemberStatus                    OptString                        `json:"member_status"`
+	MemberMatched                   bool                             `json:"member_matched"`
+	BoundaryState                   OptString                        `json:"boundary_state"`
+	BoundaryConfigured              bool                             `json:"boundary_configured"`
+	RoleChainMatched                bool                             `json:"role_chain_matched"`
+	RoleChainDisabled               bool                             `json:"role_chain_disabled"`
+	RoleChainAvailable              bool                             `json:"role_chain_available"`
+	Action                          OptUserPermissionDiagnosisAction `json:"action"`
+	SourcePackages                  []FeaturePackageRef              `json:"source_packages"`
+	RoleResults                     []UserPermissionRoleResult       `json:"role_results"`
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *UserPermissionDiagnosisResult) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetAllowed returns the value of Allowed.
+func (s *UserPermissionDiagnosisResult) GetAllowed() bool {
+	return s.Allowed
+}
+
+// GetReasonText returns the value of ReasonText.
+func (s *UserPermissionDiagnosisResult) GetReasonText() OptString {
+	return s.ReasonText
+}
+
+// GetReasons returns the value of Reasons.
+func (s *UserPermissionDiagnosisResult) GetReasons() []string {
+	return s.Reasons
+}
+
+// GetMatchedInSnapshot returns the value of MatchedInSnapshot.
+func (s *UserPermissionDiagnosisResult) GetMatchedInSnapshot() bool {
+	return s.MatchedInSnapshot
+}
+
+// GetBypassedBySuperAdmin returns the value of BypassedBySuperAdmin.
+func (s *UserPermissionDiagnosisResult) GetBypassedBySuperAdmin() bool {
+	return s.BypassedBySuperAdmin
+}
+
+// GetBlockedByCollaborationWorkspace returns the value of BlockedByCollaborationWorkspace.
+func (s *UserPermissionDiagnosisResult) GetBlockedByCollaborationWorkspace() bool {
+	return s.BlockedByCollaborationWorkspace
+}
+
+// GetDenialStage returns the value of DenialStage.
+func (s *UserPermissionDiagnosisResult) GetDenialStage() OptString {
+	return s.DenialStage
+}
+
+// GetDenialReason returns the value of DenialReason.
+func (s *UserPermissionDiagnosisResult) GetDenialReason() OptString {
+	return s.DenialReason
+}
+
+// GetMemberStatus returns the value of MemberStatus.
+func (s *UserPermissionDiagnosisResult) GetMemberStatus() OptString {
+	return s.MemberStatus
+}
+
+// GetMemberMatched returns the value of MemberMatched.
+func (s *UserPermissionDiagnosisResult) GetMemberMatched() bool {
+	return s.MemberMatched
+}
+
+// GetBoundaryState returns the value of BoundaryState.
+func (s *UserPermissionDiagnosisResult) GetBoundaryState() OptString {
+	return s.BoundaryState
+}
+
+// GetBoundaryConfigured returns the value of BoundaryConfigured.
+func (s *UserPermissionDiagnosisResult) GetBoundaryConfigured() bool {
+	return s.BoundaryConfigured
+}
+
+// GetRoleChainMatched returns the value of RoleChainMatched.
+func (s *UserPermissionDiagnosisResult) GetRoleChainMatched() bool {
+	return s.RoleChainMatched
+}
+
+// GetRoleChainDisabled returns the value of RoleChainDisabled.
+func (s *UserPermissionDiagnosisResult) GetRoleChainDisabled() bool {
+	return s.RoleChainDisabled
+}
+
+// GetRoleChainAvailable returns the value of RoleChainAvailable.
+func (s *UserPermissionDiagnosisResult) GetRoleChainAvailable() bool {
+	return s.RoleChainAvailable
+}
+
+// GetAction returns the value of Action.
+func (s *UserPermissionDiagnosisResult) GetAction() OptUserPermissionDiagnosisAction {
+	return s.Action
+}
+
+// GetSourcePackages returns the value of SourcePackages.
+func (s *UserPermissionDiagnosisResult) GetSourcePackages() []FeaturePackageRef {
+	return s.SourcePackages
+}
+
+// GetRoleResults returns the value of RoleResults.
+func (s *UserPermissionDiagnosisResult) GetRoleResults() []UserPermissionRoleResult {
+	return s.RoleResults
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *UserPermissionDiagnosisResult) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetAllowed sets the value of Allowed.
+func (s *UserPermissionDiagnosisResult) SetAllowed(val bool) {
+	s.Allowed = val
+}
+
+// SetReasonText sets the value of ReasonText.
+func (s *UserPermissionDiagnosisResult) SetReasonText(val OptString) {
+	s.ReasonText = val
+}
+
+// SetReasons sets the value of Reasons.
+func (s *UserPermissionDiagnosisResult) SetReasons(val []string) {
+	s.Reasons = val
+}
+
+// SetMatchedInSnapshot sets the value of MatchedInSnapshot.
+func (s *UserPermissionDiagnosisResult) SetMatchedInSnapshot(val bool) {
+	s.MatchedInSnapshot = val
+}
+
+// SetBypassedBySuperAdmin sets the value of BypassedBySuperAdmin.
+func (s *UserPermissionDiagnosisResult) SetBypassedBySuperAdmin(val bool) {
+	s.BypassedBySuperAdmin = val
+}
+
+// SetBlockedByCollaborationWorkspace sets the value of BlockedByCollaborationWorkspace.
+func (s *UserPermissionDiagnosisResult) SetBlockedByCollaborationWorkspace(val bool) {
+	s.BlockedByCollaborationWorkspace = val
+}
+
+// SetDenialStage sets the value of DenialStage.
+func (s *UserPermissionDiagnosisResult) SetDenialStage(val OptString) {
+	s.DenialStage = val
+}
+
+// SetDenialReason sets the value of DenialReason.
+func (s *UserPermissionDiagnosisResult) SetDenialReason(val OptString) {
+	s.DenialReason = val
+}
+
+// SetMemberStatus sets the value of MemberStatus.
+func (s *UserPermissionDiagnosisResult) SetMemberStatus(val OptString) {
+	s.MemberStatus = val
+}
+
+// SetMemberMatched sets the value of MemberMatched.
+func (s *UserPermissionDiagnosisResult) SetMemberMatched(val bool) {
+	s.MemberMatched = val
+}
+
+// SetBoundaryState sets the value of BoundaryState.
+func (s *UserPermissionDiagnosisResult) SetBoundaryState(val OptString) {
+	s.BoundaryState = val
+}
+
+// SetBoundaryConfigured sets the value of BoundaryConfigured.
+func (s *UserPermissionDiagnosisResult) SetBoundaryConfigured(val bool) {
+	s.BoundaryConfigured = val
+}
+
+// SetRoleChainMatched sets the value of RoleChainMatched.
+func (s *UserPermissionDiagnosisResult) SetRoleChainMatched(val bool) {
+	s.RoleChainMatched = val
+}
+
+// SetRoleChainDisabled sets the value of RoleChainDisabled.
+func (s *UserPermissionDiagnosisResult) SetRoleChainDisabled(val bool) {
+	s.RoleChainDisabled = val
+}
+
+// SetRoleChainAvailable sets the value of RoleChainAvailable.
+func (s *UserPermissionDiagnosisResult) SetRoleChainAvailable(val bool) {
+	s.RoleChainAvailable = val
+}
+
+// SetAction sets the value of Action.
+func (s *UserPermissionDiagnosisResult) SetAction(val OptUserPermissionDiagnosisAction) {
+	s.Action = val
+}
+
+// SetSourcePackages sets the value of SourcePackages.
+func (s *UserPermissionDiagnosisResult) SetSourcePackages(val []FeaturePackageRef) {
+	s.SourcePackages = val
+}
+
+// SetRoleResults sets the value of RoleResults.
+func (s *UserPermissionDiagnosisResult) SetRoleResults(val []UserPermissionRoleResult) {
+	s.RoleResults = val
+}
+
+// Ref: #/components/schemas/UserPermissionDiagnosisUser
+type UserPermissionDiagnosisUser struct {
+	ID           uuid.UUID `json:"id"`
+	UserName     string    `json:"user_name"`
+	NickName     OptString `json:"nick_name"`
+	Status       string    `json:"status"`
+	IsSuperAdmin bool      `json:"is_super_admin"`
+}
+
+// GetID returns the value of ID.
+func (s *UserPermissionDiagnosisUser) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetUserName returns the value of UserName.
+func (s *UserPermissionDiagnosisUser) GetUserName() string {
+	return s.UserName
+}
+
+// GetNickName returns the value of NickName.
+func (s *UserPermissionDiagnosisUser) GetNickName() OptString {
+	return s.NickName
+}
+
+// GetStatus returns the value of Status.
+func (s *UserPermissionDiagnosisUser) GetStatus() string {
+	return s.Status
+}
+
+// GetIsSuperAdmin returns the value of IsSuperAdmin.
+func (s *UserPermissionDiagnosisUser) GetIsSuperAdmin() bool {
+	return s.IsSuperAdmin
+}
+
+// SetID sets the value of ID.
+func (s *UserPermissionDiagnosisUser) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *UserPermissionDiagnosisUser) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetNickName sets the value of NickName.
+func (s *UserPermissionDiagnosisUser) SetNickName(val OptString) {
+	s.NickName = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserPermissionDiagnosisUser) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetIsSuperAdmin sets the value of IsSuperAdmin.
+func (s *UserPermissionDiagnosisUser) SetIsSuperAdmin(val bool) {
+	s.IsSuperAdmin = val
+}
+
+// Ref: #/components/schemas/UserPermissionMenuTreeItem
+type UserPermissionMenuTreeItem struct {
+	ID        uuid.UUID                    `json:"id"`
+	Name      string                       `json:"name"`
+	Title     string                       `json:"title"`
+	Path      string                       `json:"path"`
+	Component string                       `json:"component"`
+	Hidden    bool                         `json:"hidden"`
+	SortOrder int                          `json:"sort_order"`
+	Children  []UserPermissionMenuTreeItem `json:"children"`
+}
+
+// GetID returns the value of ID.
+func (s *UserPermissionMenuTreeItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *UserPermissionMenuTreeItem) GetName() string {
+	return s.Name
+}
+
+// GetTitle returns the value of Title.
+func (s *UserPermissionMenuTreeItem) GetTitle() string {
+	return s.Title
+}
+
+// GetPath returns the value of Path.
+func (s *UserPermissionMenuTreeItem) GetPath() string {
+	return s.Path
+}
+
+// GetComponent returns the value of Component.
+func (s *UserPermissionMenuTreeItem) GetComponent() string {
+	return s.Component
+}
+
+// GetHidden returns the value of Hidden.
+func (s *UserPermissionMenuTreeItem) GetHidden() bool {
+	return s.Hidden
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *UserPermissionMenuTreeItem) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetChildren returns the value of Children.
+func (s *UserPermissionMenuTreeItem) GetChildren() []UserPermissionMenuTreeItem {
+	return s.Children
+}
+
+// SetID sets the value of ID.
+func (s *UserPermissionMenuTreeItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *UserPermissionMenuTreeItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetTitle sets the value of Title.
+func (s *UserPermissionMenuTreeItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetPath sets the value of Path.
+func (s *UserPermissionMenuTreeItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetComponent sets the value of Component.
+func (s *UserPermissionMenuTreeItem) SetComponent(val string) {
+	s.Component = val
+}
+
+// SetHidden sets the value of Hidden.
+func (s *UserPermissionMenuTreeItem) SetHidden(val bool) {
+	s.Hidden = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *UserPermissionMenuTreeItem) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetChildren sets the value of Children.
+func (s *UserPermissionMenuTreeItem) SetChildren(val []UserPermissionMenuTreeItem) {
+	s.Children = val
+}
+
+// Ref: #/components/schemas/UserPermissionRoleResult
+type UserPermissionRoleResult struct {
+	RoleID               uuid.UUID           `json:"role_id"`
+	RoleCode             string              `json:"role_code"`
+	RoleName             string              `json:"role_name"`
+	Inherited            bool                `json:"inherited"`
+	RefreshedAt          OptString           `json:"refreshed_at"`
+	AvailableActionCount int                 `json:"available_action_count"`
+	DisabledActionCount  int                 `json:"disabled_action_count"`
+	EffectiveActionCount int                 `json:"effective_action_count"`
+	Matched              bool                `json:"matched"`
+	Disabled             bool                `json:"disabled"`
+	Available            bool                `json:"available"`
+	SourcePackages       []FeaturePackageRef `json:"source_packages"`
+}
+
+// GetRoleID returns the value of RoleID.
+func (s *UserPermissionRoleResult) GetRoleID() uuid.UUID {
+	return s.RoleID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *UserPermissionRoleResult) GetRoleCode() string {
+	return s.RoleCode
+}
+
+// GetRoleName returns the value of RoleName.
+func (s *UserPermissionRoleResult) GetRoleName() string {
+	return s.RoleName
+}
+
+// GetInherited returns the value of Inherited.
+func (s *UserPermissionRoleResult) GetInherited() bool {
+	return s.Inherited
+}
+
+// GetRefreshedAt returns the value of RefreshedAt.
+func (s *UserPermissionRoleResult) GetRefreshedAt() OptString {
+	return s.RefreshedAt
+}
+
+// GetAvailableActionCount returns the value of AvailableActionCount.
+func (s *UserPermissionRoleResult) GetAvailableActionCount() int {
+	return s.AvailableActionCount
+}
+
+// GetDisabledActionCount returns the value of DisabledActionCount.
+func (s *UserPermissionRoleResult) GetDisabledActionCount() int {
+	return s.DisabledActionCount
+}
+
+// GetEffectiveActionCount returns the value of EffectiveActionCount.
+func (s *UserPermissionRoleResult) GetEffectiveActionCount() int {
+	return s.EffectiveActionCount
+}
+
+// GetMatched returns the value of Matched.
+func (s *UserPermissionRoleResult) GetMatched() bool {
+	return s.Matched
+}
+
+// GetDisabled returns the value of Disabled.
+func (s *UserPermissionRoleResult) GetDisabled() bool {
+	return s.Disabled
+}
+
+// GetAvailable returns the value of Available.
+func (s *UserPermissionRoleResult) GetAvailable() bool {
+	return s.Available
+}
+
+// GetSourcePackages returns the value of SourcePackages.
+func (s *UserPermissionRoleResult) GetSourcePackages() []FeaturePackageRef {
+	return s.SourcePackages
+}
+
+// SetRoleID sets the value of RoleID.
+func (s *UserPermissionRoleResult) SetRoleID(val uuid.UUID) {
+	s.RoleID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *UserPermissionRoleResult) SetRoleCode(val string) {
+	s.RoleCode = val
+}
+
+// SetRoleName sets the value of RoleName.
+func (s *UserPermissionRoleResult) SetRoleName(val string) {
+	s.RoleName = val
+}
+
+// SetInherited sets the value of Inherited.
+func (s *UserPermissionRoleResult) SetInherited(val bool) {
+	s.Inherited = val
+}
+
+// SetRefreshedAt sets the value of RefreshedAt.
+func (s *UserPermissionRoleResult) SetRefreshedAt(val OptString) {
+	s.RefreshedAt = val
+}
+
+// SetAvailableActionCount sets the value of AvailableActionCount.
+func (s *UserPermissionRoleResult) SetAvailableActionCount(val int) {
+	s.AvailableActionCount = val
+}
+
+// SetDisabledActionCount sets the value of DisabledActionCount.
+func (s *UserPermissionRoleResult) SetDisabledActionCount(val int) {
+	s.DisabledActionCount = val
+}
+
+// SetEffectiveActionCount sets the value of EffectiveActionCount.
+func (s *UserPermissionRoleResult) SetEffectiveActionCount(val int) {
+	s.EffectiveActionCount = val
+}
+
+// SetMatched sets the value of Matched.
+func (s *UserPermissionRoleResult) SetMatched(val bool) {
+	s.Matched = val
+}
+
+// SetDisabled sets the value of Disabled.
+func (s *UserPermissionRoleResult) SetDisabled(val bool) {
+	s.Disabled = val
+}
+
+// SetAvailable sets the value of Available.
+func (s *UserPermissionRoleResult) SetAvailable(val bool) {
+	s.Available = val
+}
+
+// SetSourcePackages sets the value of SourcePackages.
+func (s *UserPermissionRoleResult) SetSourcePackages(val []FeaturePackageRef) {
+	s.SourcePackages = val
+}
+
+// Ref: #/components/schemas/UserPermissionSnapshotSummary
+type UserPermissionSnapshotSummary struct {
+	RefreshedAt          OptString `json:"refreshed_at"`
+	UpdatedAt            OptString `json:"updated_at"`
+	RoleCount            int       `json:"role_count"`
+	DirectPackageCount   int       `json:"direct_package_count"`
+	ExpandedPackageCount int       `json:"expanded_package_count"`
+	ActionCount          int       `json:"action_count"`
+	DisabledActionCount  int       `json:"disabled_action_count"`
+	MenuCount            int       `json:"menu_count"`
+	HasPackageConfig     bool      `json:"has_package_config"`
+	DerivedActionCount   int       `json:"derived_action_count"`
+	BlockedActionCount   int       `json:"blocked_action_count"`
+	EffectiveActionCount int       `json:"effective_action_count"`
+}
+
+// GetRefreshedAt returns the value of RefreshedAt.
+func (s *UserPermissionSnapshotSummary) GetRefreshedAt() OptString {
+	return s.RefreshedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *UserPermissionSnapshotSummary) GetUpdatedAt() OptString {
+	return s.UpdatedAt
+}
+
+// GetRoleCount returns the value of RoleCount.
+func (s *UserPermissionSnapshotSummary) GetRoleCount() int {
+	return s.RoleCount
+}
+
+// GetDirectPackageCount returns the value of DirectPackageCount.
+func (s *UserPermissionSnapshotSummary) GetDirectPackageCount() int {
+	return s.DirectPackageCount
+}
+
+// GetExpandedPackageCount returns the value of ExpandedPackageCount.
+func (s *UserPermissionSnapshotSummary) GetExpandedPackageCount() int {
+	return s.ExpandedPackageCount
+}
+
+// GetActionCount returns the value of ActionCount.
+func (s *UserPermissionSnapshotSummary) GetActionCount() int {
+	return s.ActionCount
+}
+
+// GetDisabledActionCount returns the value of DisabledActionCount.
+func (s *UserPermissionSnapshotSummary) GetDisabledActionCount() int {
+	return s.DisabledActionCount
+}
+
+// GetMenuCount returns the value of MenuCount.
+func (s *UserPermissionSnapshotSummary) GetMenuCount() int {
+	return s.MenuCount
+}
+
+// GetHasPackageConfig returns the value of HasPackageConfig.
+func (s *UserPermissionSnapshotSummary) GetHasPackageConfig() bool {
+	return s.HasPackageConfig
+}
+
+// GetDerivedActionCount returns the value of DerivedActionCount.
+func (s *UserPermissionSnapshotSummary) GetDerivedActionCount() int {
+	return s.DerivedActionCount
+}
+
+// GetBlockedActionCount returns the value of BlockedActionCount.
+func (s *UserPermissionSnapshotSummary) GetBlockedActionCount() int {
+	return s.BlockedActionCount
+}
+
+// GetEffectiveActionCount returns the value of EffectiveActionCount.
+func (s *UserPermissionSnapshotSummary) GetEffectiveActionCount() int {
+	return s.EffectiveActionCount
+}
+
+// SetRefreshedAt sets the value of RefreshedAt.
+func (s *UserPermissionSnapshotSummary) SetRefreshedAt(val OptString) {
+	s.RefreshedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *UserPermissionSnapshotSummary) SetUpdatedAt(val OptString) {
+	s.UpdatedAt = val
+}
+
+// SetRoleCount sets the value of RoleCount.
+func (s *UserPermissionSnapshotSummary) SetRoleCount(val int) {
+	s.RoleCount = val
+}
+
+// SetDirectPackageCount sets the value of DirectPackageCount.
+func (s *UserPermissionSnapshotSummary) SetDirectPackageCount(val int) {
+	s.DirectPackageCount = val
+}
+
+// SetExpandedPackageCount sets the value of ExpandedPackageCount.
+func (s *UserPermissionSnapshotSummary) SetExpandedPackageCount(val int) {
+	s.ExpandedPackageCount = val
+}
+
+// SetActionCount sets the value of ActionCount.
+func (s *UserPermissionSnapshotSummary) SetActionCount(val int) {
+	s.ActionCount = val
+}
+
+// SetDisabledActionCount sets the value of DisabledActionCount.
+func (s *UserPermissionSnapshotSummary) SetDisabledActionCount(val int) {
+	s.DisabledActionCount = val
+}
+
+// SetMenuCount sets the value of MenuCount.
+func (s *UserPermissionSnapshotSummary) SetMenuCount(val int) {
+	s.MenuCount = val
+}
+
+// SetHasPackageConfig sets the value of HasPackageConfig.
+func (s *UserPermissionSnapshotSummary) SetHasPackageConfig(val bool) {
+	s.HasPackageConfig = val
+}
+
+// SetDerivedActionCount sets the value of DerivedActionCount.
+func (s *UserPermissionSnapshotSummary) SetDerivedActionCount(val int) {
+	s.DerivedActionCount = val
+}
+
+// SetBlockedActionCount sets the value of BlockedActionCount.
+func (s *UserPermissionSnapshotSummary) SetBlockedActionCount(val int) {
+	s.BlockedActionCount = val
+}
+
+// SetEffectiveActionCount sets the value of EffectiveActionCount.
+func (s *UserPermissionSnapshotSummary) SetEffectiveActionCount(val int) {
+	s.EffectiveActionCount = val
+}
+
+// Ref: #/components/schemas/UserPermissionsResponse
+type UserPermissionsResponse struct {
+	MenuTree []UserPermissionMenuTreeItem `json:"menu_tree"`
+}
+
+// GetMenuTree returns the value of MenuTree.
+func (s *UserPermissionsResponse) GetMenuTree() []UserPermissionMenuTreeItem {
+	return s.MenuTree
+}
+
+// SetMenuTree sets the value of MenuTree.
+func (s *UserPermissionsResponse) SetMenuTree(val []UserPermissionMenuTreeItem) {
+	s.MenuTree = val
 }
 
 // Ref: #/components/schemas/UserRoleRef
@@ -8929,15 +19189,41 @@ func (s *UserUpdateRequest) SetRoleIds(val []string) {
 	s.RoleIds = val
 }
 
+// Ref: #/components/schemas/ViewPageItem
+type ViewPageItem struct {
+	FilePath      string `json:"file_path"`
+	ComponentPath string `json:"component_path"`
+}
+
+// GetFilePath returns the value of FilePath.
+func (s *ViewPageItem) GetFilePath() string {
+	return s.FilePath
+}
+
+// GetComponentPath returns the value of ComponentPath.
+func (s *ViewPageItem) GetComponentPath() string {
+	return s.ComponentPath
+}
+
+// SetFilePath sets the value of FilePath.
+func (s *ViewPageItem) SetFilePath(val string) {
+	s.FilePath = val
+}
+
+// SetComponentPath sets the value of ComponentPath.
+func (s *ViewPageItem) SetComponentPath(val string) {
+	s.ComponentPath = val
+}
+
 // Ref: #/components/schemas/ViewPagesResponse
 type ViewPagesResponse struct {
-	Pages       []AnyObject `json:"pages"`
-	Refreshed   bool        `json:"refreshed"`
-	RefreshedAt string      `json:"refreshed_at"`
+	Pages       []ViewPageItem `json:"pages"`
+	Refreshed   bool           `json:"refreshed"`
+	RefreshedAt string         `json:"refreshed_at"`
 }
 
 // GetPages returns the value of Pages.
-func (s *ViewPagesResponse) GetPages() []AnyObject {
+func (s *ViewPagesResponse) GetPages() []ViewPageItem {
 	return s.Pages
 }
 
@@ -8952,7 +19238,7 @@ func (s *ViewPagesResponse) GetRefreshedAt() string {
 }
 
 // SetPages sets the value of Pages.
-func (s *ViewPagesResponse) SetPages(val []AnyObject) {
+func (s *ViewPagesResponse) SetPages(val []ViewPageItem) {
 	s.Pages = val
 }
 

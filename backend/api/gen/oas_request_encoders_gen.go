@@ -15,7 +15,7 @@ import (
 )
 
 func encodeAddCollaborationWorkspaceMemberRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceMemberAddRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -29,7 +29,7 @@ func encodeAddCollaborationWorkspaceMemberRequest(
 }
 
 func encodeAddCurrentCollaborationWorkspaceMemberRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceMemberAddRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -43,7 +43,7 @@ func encodeAddCurrentCollaborationWorkspaceMemberRequest(
 }
 
 func encodeAddPermissionActionEndpointRequest(
-	req AnyObject,
+	req *PermissionActionEndpointAddRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -71,7 +71,7 @@ func encodeAssignUserRolesRequest(
 }
 
 func encodeBatchUpdatePermissionActionsRequest(
-	req AnyObject,
+	req *PermissionActionBatchUpdateRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -85,7 +85,7 @@ func encodeBatchUpdatePermissionActionsRequest(
 }
 
 func encodeCleanupStaleApiEndpointsRequest(
-	req AnyObject,
+	req *CleanupStaleRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -99,7 +99,7 @@ func encodeCleanupStaleApiEndpointsRequest(
 }
 
 func encodeCreateApiEndpointCategoryRequest(
-	req AnyObject,
+	req *ApiEndpointCategorySaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -113,7 +113,7 @@ func encodeCreateApiEndpointCategoryRequest(
 }
 
 func encodeCreateCollaborationWorkspaceRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -127,7 +127,7 @@ func encodeCreateCollaborationWorkspaceRequest(
 }
 
 func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -141,7 +141,7 @@ func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 }
 
 func encodeCreateCurrentCollaborationWorkspaceRoleRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -183,7 +183,7 @@ func encodeCreateMenuRequest(
 }
 
 func encodeCreateMessageRecipientGroupRequest(
-	req AnyObject,
+	req *MessageRecipientGroupSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -197,7 +197,7 @@ func encodeCreateMessageRecipientGroupRequest(
 }
 
 func encodeCreateMessageSenderRequest(
-	req AnyObject,
+	req *MessageSenderSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -211,7 +211,7 @@ func encodeCreateMessageSenderRequest(
 }
 
 func encodeCreateMessageTemplateRequest(
-	req AnyObject,
+	req *MessageTemplateSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -253,7 +253,7 @@ func encodeCreatePermissionActionRequest(
 }
 
 func encodeCreatePermissionActionGroupRequest(
-	req AnyObject,
+	req *PermissionActionGroupSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -323,7 +323,7 @@ func encodeCreateUserRequest(
 }
 
 func encodeDispatchMessageRequest(
-	req AnyObject,
+	req *MessageDispatchRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -337,7 +337,7 @@ func encodeDispatchMessageRequest(
 }
 
 func encodeHandleInboxTodoRequest(
-	req AnyObject,
+	req *InboxTodoActionRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -407,7 +407,7 @@ func encodeRollbackFeaturePackageRequest(
 }
 
 func encodeSaveAppRequest(
-	req AnyObject,
+	req *SystemAppSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -421,7 +421,7 @@ func encodeSaveAppRequest(
 }
 
 func encodeSaveAppHostBindingRequest(
-	req AnyObject,
+	req *SystemAppHostBindingSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -435,7 +435,7 @@ func encodeSaveAppHostBindingRequest(
 }
 
 func encodeSaveMenuSpaceRequest(
-	req AnyObject,
+	req *SystemMenuSpaceSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -449,7 +449,7 @@ func encodeSaveMenuSpaceRequest(
 }
 
 func encodeSaveMenuSpaceEntryBindingRequest(
-	req AnyObject,
+	req *SystemMenuSpaceEntryBindingSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -463,7 +463,7 @@ func encodeSaveMenuSpaceEntryBindingRequest(
 }
 
 func encodeSaveMenuSpaceHostBindingRequest(
-	req AnyObject,
+	req *SystemMenuSpaceHostBindingSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -477,7 +477,7 @@ func encodeSaveMenuSpaceHostBindingRequest(
 }
 
 func encodeSaveMenuSpaceModeRequest(
-	req AnyObject,
+	req *SystemMenuSpaceModeSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -491,7 +491,7 @@ func encodeSaveMenuSpaceModeRequest(
 }
 
 func encodeSavePermissionActionBatchTemplateRequest(
-	req AnyObject,
+	req *PermissionActionBatchTemplateSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -715,7 +715,7 @@ func encodeSetRolePackagesRequest(
 }
 
 func encodeSetUserMenusRequest(
-	req AnyObject,
+	req *UserMenusResponse,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -757,7 +757,7 @@ func encodeSwitchWorkspaceRequest(
 }
 
 func encodeUpdateApiEndpointRequest(
-	req AnyObject,
+	req *ApiEndpointSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -771,7 +771,7 @@ func encodeUpdateApiEndpointRequest(
 }
 
 func encodeUpdateApiEndpointCategoryRequest(
-	req AnyObject,
+	req *ApiEndpointCategorySaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -785,7 +785,7 @@ func encodeUpdateApiEndpointCategoryRequest(
 }
 
 func encodeUpdateApiEndpointContextScopeRequest(
-	req AnyObject,
+	req *ApiEndpointSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -799,7 +799,7 @@ func encodeUpdateApiEndpointContextScopeRequest(
 }
 
 func encodeUpdateCollaborationWorkspaceRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -813,7 +813,7 @@ func encodeUpdateCollaborationWorkspaceRequest(
 }
 
 func encodeUpdateCollaborationWorkspaceMemberRoleRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceMemberRoleRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -827,7 +827,7 @@ func encodeUpdateCollaborationWorkspaceMemberRoleRequest(
 }
 
 func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -841,7 +841,7 @@ func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 }
 
 func encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(
-	req AnyObject,
+	req *CollaborationWorkspaceMemberRoleRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -855,7 +855,7 @@ func encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(
 }
 
 func encodeUpdateFastEnterConfigRequest(
-	req AnyObject,
+	req *SystemFastEnterConfig,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -897,7 +897,7 @@ func encodeUpdateMenuRequest(
 }
 
 func encodeUpdateMessageRecipientGroupRequest(
-	req AnyObject,
+	req *MessageRecipientGroupSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -911,7 +911,7 @@ func encodeUpdateMessageRecipientGroupRequest(
 }
 
 func encodeUpdateMessageSenderRequest(
-	req AnyObject,
+	req *MessageSenderSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -925,7 +925,7 @@ func encodeUpdateMessageSenderRequest(
 }
 
 func encodeUpdateMessageTemplateRequest(
-	req AnyObject,
+	req *MessageTemplateSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -967,7 +967,7 @@ func encodeUpdatePermissionActionRequest(
 }
 
 func encodeUpdatePermissionActionGroupRequest(
-	req AnyObject,
+	req *PermissionActionGroupSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
