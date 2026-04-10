@@ -12746,6 +12746,65 @@ func (s *PermissionActionItem) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
+// Ref: #/components/schemas/PermissionActionList
+type PermissionActionList struct {
+	Records      []PermissionActionItem       `json:"records"`
+	Total        int64                        `json:"total"`
+	Current      int                          `json:"current"`
+	Size         int                          `json:"size"`
+	AuditSummary PermissionActionAuditSummary `json:"audit_summary"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PermissionActionList) GetRecords() []PermissionActionItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PermissionActionList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *PermissionActionList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *PermissionActionList) GetSize() int {
+	return s.Size
+}
+
+// GetAuditSummary returns the value of AuditSummary.
+func (s *PermissionActionList) GetAuditSummary() PermissionActionAuditSummary {
+	return s.AuditSummary
+}
+
+// SetRecords sets the value of Records.
+func (s *PermissionActionList) SetRecords(val []PermissionActionItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PermissionActionList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *PermissionActionList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *PermissionActionList) SetSize(val int) {
+	s.Size = val
+}
+
+// SetAuditSummary sets the value of AuditSummary.
+func (s *PermissionActionList) SetAuditSummary(val PermissionActionAuditSummary) {
+	s.AuditSummary = val
+}
+
 // Ref: #/components/schemas/PermissionActionOptions
 type PermissionActionOptions struct {
 	Records []PermissionActionItem `json:"records"`
@@ -15303,65 +15362,6 @@ func (s *RollbackRequest) GetVersionID() uuid.UUID {
 // SetVersionID sets the value of VersionID.
 func (s *RollbackRequest) SetVersionID(val uuid.UUID) {
 	s.VersionID = val
-}
-
-// Ref: #/components/schemas/schemas-PermissionActionList
-type SchemasPermissionActionList struct {
-	Records      []PermissionActionItem       `json:"records"`
-	Total        int64                        `json:"total"`
-	Current      int                          `json:"current"`
-	Size         int                          `json:"size"`
-	AuditSummary PermissionActionAuditSummary `json:"audit_summary"`
-}
-
-// GetRecords returns the value of Records.
-func (s *SchemasPermissionActionList) GetRecords() []PermissionActionItem {
-	return s.Records
-}
-
-// GetTotal returns the value of Total.
-func (s *SchemasPermissionActionList) GetTotal() int64 {
-	return s.Total
-}
-
-// GetCurrent returns the value of Current.
-func (s *SchemasPermissionActionList) GetCurrent() int {
-	return s.Current
-}
-
-// GetSize returns the value of Size.
-func (s *SchemasPermissionActionList) GetSize() int {
-	return s.Size
-}
-
-// GetAuditSummary returns the value of AuditSummary.
-func (s *SchemasPermissionActionList) GetAuditSummary() PermissionActionAuditSummary {
-	return s.AuditSummary
-}
-
-// SetRecords sets the value of Records.
-func (s *SchemasPermissionActionList) SetRecords(val []PermissionActionItem) {
-	s.Records = val
-}
-
-// SetTotal sets the value of Total.
-func (s *SchemasPermissionActionList) SetTotal(val int64) {
-	s.Total = val
-}
-
-// SetCurrent sets the value of Current.
-func (s *SchemasPermissionActionList) SetCurrent(val int) {
-	s.Current = val
-}
-
-// SetSize sets the value of Size.
-func (s *SchemasPermissionActionList) SetSize(val int) {
-	s.Size = val
-}
-
-// SetAuditSummary sets the value of AuditSummary.
-func (s *SchemasPermissionActionList) SetAuditSummary(val PermissionActionAuditSummary) {
-	s.AuditSummary = val
 }
 
 // Ref: #/components/schemas/StaleApiEndpointList

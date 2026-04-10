@@ -2,7 +2,6 @@ import {
   v5Client,
   unwrap,
   toV5Body,
-  toV5Record,
   type V5Query,
   type V5RequestBody
 } from '@/api/system-manage/_shared'
@@ -583,7 +582,6 @@ export async function fetchCreateMyCollaborationWorkspaceRole(
     name: data.name,
     description: data.description,
     sort_order: data.sort_order,
-    priority: data.priority,
     status: data.status
   }
   return unwrap(v5Client.POST('/collaboration-workspaces/current/roles', { body }))
@@ -599,7 +597,6 @@ export async function fetchUpdateMyCollaborationWorkspaceRole(
       name: data.name || '',
       description: data.description,
       sort_order: data.sort_order,
-      priority: data.priority,
       status: data.status
     }
   const { error } = await v5Client.PUT(

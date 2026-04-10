@@ -3,67 +3,8 @@ package handlers
 import (
 	"encoding/json"
 
-	"github.com/go-faster/jx"
-
 	"github.com/gg-ecommerce/backend/api/gen"
 )
-
-// anyObject is map[string]jx.Raw — mirrors the former gen.AnyObject alias.
-type anyObject = map[string]jx.Raw
-
-// optAnyObject wraps an optional anyObject value.
-type optAnyObject struct {
-	Value anyObject
-	Set   bool
-}
-
-// marshalAnyObject marshals any value to anyObject (map[string]jx.Raw).
-// Returns empty anyObject on error.
-func marshalAnyObject(v interface{}) anyObject {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return anyObject{}
-	}
-	var m map[string]interface{}
-	if err := json.Unmarshal(b, &m); err != nil {
-		return anyObject{}
-	}
-	out := make(anyObject, len(m))
-	for k, val := range m {
-		b2, _ := json.Marshal(val)
-		out[k] = jx.Raw(b2)
-	}
-	return out
-}
-
-// marshalList converts a slice to []anyObject using marshalAnyObject.
-func marshalList[T any](items []T) []anyObject {
-	out := make([]anyObject, 0, len(items))
-	for i := range items {
-		out = append(out, marshalAnyObject(items[i]))
-	}
-	return out
-}
-
-// unmarshalAnyObject converts anyObject to a map then unmarshals into target.
-func unmarshalAnyObject(src anyObject, target interface{}) error {
-	b, err := json.Marshal(src)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(b, target)
-}
-
-func optAnyObjectToMap(src optAnyObject) map[string]interface{} {
-	if !src.Set {
-		return nil
-	}
-	target := map[string]interface{}{}
-	if err := unmarshalAnyObject(src.Value, &target); err != nil {
-		return nil
-	}
-	return target
-}
 
 func optSystemMetaToMap(src gen.OptSystemMeta) map[string]interface{} {
 	if !src.Set {

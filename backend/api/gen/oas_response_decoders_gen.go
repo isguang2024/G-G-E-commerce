@@ -7414,7 +7414,7 @@ func decodeListPermissionActionRiskAuditsResponse(resp *http.Response) (res *Per
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListPermissionActionsResponse(resp *http.Response) (res *SchemasPermissionActionList, _ error) {
+func decodeListPermissionActionsResponse(resp *http.Response) (res *PermissionActionList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -7430,7 +7430,7 @@ func decodeListPermissionActionsResponse(resp *http.Response) (res *SchemasPermi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SchemasPermissionActionList
+			var response PermissionActionList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

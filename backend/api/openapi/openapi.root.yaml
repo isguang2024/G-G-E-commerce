@@ -370,10 +370,6 @@ components:
       $ref: ./components/common.yaml#/components/schemas/MutationResult
     IDResult:
       $ref: ./components/common.yaml#/components/schemas/IDResult
-    AnyObject:
-      $ref: ./components/common.yaml#/components/schemas/AnyObject
-    AnyListResponse:
-      $ref: ./components/common.yaml#/components/schemas/AnyListResponse
     UUIDListRequest:
       $ref: ./components/common.yaml#/components/schemas/UUIDListRequest
     RoleSummary:
@@ -446,8 +442,6 @@ components:
       $ref: ./components/common.yaml#/components/schemas/RollbackRequest
     PermissionActionDetail:
       $ref: ./components/common.yaml#/components/schemas/PermissionActionDetail
-    PermissionActionList:
-      $ref: ./components/common.yaml#/components/schemas/PermissionActionList
     PermissionActionSaveRequest:
       $ref: ./components/common.yaml#/components/schemas/PermissionActionSaveRequest
     ViewPagesResponse:

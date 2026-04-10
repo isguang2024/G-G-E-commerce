@@ -1,6 +1,4 @@
 // featurepackage.go: ogen handler implementations for /feature-packages/*.
-// Phase 4 — feature package domain migration. Returns data via marshalAnyObject
-// to avoid duplicating typed schema wiring.
 package handlers
 
 import (

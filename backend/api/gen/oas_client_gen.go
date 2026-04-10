@@ -819,7 +819,7 @@ type Invoker interface {
 	// 获取功能权限列表.
 	//
 	// GET /permission-actions
-	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*SchemasPermissionActionList, error)
+	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error)
 	// ListPublicRuntimePages invokes listPublicRuntimePages operation.
 	//
 	// 获取公开运行时页面注册表.
@@ -18077,12 +18077,12 @@ func (c *Client) sendListPermissionActionRiskAudits(ctx context.Context, params 
 // 获取功能权限列表.
 //
 // GET /permission-actions
-func (c *Client) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*SchemasPermissionActionList, error) {
+func (c *Client) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error) {
 	res, err := c.sendListPermissionActions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (res *SchemasPermissionActionList, err error) {
+func (c *Client) sendListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (res *PermissionActionList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("listPermissionActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),

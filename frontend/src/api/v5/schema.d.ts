@@ -2682,13 +2682,6 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
-        AnyObject: {
-            [key: string]: unknown;
-        };
-        AnyListResponse: {
-            records: components["schemas"]["AnyObject"][];
-            total: number;
-        };
         UUIDListRequest: {
             ids: string[];
         };
@@ -2702,7 +2695,6 @@ export interface components {
             isGlobal?: boolean;
             status: string;
             sortOrder?: number;
-            priority?: number;
             createTime: string;
             canEditPermission?: boolean;
         };
@@ -2722,7 +2714,6 @@ export interface components {
             description?: string;
             app_keys?: string[];
             sort_order?: number;
-            priority?: number;
             status?: string;
         };
         RoleUpdateRequest: {
@@ -2731,7 +2722,6 @@ export interface components {
             description?: string;
             app_keys?: string[];
             sort_order?: number;
-            priority?: number;
             status?: string;
         };
         RoleCreateResult: {
@@ -2963,13 +2953,6 @@ export interface components {
             group_name?: string | null;
             created_at?: string | null;
         };
-        PermissionActionList: {
-            records: components["schemas"]["AnyObject"][];
-            total: number;
-            current: number;
-            size: number;
-            audit_summary?: components["schemas"]["AnyObject"];
-        };
         PermissionActionSaveRequest: {
             action_key: string;
             name: string;
@@ -3195,8 +3178,6 @@ export interface components {
             is_system: boolean;
             is_global: boolean;
             /** Format: int64 */
-            priority?: number;
-            /** Format: int64 */
             sort_order?: number;
             /** Format: date-time */
             created_at: string;
@@ -3213,7 +3194,6 @@ export interface components {
             name: string;
             description?: string;
             sort_order?: number;
-            priority?: number;
             status?: string;
         };
         CollaborationWorkspaceBoundaryRolePackagesResponse: {
@@ -3456,7 +3436,7 @@ export interface components {
             /** Format: int64 */
             suspected_duplicate_count: number;
         };
-        "schemas-PermissionActionList": {
+        PermissionActionList: {
             records: components["schemas"]["PermissionActionItem"][];
             /** Format: int64 */
             total: number;
@@ -6944,7 +6924,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["schemas-PermissionActionList"];
+                    "application/json": components["schemas"]["PermissionActionList"];
                 };
             };
         };

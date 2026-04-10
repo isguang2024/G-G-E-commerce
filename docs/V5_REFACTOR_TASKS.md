@@ -526,3 +526,40 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 核查 `docs/openapi-contract-closeout-temp.md` 是否仍有价值，若无则删除，避免与正式任务文档状态冲突。
 - 可考虑固化一次生成链 CI 守门脚本（bundle → ogen diff → vue-tsc），防止后续 spec 改动与 handler/前端类型再次漂移。
+
+### 2026-04-10 协作文档约束回正（Phase 12 收尾）
+
+**本次改动**
+- 回正 `AGENTS.md`：将“5.0 重构进行中”“先 `make gen`”等失效表述替换为当前项目态，明确 `backend/api/openapi/ -> backend/api/gen/ -> frontend/src/api/v5/` 的生成链、`backend/internal/pkg/permission/evaluator` 的真实路径，以及新增/修改 API 后的固定执行步骤。
+- 回正 `PROJECT_FRAMEWORK.md`：将后端/前端主框架从“将引入”改为“已落地”，补齐 `backend/cmd/*` 运行入口、OpenAPI 生成链与前端业务封装位置；同时把“4.5 旧术语统一硬切”修正为“历史术语允许存在于兼容层，但新增设计不得继续扩散旧模式”。
+- 回正 `FRONTEND_GUIDELINE.md`：明确前端生成物位置、`v5Client` / schema 类型为唯一接口入口，normalizer 只负责归一化，不再鼓励继续扩散 `any` 解析或第二套请求体系。
+
+**下次方向**
+- 若后续继续调整协作纪律，应优先修改 `AGENTS.md` / `PROJECT_FRAMEWORK.md` / `FRONTEND_GUIDELINE.md` 这三份根文档，并同步检查 `docs/V5_REFACTOR_TASKS.md` 是否需要补阶段记录。
+- 可以考虑再补一份简短的”单人 + AI 开发日常流程”约束，但应落在现有三份文档内，不再新增第四套平行规范。
+
+### 2026-04-10 全量清尾：AnyObject/AnyListResponse 彻底删除 + 死代码扫清
+
+**本次改动**
+- `backend/api/openapi/components/common.yaml` 删除 `AnyObject`、`AnyListResponse`、旧版 `PermissionActionList`（含 AnyObject 引用）三个死亡 schema；`backend/api/openapi/openapi.root.yaml` 同步移除对应的三条 `$ref` 导出。重新执行 `redocly bundle → ogen → pnpm run gen:api` 后，生成产物中已完全查不到 `AnyObject`/`AnyListResponse` 残留。
+- `PermissionActionList` 去掉命名冲突后，ogen 直接生成 `gen.PermissionActionList`（不再前缀 `Schemas`）；`backend/internal/api/handlers/permission.go` 同步对齐新名称。
+- `backend/internal/api/handlers/helpers.go` 删除已无调用者的 `anyObject`/`optAnyObject`/`marshalAnyObject`/`marshalList`/`unmarshalAnyObject`/`optAnyObjectToMap` 六段死代码；`backend/internal/api/handlers/extras.go` 删除 `anyObjectToMap` 死代码。
+- `backend/internal/api/handlers/featurepackage.go` 清理文件顶部过时注释（”Returns data via marshalAnyObject”已不成立）。
+- `frontend/src/api/collaboration-workspace.ts` 移除不再使用的 `toV5Record` 导入；同时删除 `fetchCreateMyCollaborationWorkspaceRole`/`fetchUpdateMyCollaborationWorkspaceRole` 中历史遗留的 `priority` 字段（不在 spec schema 内）。
+- `frontend/src/api/system-manage/_shared.ts` 删除 `V5AnyListResponse`/`toV5Record`/`toV5Records`/`toV5ListResponse` 四个已无业务层调用者的导出函数与类型。
+
+**验证**
+- `redocly bundle` ✓
+- `ogen` ✓
+- `pnpm run gen:api` ✓
+- `go test ./internal/api/handlers -count=1` ✓（ok 0.080s）
+- `pnpm exec vue-tsc --noEmit` ✓
+
+**当前状态**
+- `backend/api/openapi/` 与 `backend/api/gen/`：查不到 `AnyObject`/`AnyListResponse` 残留。
+- `frontend/src/api/v5/schema.d.ts`：查不到 `AnyObject`/`AnyListResponse` 残留。
+- `frontend/src/api/`：查不到 `toV5Record`/`toV5ListResponse`/`V5AnyListResponse` 残留。
+- `backend/internal/api/handlers/`：查不到 `marshalAnyObject`/`unmarshalAnyObject`/`anyObjectToMap` 残留。
+- 剩余已知开放项（受控动态边界，不属于技术债）：
+  - `optSystemMetaToMap`、`permissionBatchTemplatePayloadToMap`（helpers.go）：仍在使用，对应 `SystemMeta`/`PermissionActionBatchTemplatePayload` 这两类有合理动态性的边界字段，属于受控保留。
+  - `evaluator.go:51` `RoleKeys` TODO、`openapiperm.go:8` account-only path TODO、`MenuProcessor.ts:30` manifest.normalized TODO：三处已知未完成功能，文档级标注，不影响当前主链路。

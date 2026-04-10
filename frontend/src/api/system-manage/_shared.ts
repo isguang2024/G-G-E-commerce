@@ -200,10 +200,6 @@ export async function unwrap<T>(
 }
 
 export type V5AnyRecord = Record<string, unknown>
-export type V5AnyListResponse = V5AnyRecord & {
-  records: V5AnyRecord[]
-  total: number
-}
 
 export type V5BodyShape<T extends object> = {
   [K in keyof T]: T[K]
@@ -211,29 +207,6 @@ export type V5BodyShape<T extends object> = {
 
 export function toV5Body<T extends object>(value: T): V5BodyShape<T> {
   return { ...value }
-}
-
-export function toV5Record(value: unknown): V5AnyRecord {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return value as V5AnyRecord
-  }
-  return {}
-}
-
-export function toV5Records(value: unknown): V5AnyRecord[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .filter((item): item is V5AnyRecord => Boolean(item) && typeof item === 'object')
-    .map((item) => item as V5AnyRecord)
-}
-
-export function toV5ListResponse(value: unknown): V5AnyListResponse {
-  const record = toV5Record(value)
-  return {
-    ...record,
-    records: toV5Records(record.records),
-    total: Number(record.total || 0)
-  }
 }
 
 export function toV5StringArray(value: unknown): string[] {

@@ -24537,7 +24537,7 @@ func (s *Server) handleListPermissionActionsRequest(args [0]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *SchemasPermissionActionList
+	var response *PermissionActionList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24574,7 +24574,7 @@ func (s *Server) handleListPermissionActionsRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = ListPermissionActionsParams
-			Response = *SchemasPermissionActionList
+			Response = *PermissionActionList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

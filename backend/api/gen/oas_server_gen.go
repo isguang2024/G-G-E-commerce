@@ -799,7 +799,7 @@ type Handler interface {
 	// 获取功能权限列表.
 	//
 	// GET /permission-actions
-	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*SchemasPermissionActionList, error)
+	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error)
 	// ListPublicRuntimePages implements listPublicRuntimePages operation.
 	//
 	// 获取公开运行时页面注册表.

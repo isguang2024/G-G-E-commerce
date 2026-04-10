@@ -220,17 +220,6 @@ func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req 
 	return &out, nil
 }
 
-func anyObjectToMap(src anyObject) map[string]interface{} {
-	if len(src) == 0 {
-		return nil
-	}
-	target := make(map[string]interface{}, len(src))
-	if err := unmarshalAnyObject(src, &target); err != nil {
-		return nil
-	}
-	return target
-}
-
 // -------- menu --------
 
 func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMenuDeletePreviewParams) (*gen.MenuDeletePreviewResponse, error) {

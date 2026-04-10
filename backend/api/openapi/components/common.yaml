@@ -552,21 +552,6 @@ components:
       properties:
         refresh_stats:
           $ref: '#/components/schemas/RefreshStats'
-    AnyObject:
-      type: object
-      additionalProperties: {}
-    AnyListResponse:
-      type: object
-      required:
-      - records
-      - total
-      properties:
-        records:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnyObject'
-        total:
-          type: integer
     UUIDListRequest:
       type: object
       required:
@@ -1602,26 +1587,6 @@ components:
         created_at:
           type: string
           nullable: true
-    PermissionActionList:
-      type: object
-      required:
-      - records
-      - total
-      - current
-      - size
-      properties:
-        records:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnyObject'
-        total:
-          type: integer
-        current:
-          type: integer
-        size:
-          type: integer
-        audit_summary:
-          $ref: '#/components/schemas/AnyObject'
     PermissionActionSaveRequest:
       type: object
       required:

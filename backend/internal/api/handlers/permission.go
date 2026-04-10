@@ -11,7 +11,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 )
 
-func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.SchemasPermissionActionList, error) {
+func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.PermissionActionList, error) {
 	req := &dto.PermissionKeyListRequest{
 		Current:       optInt(params.Current, 1),
 		Size:          optInt(params.Size, 20),
@@ -24,7 +24,7 @@ func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListP
 		h.logger.Error("list permission actions failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.SchemasPermissionActionList{
+	return &gen.PermissionActionList{
 		Records:      permissionActionListItemsFromModels(list),
 		Total:        int64(total),
 		Current:      req.Current,

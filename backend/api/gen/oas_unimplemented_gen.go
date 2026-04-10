@@ -1197,7 +1197,7 @@ func (UnimplementedHandler) ListPermissionActionRiskAudits(ctx context.Context, 
 // 获取功能权限列表.
 //
 // GET /permission-actions
-func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (r *SchemasPermissionActionList, _ error) {
+func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (r *PermissionActionList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

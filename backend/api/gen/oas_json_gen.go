@@ -30555,6 +30555,178 @@ func (s *PermissionActionItem) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *PermissionActionList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *PermissionActionList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int64(s.Total)
+	}
+	{
+		e.FieldStart("current")
+		e.Int(s.Current)
+	}
+	{
+		e.FieldStart("size")
+		e.Int(s.Size)
+	}
+	{
+		e.FieldStart("audit_summary")
+		s.AuditSummary.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfPermissionActionList = [5]string{
+	0: "records",
+	1: "total",
+	2: "current",
+	3: "size",
+	4: "audit_summary",
+}
+
+// Decode decodes PermissionActionList from json.
+func (s *PermissionActionList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode PermissionActionList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]PermissionActionItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem PermissionActionItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int64()
+				s.Total = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		case "current":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int()
+				s.Current = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"current\"")
+			}
+		case "size":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int()
+				s.Size = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"size\"")
+			}
+		case "audit_summary":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.AuditSummary.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"audit_summary\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode PermissionActionList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfPermissionActionList) {
+					name = jsonFieldsNameOfPermissionActionList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *PermissionActionList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *PermissionActionList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *PermissionActionOptions) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -37232,178 +37404,6 @@ func (s *RollbackRequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *RollbackRequest) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SchemasPermissionActionList) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SchemasPermissionActionList) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("records")
-		e.ArrStart()
-		for _, elem := range s.Records {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("total")
-		e.Int64(s.Total)
-	}
-	{
-		e.FieldStart("current")
-		e.Int(s.Current)
-	}
-	{
-		e.FieldStart("size")
-		e.Int(s.Size)
-	}
-	{
-		e.FieldStart("audit_summary")
-		s.AuditSummary.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfSchemasPermissionActionList = [5]string{
-	0: "records",
-	1: "total",
-	2: "current",
-	3: "size",
-	4: "audit_summary",
-}
-
-// Decode decodes SchemasPermissionActionList from json.
-func (s *SchemasPermissionActionList) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SchemasPermissionActionList to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "records":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				s.Records = make([]PermissionActionItem, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem PermissionActionItem
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Records = append(s.Records, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"records\"")
-			}
-		case "total":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int64()
-				s.Total = int64(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"total\"")
-			}
-		case "current":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Int()
-				s.Current = int(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current\"")
-			}
-		case "size":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				v, err := d.Int()
-				s.Size = int(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"size\"")
-			}
-		case "audit_summary":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				if err := s.AuditSummary.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"audit_summary\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SchemasPermissionActionList")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00011111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSchemasPermissionActionList) {
-					name = jsonFieldsNameOfSchemasPermissionActionList[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SchemasPermissionActionList) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SchemasPermissionActionList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
