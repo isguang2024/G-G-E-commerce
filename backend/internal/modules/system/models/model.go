@@ -80,7 +80,6 @@ type Role struct {
 	Code                     string         `gorm:"type:varchar(50);not null" json:"code"`
 	Name                     string         `gorm:"type:varchar(100);not null" json:"name"`
 	Description              string         `gorm:"type:varchar(255)" json:"description"`
-	Priority                 int            `gorm:"default:0" json:"priority"`
 	SortOrder                int            `gorm:"default:0" json:"sort_order"`
 	CustomParams             MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"custom_params"`
 	Status                   string         `gorm:"type:varchar(20);default:'normal'" json:"status"`

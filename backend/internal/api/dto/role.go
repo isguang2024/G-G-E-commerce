@@ -21,7 +21,6 @@ type RoleCreateRequest struct {
 	Description  string         `json:"description"`
 	AppKeys      []string       `json:"app_keys"`
 	SortOrder    int            `json:"sort_order"`
-	Priority     int            `json:"priority"`
 	CustomParams map[string]any `json:"custom_params"`
 	Status       string         `json:"status"`
 }
@@ -33,7 +32,6 @@ type RoleUpdateRequest struct {
 	Description  string         `json:"description"`
 	AppKeys      []string       `json:"app_keys"`
 	SortOrder    int            `json:"sort_order"`
-	Priority     int            `json:"priority"`
 	CustomParams map[string]any `json:"custom_params"`
 	Status       string         `json:"status"`
 }

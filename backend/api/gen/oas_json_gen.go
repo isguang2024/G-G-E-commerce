@@ -4502,12 +4502,6 @@ func (s *CollaborationWorkspaceRoleItem) encodeFields(e *jx.Encoder) {
 		e.Bool(s.IsGlobal)
 	}
 	{
-		if s.Priority.Set {
-			e.FieldStart("priority")
-			s.Priority.Encode(e)
-		}
-	}
-	{
 		if s.SortOrder.Set {
 			e.FieldStart("sort_order")
 			s.SortOrder.Encode(e)
@@ -4525,7 +4519,7 @@ func (s *CollaborationWorkspaceRoleItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceRoleItem = [12]string{
+var jsonFieldsNameOfCollaborationWorkspaceRoleItem = [11]string{
 	0:  "id",
 	1:  "collaboration_workspace_id",
 	2:  "code",
@@ -4534,10 +4528,9 @@ var jsonFieldsNameOfCollaborationWorkspaceRoleItem = [12]string{
 	5:  "status",
 	6:  "is_system",
 	7:  "is_global",
-	8:  "priority",
-	9:  "sort_order",
-	10: "created_at",
-	11: "updated_at",
+	8:  "sort_order",
+	9:  "created_at",
+	10: "updated_at",
 }
 
 // Decode decodes CollaborationWorkspaceRoleItem from json.
@@ -4643,16 +4636,6 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"is_global\"")
 			}
-		case "priority":
-			if err := func() error {
-				s.Priority.Reset()
-				if err := s.Priority.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"priority\"")
-			}
 		case "sort_order":
 			if err := func() error {
 				s.SortOrder.Reset()
@@ -4664,7 +4647,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sort_order\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -4696,7 +4679,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00000100,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -4895,12 +4878,6 @@ func (s *CollaborationWorkspaceRoleSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Priority.Set {
-			e.FieldStart("priority")
-			s.Priority.Encode(e)
-		}
-	}
-	{
 		if s.Status.Set {
 			e.FieldStart("status")
 			s.Status.Encode(e)
@@ -4908,13 +4885,12 @@ func (s *CollaborationWorkspaceRoleSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest = [6]string{
+var jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest = [5]string{
 	0: "code",
 	1: "name",
 	2: "description",
 	3: "sort_order",
-	4: "priority",
-	5: "status",
+	4: "status",
 }
 
 // Decode decodes CollaborationWorkspaceRoleSaveRequest from json.
@@ -4969,16 +4945,6 @@ func (s *CollaborationWorkspaceRoleSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sort_order\"")
-			}
-		case "priority":
-			if err := func() error {
-				s.Priority.Reset()
-				if err := s.Priority.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"priority\"")
 			}
 		case "status":
 			if err := func() error {
@@ -35610,12 +35576,6 @@ func (s *RoleCreateRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Priority.Set {
-			e.FieldStart("priority")
-			s.Priority.Encode(e)
-		}
-	}
-	{
 		if s.Status.Set {
 			e.FieldStart("status")
 			s.Status.Encode(e)
@@ -35623,14 +35583,13 @@ func (s *RoleCreateRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRoleCreateRequest = [7]string{
+var jsonFieldsNameOfRoleCreateRequest = [6]string{
 	0: "code",
 	1: "name",
 	2: "description",
 	3: "app_keys",
 	4: "sort_order",
-	5: "priority",
-	6: "status",
+	5: "status",
 }
 
 // Decode decodes RoleCreateRequest from json.
@@ -35704,16 +35663,6 @@ func (s *RoleCreateRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sort_order\"")
-			}
-		case "priority":
-			if err := func() error {
-				s.Priority.Reset()
-				if err := s.Priority.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"priority\"")
 			}
 		case "status":
 			if err := func() error {
@@ -36830,12 +36779,6 @@ func (s *RoleSummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Priority.Set {
-			e.FieldStart("priority")
-			s.Priority.Encode(e)
-		}
-	}
-	{
 		e.FieldStart("createTime")
 		e.Str(s.CreateTime)
 	}
@@ -36847,18 +36790,17 @@ func (s *RoleSummary) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRoleSummary = [11]string{
-	0:  "roleId",
-	1:  "roleName",
-	2:  "roleCode",
-	3:  "description",
-	4:  "appKeys",
-	5:  "isGlobal",
-	6:  "status",
-	7:  "sortOrder",
-	8:  "priority",
-	9:  "createTime",
-	10: "canEditPermission",
+var jsonFieldsNameOfRoleSummary = [10]string{
+	0: "roleId",
+	1: "roleName",
+	2: "roleCode",
+	3: "description",
+	4: "appKeys",
+	5: "isGlobal",
+	6: "status",
+	7: "sortOrder",
+	8: "createTime",
+	9: "canEditPermission",
 }
 
 // Decode decodes RoleSummary from json.
@@ -36958,18 +36900,8 @@ func (s *RoleSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sortOrder\"")
 			}
-		case "priority":
-			if err := func() error {
-				s.Priority.Reset()
-				if err := s.Priority.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"priority\"")
-			}
 		case "createTime":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
 				s.CreateTime = string(v)
@@ -37001,7 +36933,7 @@ func (s *RoleSummary) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01000111,
-		0b00000010,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -37091,12 +37023,6 @@ func (s *RoleUpdateRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Priority.Set {
-			e.FieldStart("priority")
-			s.Priority.Encode(e)
-		}
-	}
-	{
 		if s.Status.Set {
 			e.FieldStart("status")
 			s.Status.Encode(e)
@@ -37104,14 +37030,13 @@ func (s *RoleUpdateRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRoleUpdateRequest = [7]string{
+var jsonFieldsNameOfRoleUpdateRequest = [6]string{
 	0: "code",
 	1: "name",
 	2: "description",
 	3: "app_keys",
 	4: "sort_order",
-	5: "priority",
-	6: "status",
+	5: "status",
 }
 
 // Decode decodes RoleUpdateRequest from json.
@@ -37180,16 +37105,6 @@ func (s *RoleUpdateRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sort_order\"")
-			}
-		case "priority":
-			if err := func() error {
-				s.Priority.Reset()
-				if err := s.Priority.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"priority\"")
 			}
 		case "status":
 			if err := func() error {

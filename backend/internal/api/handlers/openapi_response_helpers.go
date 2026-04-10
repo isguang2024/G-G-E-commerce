@@ -347,7 +347,6 @@ func collaborationWorkspaceRoleItemFromModel(item user.Role) gen.CollaborationWo
 		Status:                   item.Status,
 		IsSystem:                 item.IsSystem,
 		IsGlobal:                 item.CollaborationWorkspaceID == nil,
-		Priority:                 gen.NewOptInt64(int64(item.Priority)),
 		SortOrder:                gen.NewOptInt64(int64(item.SortOrder)),
 		CreatedAt:                item.CreatedAt,
 		UpdatedAt:                gen.NewOptDateTime(item.UpdatedAt),

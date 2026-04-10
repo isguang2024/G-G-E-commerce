@@ -56,7 +56,6 @@ func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context
 		Name:                     strings.TrimSpace(req.Name),
 		Description:              optString(req.Description),
 		SortOrder:                optInt(req.SortOrder, 0),
-		Priority:                 optInt(req.Priority, 0),
 		Status:                   cwNormalizeStatus(optString(req.Status)),
 	}
 	if err := h.roleRepo.Create(role); err != nil {
@@ -89,7 +88,6 @@ func (h *APIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 		"name":        strings.TrimSpace(cwDefaultString(req.Name, role.Name)),
 		"description": strings.TrimSpace(cwDefaultString(optString(req.Description), role.Description)),
 		"sort_order":  optInt(req.SortOrder, int(role.SortOrder)),
-		"priority":    optInt(req.Priority, int(role.Priority)),
 		"status":      cwNormalizeStatus(cwDefaultString(optString(req.Status), role.Status)),
 	}
 	if code := strings.TrimSpace(req.Code); code != "" && code != role.Code {

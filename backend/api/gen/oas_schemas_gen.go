@@ -1461,7 +1461,6 @@ type CollaborationWorkspaceRoleItem struct {
 	Status                   string      `json:"status"`
 	IsSystem                 bool        `json:"is_system"`
 	IsGlobal                 bool        `json:"is_global"`
-	Priority                 OptInt64    `json:"priority"`
 	SortOrder                OptInt64    `json:"sort_order"`
 	CreatedAt                time.Time   `json:"created_at"`
 	UpdatedAt                OptDateTime `json:"updated_at"`
@@ -1505,11 +1504,6 @@ func (s *CollaborationWorkspaceRoleItem) GetIsSystem() bool {
 // GetIsGlobal returns the value of IsGlobal.
 func (s *CollaborationWorkspaceRoleItem) GetIsGlobal() bool {
 	return s.IsGlobal
-}
-
-// GetPriority returns the value of Priority.
-func (s *CollaborationWorkspaceRoleItem) GetPriority() OptInt64 {
-	return s.Priority
 }
 
 // GetSortOrder returns the value of SortOrder.
@@ -1567,11 +1561,6 @@ func (s *CollaborationWorkspaceRoleItem) SetIsGlobal(val bool) {
 	s.IsGlobal = val
 }
 
-// SetPriority sets the value of Priority.
-func (s *CollaborationWorkspaceRoleItem) SetPriority(val OptInt64) {
-	s.Priority = val
-}
-
 // SetSortOrder sets the value of SortOrder.
 func (s *CollaborationWorkspaceRoleItem) SetSortOrder(val OptInt64) {
 	s.SortOrder = val
@@ -1619,7 +1608,6 @@ type CollaborationWorkspaceRoleSaveRequest struct {
 	Name        string    `json:"name"`
 	Description OptString `json:"description"`
 	SortOrder   OptInt    `json:"sort_order"`
-	Priority    OptInt    `json:"priority"`
 	Status      OptString `json:"status"`
 }
 
@@ -1641,11 +1629,6 @@ func (s *CollaborationWorkspaceRoleSaveRequest) GetDescription() OptString {
 // GetSortOrder returns the value of SortOrder.
 func (s *CollaborationWorkspaceRoleSaveRequest) GetSortOrder() OptInt {
 	return s.SortOrder
-}
-
-// GetPriority returns the value of Priority.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetPriority() OptInt {
-	return s.Priority
 }
 
 // GetStatus returns the value of Status.
@@ -1671,11 +1654,6 @@ func (s *CollaborationWorkspaceRoleSaveRequest) SetDescription(val OptString) {
 // SetSortOrder sets the value of SortOrder.
 func (s *CollaborationWorkspaceRoleSaveRequest) SetSortOrder(val OptInt) {
 	s.SortOrder = val
-}
-
-// SetPriority sets the value of Priority.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetPriority(val OptInt) {
-	s.Priority = val
 }
 
 // SetStatus sets the value of Status.
@@ -14837,7 +14815,6 @@ type RoleCreateRequest struct {
 	Description OptString `json:"description"`
 	AppKeys     []string  `json:"app_keys"`
 	SortOrder   OptInt    `json:"sort_order"`
-	Priority    OptInt    `json:"priority"`
 	Status      OptString `json:"status"`
 }
 
@@ -14864,11 +14841,6 @@ func (s *RoleCreateRequest) GetAppKeys() []string {
 // GetSortOrder returns the value of SortOrder.
 func (s *RoleCreateRequest) GetSortOrder() OptInt {
 	return s.SortOrder
-}
-
-// GetPriority returns the value of Priority.
-func (s *RoleCreateRequest) GetPriority() OptInt {
-	return s.Priority
 }
 
 // GetStatus returns the value of Status.
@@ -14899,11 +14871,6 @@ func (s *RoleCreateRequest) SetAppKeys(val []string) {
 // SetSortOrder sets the value of SortOrder.
 func (s *RoleCreateRequest) SetSortOrder(val OptInt) {
 	s.SortOrder = val
-}
-
-// SetPriority sets the value of Priority.
-func (s *RoleCreateRequest) SetPriority(val OptInt) {
-	s.Priority = val
 }
 
 // SetStatus sets the value of Status.
@@ -15147,7 +15114,6 @@ type RoleSummary struct {
 	IsGlobal          OptBool           `json:"isGlobal"`
 	Status            string            `json:"status"`
 	SortOrder         OptInt            `json:"sortOrder"`
-	Priority          OptInt            `json:"priority"`
 	CreateTime        string            `json:"createTime"`
 	CanEditPermission OptBool           `json:"canEditPermission"`
 }
@@ -15190,11 +15156,6 @@ func (s *RoleSummary) GetStatus() string {
 // GetSortOrder returns the value of SortOrder.
 func (s *RoleSummary) GetSortOrder() OptInt {
 	return s.SortOrder
-}
-
-// GetPriority returns the value of Priority.
-func (s *RoleSummary) GetPriority() OptInt {
-	return s.Priority
 }
 
 // GetCreateTime returns the value of CreateTime.
@@ -15247,11 +15208,6 @@ func (s *RoleSummary) SetSortOrder(val OptInt) {
 	s.SortOrder = val
 }
 
-// SetPriority sets the value of Priority.
-func (s *RoleSummary) SetPriority(val OptInt) {
-	s.Priority = val
-}
-
 // SetCreateTime sets the value of CreateTime.
 func (s *RoleSummary) SetCreateTime(val string) {
 	s.CreateTime = val
@@ -15271,7 +15227,6 @@ type RoleUpdateRequest struct {
 	Description OptString `json:"description"`
 	AppKeys     []string  `json:"app_keys"`
 	SortOrder   OptInt    `json:"sort_order"`
-	Priority    OptInt    `json:"priority"`
 	Status      OptString `json:"status"`
 }
 
@@ -15298,11 +15253,6 @@ func (s *RoleUpdateRequest) GetAppKeys() []string {
 // GetSortOrder returns the value of SortOrder.
 func (s *RoleUpdateRequest) GetSortOrder() OptInt {
 	return s.SortOrder
-}
-
-// GetPriority returns the value of Priority.
-func (s *RoleUpdateRequest) GetPriority() OptInt {
-	return s.Priority
 }
 
 // GetStatus returns the value of Status.
@@ -15333,11 +15283,6 @@ func (s *RoleUpdateRequest) SetAppKeys(val []string) {
 // SetSortOrder sets the value of SortOrder.
 func (s *RoleUpdateRequest) SetSortOrder(val OptInt) {
 	s.SortOrder = val
-}
-
-// SetPriority sets the value of Priority.
-func (s *RoleUpdateRequest) SetPriority(val OptInt) {
-	s.Priority = val
 }
 
 // SetStatus sets the value of Status.

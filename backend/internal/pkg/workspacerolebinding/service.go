@@ -225,7 +225,6 @@ func LoadPersonalRoleRows(db *gorm.DB, userIDs []uuid.UUID, onlyActive bool) ([]
 		Name                 string    `gorm:"column:name"`
 		Description          string    `gorm:"column:description"`
 		Status               string    `gorm:"column:status"`
-		Priority             int       `gorm:"column:priority"`
 		SortOrder            int       `gorm:"column:sort_order"`
 		IsSystem             bool      `gorm:"column:is_system"`
 		CreatedAt            time.Time `gorm:"column:created_at"`
@@ -243,7 +242,6 @@ func LoadPersonalRoleRows(db *gorm.DB, userIDs []uuid.UUID, onlyActive bool) ([]
 			roles.name,
 			roles.description,
 			roles.status,
-			roles.priority,
 			roles.sort_order,
 			roles.is_system,
 			roles.created_at,
@@ -273,7 +271,6 @@ func LoadPersonalRoleRows(db *gorm.DB, userIDs []uuid.UUID, onlyActive bool) ([]
 				Name:        item.Name,
 				Description: item.Description,
 				Status:      item.Status,
-				Priority:    item.Priority,
 				SortOrder:   item.SortOrder,
 				IsSystem:    item.IsSystem,
 				CreatedAt:   item.CreatedAt,

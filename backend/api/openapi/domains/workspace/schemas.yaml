@@ -95,7 +95,6 @@ components:
         status: {type: string}
         is_system: {type: boolean}
         is_global: {type: boolean}
-        priority: {type: integer, format: int64}
         sort_order: {type: integer, format: int64}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
@@ -217,8 +216,6 @@ components:
         description:
           type: string
         sort_order:
-          type: integer
-        priority:
           type: integer
         status:
           type: string

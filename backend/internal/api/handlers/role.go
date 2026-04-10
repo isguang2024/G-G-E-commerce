@@ -79,7 +79,6 @@ func (h *APIHandler) CreateRole(ctx context.Context, req *gen.RoleCreateRequest)
 		Description: optString(req.Description),
 		AppKeys:     req.AppKeys,
 		SortOrder:   optInt(req.SortOrder, 0),
-		Priority:    optInt(req.Priority, 0),
 		Status:      optString(req.Status),
 	}
 	created, err := h.roleSvc.Create(dtoReq)
@@ -100,7 +99,6 @@ func (h *APIHandler) UpdateRole(ctx context.Context, req *gen.RoleUpdateRequest,
 		Description: optString(req.Description),
 		AppKeys:     req.AppKeys,
 		SortOrder:   optInt(req.SortOrder, 0),
-		Priority:    optInt(req.Priority, 0),
 		Status:      optString(req.Status),
 	}
 	if err := h.roleSvc.Update(params.ID, dtoReq); err != nil {
@@ -251,7 +249,6 @@ func roleSummaryFromModel(r *user.Role) gen.RoleSummary {
 		RoleCode:   r.Code,
 		Status:     r.Status,
 		SortOrder:  gen.NewOptInt(r.SortOrder),
-		Priority:   gen.NewOptInt(r.Priority),
 		IsGlobal:   gen.NewOptBool(len(r.AppKeys) == 0),
 		CreateTime: r.CreatedAt.Format(roleTimeLayout),
 		CanEditPermission: gen.NewOptBool(true),

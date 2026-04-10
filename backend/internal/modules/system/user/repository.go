@@ -1422,7 +1422,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 				Name:        role.Name,
 				Description: role.Description,
 				Status:      role.Status,
-				Priority:    role.Priority,
 				SortOrder:   role.SortOrder,
 				IsSystem:    role.IsSystem,
 				CreatedAt:   role.CreatedAt,
@@ -1452,7 +1451,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		Name        string    `gorm:"column:name"`
 		Description string    `gorm:"column:description"`
 		Status      string    `gorm:"column:status"`
-		Priority    int       `gorm:"column:priority"`
 		SortOrder   int       `gorm:"column:sort_order"`
 		IsSystem    bool      `gorm:"column:is_system"`
 		CreatedAt   time.Time `gorm:"column:created_at"`
@@ -1461,7 +1459,7 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 
 	var rows []userRoleRow
 	if err := r.db.Table("user_roles").
-		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
+		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id IN ?", fallbackUserIDs).
 		Where("user_roles.collaboration_workspace_id IS NULL").
@@ -1484,7 +1482,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 				Name:        row.Name,
 				Description: row.Description,
 				Status:      row.Status,
-				Priority:    row.Priority,
 				SortOrder:   row.SortOrder,
 				IsSystem:    row.IsSystem,
 				CreatedAt:   row.CreatedAt,

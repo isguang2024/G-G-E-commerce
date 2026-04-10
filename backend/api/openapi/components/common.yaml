@@ -607,8 +607,6 @@ components:
           type: string
         sortOrder:
           type: integer
-        priority:
-          type: integer
         createTime:
           type: string
         canEditPermission:
@@ -663,8 +661,6 @@ components:
             type: string
         sort_order:
           type: integer
-        priority:
-          type: integer
         status:
           type: string
     RoleUpdateRequest:
@@ -681,8 +677,6 @@ components:
           items:
             type: string
         sort_order:
-          type: integer
-        priority:
           type: integer
         status:
           type: string
