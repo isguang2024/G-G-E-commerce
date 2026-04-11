@@ -123,6 +123,7 @@ func AutoMigrate() error {
 		&models.RoleAppScope{},
 		&models.App{},
 		&models.AppHostBinding{},
+		&models.AuthCallbackCode{},
 		&models.UserRole{},
 		&models.PermissionGroup{},
 		&models.PermissionKey{},

@@ -88,6 +88,24 @@ components:
         password:
           type: string
           minLength: 6
+        target_app_key:
+          type: string
+          description: centralized_login 场景下的目标业务 APP
+        redirect_uri:
+          type: string
+          description: centralized_login 场景下的 callback 绝对地址
+        target_path:
+          type: string
+          description: 登录成功后最终回跳的业务页相对路径
+        navigation_space_key:
+          type: string
+          description: 期望进入的菜单空间，仅作 landing 提示
+        state:
+          type: string
+        nonce:
+          type: string
+        auth_protocol_version:
+          type: string
     LoginResponse:
       type: object
       required: []
@@ -116,6 +134,8 @@ components:
             app_key: {type: string}
             navigation_space_key: {type: string}
             home_path: {type: string}
+        callback:
+          $ref: '../domains/auth/schemas.yaml#/components/schemas/AuthCallbackPayload'
     RegisterRequest:
       type: object
       required:
@@ -145,6 +165,10 @@ components:
       - refresh_token
       properties:
         refresh_token:
+          type: string
+        client_app_key:
+          type: string
+        auth_protocol_version:
           type: string
     TokenResponse:
       type: object

@@ -657,6 +657,213 @@ type AssignUserRolesUnauthorized Error
 
 func (*AssignUserRolesUnauthorized) assignUserRolesRes() {}
 
+// Ref: #/components/schemas/AuthCallbackExchangeRequest
+type AuthCallbackExchangeRequest struct {
+	Code                string    `json:"code"`
+	State               string    `json:"state"`
+	Nonce               string    `json:"nonce"`
+	TargetAppKey        string    `json:"target_app_key"`
+	RedirectURI         string    `json:"redirect_uri"`
+	AuthProtocolVersion OptString `json:"auth_protocol_version"`
+}
+
+// GetCode returns the value of Code.
+func (s *AuthCallbackExchangeRequest) GetCode() string {
+	return s.Code
+}
+
+// GetState returns the value of State.
+func (s *AuthCallbackExchangeRequest) GetState() string {
+	return s.State
+}
+
+// GetNonce returns the value of Nonce.
+func (s *AuthCallbackExchangeRequest) GetNonce() string {
+	return s.Nonce
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *AuthCallbackExchangeRequest) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetRedirectURI returns the value of RedirectURI.
+func (s *AuthCallbackExchangeRequest) GetRedirectURI() string {
+	return s.RedirectURI
+}
+
+// GetAuthProtocolVersion returns the value of AuthProtocolVersion.
+func (s *AuthCallbackExchangeRequest) GetAuthProtocolVersion() OptString {
+	return s.AuthProtocolVersion
+}
+
+// SetCode sets the value of Code.
+func (s *AuthCallbackExchangeRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetState sets the value of State.
+func (s *AuthCallbackExchangeRequest) SetState(val string) {
+	s.State = val
+}
+
+// SetNonce sets the value of Nonce.
+func (s *AuthCallbackExchangeRequest) SetNonce(val string) {
+	s.Nonce = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *AuthCallbackExchangeRequest) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetRedirectURI sets the value of RedirectURI.
+func (s *AuthCallbackExchangeRequest) SetRedirectURI(val string) {
+	s.RedirectURI = val
+}
+
+// SetAuthProtocolVersion sets the value of AuthProtocolVersion.
+func (s *AuthCallbackExchangeRequest) SetAuthProtocolVersion(val OptString) {
+	s.AuthProtocolVersion = val
+}
+
+// Ref: #/components/schemas/AuthCallbackPayload
+type AuthCallbackPayload struct {
+	Mode                AuthCallbackPayloadMode `json:"mode"`
+	Code                string                  `json:"code"`
+	State               string                  `json:"state"`
+	TargetAppKey        string                  `json:"target_app_key"`
+	RedirectURI         string                  `json:"redirect_uri"`
+	RedirectTo          string                  `json:"redirect_to"`
+	TargetPath          OptString               `json:"target_path"`
+	NavigationSpaceKey  OptString               `json:"navigation_space_key"`
+	AuthProtocolVersion OptString               `json:"auth_protocol_version"`
+}
+
+// GetMode returns the value of Mode.
+func (s *AuthCallbackPayload) GetMode() AuthCallbackPayloadMode {
+	return s.Mode
+}
+
+// GetCode returns the value of Code.
+func (s *AuthCallbackPayload) GetCode() string {
+	return s.Code
+}
+
+// GetState returns the value of State.
+func (s *AuthCallbackPayload) GetState() string {
+	return s.State
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *AuthCallbackPayload) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetRedirectURI returns the value of RedirectURI.
+func (s *AuthCallbackPayload) GetRedirectURI() string {
+	return s.RedirectURI
+}
+
+// GetRedirectTo returns the value of RedirectTo.
+func (s *AuthCallbackPayload) GetRedirectTo() string {
+	return s.RedirectTo
+}
+
+// GetTargetPath returns the value of TargetPath.
+func (s *AuthCallbackPayload) GetTargetPath() OptString {
+	return s.TargetPath
+}
+
+// GetNavigationSpaceKey returns the value of NavigationSpaceKey.
+func (s *AuthCallbackPayload) GetNavigationSpaceKey() OptString {
+	return s.NavigationSpaceKey
+}
+
+// GetAuthProtocolVersion returns the value of AuthProtocolVersion.
+func (s *AuthCallbackPayload) GetAuthProtocolVersion() OptString {
+	return s.AuthProtocolVersion
+}
+
+// SetMode sets the value of Mode.
+func (s *AuthCallbackPayload) SetMode(val AuthCallbackPayloadMode) {
+	s.Mode = val
+}
+
+// SetCode sets the value of Code.
+func (s *AuthCallbackPayload) SetCode(val string) {
+	s.Code = val
+}
+
+// SetState sets the value of State.
+func (s *AuthCallbackPayload) SetState(val string) {
+	s.State = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *AuthCallbackPayload) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetRedirectURI sets the value of RedirectURI.
+func (s *AuthCallbackPayload) SetRedirectURI(val string) {
+	s.RedirectURI = val
+}
+
+// SetRedirectTo sets the value of RedirectTo.
+func (s *AuthCallbackPayload) SetRedirectTo(val string) {
+	s.RedirectTo = val
+}
+
+// SetTargetPath sets the value of TargetPath.
+func (s *AuthCallbackPayload) SetTargetPath(val OptString) {
+	s.TargetPath = val
+}
+
+// SetNavigationSpaceKey sets the value of NavigationSpaceKey.
+func (s *AuthCallbackPayload) SetNavigationSpaceKey(val OptString) {
+	s.NavigationSpaceKey = val
+}
+
+// SetAuthProtocolVersion sets the value of AuthProtocolVersion.
+func (s *AuthCallbackPayload) SetAuthProtocolVersion(val OptString) {
+	s.AuthProtocolVersion = val
+}
+
+type AuthCallbackPayloadMode string
+
+const (
+	AuthCallbackPayloadModeTokenExchange AuthCallbackPayloadMode = "token_exchange"
+)
+
+// AllValues returns all AuthCallbackPayloadMode values.
+func (AuthCallbackPayloadMode) AllValues() []AuthCallbackPayloadMode {
+	return []AuthCallbackPayloadMode{
+		AuthCallbackPayloadModeTokenExchange,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AuthCallbackPayloadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case AuthCallbackPayloadModeTokenExchange:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AuthCallbackPayloadMode) UnmarshalText(data []byte) error {
+	switch AuthCallbackPayloadMode(data) {
+	case AuthCallbackPayloadModeTokenExchange:
+		*s = AuthCallbackPayloadModeTokenExchange
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/AuthMe
 type AuthMe struct {
 	ID                              uuid.UUID    `json:"id"`
@@ -2866,6 +3073,14 @@ func (s *ErrorDetails) init() ErrorDetails {
 	return m
 }
 
+type ExchangeAuthCallbackBadRequest Error
+
+func (*ExchangeAuthCallbackBadRequest) exchangeAuthCallbackRes() {}
+
+type ExchangeAuthCallbackUnauthorized Error
+
+func (*ExchangeAuthCallbackUnauthorized) exchangeAuthCallbackRes() {}
+
 // Ref: #/components/schemas/FeaturePackageActionsResponse
 type FeaturePackageActionsResponse struct {
 	ActionIds []uuid.UUID           `json:"action_ids"`
@@ -4597,6 +4812,17 @@ func (*LoginBadRequest) loginRes() {}
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	// Centralized_login 场景下的目标业务 APP.
+	TargetAppKey OptString `json:"target_app_key"`
+	// Centralized_login 场景下的 callback 绝对地址.
+	RedirectURI OptString `json:"redirect_uri"`
+	// 登录成功后最终回跳的业务页相对路径.
+	TargetPath OptString `json:"target_path"`
+	// 期望进入的菜单空间，仅作 landing 提示.
+	NavigationSpaceKey  OptString `json:"navigation_space_key"`
+	State               OptString `json:"state"`
+	Nonce               OptString `json:"nonce"`
+	AuthProtocolVersion OptString `json:"auth_protocol_version"`
 }
 
 // GetUsername returns the value of Username.
@@ -4609,6 +4835,41 @@ func (s *LoginRequest) GetPassword() string {
 	return s.Password
 }
 
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *LoginRequest) GetTargetAppKey() OptString {
+	return s.TargetAppKey
+}
+
+// GetRedirectURI returns the value of RedirectURI.
+func (s *LoginRequest) GetRedirectURI() OptString {
+	return s.RedirectURI
+}
+
+// GetTargetPath returns the value of TargetPath.
+func (s *LoginRequest) GetTargetPath() OptString {
+	return s.TargetPath
+}
+
+// GetNavigationSpaceKey returns the value of NavigationSpaceKey.
+func (s *LoginRequest) GetNavigationSpaceKey() OptString {
+	return s.NavigationSpaceKey
+}
+
+// GetState returns the value of State.
+func (s *LoginRequest) GetState() OptString {
+	return s.State
+}
+
+// GetNonce returns the value of Nonce.
+func (s *LoginRequest) GetNonce() OptString {
+	return s.Nonce
+}
+
+// GetAuthProtocolVersion returns the value of AuthProtocolVersion.
+func (s *LoginRequest) GetAuthProtocolVersion() OptString {
+	return s.AuthProtocolVersion
+}
+
 // SetUsername sets the value of Username.
 func (s *LoginRequest) SetUsername(val string) {
 	s.Username = val
@@ -4619,15 +4880,51 @@ func (s *LoginRequest) SetPassword(val string) {
 	s.Password = val
 }
 
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *LoginRequest) SetTargetAppKey(val OptString) {
+	s.TargetAppKey = val
+}
+
+// SetRedirectURI sets the value of RedirectURI.
+func (s *LoginRequest) SetRedirectURI(val OptString) {
+	s.RedirectURI = val
+}
+
+// SetTargetPath sets the value of TargetPath.
+func (s *LoginRequest) SetTargetPath(val OptString) {
+	s.TargetPath = val
+}
+
+// SetNavigationSpaceKey sets the value of NavigationSpaceKey.
+func (s *LoginRequest) SetNavigationSpaceKey(val OptString) {
+	s.NavigationSpaceKey = val
+}
+
+// SetState sets the value of State.
+func (s *LoginRequest) SetState(val OptString) {
+	s.State = val
+}
+
+// SetNonce sets the value of Nonce.
+func (s *LoginRequest) SetNonce(val OptString) {
+	s.Nonce = val
+}
+
+// SetAuthProtocolVersion sets the value of AuthProtocolVersion.
+func (s *LoginRequest) SetAuthProtocolVersion(val OptString) {
+	s.AuthProtocolVersion = val
+}
+
 // Ref: #/components/schemas/LoginResponse
 type LoginResponse struct {
 	AccessToken  OptNilString `json:"access_token"`
 	RefreshToken OptNilString `json:"refresh_token"`
 	ExpiresIn    OptNilInt    `json:"expires_in"`
 	// 当 auto_login=false 时为 true，表示注册成功但未自动登录.
-	Pending OptNilBool                 `json:"pending"`
-	User    OptNilLoginResponseUser    `json:"user"`
-	Landing OptNilLoginResponseLanding `json:"landing"`
+	Pending  OptNilBool                 `json:"pending"`
+	User     OptNilLoginResponseUser    `json:"user"`
+	Landing  OptNilLoginResponseLanding `json:"landing"`
+	Callback OptAuthCallbackPayload     `json:"callback"`
 }
 
 // GetAccessToken returns the value of AccessToken.
@@ -4660,6 +4957,11 @@ func (s *LoginResponse) GetLanding() OptNilLoginResponseLanding {
 	return s.Landing
 }
 
+// GetCallback returns the value of Callback.
+func (s *LoginResponse) GetCallback() OptAuthCallbackPayload {
+	return s.Callback
+}
+
 // SetAccessToken sets the value of AccessToken.
 func (s *LoginResponse) SetAccessToken(val OptNilString) {
 	s.AccessToken = val
@@ -4690,8 +4992,14 @@ func (s *LoginResponse) SetLanding(val OptNilLoginResponseLanding) {
 	s.Landing = val
 }
 
-func (*LoginResponse) loginRes()    {}
-func (*LoginResponse) registerRes() {}
+// SetCallback sets the value of Callback.
+func (s *LoginResponse) SetCallback(val OptAuthCallbackPayload) {
+	s.Callback = val
+}
+
+func (*LoginResponse) exchangeAuthCallbackRes() {}
+func (*LoginResponse) loginRes()                {}
+func (*LoginResponse) registerRes()             {}
 
 type LoginResponseLanding struct {
 	AppKey             OptString `json:"app_key"`
@@ -7440,6 +7748,52 @@ func (o NilUUID) Get() (v uuid.UUID, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilUUID) Or(d uuid.UUID) uuid.UUID {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptAuthCallbackPayload returns new OptAuthCallbackPayload with value set to v.
+func NewOptAuthCallbackPayload(v AuthCallbackPayload) OptAuthCallbackPayload {
+	return OptAuthCallbackPayload{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAuthCallbackPayload is optional AuthCallbackPayload.
+type OptAuthCallbackPayload struct {
+	Value AuthCallbackPayload
+	Set   bool
+}
+
+// IsSet returns true if OptAuthCallbackPayload was set.
+func (o OptAuthCallbackPayload) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAuthCallbackPayload) Reset() {
+	var v AuthCallbackPayload
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAuthCallbackPayload) SetTo(v AuthCallbackPayload) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAuthCallbackPayload) Get() (v AuthCallbackPayload, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAuthCallbackPayload) Or(d AuthCallbackPayload) AuthCallbackPayload {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -13349,7 +13703,9 @@ func (s *RefreshStats) SetFinishedAt(val time.Time) {
 
 // Ref: #/components/schemas/RefreshTokenRequest
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	ClientAppKey        OptString `json:"client_app_key"`
+	AuthProtocolVersion OptString `json:"auth_protocol_version"`
 }
 
 // GetRefreshToken returns the value of RefreshToken.
@@ -13357,9 +13713,29 @@ func (s *RefreshTokenRequest) GetRefreshToken() string {
 	return s.RefreshToken
 }
 
+// GetClientAppKey returns the value of ClientAppKey.
+func (s *RefreshTokenRequest) GetClientAppKey() OptString {
+	return s.ClientAppKey
+}
+
+// GetAuthProtocolVersion returns the value of AuthProtocolVersion.
+func (s *RefreshTokenRequest) GetAuthProtocolVersion() OptString {
+	return s.AuthProtocolVersion
+}
+
 // SetRefreshToken sets the value of RefreshToken.
 func (s *RefreshTokenRequest) SetRefreshToken(val string) {
 	s.RefreshToken = val
+}
+
+// SetClientAppKey sets the value of ClientAppKey.
+func (s *RefreshTokenRequest) SetClientAppKey(val OptString) {
+	s.ClientAppKey = val
+}
+
+// SetAuthProtocolVersion sets the value of AuthProtocolVersion.
+func (s *RefreshTokenRequest) SetAuthProtocolVersion(val OptString) {
+	s.AuthProtocolVersion = val
 }
 
 // Ref: #/components/schemas/RegisterContext

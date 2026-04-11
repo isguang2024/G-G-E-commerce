@@ -254,16 +254,32 @@
       const { username, password } = formData
       const response = await fetchLogin({
         username,
-        password
+        password,
+        target_app_key: `${route.query.target_app_key || ''}`.trim() || undefined,
+        redirect_uri: `${route.query.redirect_uri || ''}`.trim() || undefined,
+        target_path: `${route.query.target_path || ''}`.trim() || undefined,
+        navigation_space_key: `${route.query.navigation_space_key || ''}`.trim() || undefined,
+        state: `${route.query.state || ''}`.trim() || undefined,
+        nonce: `${route.query.nonce || ''}`.trim() || undefined,
+        auth_protocol_version: `${route.query.auth_protocol_version || ''}`.trim() || undefined
       })
+
+      if (response.callback?.redirect_to) {
+        persistRememberedCredentials()
+        window.location.assign(response.callback.redirect_to)
+        return
+      }
 
       if (!response.access_token) {
         throw new Error('Login failed - no token received')
       }
 
       resetRouterState(0)
-      userStore.setToken(response.access_token, response.refresh_token)
-      userStore.setLoginStatus(true)
+      userStore.applySession({
+        accessToken: response.access_token,
+        refreshToken: response.refresh_token,
+        isLogin: true
+      })
 
       if (response.user) {
         userStore.syncLoginUserIdentity(response.user.id)

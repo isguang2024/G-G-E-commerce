@@ -59,6 +59,13 @@
 
     <ElCard class="art-table-card" shadow="never">
       <ElAlert
+        class="page-governance-alert"
+        type="info"
+        :closable="false"
+        show-icon
+        title="共存治理规则：本地配置页负责当前后台直接维护；扫描同步页优先回到扫描源修正；远端页只保留 link / remote meta 作为入口，不再补同一路由的本地组件。"
+      />
+      <ElAlert
         v-if="loadError"
         class="page-inline-alert"
         type="info"
@@ -133,8 +140,14 @@
                 <ElTag :type="getPageTypeTag(row)" effect="plain" size="small">
                   {{ getPageTypeText(row) }}
                 </ElTag>
+                <ElTag :type="getPageSourceTag(row)" effect="plain" size="small">
+                  {{ getPageSourceText(row) }}
+                </ElTag>
                 <span class="page-name-cell__text">{{ row.name }}</span>
                 <span class="page-inline-relation">{{ getRelationDisplayText(row) }}</span>
+              </div>
+              <div class="page-name-cell__subtext">
+                {{ getPageGovernanceText(row) }}
               </div>
             </div>
           </div>
@@ -327,6 +340,9 @@
     getOperationList,
     getRouteDisplayText,
     getRelationDisplayText,
+    getPageGovernanceText,
+    getPageSourceTag,
+    getPageSourceText,
     getMountTargetText,
     getEffectiveChainText,
     getParentChainStatusText,
@@ -365,6 +381,10 @@
   }
 
   .page-inline-alert {
+    margin-bottom: 12px;
+  }
+
+  .page-governance-alert {
     margin-bottom: 12px;
   }
 
@@ -432,7 +452,8 @@
   .page-name-cell__main {
     display: flex;
     flex: 1;
-    align-items: center;
+    align-items: flex-start;
+    flex-direction: column;
     min-width: 0;
   }
 
@@ -461,6 +482,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .page-name-cell__subtext {
+    color: var(--art-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 6px;
   }
 
   .page-muted-text {

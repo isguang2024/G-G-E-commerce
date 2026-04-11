@@ -3,6 +3,56 @@
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
+    AuthCallbackPayload:
+      type: object
+      required:
+        - mode
+        - code
+        - state
+        - target_app_key
+        - redirect_uri
+        - redirect_to
+      properties:
+        mode:
+          type: string
+          enum: [token_exchange]
+        code:
+          type: string
+        state:
+          type: string
+        target_app_key:
+          type: string
+        redirect_uri:
+          type: string
+        redirect_to:
+          type: string
+        target_path:
+          type: string
+        navigation_space_key:
+          type: string
+        auth_protocol_version:
+          type: string
+    AuthCallbackExchangeRequest:
+      type: object
+      required:
+        - code
+        - state
+        - nonce
+        - target_app_key
+        - redirect_uri
+      properties:
+        code:
+          type: string
+        state:
+          type: string
+        nonce:
+          type: string
+        target_app_key:
+          type: string
+        redirect_uri:
+          type: string
+        auth_protocol_version:
+          type: string
     RegisterContext:
       type: object
       required:

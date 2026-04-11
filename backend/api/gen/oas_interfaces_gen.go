@@ -41,6 +41,10 @@ type DeleteUserRes interface {
 	deleteUserRes()
 }
 
+type ExchangeAuthCallbackRes interface {
+	exchangeAuthCallbackRes()
+}
+
 type ExplainPermissionsRes interface {
 	explainPermissionsRes()
 }

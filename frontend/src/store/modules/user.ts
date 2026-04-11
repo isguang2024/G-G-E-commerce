@@ -137,6 +137,15 @@ export const useUserStore = defineStore(
       }
     }
 
+    const applySession = (payload: {
+      accessToken: string
+      refreshToken?: string
+      isLogin?: boolean
+    }) => {
+      setToken(payload.accessToken, payload.refreshToken)
+      setLoginStatus(payload.isLogin ?? true)
+    }
+
     const resolveCurrentUserId = (): string => {
       const userId = `${info.value.userId || info.value.id || ''}`.trim()
       return userId
@@ -164,34 +173,28 @@ export const useUserStore = defineStore(
      * 清空所有用户相关状态并跳转到登录页
      * 如果是同一账号重新登录，保留工作台标签页
      */
-    const logOut = () => {
-      // 保存当前用户 ID，用于下次登录时判断是否为同一用户
-      const currentUserId = info.value.userId
-      if (currentUserId) {
-        localStorage.setItem(StorageConfig.LAST_USER_ID_KEY, String(currentUserId))
+    const clearSessionState = (options: { preserveLastUserId?: boolean } = {}) => {
+      if (options.preserveLastUserId) {
+        const currentUserId = info.value.userId
+        if (currentUserId) {
+          localStorage.setItem(StorageConfig.LAST_USER_ID_KEY, String(currentUserId))
+        }
       }
-
       // 清空用户信息（显式清空 actions/roles，避免 useAuth 命中旧权限缓存）
       info.value = { actions: [], roles: [] } as any
-      // 重置登录状态
       isLogin.value = false
-      // 重置锁屏状态
       isLock.value = false
-      // 清空锁屏密码
       lockPassword.value = ''
-      // 清空访问令牌
       accessToken.value = ''
-      // 清空刷新令牌
       refreshToken.value = ''
-      // 注意：不清空工作台标签页，等下次登录时根据用户判断
-      // 移除iframe路由缓存
       sessionStorage.removeItem('iframeRoutes')
-      // 清空主页路径
       useMenuStore().setHomePath('')
-      // 清空当前协作空间上下文
       useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
-      // 重置路由状态
       resetRouterState(500)
+    }
+
+    const logOut = () => {
+      clearSessionState({ preserveLastUserId: true })
       // 跳转到登录页，携带当前路由作为 redirect 参数
       const currentRoute = router.currentRoute.value
       const redirect = currentRoute.path !== RoutesAlias.Login ? currentRoute.fullPath : undefined
@@ -246,7 +249,9 @@ export const useUserStore = defineStore(
       setLockStatus,
       setLockPassword,
       setToken,
+      applySession,
       syncLoginUserIdentity,
+      clearSessionState,
       logOut,
       checkAndClearWorktabs
     }

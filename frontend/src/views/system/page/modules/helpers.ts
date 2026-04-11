@@ -219,6 +219,59 @@ export function getRelationDisplayText(row: PageItem) {
   return '未挂载内页'
 }
 
+function hasRemoteMeta(meta?: Record<string, any>) {
+  if (!meta || typeof meta !== 'object') return false
+  return [
+    meta.remoteAppKey,
+    meta.remotePageKey,
+    meta.remoteEntryUrl,
+    meta.remoteModule,
+    meta.remoteModuleName,
+    meta.remoteRoutePath,
+    meta.remoteUrl
+  ].some((item) => `${item || ''}`.trim())
+}
+
+export function getPageSourceKind(row: PageItem) {
+  const link = `${row.link || ''}`.trim()
+  if (/^https?:\/\//i.test(link) || hasRemoteMeta(row.meta)) {
+    return 'remote'
+  }
+  if (row.source === 'sync') return 'sync'
+  if (row.source === 'seed') return 'seed'
+  return 'manual'
+}
+
+export function getPageSourceText(row: PageItem) {
+  const sourceKind = getPageSourceKind(row)
+  if (sourceKind === 'remote') return '远端页'
+  if (sourceKind === 'sync') return '扫描同步'
+  if (sourceKind === 'seed') return 'Seed'
+  return '本地配置'
+}
+
+export function getPageSourceTag(row: PageItem) {
+  const sourceKind = getPageSourceKind(row)
+  if (sourceKind === 'remote') return 'primary'
+  if (sourceKind === 'sync') return 'success'
+  if (sourceKind === 'seed') return 'info'
+  return 'warning'
+}
+
+export function getPageGovernanceText(row: PageItem) {
+  const sourceKind = getPageSourceKind(row)
+  if (sourceKind === 'remote') {
+    return '远端接入页应以 link 或 remote meta 作为唯一入口，避免再为同一路由补本地组件。'
+  }
+  if (sourceKind === 'sync') {
+    return '扫描同步页应优先回到扫描源修正，避免人工编辑后再次被覆盖。'
+  }
+  if (sourceKind === 'seed') {
+    return 'Seed 页适合做基线能力，后续差异优先走增量配置，不回写初始化脚本。'
+  }
+  return '本地配置页由当前后台直接治理，注意不要和远端入口或扫描结果重复占用同一路由。'
+}
+
 export function formatUpdatedAt(value?: string) {
   const target = `${value || ''}`.trim()
   if (!target) {

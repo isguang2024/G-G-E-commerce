@@ -44,6 +44,7 @@ const (
 	DeleteRoleOperation                                           OperationName = "DeleteRole"
 	DeleteUserOperation                                           OperationName = "DeleteUser"
 	DispatchMessageOperation                                      OperationName = "DispatchMessage"
+	ExchangeAuthCallbackOperation                                 OperationName = "ExchangeAuthCallback"
 	ExplainPermissionsOperation                                   OperationName = "ExplainPermissions"
 	GetApiEndpointOverviewOperation                               OperationName = "GetApiEndpointOverview"
 	GetAuthMeOperation                                            OperationName = "GetAuthMe"

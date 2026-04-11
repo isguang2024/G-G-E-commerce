@@ -62,6 +62,11 @@ import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
 import { DEFAULT_MENU_SPACE_KEY, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+import {
+  buildCentralizedLoginURL,
+  createCentralizedAuthAttempt,
+  persistCentralizedAuthAttempt
+} from '@/utils/auth/centralized-login'
 
 /**
  * 运行时 manifest 校验失败错误
@@ -511,14 +516,46 @@ function handleLoginStatus(
     return true
   }
 
-  // 未登录且访问需要权限的页面，跳转到登录页并携带 redirect 参数
-    userStore.logOut()
-    next({
-      path: RoutesAlias.Login,
-      query: { redirect: to.fullPath }
-    })
+  const appContextStore = useAppContextStore()
+  const menuSpaceStore = useMenuSpaceStore()
+  const targetAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
+  const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
+  const binding = menuSpaceStore.resolveHostBinding(preferredSpaceKey)
+  const shouldUseCentralizedLogin =
+    Boolean(targetAppKey) && targetAppKey !== 'account-portal'
+
+  if (shouldUseCentralizedLogin && typeof window !== 'undefined') {
+    userStore.clearSessionState()
+    const redirectUri = new URL(RoutesAlias.AuthCallback, window.location.origin).toString()
+    const attempt = createCentralizedAuthAttempt(
+      targetAppKey,
+      to.fullPath,
+      redirectUri,
+      preferredSpaceKey || binding?.spaceKey || ''
+    )
+    persistCentralizedAuthAttempt(attempt)
+    window.location.assign(
+      buildCentralizedLoginURL({
+        loginHost: binding?.loginHost || '',
+        targetAppKey,
+        targetPath: to.fullPath,
+        redirectUri,
+        navigationSpaceKey: preferredSpaceKey || binding?.spaceKey || '',
+        state: attempt.state,
+        nonce: attempt.nonce
+      })
+    )
+    next(false)
     return false
   }
+
+  userStore.clearSessionState()
+  next({
+    path: RoutesAlias.Login,
+    query: { redirect: to.fullPath }
+  })
+  return false
+}
 
 async function ensurePublicRuntimeRoutes(
   to: RouteLocationNormalized,

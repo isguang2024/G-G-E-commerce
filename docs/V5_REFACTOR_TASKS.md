@@ -634,3 +634,65 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 若后续继续做多 host/多域名部署，应把 host binding 的优先级规则沉到后端返回顺序或显式优先级字段，减少前端推断成本。
 - 当前仍有 1 条非阻断 warning 未纳入本次节点处理；若后续复现，应单开节点按 warning 类型拆解，不与导航主链收口混做。
+
+### 2026-04-12 Phase C 设计首轮收口：认证中心协议与职责边界（Phase C）
+
+**本次改动**
+- 在 `docs/multi-app-hosting-foundation.md` 补齐 Phase C 认证中心协议：明确 `account-portal` 为唯一认证中心，定义登录入口参数、callback 两段式回跳、一次性 code 交换、refresh 轮换与 logout 分层。
+- 明确 branding 与回跳策略的责任分工：长期品牌配置真相源来自 `apps.meta.branding`，认证流程只消费 snapshot；后端决定“允许回跳哪里”，前端只负责展示和有限兜底校验。
+- 补齐独立认证 APP 的职责上限与剥离路径：认证页不继续扩散成业务后台，也不再把后台菜单树、worktab、动态路由初始化当成登录前置条件。
+
+**下次方向**
+- 进入 `8/1/*` 实现节点时，先把 callback/logout/OpenAPI 契约补出来，再做 handler 与前端落地，避免先写代码再反推协议。
+- 进入 `8/2/*` 前端适配节点时，优先收掉认证页对共享 `menu-space/worktab/route reset` 的依赖，把 `account-portal` 真正收敛成轻壳 APP。
+
+### 2026-04-12 Phase C 实现收口：centralized login 回调链路打通（Phase C）
+
+**本次改动**
+- 完成 `8/1/1`、`8/1/2`、`8/1/3` 后端实现：OpenAPI 新增 `POST /auth/callback/exchange` 与 centralized login 参数扩展；新增 `auth_callback_codes` 模型与迁移 `00011_auth_callback_codes.sql`；`auth/login` 在 centralized 模式下改为签发一次性 callback code，`auth/callback/exchange` 负责 code 校验、token 交换与 landing 解析。
+- 完成 `8/2/1`、`8/2/2` 前端适配：路由守卫未登录时会为目标 app 生成 `state/nonce` 并跳到 `account-portal`；新增 `/account/auth/callback` 页面接收 code、换取 token、初始化 `userStore` 并回跳原业务页；`userStore` 抽出 `applySession/clearSessionState` 统一登录态写入与清理。
+- 补齐历史遗漏收口：`frontend/src/router/routes/staticRoutes.ts` 补上 `/account/auth/login|register|forget-password` 静态入口，避免 logout/guard 进入 account-portal 时直接 404；`backend/internal/api/router/router.go` 与 smoke test 同步补挂 `/auth/callback/exchange` public bridge，消除“spec 已生成但 Gin 未桥接”的假接通状态。
+- 修正 redirect 白名单本地开发兼容性：callback 校验现在同时支持 `host:port` 精确匹配和 hostname 级匹配，本地 `127.0.0.1:5174` 回调不再因为白名单登记为 `127.0.0.1/localhost` 而误判失败。
+- 浏览器端到端验证通过：未登录访问 `http://127.0.0.1:5174/system/page` 会跳到 `account-portal` 登录页；登录后进入 `/account/auth/callback`，随后成功调用 `/api/v1/auth/callback/exchange`、`/api/v1/auth/me`、`/api/v1/collaboration-workspaces/mine`、`/api/v1/runtime/navigation`，最终稳定回到 `/system/page`，控制台 `error = 0`。
+
+**下次方向**
+- 继续推进 Phase C 时，应把 `shouldUseCentralizedLogin` 从“按路径推断非 account-portal 全部走 centralized”收敛为真正读取 app `authMode/capabilities`，避免后续 demo 或本地单体场景被过度重定向。
+- `frontend/src/api/auth.ts` 当前对 `POST /auth/callback/exchange` 仍用了一层 `as any` 调用，后续需要继续核查前端 `openapi-typescript` 生成层为什么没把该 path 正常暴露出来，并收掉这层临时绕过。
+- 现阶段打通的是 callback token exchange 主链；全局 logout、refresh 跨 APP 一致性、shared cookie 与认证中心会话撤销仍是下一轮实现重点。
+
+### 2026-04-12 Phase D 治理台收口：APP 注册中心分区与页面来源治理（Phase D）
+
+**本次改动**
+- `App 管理` 页面补齐注册中心治理分区：把基础标识、空间与认证、运行入口、能力声明、治理补充拆成显式表单段落，并新增三组治理卡片，直接展示入口绑定、前后端入口、健康探针、认证模式与能力声明完整度。
+- 基于现有字段增加“接入预检查与本地预演”：不伪造新的 dry-run API，而是按当前 `hostBindings/frontend_entry_url/health_check_url/auth_mode` 静态推导入口命中、首跳落点和探针状态，让接入前检查从 JSON 文本变成可读治理视图。
+- `受管页面` 页面补齐本地/扫描同步/远端页的来源分类：搜索条件新增来源筛选，指标区新增来源统计，列表行新增来源标签与治理提示，明确“扫描同步回源修正、远端页不重复挂本地组件”的共存约束。
+- 前端验证通过：`pnpm exec vue-tsc --noEmit`、`pnpm build` 成功；Playwright 实测确认 `App 管理` 的治理卡片与 `受管页面` 的来源统计/治理告警已渲染。
+
+**下次方向**
+- 后端仍缺 `menu-space-entry-bindings` 运行时接口闭环，当前 `App 管理` 页会暴露历史 404；后续应把该接口补齐或显式下线，避免治理页长期带错误兜底运行。
+- 这轮“预检查”仍是静态推导；如果后续进入真正接入托管阶段，应新增后端 dry-run/health 聚合接口，把 DNS、callback 白名单、CORS/CSP 与 issuer 校验统一下沉到服务端。
+- `受管页面` 目前对“远端页”的识别依赖 `link/meta` 约定；后续如果接入远端 manifest，应把来源升级为明确契约字段，而不是继续靠前端推断。
+
+### 2026-04-12 Phase D 治理台收口：APP 环境配置、Feature Flag 与敏感配置引用（Phase D）
+
+**本次改动**
+- 在 `App 管理` 抽屉新增三组结构化治理编辑区：`meta.env_profiles`、`meta.feature_flags`、`meta.sensitive_config`，把多环境配置、APP 级开关和敏感配置引用从自由文本说明拆成受控 JSON 编辑区。
+- 保存链路改为“保留未知 meta + 合并受控治理键”：前端会在保存时只覆盖 `env_profiles/feature_flags/sensitive_config` 三个治理段，不丢历史上已经存在但当前页面未显式编辑的其他 `meta` 字段。
+- 应用概览卡片新增环境/Flag/敏感治理统计，页面层能直接看到“环境 0 组 / Flag 0 项 / 敏感治理 0 组”这类覆盖度，不必先打开抽屉才能判断配置空缺。
+- 浏览器实测确认编辑抽屉已出现“环境配置（meta.env_profiles） / Feature Flag（meta.feature_flags） / 敏感配置引用（meta.sensitive_config）”三项，前端联编与构建继续通过。
+
+**下次方向**
+- 当前只是把治理约定落到前端结构化编辑层，后续若要真正消费这些配置，需要在运行时 app-context、部署脚本或后端聚合接口里明确 `env_profiles/feature_flags/sensitive_config` 的真读取方。
+- `sensitive_config` 当前仍是“引用治理”而非真实密钥托管；下一步若推进部署集成，应把 key vault / 环境变量 / 证书管理系统的来源类型也标准化，避免不同 APP 各自发明字段。
+- `menu-space-entry-bindings` 历史 404 仍会污染 `App 管理` 页的控制台；在继续扩治理台之前，建议先补齐这个后端接口闭环或在前端显式降级提示。
+
+### 2026-04-12 Phase D 历史遗留收口：menu-space-entry-bindings 路由桥接补齐（Phase D）
+
+**本次改动**
+- 在 [backend/internal/api/router/router.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/router/router.go:256) 补挂 `DELETE /system/app-host-bindings/:id`，并补齐 `GET/POST/DELETE /system/menu-space-entry-bindings` 三条 Gin → ogen 桥接路由。
+- 后端 handler 与 OpenAPI 其实早已存在，这次修复的是运行时桥接缺口，不涉及 OpenAPI 或 ogen 重新生成。
+- 重启后端后重新验证，`App 管理` 页控制台不再出现 `menu-space-entry-bindings` 404，历史遗留已收掉。
+
+**下次方向**
+- `menu-space-host-bindings` 这一组路由目前仍只有 `GET/POST` 桥接；若前端后续补删除能力，应同步检查 OpenAPI 与 Gin 路由是否一致，避免再次出现“spec/handler 在、路由没挂”的半接通状态。
+- 这类问题本质上是路由桥接遗漏；后续如果继续扩 OpenAPI-first 链路，建议补一层“spec path 与 Gin bridge 对账”的自动检查，别再靠浏览器控制台发现。 

@@ -1,5 +1,7 @@
 import { v5Client, SKIP_WORKSPACE_CONTEXT_HEADER } from '@/api/v5/client'
 import { unwrap, createV5HttpError } from '@/api/system-manage/_shared'
+import { useAppContextStore } from '@/store/modules/app-context'
+import { AUTH_PROTOCOL_VERSION } from '@/utils/auth/centralized-login'
 
 /**
  * 登录 — 走 v5 OpenAPI client。后端 ogen handler 直接返回裸 schema
@@ -8,7 +10,17 @@ import { unwrap, createV5HttpError } from '@/api/system-manage/_shared'
  */
 export async function fetchLogin(params: Api.Auth.LoginParams) {
   const { data, error, response } = await v5Client.POST('/auth/login', {
-    body: { username: params.username, password: params.password },
+    body: {
+      username: params.username,
+      password: params.password,
+      target_app_key: params.target_app_key,
+      redirect_uri: params.redirect_uri,
+      target_path: params.target_path,
+      navigation_space_key: params.navigation_space_key,
+      state: params.state,
+      nonce: params.nonce,
+      auth_protocol_version: params.auth_protocol_version || AUTH_PROTOCOL_VERSION
+    },
     headers: {
       [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
     }
@@ -66,14 +78,43 @@ export async function fetchRegister(body: {
  * 刷新 Token — v5 OpenAPI client。
  */
 export async function fetchRefreshToken(refreshToken: string) {
+  const appContextStore = useAppContextStore()
   const { data, error, response } = await v5Client.POST('/auth/refresh', {
-    body: { refresh_token: refreshToken },
+    body: {
+      refresh_token: refreshToken,
+      client_app_key: appContextStore.effectiveManagedAppKey || appContextStore.currentRuntimeAppKey,
+      auth_protocol_version: AUTH_PROTOCOL_VERSION
+    },
     headers: {
       [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
     }
   })
   if (error || !data) {
     throw (error ? createV5HttpError(error, response) : new Error('refresh failed'))
+  }
+  return data as Api.Auth.LoginResponse
+}
+
+export async function fetchExchangeAuthCallback(body: {
+  code: string
+  state: string
+  nonce: string
+  target_app_key: string
+  redirect_uri: string
+}) {
+  const { data, error, response } = await v5Client.POST('/auth/callback/exchange' as any, {
+    body: {
+      ...body,
+      auth_protocol_version: AUTH_PROTOCOL_VERSION
+    },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
+  })
+  if (error || !data) {
+    throw (
+      error ? createV5HttpError(error, response) : new Error('exchange auth callback failed')
+    )
   }
   return data as Api.Auth.LoginResponse
 }

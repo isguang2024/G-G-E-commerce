@@ -355,6 +355,15 @@ func (UnimplementedHandler) DispatchMessage(ctx context.Context, req *MessageDis
 	return r, ht.ErrNotImplemented
 }
 
+// ExchangeAuthCallback implements exchangeAuthCallback operation.
+//
+// Centralized_login 回调换取令牌.
+//
+// POST /auth/callback/exchange
+func (UnimplementedHandler) ExchangeAuthCallback(ctx context.Context, req *AuthCallbackExchangeRequest) (r ExchangeAuthCallbackRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExplainPermissions implements explainPermissions operation.
 //
 // 解释当前账号在指定工作空间内的最终权限及其来源.

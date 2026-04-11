@@ -256,6 +256,12 @@ type Invoker interface {
 	//
 	// POST /messages/dispatch
 	DispatchMessage(ctx context.Context, request *MessageDispatchRequest) (*MessageDispatchResult, error)
+	// ExchangeAuthCallback invokes exchangeAuthCallback operation.
+	//
+	// Centralized_login 回调换取令牌.
+	//
+	// POST /auth/callback/exchange
+	ExchangeAuthCallback(ctx context.Context, request *AuthCallbackExchangeRequest) (ExchangeAuthCallbackRes, error)
 	// ExplainPermissions invokes explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -5798,6 +5804,83 @@ func (c *Client) sendDispatchMessage(ctx context.Context, request *MessageDispat
 
 	stage = "DecodeResponse"
 	result, err := decodeDispatchMessageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ExchangeAuthCallback invokes exchangeAuthCallback operation.
+//
+// Centralized_login 回调换取令牌.
+//
+// POST /auth/callback/exchange
+func (c *Client) ExchangeAuthCallback(ctx context.Context, request *AuthCallbackExchangeRequest) (ExchangeAuthCallbackRes, error) {
+	res, err := c.sendExchangeAuthCallback(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendExchangeAuthCallback(ctx context.Context, request *AuthCallbackExchangeRequest) (res ExchangeAuthCallbackRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("exchangeAuthCallback"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/callback/exchange"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ExchangeAuthCallbackOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/callback/exchange"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeExchangeAuthCallbackRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeExchangeAuthCallbackResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

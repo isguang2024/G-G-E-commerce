@@ -18,6 +18,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
+	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 )
 
@@ -47,6 +48,40 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 	}
 	if userMap, ok := resp.User.(map[string]interface{}); ok {
 		out.User = gen.NewOptNilLoginResponseUser(toJxRawMap(userMap))
+		if centralizedLoginRequested(req) && h.centralizedAuthSvc != nil {
+			userID, parseErr := uuidFromMapValue(userMap["id"])
+			if parseErr != nil {
+				return nil, &apperr.ParamError{Msg: "登录态用户标识无效"}
+			}
+			callback, callbackErr := h.centralizedAuthSvc.CreateCallback(ctx, auth.CreateAuthCallbackInput{
+				UserID:             userID,
+				TargetAppKey:       optString(req.TargetAppKey),
+				RedirectURI:        optString(req.RedirectURI),
+				TargetPath:         optString(req.TargetPath),
+				NavigationSpaceKey: optString(req.NavigationSpaceKey),
+				State:              optString(req.State),
+				Nonce:              optString(req.Nonce),
+				RequestHost:        requestHostFromCtx(ctx),
+			})
+			if callbackErr != nil {
+				return nil, &apperr.ParamError{Msg: callbackErr.Error()}
+			}
+			out.AccessToken = gen.OptNilString{}
+			out.RefreshToken = gen.OptNilString{}
+			out.ExpiresIn = gen.OptNilInt{}
+			out.User = gen.OptNilLoginResponseUser{}
+			out.Callback = gen.OptAuthCallbackPayload{Value: gen.AuthCallbackPayload{
+				Mode:                gen.AuthCallbackPayloadModeTokenExchange,
+				Code:                callback.Code,
+				State:               callback.State,
+				TargetAppKey:        callback.TargetAppKey,
+				RedirectURI:         callback.RedirectURI,
+				RedirectTo:          callback.RedirectTo,
+				TargetPath:          gen.NewOptString(callback.TargetPath),
+				NavigationSpaceKey:  gen.NewOptString(callback.NavigationSpaceKey),
+				AuthProtocolVersion: gen.NewOptString(callback.AuthProtocolVersion),
+			}, Set: true}
+		}
 	}
 	return out, nil
 }
@@ -167,6 +202,36 @@ func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequ
 		RefreshToken: resp.RefreshToken,
 		ExpiresIn:    resp.ExpiresIn,
 	}, nil
+}
+
+func (h *APIHandler) ExchangeAuthCallback(ctx context.Context, req *gen.AuthCallbackExchangeRequest) (gen.ExchangeAuthCallbackRes, error) {
+	if req == nil || h.centralizedAuthSvc == nil {
+		return nil, &apperr.ParamError{Msg: "callback exchange 未启用"}
+	}
+	result, err := h.centralizedAuthSvc.ExchangeCallback(ctx, auth.ExchangeAuthCallbackInput{
+		Code:         req.Code,
+		State:        req.State,
+		Nonce:        req.Nonce,
+		TargetAppKey: req.TargetAppKey,
+		RedirectURI:  req.RedirectURI,
+	})
+	if err != nil {
+		return nil, &apperr.ParamError{Msg: err.Error()}
+	}
+	out := &gen.LoginResponse{
+		AccessToken:  gen.NewOptNilString(result.LoginResponse.AccessToken),
+		RefreshToken: gen.NewOptNilString(result.LoginResponse.RefreshToken),
+		ExpiresIn:    gen.NewOptNilInt(result.LoginResponse.ExpiresIn),
+		Landing: gen.NewOptNilLoginResponseLanding(gen.LoginResponseLanding{
+			AppKey:             gen.NewOptString(result.AppKey),
+			NavigationSpaceKey: gen.NewOptString(result.NavigationSpaceKey),
+			HomePath:           gen.NewOptString(result.HomePath),
+		}),
+	}
+	if len(result.LoginResponse.User) > 0 {
+		out.User = gen.NewOptNilLoginResponseUser(toJxRawMap(result.LoginResponse.User))
+	}
+	return out, nil
 }
 
 func toJxRawMap(m map[string]interface{}) gen.LoginResponseUser {
@@ -317,6 +382,21 @@ func clientIPFromCtx(ctx context.Context) string {
 		return host
 	}
 	return raw
+}
+
+func centralizedLoginRequested(req *gen.LoginRequest) bool {
+	return strings.TrimSpace(optString(req.TargetAppKey)) != "" ||
+		strings.TrimSpace(optString(req.RedirectURI)) != "" ||
+		strings.TrimSpace(optString(req.State)) != "" ||
+		strings.TrimSpace(optString(req.Nonce)) != ""
+}
+
+func uuidFromMapValue(value interface{}) (uuid.UUID, error) {
+	raw, ok := value.(string)
+	if !ok {
+		return uuid.Nil, errors.New("invalid uuid value")
+	}
+	return uuid.Parse(strings.TrimSpace(raw))
 }
 
 var _ = uuid.Nil // reserved for future auth handler additions

@@ -37,6 +37,10 @@ import {
   getMountModeText,
   getMountTargetText,
   getOperationList,
+  getPageGovernanceText,
+  getPageSourceKind,
+  getPageSourceTag,
+  getPageSourceText,
   getPageTypeTag,
   getPageTypeText,
   getRelationDisplayText,
@@ -80,6 +84,7 @@ export function usePagePage() {
     keyword: '',
     pageType: '',
     accessMode: '',
+    source: '',
     status: ''
   }
   const searchForm = reactive({ ...initialSearchState })
@@ -118,6 +123,21 @@ export function usePagePage() {
           { label: '公开', value: 'public' },
           { label: '登录', value: 'jwt' },
           { label: '权限', value: 'permission' }
+        ],
+        clearable: true
+      }
+    },
+    {
+      label: '来源',
+      key: 'source',
+      type: 'select',
+      props: {
+        options: [
+          { label: '全部', value: '' },
+          { label: '本地配置', value: 'manual' },
+          { label: '扫描同步', value: 'sync' },
+          { label: 'Seed', value: 'seed' },
+          { label: '远端页', value: 'remote' }
         ],
         clearable: true
       }
@@ -197,6 +217,7 @@ export function usePagePage() {
     const keyword = normalizeKeyword(appliedFilters.keyword)
     const pageType = `${appliedFilters.pageType || ''}`.trim()
     const accessMode = `${appliedFilters.accessMode || ''}`.trim()
+    const source = `${appliedFilters.source || ''}`.trim()
     const status = `${appliedFilters.status || ''}`.trim()
 
     const keywordSource = [
@@ -218,6 +239,7 @@ export function usePagePage() {
     if (keyword && !keywordSource.includes(keyword)) return false
     if (pageType && item.pageType !== pageType) return false
     if (accessMode && item.accessMode !== accessMode) return false
+    if (source && getPageSourceKind(item) !== source) return false
     if (status && item.status !== status) return false
     return true
   }
@@ -257,10 +279,16 @@ export function usePagePage() {
     const displayGroupCount = rawPages.value.filter(
       (item) => item.pageType === 'display_group'
     ).length
+    const remoteCount = rawPages.value.filter((item) => getPageSourceKind(item) === 'remote').length
+    const syncCount = rawPages.value.filter((item) => getPageSourceKind(item) === 'sync').length
+    const localCount = rawPages.value.filter((item) => getPageSourceKind(item) === 'manual').length
     return [
       { label: '当前 App', value: targetAppKey.value },
       { label: '当前显示', value: visibleCount.value },
       { label: '受管页面', value: managedEntryCount || 0 },
+      { label: '本地配置', value: localCount || 0 },
+      { label: '扫描同步', value: syncCount || 0 },
+      { label: '远端页', value: remoteCount || 0 },
       { label: '逻辑分组', value: logicGroupCount || 0 },
       { label: '普通分组', value: displayGroupCount || 0 },
       { label: '停用', value: suspendedCount || 0 },
@@ -321,6 +349,7 @@ export function usePagePage() {
       keyword: searchForm.keyword.trim(),
       pageType: searchForm.pageType,
       accessMode: searchForm.accessMode,
+      source: searchForm.source,
       status: searchForm.status
     })
   }
@@ -712,6 +741,9 @@ export function usePagePage() {
     getOperationList,
     getRouteDisplayText,
     getRelationDisplayText,
+    getPageGovernanceText,
+    getPageSourceTag,
+    getPageSourceText,
     getMountTargetText,
     getEffectiveChainText,
     getParentChainStatusText,

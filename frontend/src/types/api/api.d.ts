@@ -66,6 +66,13 @@ declare namespace Api {
     interface LoginParams {
       username: string
       password: string
+      target_app_key?: string
+      redirect_uri?: string
+      target_path?: string
+      navigation_space_key?: string
+      state?: string
+      nonce?: string
+      auth_protocol_version?: string
     }
 
     /** 登录响应数据 */
@@ -78,10 +85,26 @@ declare namespace Api {
 
     /** 登录响应 */
     interface LoginResponse {
-      access_token: string
-      refresh_token: string
-      expires_in: number
-      user: UserInfo
+      access_token?: string
+      refresh_token?: string
+      expires_in?: number
+      user?: UserInfo
+      landing?: {
+        app_key?: string
+        navigation_space_key?: string
+        home_path?: string
+      }
+      callback?: {
+        mode: 'token_exchange' | string
+        code: string
+        state: string
+        target_app_key: string
+        redirect_uri: string
+        redirect_to: string
+        target_path?: string
+        navigation_space_key?: string
+        auth_protocol_version?: string
+      }
     }
 
     /** 用户信息 */

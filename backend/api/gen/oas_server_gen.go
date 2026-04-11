@@ -236,6 +236,12 @@ type Handler interface {
 	//
 	// POST /messages/dispatch
 	DispatchMessage(ctx context.Context, req *MessageDispatchRequest) (*MessageDispatchResult, error)
+	// ExchangeAuthCallback implements exchangeAuthCallback operation.
+	//
+	// Centralized_login 回调换取令牌.
+	//
+	// POST /auth/callback/exchange
+	ExchangeAuthCallback(ctx context.Context, req *AuthCallbackExchangeRequest) (ExchangeAuthCallbackRes, error)
 	// ExplainPermissions implements explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.

@@ -129,6 +129,22 @@ func ensureAccountPortalPublicPages(db *gorm.DB) error {
 			Status:          "normal",
 			Meta:            systemmodels.MetaJSON{"authScene": "forget-password"},
 		},
+		{
+			AppKey:          AccountPortalAppKey,
+			PageKey:         "account_portal.auth.callback",
+			Name:            "认证回调",
+			RouteName:       "AuthCallback",
+			RoutePath:       "/account/auth/callback",
+			Component:       "/auth/callback",
+			PageType:        "standalone",
+			VisibilityScope: "app",
+			Source:          "manual",
+			ModuleKey:       "auth",
+			SortOrder:       13,
+			AccessMode:      "public",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"authScene": "callback"},
+		},
 	}
 	for i := range specs {
 		spec := specs[i]
@@ -171,7 +187,7 @@ func ensureAccountPortalApp(db *gorm.DB) error {
 		SpaceMode:        "single",
 		DefaultSpaceKey:  AccountPortalDefaultSpaceKey,
 		AuthMode:         "inherit_host",
-		FrontendEntryURL: "/account",
+		FrontendEntryURL: "/account/auth/login",
 		BackendEntryURL:  "",
 		HealthCheckURL:   "/health",
 		Status:           "normal",

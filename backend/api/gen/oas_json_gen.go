@@ -1847,6 +1847,456 @@ func (s *AssignUserRolesUnauthorized) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *AuthCallbackExchangeRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AuthCallbackExchangeRequest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("code")
+		e.Str(s.Code)
+	}
+	{
+		e.FieldStart("state")
+		e.Str(s.State)
+	}
+	{
+		e.FieldStart("nonce")
+		e.Str(s.Nonce)
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		e.FieldStart("redirect_uri")
+		e.Str(s.RedirectURI)
+	}
+	{
+		if s.AuthProtocolVersion.Set {
+			e.FieldStart("auth_protocol_version")
+			s.AuthProtocolVersion.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfAuthCallbackExchangeRequest = [6]string{
+	0: "code",
+	1: "state",
+	2: "nonce",
+	3: "target_app_key",
+	4: "redirect_uri",
+	5: "auth_protocol_version",
+}
+
+// Decode decodes AuthCallbackExchangeRequest from json.
+func (s *AuthCallbackExchangeRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AuthCallbackExchangeRequest to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "code":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Code = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"code\"")
+			}
+		case "state":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.State = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "nonce":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Nonce = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"nonce\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "redirect_uri":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.RedirectURI = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"redirect_uri\"")
+			}
+		case "auth_protocol_version":
+			if err := func() error {
+				s.AuthProtocolVersion.Reset()
+				if err := s.AuthProtocolVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auth_protocol_version\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AuthCallbackExchangeRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAuthCallbackExchangeRequest) {
+					name = jsonFieldsNameOfAuthCallbackExchangeRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AuthCallbackExchangeRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AuthCallbackExchangeRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AuthCallbackPayload) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AuthCallbackPayload) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("mode")
+		s.Mode.Encode(e)
+	}
+	{
+		e.FieldStart("code")
+		e.Str(s.Code)
+	}
+	{
+		e.FieldStart("state")
+		e.Str(s.State)
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		e.FieldStart("redirect_uri")
+		e.Str(s.RedirectURI)
+	}
+	{
+		e.FieldStart("redirect_to")
+		e.Str(s.RedirectTo)
+	}
+	{
+		if s.TargetPath.Set {
+			e.FieldStart("target_path")
+			s.TargetPath.Encode(e)
+		}
+	}
+	{
+		if s.NavigationSpaceKey.Set {
+			e.FieldStart("navigation_space_key")
+			s.NavigationSpaceKey.Encode(e)
+		}
+	}
+	{
+		if s.AuthProtocolVersion.Set {
+			e.FieldStart("auth_protocol_version")
+			s.AuthProtocolVersion.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfAuthCallbackPayload = [9]string{
+	0: "mode",
+	1: "code",
+	2: "state",
+	3: "target_app_key",
+	4: "redirect_uri",
+	5: "redirect_to",
+	6: "target_path",
+	7: "navigation_space_key",
+	8: "auth_protocol_version",
+}
+
+// Decode decodes AuthCallbackPayload from json.
+func (s *AuthCallbackPayload) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AuthCallbackPayload to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "mode":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Mode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mode\"")
+			}
+		case "code":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Code = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"code\"")
+			}
+		case "state":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.State = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "redirect_uri":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.RedirectURI = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"redirect_uri\"")
+			}
+		case "redirect_to":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.RedirectTo = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"redirect_to\"")
+			}
+		case "target_path":
+			if err := func() error {
+				s.TargetPath.Reset()
+				if err := s.TargetPath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_path\"")
+			}
+		case "navigation_space_key":
+			if err := func() error {
+				s.NavigationSpaceKey.Reset()
+				if err := s.NavigationSpaceKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"navigation_space_key\"")
+			}
+		case "auth_protocol_version":
+			if err := func() error {
+				s.AuthProtocolVersion.Reset()
+				if err := s.AuthProtocolVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auth_protocol_version\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AuthCallbackPayload")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00111111,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAuthCallbackPayload) {
+					name = jsonFieldsNameOfAuthCallbackPayload[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AuthCallbackPayload) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AuthCallbackPayload) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AuthCallbackPayloadMode as json.
+func (s AuthCallbackPayloadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AuthCallbackPayloadMode from json.
+func (s *AuthCallbackPayloadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AuthCallbackPayloadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AuthCallbackPayloadMode(v) {
+	case AuthCallbackPayloadModeTokenExchange:
+		*s = AuthCallbackPayloadModeTokenExchange
+	default:
+		*s = AuthCallbackPayloadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AuthCallbackPayloadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AuthCallbackPayloadMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *AuthMe) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -8364,6 +8814,82 @@ func (s *ErrorDetails) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ExchangeAuthCallbackBadRequest as json.
+func (s *ExchangeAuthCallbackBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ExchangeAuthCallbackBadRequest from json.
+func (s *ExchangeAuthCallbackBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ExchangeAuthCallbackBadRequest to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ExchangeAuthCallbackBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ExchangeAuthCallbackBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ExchangeAuthCallbackBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ExchangeAuthCallbackUnauthorized as json.
+func (s *ExchangeAuthCallbackUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ExchangeAuthCallbackUnauthorized from json.
+func (s *ExchangeAuthCallbackUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ExchangeAuthCallbackUnauthorized to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ExchangeAuthCallbackUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ExchangeAuthCallbackUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ExchangeAuthCallbackUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *FeaturePackageActionsResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -13693,11 +14219,60 @@ func (s *LoginRequest) encodeFields(e *jx.Encoder) {
 		e.FieldStart("password")
 		e.Str(s.Password)
 	}
+	{
+		if s.TargetAppKey.Set {
+			e.FieldStart("target_app_key")
+			s.TargetAppKey.Encode(e)
+		}
+	}
+	{
+		if s.RedirectURI.Set {
+			e.FieldStart("redirect_uri")
+			s.RedirectURI.Encode(e)
+		}
+	}
+	{
+		if s.TargetPath.Set {
+			e.FieldStart("target_path")
+			s.TargetPath.Encode(e)
+		}
+	}
+	{
+		if s.NavigationSpaceKey.Set {
+			e.FieldStart("navigation_space_key")
+			s.NavigationSpaceKey.Encode(e)
+		}
+	}
+	{
+		if s.State.Set {
+			e.FieldStart("state")
+			s.State.Encode(e)
+		}
+	}
+	{
+		if s.Nonce.Set {
+			e.FieldStart("nonce")
+			s.Nonce.Encode(e)
+		}
+	}
+	{
+		if s.AuthProtocolVersion.Set {
+			e.FieldStart("auth_protocol_version")
+			s.AuthProtocolVersion.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfLoginRequest = [2]string{
+var jsonFieldsNameOfLoginRequest = [9]string{
 	0: "username",
 	1: "password",
+	2: "target_app_key",
+	3: "redirect_uri",
+	4: "target_path",
+	5: "navigation_space_key",
+	6: "state",
+	7: "nonce",
+	8: "auth_protocol_version",
 }
 
 // Decode decodes LoginRequest from json.
@@ -13705,7 +14280,7 @@ func (s *LoginRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode LoginRequest to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -13733,6 +14308,76 @@ func (s *LoginRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
+		case "target_app_key":
+			if err := func() error {
+				s.TargetAppKey.Reset()
+				if err := s.TargetAppKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "redirect_uri":
+			if err := func() error {
+				s.RedirectURI.Reset()
+				if err := s.RedirectURI.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"redirect_uri\"")
+			}
+		case "target_path":
+			if err := func() error {
+				s.TargetPath.Reset()
+				if err := s.TargetPath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_path\"")
+			}
+		case "navigation_space_key":
+			if err := func() error {
+				s.NavigationSpaceKey.Reset()
+				if err := s.NavigationSpaceKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"navigation_space_key\"")
+			}
+		case "state":
+			if err := func() error {
+				s.State.Reset()
+				if err := s.State.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "nonce":
+			if err := func() error {
+				s.Nonce.Reset()
+				if err := s.Nonce.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"nonce\"")
+			}
+		case "auth_protocol_version":
+			if err := func() error {
+				s.AuthProtocolVersion.Reset()
+				if err := s.AuthProtocolVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auth_protocol_version\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -13742,8 +14387,9 @@ func (s *LoginRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b00000011,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -13834,15 +14480,22 @@ func (s *LoginResponse) encodeFields(e *jx.Encoder) {
 			s.Landing.Encode(e)
 		}
 	}
+	{
+		if s.Callback.Set {
+			e.FieldStart("callback")
+			s.Callback.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfLoginResponse = [6]string{
+var jsonFieldsNameOfLoginResponse = [7]string{
 	0: "access_token",
 	1: "refresh_token",
 	2: "expires_in",
 	3: "pending",
 	4: "user",
 	5: "landing",
+	6: "callback",
 }
 
 // Decode decodes LoginResponse from json.
@@ -13912,6 +14565,16 @@ func (s *LoginResponse) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"landing\"")
+			}
+		case "callback":
+			if err := func() error {
+				s.Callback.Reset()
+				if err := s.Callback.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"callback\"")
 			}
 		default:
 			return d.Skip()
@@ -20748,6 +21411,39 @@ func (s NilUUID) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *NilUUID) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AuthCallbackPayload as json.
+func (o OptAuthCallbackPayload) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes AuthCallbackPayload from json.
+func (o *OptAuthCallbackPayload) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptAuthCallbackPayload to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptAuthCallbackPayload) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptAuthCallbackPayload) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -32266,10 +32962,24 @@ func (s *RefreshTokenRequest) encodeFields(e *jx.Encoder) {
 		e.FieldStart("refresh_token")
 		e.Str(s.RefreshToken)
 	}
+	{
+		if s.ClientAppKey.Set {
+			e.FieldStart("client_app_key")
+			s.ClientAppKey.Encode(e)
+		}
+	}
+	{
+		if s.AuthProtocolVersion.Set {
+			e.FieldStart("auth_protocol_version")
+			s.AuthProtocolVersion.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfRefreshTokenRequest = [1]string{
+var jsonFieldsNameOfRefreshTokenRequest = [3]string{
 	0: "refresh_token",
+	1: "client_app_key",
+	2: "auth_protocol_version",
 }
 
 // Decode decodes RefreshTokenRequest from json.
@@ -32292,6 +33002,26 @@ func (s *RefreshTokenRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"refresh_token\"")
+			}
+		case "client_app_key":
+			if err := func() error {
+				s.ClientAppKey.Reset()
+				if err := s.ClientAppKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_app_key\"")
+			}
+		case "auth_protocol_version":
+			if err := func() error {
+				s.AuthProtocolVersion.Reset()
+				if err := s.AuthProtocolVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"auth_protocol_version\"")
 			}
 		default:
 			return d.Skip()

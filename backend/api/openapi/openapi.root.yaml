@@ -54,6 +54,8 @@ paths:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register-context
   /auth/refresh:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1refresh
+  /auth/callback/exchange:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1exchange
   /auth/me:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1me
   /workspaces/my:

@@ -117,6 +117,39 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/callback/exchange:
+    post:
+      operationId: exchangeAuthCallback
+      summary: centralized_login 回调换取令牌
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/auth/schemas.yaml#/components/schemas/AuthCallbackExchangeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /auth/me:
     get:
       operationId: getAuthMe

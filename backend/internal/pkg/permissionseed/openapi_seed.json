@@ -112,6 +112,16 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "exchangeAuthCallback",
+      "method": "post",
+      "path": "/auth/callback/exchange",
+      "permission_key": "",
+      "summary": "centralized_login 回调换取令牌",
+      "tags": "auth",
+      "api_category": "auth",
+      "access_mode": "public"
+    },
+    {
       "operation_id": "login",
       "method": "post",
       "path": "/auth/login",

@@ -35,6 +35,35 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: 'menus.forgetPassword.title', isHideTab: true }
   },
   {
+    path: '/auth/callback',
+    redirect: '/account/auth/callback',
+    meta: { title: 'auth-callback', isHideTab: true }
+  },
+  {
+    path: '/account/auth/login',
+    name: 'AccountPortalLogin',
+    component: () => import('@views/auth/login/index.vue'),
+    meta: { title: 'menus.login.title', isHideTab: true }
+  },
+  {
+    path: '/account/auth/register',
+    name: 'AccountPortalRegister',
+    component: () => import('@views/auth/register/index.vue'),
+    meta: { title: 'menus.register.title', isHideTab: true }
+  },
+  {
+    path: '/account/auth/forget-password',
+    name: 'AccountPortalForgetPassword',
+    component: () => import('@views/auth/forget-password/index.vue'),
+    meta: { title: 'menus.forgetPassword.title', isHideTab: true }
+  },
+  {
+    path: '/account/auth/callback',
+    name: 'AuthCallback',
+    component: () => import('@views/auth/callback/index.vue'),
+    meta: { title: 'auth-callback', isHideTab: true }
+  },
+  {
     path: '/403',
     name: 'Exception403',
     component: () => import('@views/exception/403/index.vue'),

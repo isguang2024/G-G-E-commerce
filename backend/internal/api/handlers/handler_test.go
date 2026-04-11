@@ -103,7 +103,7 @@ func (s nilAPIEndpointSvc) SaveCategory(_ *user.APIEndpointCategory) (*user.APIE
 func (s nilAPIEndpointSvc) UpdateContextScope(_ uuid.UUID, _ string) (*user.APIEndpoint, error) {
 	return nil, nil
 }
-func (s nilAPIEndpointSvc) Sync() error        { return nil }
+func (s nilAPIEndpointSvc) Sync() error                                       { return nil }
 func (s nilAPIEndpointSvc) CleanupStale(_ []uuid.UUID, _ string) (int, error) { return 0, nil }
 
 // testEngine builds a minimal gin engine wired to the real ogen server.
@@ -173,6 +173,7 @@ func testEngine(t *testing.T) *gin.Engine {
 		v1.POST("/auth/login", ogenBridgePublic)
 		v1.POST("/auth/register", ogenBridgePublic)
 		v1.POST("/auth/refresh", ogenBridgePublic)
+		v1.POST("/auth/callback/exchange", ogenBridgePublic)
 
 		// Authenticated routes guarded by JWT
 		authed := v1.Group("")
