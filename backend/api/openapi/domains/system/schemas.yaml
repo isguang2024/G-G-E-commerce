@@ -6,6 +6,9 @@ components:
     SystemMeta:
       type: object
       additionalProperties: true
+    SystemAppCapabilities:
+      type: object
+      additionalProperties: true
     SystemAppItem:
       type: object
       required:
@@ -21,6 +24,7 @@ components:
       - space_count
       - menu_count
       - page_count
+      - capabilities
       - meta
       - created_at
       - updated_at
@@ -32,6 +36,9 @@ components:
         default_space_key: {type: string}
         space_mode: {type: string}
         auth_mode: {type: string}
+        frontend_entry_url: {type: string}
+        backend_entry_url: {type: string}
+        health_check_url: {type: string}
         is_default: {type: boolean}
         status: {type: string}
         host_count: {type: integer, format: int64}
@@ -41,6 +48,8 @@ components:
         primary_hosts:
           type: array
           items: {type: string}
+        capabilities:
+          $ref: '#/components/schemas/SystemAppCapabilities'
         meta:
           $ref: '#/components/schemas/SystemMeta'
         created_at: {type: string, format: date-time}
@@ -109,6 +118,11 @@ components:
         space_mode: {type: string}
         default_space_key: {type: string}
         auth_mode: {type: string}
+        frontend_entry_url: {type: string}
+        backend_entry_url: {type: string}
+        health_check_url: {type: string}
+        capabilities:
+          $ref: '#/components/schemas/SystemAppCapabilities'
         status: {type: string}
         is_default: {type: boolean}
         meta:

@@ -32,15 +32,19 @@ func (h *APIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest)
 		req = &gen.SystemAppSaveRequest{}
 	}
 	body := appmod.SaveAppRequest{
-		AppKey:          req.AppKey,
-		Name:            req.Name,
-		Description:     optString(req.Description),
-		SpaceMode:       optString(req.SpaceMode),
-		DefaultSpaceKey: optString(req.DefaultSpaceKey),
-		AuthMode:        optString(req.AuthMode),
-		Status:          optString(req.Status),
-		IsDefault:       optBool(req.IsDefault),
-		Meta:            optSystemMetaToMap(req.Meta),
+		AppKey:           req.AppKey,
+		Name:             req.Name,
+		Description:      optString(req.Description),
+		SpaceMode:        optString(req.SpaceMode),
+		DefaultSpaceKey:  optString(req.DefaultSpaceKey),
+		AuthMode:         optString(req.AuthMode),
+		FrontendEntryURL: optString(req.FrontendEntryURL),
+		BackendEntryURL:  optString(req.BackendEntryURL),
+		HealthCheckURL:   optString(req.HealthCheckURL),
+		Capabilities:     optSystemAppCapabilitiesToMap(req.Capabilities),
+		Status:           optString(req.Status),
+		IsDefault:        optBool(req.IsDefault),
+		Meta:             optSystemMetaToMap(req.Meta),
 	}
 	record, err := h.appSvc.SaveApp(&body)
 	if err != nil {

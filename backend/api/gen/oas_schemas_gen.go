@@ -8858,6 +8858,52 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
+// NewOptSystemAppCapabilities returns new OptSystemAppCapabilities with value set to v.
+func NewOptSystemAppCapabilities(v SystemAppCapabilities) OptSystemAppCapabilities {
+	return OptSystemAppCapabilities{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSystemAppCapabilities is optional SystemAppCapabilities.
+type OptSystemAppCapabilities struct {
+	Value SystemAppCapabilities
+	Set   bool
+}
+
+// IsSet returns true if OptSystemAppCapabilities was set.
+func (o OptSystemAppCapabilities) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSystemAppCapabilities) Reset() {
+	var v SystemAppCapabilities
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSystemAppCapabilities) SetTo(v SystemAppCapabilities) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSystemAppCapabilities) Get() (v SystemAppCapabilities, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSystemAppCapabilities) Or(d SystemAppCapabilities) SystemAppCapabilities {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSystemAppHostBindingItem returns new OptSystemAppHostBindingItem with value set to v.
 func NewOptSystemAppHostBindingItem(v SystemAppHostBindingItem) OptSystemAppHostBindingItem {
 	return OptSystemAppHostBindingItem{
@@ -9771,38 +9817,39 @@ func (s *PageBreadcrumbPreviewListResponse) SetTotal(val int) {
 
 // Ref: #/components/schemas/PageListItem
 type PageListItem struct {
-	ID                OptUUID     `json:"id"`
-	AppKey            OptString   `json:"app_key"`
-	PageKey           string      `json:"page_key"`
-	Name              string      `json:"name"`
-	RouteName         OptString   `json:"route_name"`
-	RoutePath         string      `json:"route_path"`
-	Component         OptString   `json:"component"`
-	SpaceKey          OptString   `json:"space_key"`
-	SpaceKeys         []string    `json:"space_keys"`
-	SpaceScope        OptString   `json:"space_scope"`
-	PageType          OptString   `json:"page_type"`
-	VisibilityScope   OptString   `json:"visibility_scope"`
-	Source            OptString   `json:"source"`
-	ModuleKey         OptString   `json:"module_key"`
-	SortOrder         OptInt      `json:"sort_order"`
-	ParentMenuID      OptUUID     `json:"parent_menu_id"`
-	ParentMenuName    OptString   `json:"parent_menu_name"`
-	ParentPageKey     OptString   `json:"parent_page_key"`
-	ParentPageName    OptString   `json:"parent_page_name"`
-	DisplayGroupKey   OptString   `json:"display_group_key"`
-	DisplayGroupName  OptString   `json:"display_group_name"`
-	ActiveMenuPath    OptString   `json:"active_menu_path"`
-	BreadcrumbMode    OptString   `json:"breadcrumb_mode"`
-	AccessMode        OptString   `json:"access_mode"`
-	PermissionKey     OptString   `json:"permission_key"`
-	InheritPermission OptBool     `json:"inherit_permission"`
-	KeepAlive         OptBool     `json:"keep_alive"`
-	IsFullPage        OptBool     `json:"is_full_page"`
-	Status            OptString   `json:"status"`
-	Meta              OptPageMeta `json:"meta"`
-	CreatedAt         OptDateTime `json:"created_at"`
-	UpdatedAt         OptDateTime `json:"updated_at"`
+	ID                OptUUID                `json:"id"`
+	AppKey            OptString              `json:"app_key"`
+	PageKey           string                 `json:"page_key"`
+	Name              string                 `json:"name"`
+	RouteName         OptString              `json:"route_name"`
+	RoutePath         string                 `json:"route_path"`
+	Component         OptString              `json:"component"`
+	SpaceKey          OptString              `json:"space_key"`
+	SpaceKeys         []string               `json:"space_keys"`
+	PageSpaceBindings []PageSpaceBindingItem `json:"page_space_bindings"`
+	SpaceScope        OptString              `json:"space_scope"`
+	PageType          OptString              `json:"page_type"`
+	VisibilityScope   OptString              `json:"visibility_scope"`
+	Source            OptString              `json:"source"`
+	ModuleKey         OptString              `json:"module_key"`
+	SortOrder         OptInt                 `json:"sort_order"`
+	ParentMenuID      OptUUID                `json:"parent_menu_id"`
+	ParentMenuName    OptString              `json:"parent_menu_name"`
+	ParentPageKey     OptString              `json:"parent_page_key"`
+	ParentPageName    OptString              `json:"parent_page_name"`
+	DisplayGroupKey   OptString              `json:"display_group_key"`
+	DisplayGroupName  OptString              `json:"display_group_name"`
+	ActiveMenuPath    OptString              `json:"active_menu_path"`
+	BreadcrumbMode    OptString              `json:"breadcrumb_mode"`
+	AccessMode        OptString              `json:"access_mode"`
+	PermissionKey     OptString              `json:"permission_key"`
+	InheritPermission OptBool                `json:"inherit_permission"`
+	KeepAlive         OptBool                `json:"keep_alive"`
+	IsFullPage        OptBool                `json:"is_full_page"`
+	Status            OptString              `json:"status"`
+	Meta              OptPageMeta            `json:"meta"`
+	CreatedAt         OptDateTime            `json:"created_at"`
+	UpdatedAt         OptDateTime            `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -9848,6 +9895,11 @@ func (s *PageListItem) GetSpaceKey() OptString {
 // GetSpaceKeys returns the value of SpaceKeys.
 func (s *PageListItem) GetSpaceKeys() []string {
 	return s.SpaceKeys
+}
+
+// GetPageSpaceBindings returns the value of PageSpaceBindings.
+func (s *PageListItem) GetPageSpaceBindings() []PageSpaceBindingItem {
+	return s.PageSpaceBindings
 }
 
 // GetSpaceScope returns the value of SpaceScope.
@@ -10008,6 +10060,11 @@ func (s *PageListItem) SetSpaceKey(val OptString) {
 // SetSpaceKeys sets the value of SpaceKeys.
 func (s *PageListItem) SetSpaceKeys(val []string) {
 	s.SpaceKeys = val
+}
+
+// SetPageSpaceBindings sets the value of PageSpaceBindings.
+func (s *PageListItem) SetPageSpaceBindings(val []PageSpaceBindingItem) {
+	s.PageSpaceBindings = val
 }
 
 // SetSpaceScope sets the value of SpaceScope.
@@ -10994,6 +11051,32 @@ func (s *PageSaveResult) SetCreatedAt(val time.Time) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *PageSaveResult) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/PageSpaceBindingItem
+type PageSpaceBindingItem struct {
+	SpaceKey string    `json:"space_key"`
+	Source   OptString `json:"source"`
+}
+
+// GetSpaceKey returns the value of SpaceKey.
+func (s *PageSpaceBindingItem) GetSpaceKey() string {
+	return s.SpaceKey
+}
+
+// GetSource returns the value of Source.
+func (s *PageSpaceBindingItem) GetSource() OptString {
+	return s.Source
+}
+
+// SetSpaceKey sets the value of SpaceKey.
+func (s *PageSpaceBindingItem) SetSpaceKey(val string) {
+	s.SpaceKey = val
+}
+
+// SetSource sets the value of Source.
+func (s *PageSpaceBindingItem) SetSource(val OptString) {
+	s.Source = val
 }
 
 // Ref: #/components/schemas/PageSyncResult
@@ -15430,6 +15513,18 @@ type SyncApiEndpointsUnauthorized Error
 
 func (*SyncApiEndpointsUnauthorized) syncApiEndpointsRes() {}
 
+// Ref: #/components/schemas/SystemAppCapabilities
+type SystemAppCapabilities map[string]jx.Raw
+
+func (s *SystemAppCapabilities) init() SystemAppCapabilities {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
 // Ref: #/components/schemas/SystemAppHostBindingItem
 type SystemAppHostBindingItem struct {
 	ID              uuid.UUID  `json:"id"`
@@ -15741,23 +15836,27 @@ func (s *SystemAppHostBindingSaveRequest) SetMeta(val OptSystemMeta) {
 
 // Ref: #/components/schemas/SystemAppItem
 type SystemAppItem struct {
-	ID              uuid.UUID  `json:"id"`
-	AppKey          string     `json:"app_key"`
-	Name            string     `json:"name"`
-	Description     string     `json:"description"`
-	DefaultSpaceKey string     `json:"default_space_key"`
-	SpaceMode       string     `json:"space_mode"`
-	AuthMode        OptString  `json:"auth_mode"`
-	IsDefault       bool       `json:"is_default"`
-	Status          string     `json:"status"`
-	HostCount       int64      `json:"host_count"`
-	SpaceCount      int64      `json:"space_count"`
-	MenuCount       int64      `json:"menu_count"`
-	PageCount       int64      `json:"page_count"`
-	PrimaryHosts    []string   `json:"primary_hosts"`
-	Meta            SystemMeta `json:"meta"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
+	ID               uuid.UUID             `json:"id"`
+	AppKey           string                `json:"app_key"`
+	Name             string                `json:"name"`
+	Description      string                `json:"description"`
+	DefaultSpaceKey  string                `json:"default_space_key"`
+	SpaceMode        string                `json:"space_mode"`
+	AuthMode         OptString             `json:"auth_mode"`
+	FrontendEntryURL OptString             `json:"frontend_entry_url"`
+	BackendEntryURL  OptString             `json:"backend_entry_url"`
+	HealthCheckURL   OptString             `json:"health_check_url"`
+	IsDefault        bool                  `json:"is_default"`
+	Status           string                `json:"status"`
+	HostCount        int64                 `json:"host_count"`
+	SpaceCount       int64                 `json:"space_count"`
+	MenuCount        int64                 `json:"menu_count"`
+	PageCount        int64                 `json:"page_count"`
+	PrimaryHosts     []string              `json:"primary_hosts"`
+	Capabilities     SystemAppCapabilities `json:"capabilities"`
+	Meta             SystemMeta            `json:"meta"`
+	CreatedAt        time.Time             `json:"created_at"`
+	UpdatedAt        time.Time             `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -15795,6 +15894,21 @@ func (s *SystemAppItem) GetAuthMode() OptString {
 	return s.AuthMode
 }
 
+// GetFrontendEntryURL returns the value of FrontendEntryURL.
+func (s *SystemAppItem) GetFrontendEntryURL() OptString {
+	return s.FrontendEntryURL
+}
+
+// GetBackendEntryURL returns the value of BackendEntryURL.
+func (s *SystemAppItem) GetBackendEntryURL() OptString {
+	return s.BackendEntryURL
+}
+
+// GetHealthCheckURL returns the value of HealthCheckURL.
+func (s *SystemAppItem) GetHealthCheckURL() OptString {
+	return s.HealthCheckURL
+}
+
 // GetIsDefault returns the value of IsDefault.
 func (s *SystemAppItem) GetIsDefault() bool {
 	return s.IsDefault
@@ -15828,6 +15942,11 @@ func (s *SystemAppItem) GetPageCount() int64 {
 // GetPrimaryHosts returns the value of PrimaryHosts.
 func (s *SystemAppItem) GetPrimaryHosts() []string {
 	return s.PrimaryHosts
+}
+
+// GetCapabilities returns the value of Capabilities.
+func (s *SystemAppItem) GetCapabilities() SystemAppCapabilities {
+	return s.Capabilities
 }
 
 // GetMeta returns the value of Meta.
@@ -15880,6 +15999,21 @@ func (s *SystemAppItem) SetAuthMode(val OptString) {
 	s.AuthMode = val
 }
 
+// SetFrontendEntryURL sets the value of FrontendEntryURL.
+func (s *SystemAppItem) SetFrontendEntryURL(val OptString) {
+	s.FrontendEntryURL = val
+}
+
+// SetBackendEntryURL sets the value of BackendEntryURL.
+func (s *SystemAppItem) SetBackendEntryURL(val OptString) {
+	s.BackendEntryURL = val
+}
+
+// SetHealthCheckURL sets the value of HealthCheckURL.
+func (s *SystemAppItem) SetHealthCheckURL(val OptString) {
+	s.HealthCheckURL = val
+}
+
 // SetIsDefault sets the value of IsDefault.
 func (s *SystemAppItem) SetIsDefault(val bool) {
 	s.IsDefault = val
@@ -15913,6 +16047,11 @@ func (s *SystemAppItem) SetPageCount(val int64) {
 // SetPrimaryHosts sets the value of PrimaryHosts.
 func (s *SystemAppItem) SetPrimaryHosts(val []string) {
 	s.PrimaryHosts = val
+}
+
+// SetCapabilities sets the value of Capabilities.
+func (s *SystemAppItem) SetCapabilities(val SystemAppCapabilities) {
+	s.Capabilities = val
 }
 
 // SetMeta sets the value of Meta.
@@ -15958,15 +16097,19 @@ func (s *SystemAppListResponse) SetTotal(val int64) {
 
 // Ref: #/components/schemas/SystemAppSaveRequest
 type SystemAppSaveRequest struct {
-	AppKey          string        `json:"app_key"`
-	Name            string        `json:"name"`
-	Description     OptString     `json:"description"`
-	SpaceMode       OptString     `json:"space_mode"`
-	DefaultSpaceKey OptString     `json:"default_space_key"`
-	AuthMode        OptString     `json:"auth_mode"`
-	Status          OptString     `json:"status"`
-	IsDefault       OptBool       `json:"is_default"`
-	Meta            OptSystemMeta `json:"meta"`
+	AppKey           string                   `json:"app_key"`
+	Name             string                   `json:"name"`
+	Description      OptString                `json:"description"`
+	SpaceMode        OptString                `json:"space_mode"`
+	DefaultSpaceKey  OptString                `json:"default_space_key"`
+	AuthMode         OptString                `json:"auth_mode"`
+	FrontendEntryURL OptString                `json:"frontend_entry_url"`
+	BackendEntryURL  OptString                `json:"backend_entry_url"`
+	HealthCheckURL   OptString                `json:"health_check_url"`
+	Capabilities     OptSystemAppCapabilities `json:"capabilities"`
+	Status           OptString                `json:"status"`
+	IsDefault        OptBool                  `json:"is_default"`
+	Meta             OptSystemMeta            `json:"meta"`
 }
 
 // GetAppKey returns the value of AppKey.
@@ -15997,6 +16140,26 @@ func (s *SystemAppSaveRequest) GetDefaultSpaceKey() OptString {
 // GetAuthMode returns the value of AuthMode.
 func (s *SystemAppSaveRequest) GetAuthMode() OptString {
 	return s.AuthMode
+}
+
+// GetFrontendEntryURL returns the value of FrontendEntryURL.
+func (s *SystemAppSaveRequest) GetFrontendEntryURL() OptString {
+	return s.FrontendEntryURL
+}
+
+// GetBackendEntryURL returns the value of BackendEntryURL.
+func (s *SystemAppSaveRequest) GetBackendEntryURL() OptString {
+	return s.BackendEntryURL
+}
+
+// GetHealthCheckURL returns the value of HealthCheckURL.
+func (s *SystemAppSaveRequest) GetHealthCheckURL() OptString {
+	return s.HealthCheckURL
+}
+
+// GetCapabilities returns the value of Capabilities.
+func (s *SystemAppSaveRequest) GetCapabilities() OptSystemAppCapabilities {
+	return s.Capabilities
 }
 
 // GetStatus returns the value of Status.
@@ -16042,6 +16205,26 @@ func (s *SystemAppSaveRequest) SetDefaultSpaceKey(val OptString) {
 // SetAuthMode sets the value of AuthMode.
 func (s *SystemAppSaveRequest) SetAuthMode(val OptString) {
 	s.AuthMode = val
+}
+
+// SetFrontendEntryURL sets the value of FrontendEntryURL.
+func (s *SystemAppSaveRequest) SetFrontendEntryURL(val OptString) {
+	s.FrontendEntryURL = val
+}
+
+// SetBackendEntryURL sets the value of BackendEntryURL.
+func (s *SystemAppSaveRequest) SetBackendEntryURL(val OptString) {
+	s.BackendEntryURL = val
+}
+
+// SetHealthCheckURL sets the value of HealthCheckURL.
+func (s *SystemAppSaveRequest) SetHealthCheckURL(val OptString) {
+	s.HealthCheckURL = val
+}
+
+// SetCapabilities sets the value of Capabilities.
+func (s *SystemAppSaveRequest) SetCapabilities(val OptSystemAppCapabilities) {
+	s.Capabilities = val
 }
 
 // SetStatus sets the value of Status.

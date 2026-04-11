@@ -31,12 +31,13 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.Recovery(logger))
-	r.Use(middleware.CORS())
 	r.Use(middleware.AppContext(db))
+	r.Use(middleware.DynamicAppSecurity(db, logger, cfg.Env))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+	registerAppHealthRoutes(r, db, logger)
 
 	// Phase 1 cleanup: serve the embedded OpenAPI spec + Swagger UI.
 	openapidocs.Mount(r)

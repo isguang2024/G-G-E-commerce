@@ -21,6 +21,21 @@ func optSystemMetaToMap(src gen.OptSystemMeta) map[string]interface{} {
 	return target
 }
 
+func optSystemAppCapabilitiesToMap(src gen.OptSystemAppCapabilities) map[string]interface{} {
+	if !src.Set {
+		return nil
+	}
+	target := map[string]interface{}{}
+	b, err := json.Marshal(src.Value)
+	if err != nil {
+		return nil
+	}
+	if err := json.Unmarshal(b, &target); err != nil {
+		return nil
+	}
+	return target
+}
+
 func permissionBatchTemplatePayloadToMap(src gen.PermissionActionBatchTemplatePayload) map[string]interface{} {
 	target := map[string]interface{}{}
 	if len(src.Ids) > 0 {

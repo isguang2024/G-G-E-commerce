@@ -37,15 +37,19 @@ type CurrentResponse struct {
 }
 
 type SaveAppRequest struct {
-	AppKey          string                 `json:"app_key"`
-	Name            string                 `json:"name"`
-	Description     string                 `json:"description"`
-	SpaceMode       string                 `json:"space_mode"`
-	DefaultSpaceKey string                 `json:"default_space_key"`
-	AuthMode        string                 `json:"auth_mode"`
-	Status          string                 `json:"status"`
-	IsDefault       bool                   `json:"is_default"`
-	Meta            map[string]interface{} `json:"meta"`
+	AppKey           string                 `json:"app_key"`
+	Name             string                 `json:"name"`
+	Description      string                 `json:"description"`
+	SpaceMode        string                 `json:"space_mode"`
+	DefaultSpaceKey  string                 `json:"default_space_key"`
+	AuthMode         string                 `json:"auth_mode"`
+	FrontendEntryURL string                 `json:"frontend_entry_url"`
+	BackendEntryURL  string                 `json:"backend_entry_url"`
+	HealthCheckURL   string                 `json:"health_check_url"`
+	Capabilities     map[string]interface{} `json:"capabilities"`
+	Status           string                 `json:"status"`
+	IsDefault        bool                   `json:"is_default"`
+	Meta             map[string]interface{} `json:"meta"`
 }
 
 type SaveHostBindingRequest struct {
@@ -370,15 +374,19 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	}
 
 	payload := models.App{
-		AppKey:          appKey,
-		Name:            name,
-		Description:     strings.TrimSpace(req.Description),
-		SpaceMode:       normalizeAppSpaceMode(req.SpaceMode),
-		DefaultSpaceKey: defaultSpaceKey,
-		AuthMode:        authMode,
-		Status:          status,
-		IsDefault:       req.IsDefault || appKey == models.DefaultAppKey,
-		Meta:            models.MetaJSON(req.Meta),
+		AppKey:           appKey,
+		Name:             name,
+		Description:      strings.TrimSpace(req.Description),
+		SpaceMode:        normalizeAppSpaceMode(req.SpaceMode),
+		DefaultSpaceKey:  defaultSpaceKey,
+		AuthMode:         authMode,
+		FrontendEntryURL: strings.TrimSpace(req.FrontendEntryURL),
+		BackendEntryURL:  strings.TrimSpace(req.BackendEntryURL),
+		HealthCheckURL:   strings.TrimSpace(req.HealthCheckURL),
+		Capabilities:     normalizeMetaJSON(req.Capabilities),
+		Status:           status,
+		IsDefault:        req.IsDefault || appKey == models.DefaultAppKey,
+		Meta:             normalizeMetaJSON(req.Meta),
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -396,14 +404,18 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 				return err
 			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
-				"name":              payload.Name,
-				"description":       payload.Description,
-				"space_mode":        payload.SpaceMode,
-				"default_space_key": payload.DefaultSpaceKey,
-				"auth_mode":         payload.AuthMode,
-				"status":            payload.Status,
-				"is_default":        payload.IsDefault,
-				"meta":              payload.Meta,
+				"name":               payload.Name,
+				"description":        payload.Description,
+				"space_mode":         payload.SpaceMode,
+				"default_space_key":  payload.DefaultSpaceKey,
+				"auth_mode":          payload.AuthMode,
+				"frontend_entry_url": payload.FrontendEntryURL,
+				"backend_entry_url":  payload.BackendEntryURL,
+				"health_check_url":   payload.HealthCheckURL,
+				"capabilities":       payload.Capabilities,
+				"status":             payload.Status,
+				"is_default":         payload.IsDefault,
+				"meta":               payload.Meta,
 			}).Error; updateErr != nil {
 				return updateErr
 			}
@@ -927,27 +939,42 @@ func ensureDefaultApp(db *gorm.DB) error {
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":              models.DefaultAppName,
-			"space_mode":        "multi",
-			"default_space_key": models.DefaultMenuSpaceKey,
-			"status":            "normal",
-			"is_default":        true,
+			"name":               models.DefaultAppName,
+			"space_mode":         "multi",
+			"default_space_key":  models.DefaultMenuSpaceKey,
+			"status":             "normal",
+			"frontend_entry_url": "/",
+			"backend_entry_url":  "",
+			"health_check_url":   "/health",
+			"capabilities":       models.DefaultPlatformAdminCapabilities(),
+			"is_default":         true,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&models.App{
-			AppKey:          models.DefaultAppKey,
-			Name:            models.DefaultAppName,
-			Description:     "当前内置管理员后台应用",
-			SpaceMode:       "multi",
-			DefaultSpaceKey: models.DefaultMenuSpaceKey,
-			AuthMode:        "inherit_host",
-			Status:          "normal",
-			IsDefault:       true,
-			Meta:            models.MetaJSON{},
+			AppKey:           models.DefaultAppKey,
+			Name:             models.DefaultAppName,
+			Description:      "当前内置管理员后台应用",
+			SpaceMode:        "multi",
+			DefaultSpaceKey:  models.DefaultMenuSpaceKey,
+			AuthMode:         "inherit_host",
+			FrontendEntryURL: "/",
+			BackendEntryURL:  "",
+			HealthCheckURL:   "/health",
+			Status:           "normal",
+			IsDefault:        true,
+			Capabilities:     models.DefaultPlatformAdminCapabilities(),
+			Meta:             models.MetaJSON{},
 		}).Error
 	default:
 		return err
 	}
+}
+
+func normalizeMetaJSON(value map[string]interface{}) models.MetaJSON {
+	if len(value) == 0 {
+		return models.MetaJSON{}
+	}
+	return models.MetaJSON(value)
 }
 
 func loadDefaultApp(db *gorm.DB) (*models.App, error) {

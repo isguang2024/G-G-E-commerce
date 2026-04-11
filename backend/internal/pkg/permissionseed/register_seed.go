@@ -14,6 +14,9 @@ import (
 const (
 	AccountPortalAppKey            = "account-portal"
 	AccountPortalDefaultSpaceKey   = "public"
+	DemoAppKey                     = "demo-app"
+	DemoAppDefaultSpaceKey         = "demo"
+	DemoAppHomePath                = "/demo/lab"
 	SelfServiceMenuSpaceKey        = "self-service"
 	SelfServiceFeaturePackageKey   = "self_service.basic"
 	SelfServiceRoleCode            = "personal.self_user"
@@ -36,6 +39,9 @@ func EnsureRegisterSystemSeeds(db *gorm.DB) error {
 		return errors.New("permissionseed: db is nil")
 	}
 	if err := ensureAccountPortalApp(db); err != nil {
+		return err
+	}
+	if err := ensureDemoApp(db); err != nil {
 		return err
 	}
 	if err := ensureRegisterMenuSpaces(db); err != nil {
@@ -65,6 +71,9 @@ func EnsureRegisterSystemSeeds(db *gorm.DB) error {
 		return err
 	}
 	if err := ensureAccountPortalPublicPages(db); err != nil {
+		return err
+	}
+	if err := ensureDemoAppPages(db); err != nil {
 		return err
 	}
 	return nil
@@ -156,27 +165,78 @@ func ensureAccountPortalPublicPages(db *gorm.DB) error {
 
 func ensureAccountPortalApp(db *gorm.DB) error {
 	desired := systemmodels.App{
-		AppKey:          AccountPortalAppKey,
-		Name:            "注册中心",
-		Description:     "公开注册 / 登录 / 邮箱验证 / 找回密码 / 邀请接受 入口承载 App",
-		SpaceMode:       "single",
-		DefaultSpaceKey: AccountPortalDefaultSpaceKey,
-		AuthMode:        "inherit_host",
-		Status:          "normal",
-		IsDefault:       false,
-		Meta:            systemmodels.MetaJSON{},
+		AppKey:           AccountPortalAppKey,
+		Name:             "注册中心",
+		Description:      "公开注册 / 登录 / 邮箱验证 / 找回密码 / 邀请接受 入口承载 App",
+		SpaceMode:        "single",
+		DefaultSpaceKey:  AccountPortalDefaultSpaceKey,
+		AuthMode:         "inherit_host",
+		FrontendEntryURL: "/account",
+		BackendEntryURL:  "",
+		HealthCheckURL:   "/health",
+		Status:           "normal",
+		IsDefault:        false,
+		Capabilities:     systemmodels.DefaultAccountPortalCapabilities(),
+		Meta:             systemmodels.MetaJSON{},
 	}
 	var existing systemmodels.App
 	err := db.Where("app_key = ?", AccountPortalAppKey).First(&existing).Error
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":              desired.Name,
-			"description":       desired.Description,
-			"space_mode":        desired.SpaceMode,
-			"default_space_key": desired.DefaultSpaceKey,
-			"auth_mode":         desired.AuthMode,
-			"status":            desired.Status,
+			"name":               desired.Name,
+			"description":        desired.Description,
+			"space_mode":         desired.SpaceMode,
+			"default_space_key":  desired.DefaultSpaceKey,
+			"auth_mode":          desired.AuthMode,
+			"frontend_entry_url": desired.FrontendEntryURL,
+			"backend_entry_url":  desired.BackendEntryURL,
+			"health_check_url":   desired.HealthCheckURL,
+			"capabilities":       desired.Capabilities,
+			"status":             desired.Status,
+		}).Error
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return db.Create(&desired).Error
+	default:
+		return err
+	}
+}
+
+func ensureDemoApp(db *gorm.DB) error {
+	desired := systemmodels.App{
+		AppKey:           DemoAppKey,
+		Name:             "Demo App",
+		Description:      "Phase A path_prefix 多 APP 验证应用",
+		SpaceMode:        "single",
+		DefaultSpaceKey:  DemoAppDefaultSpaceKey,
+		AuthMode:         "inherit_host",
+		FrontendEntryURL: DemoAppHomePath,
+		BackendEntryURL:  "",
+		HealthCheckURL:   "/health",
+		Status:           "normal",
+		IsDefault:        false,
+		Capabilities: systemmodels.MetaJSON{
+			"managed_pages":      true,
+			"runtime_navigation": true,
+			"app_switchable":     true,
+		},
+		Meta: systemmodels.MetaJSON{},
+	}
+	var existing systemmodels.App
+	err := db.Where("app_key = ?", DemoAppKey).First(&existing).Error
+	switch {
+	case err == nil:
+		return db.Model(&existing).Updates(map[string]interface{}{
+			"name":               desired.Name,
+			"description":        desired.Description,
+			"space_mode":         desired.SpaceMode,
+			"default_space_key":  desired.DefaultSpaceKey,
+			"auth_mode":          desired.AuthMode,
+			"frontend_entry_url": desired.FrontendEntryURL,
+			"backend_entry_url":  desired.BackendEntryURL,
+			"health_check_url":   desired.HealthCheckURL,
+			"capabilities":       desired.Capabilities,
+			"status":             desired.Status,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -193,6 +253,16 @@ func ensureRegisterMenuSpaces(db *gorm.DB) error {
 			Name:            "公开入口",
 			Description:     "account-portal 公开页（注册 / 登录 / 找回密码 / 邀请接受）",
 			DefaultHomePath: AccountPortalHomePath,
+			IsDefault:       true,
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{},
+		},
+		{
+			AppKey:          DemoAppKey,
+			SpaceKey:        DemoAppDefaultSpaceKey,
+			Name:            "Demo 空间",
+			Description:     "Phase A path_prefix 多 APP 验证空间",
+			DefaultHomePath: DemoAppHomePath,
 			IsDefault:       true,
 			Status:          "normal",
 			Meta:            systemmodels.MetaJSON{},
@@ -281,7 +351,16 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 			spec.AppKey, spec.MatchType, spec.Host, spec.PathPattern).First(&existing).Error
 		switch {
 		case err == nil:
-			continue
+			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
+				"priority":          spec.Priority,
+				"description":       spec.Description,
+				"default_space_key": spec.DefaultSpaceKey,
+				"status":            spec.Status,
+				"is_primary":        spec.IsPrimary,
+				"meta":              spec.Meta,
+			}).Error; updateErr != nil {
+				return updateErr
+			}
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			if createErr := db.Create(&spec).Error; createErr != nil {
 				return createErr
@@ -297,7 +376,14 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 			spec.AppKey, spec.SpaceKey, spec.MatchType, spec.Host, spec.PathPattern).First(&existing).Error
 		switch {
 		case err == nil:
-			continue
+			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
+				"priority":    spec.Priority,
+				"description": spec.Description,
+				"status":      spec.Status,
+				"meta":        spec.Meta,
+			}).Error; updateErr != nil {
+				return updateErr
+			}
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			if createErr := db.Create(&spec).Error; createErr != nil {
 				return createErr
@@ -514,6 +600,51 @@ func ensureDefaultRegisterEntry(db *gorm.DB) error {
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
+	default:
+		return err
+	}
+}
+
+func ensureDemoAppPages(db *gorm.DB) error {
+	spec := systemmodels.UIPage{
+		AppKey:          DemoAppKey,
+		PageKey:         "demo_app.lab.index",
+		Name:            "Demo 验证页",
+		RouteName:       "DemoAppLab",
+		RoutePath:       DemoAppHomePath,
+		Component:       "/demo/lab",
+		PageType:        "standalone",
+		VisibilityScope: "app",
+		Source:          "manual",
+		ModuleKey:       "demo",
+		SortOrder:       10,
+		AccessMode:      "public",
+		Status:          "normal",
+		Meta: systemmodels.MetaJSON{
+			"purpose": "phase-a-validation",
+		},
+	}
+
+	var existing systemmodels.UIPage
+	err := db.Where("app_key = ? AND page_key = ?", spec.AppKey, spec.PageKey).First(&existing).Error
+	switch {
+	case err == nil:
+		return db.Model(&existing).Updates(map[string]interface{}{
+			"name":             spec.Name,
+			"route_name":       spec.RouteName,
+			"route_path":       spec.RoutePath,
+			"component":        spec.Component,
+			"page_type":        spec.PageType,
+			"visibility_scope": spec.VisibilityScope,
+			"source":           spec.Source,
+			"module_key":       spec.ModuleKey,
+			"sort_order":       spec.SortOrder,
+			"access_mode":      spec.AccessMode,
+			"status":           spec.Status,
+			"meta":             spec.Meta,
+		}).Error
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return db.Create(&spec).Error
 	default:
 		return err
 	}

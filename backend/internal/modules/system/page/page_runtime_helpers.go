@@ -50,8 +50,10 @@ func buildRuntimePageRecord(item Record) gin.H {
 	if item.Meta != nil {
 		if values, ok := item.Meta["spaceKeys"].([]string); ok && len(values) > 0 {
 			node["space_keys"] = values
+			node["page_space_bindings"] = buildRuntimePageSpaceBindings(values, item.VisibilityScope)
 		} else if values, ok := item.Meta["spaceKeys"].([]interface{}); ok && len(values) > 0 {
 			node["space_keys"] = values
+			node["page_space_bindings"] = buildRuntimePageSpaceBindings(interfaceStrings(values), item.VisibilityScope)
 		}
 		if scope, ok := item.Meta["spaceScope"].(string); ok && strings.TrimSpace(scope) != "" {
 			node["space_scope"] = scope
@@ -114,6 +116,41 @@ func buildRuntimePageRecord(item Record) gin.H {
 	}
 
 	return node
+}
+
+func buildRuntimePageSpaceBindings(spaceKeys []string, visibilityScope string) []gin.H {
+	keys := uniqueSortedStrings(spaceKeys)
+	if len(keys) == 0 {
+		return nil
+	}
+	source := "explicit_binding"
+	if strings.TrimSpace(visibilityScope) == pageVisibilityScopeInherit {
+		source = "inherited_binding"
+	}
+	result := make([]gin.H, 0, len(keys))
+	for _, key := range keys {
+		if key == "" {
+			continue
+		}
+		result = append(result, gin.H{
+			"space_key": key,
+			"source":    source,
+		})
+	}
+	return result
+}
+
+func interfaceStrings(values []interface{}) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if text, ok := value.(string); ok {
+			result = append(result, text)
+		}
+	}
+	return result
 }
 
 func flattenRuntimePageRecord(item Record, pageMap map[string]Record) Record {

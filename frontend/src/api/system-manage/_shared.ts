@@ -66,6 +66,10 @@ type V5PageLike = {
   is_iframe?: boolean
   is_hide_tab?: boolean
   space_keys?: string[]
+  page_space_bindings?: Array<{
+    space_key?: string
+    source?: string
+  }>
   space_scope?: string
   space_type?: string
   host_key?: string
@@ -529,6 +533,14 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
   const spaceKeys = rawSpaceKeys
     .map((value) => normalizeMenuSpaceKey(`${value || ''}`))
     .filter(Boolean)
+  const pageSpaceBindings = Array.isArray(item?.page_space_bindings)
+    ? item.page_space_bindings
+        .map((binding) => ({
+          spaceKey: normalizeMenuSpaceKey(`${binding?.space_key || ''}`),
+          source: `${binding?.source || ''}`.trim() || undefined
+        }))
+        .filter((binding) => binding.spaceKey)
+    : []
   const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
   const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
   return {
@@ -561,6 +573,7 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? false),
     link: `${meta?.link || ''}`.trim(),
     spaceKeys,
+    pageSpaceBindings,
     spaceScope:
       `${item?.space_scope || meta?.spaceScope || ''}`.trim() || undefined,
     spaceType,
@@ -683,6 +696,10 @@ export function normalizeApp(item: any): Api.SystemManage.AppItem {
   const primaryHosts = Array.isArray(primaryHostsRaw)
     ? primaryHostsRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
+  const capabilities =
+    item?.capabilities && typeof item.capabilities === 'object' && !Array.isArray(item.capabilities)
+      ? item.capabilities
+      : {}
   return {
     id: item?.id || '',
     appKey: item?.app_key || '',
@@ -690,6 +707,11 @@ export function normalizeApp(item: any): Api.SystemManage.AppItem {
     description: item?.description || '',
     defaultSpaceKey: item?.default_space_key || '',
     spaceMode: item?.space_mode || 'single',
+    authMode: item?.auth_mode || 'inherit_host',
+    frontendEntryUrl: `${item?.frontend_entry_url || ''}`.trim(),
+    backendEntryUrl: `${item?.backend_entry_url || ''}`.trim(),
+    healthCheckUrl: `${item?.health_check_url || ''}`.trim(),
+    capabilities,
     isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',
     hostCount: Number(item?.host_count ?? 0),

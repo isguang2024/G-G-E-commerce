@@ -576,3 +576,61 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 让“页面管理”后台对 `account-portal` 公开页给出更显式的扫描/注册提示，减少运维还要理解 `/auth/*` 历史排除规则的心智负担。
 - 若后续需要把邀请码、邮箱验证、人机验证做成真正可选的开箱能力，应继续补齐对应消息模板、验证码提供商配置和回执页，而不是只停留在字段开关层。
 - 可以补一轮 Playwright 端到端验证，覆盖“命中入口 -> 展示字段 -> 注册成功跳转/回登录页”主链路，避免后续路由调整再次把公开页打回静态逻辑。
+
+### 2026-04-12 多 APP Phase A 首批实现收口（Phase A）
+
+**本次改动**
+- 完成 `App` 运行时元数据首批落地：后端模型、`SaveApp` 服务、默认 app bootstrap、`account-portal`/`platform-admin` seed 与新迁移 `00010_app_runtime_metadata.sql` 已统一支持 `frontend_entry_url`、`backend_entry_url`、`health_check_url`、`capabilities`，并为两个默认 APP 写入首版能力默认值。
+- 完成多 APP 契约扩展：`backend/api/openapi/domains/system/schemas.yaml` 新增 `SystemAppCapabilities` 并扩展 `SystemAppItem`/`SystemAppSaveRequest`；`backend/api/openapi/domains/page/schemas.yaml` 新增 `PageSpaceBindingItem`，运行时页面输出开始返回 `page_space_bindings`，治理侧与壳层都可以感知页面实际归属的 space 来源。
+- 完成前端治理台与壳层首批接入：系统应用管理页补齐认证模式、入口 URL、健康检查 URL、capabilities JSON 表单；`ArtAppSwitcher` 接入顶栏，切换 APP 时会同步重置 `worktab`、动态路由、菜单树与当前 space，并按 APP 入口落点重新拉取运行时导航。
+- 本轮已完成任务树三个大节点收口：`4/1`（模型/seed/migration）、`4/2`（API 契约与运行时导航）、`4/4`（UIPage/MenuSpace 绑定能力），当前下一可执行节点已切到 `4/3/1`。
+- 验证通过：`redocly bundle`、`ogen`、`pnpm run gen:api`、`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit`、`go build ./...`。
+
+**下次方向**
+- 继续完成 `4/3/1` 到 `4/3/5`：让 `app-context` 真正基于 capabilities 驱动前端行为，补齐 APP 级路由替换/缓存清理、ErrorBoundary、本地存储命名空间和 Vite 分包边界。
+- 继续推进 Phase A 后续节点时，应把 `account-portal` 作为公共认证中心的约束守住，只承接认证/注册/找回密码等公共能力，不把业务私有菜单和页面重新塞回公共壳。
+- `redocly lint` 目前仍存在一条历史硬错误：`MenuSaveRequest.status.permission_keys` 在 bundle 后 spec 中位置异常；这不影响本轮生成、测试和构建，但后续应单独清掉，避免误判 OpenAPI 生成链异常。
+
+### 2026-04-12 节点 4 全量收口：前端运行时隔离 + 集成验证完成（Phase A）
+
+**本次改动**
+- 一次性完成 `4/3/1` 到 `4/3/5`：`app-context` 增加 capabilities 感知与 runtime 上下文写入；`RouteRegistry` 注销/重建链增加 `ComponentLoader.clearCache()`；`IframeRouteManager` 改为按 `appKey` 分桶；`worktab` 的 `current/opened/keepAliveExclude` 改为按 app scope 切桶恢复。
+- 落地 APP 级错误兜底：新增 `ArtAppErrorBoundary` 并挂到 `ArtPageContent` 的 keep-alive 与非 keep-alive 两条渲染链，错误日志带 `appKey` 作为 telemetry 上下文，并提供“重试/返回首页”恢复路径。
+- 完成 APP 隔离存储命名空间：新增 `app-scope` 工具，`StorageConfig/StorageKeyManager` 支持 `sys-v{version}:app:{appKey}:{storeId}`；`menuSpaceStore/worktabStore` 切换到 APP 隔离 key，并兼容迁移旧 `menu-space/worktab` key。
+- 完成分包命名规范：`vite manualChunks` 固化 `app-account-portal`、`app-platform-admin`、`app-demo`；构建产物已出现对应 chunk 名称。
+- 完成 `4/5/1`、`4/5/2`：新增 `demo-app` seed（app/space/`/demo` 绑定/`/demo/lab` 页面）与前端 demo 页面，路由守卫放宽为 `menuTree` 或 `managedPages` 任一可注册即可，支撑轻量 APP 切换验证。
+
+**验证**
+- `gofmt -w backend/internal/pkg/permissionseed/register_seed.go` ✓
+- `go test ./internal/api/handlers -count=1` ✓
+- `pnpm exec vue-tsc --noEmit` ✓
+- `pnpm run build` ✓（产物含 `app-account-portal` / `app-platform-admin` / `app-demo`）
+- `go build ./...` ✓
+
+**下次方向**
+- 节点 `4` 已完成，任务树下一步已切到 `5/1/1`（Phase B 设计）。后续应先收口独立域名入口、跨域认证与网关分发规则，再进入 Phase B 编码。
+- `demo-app` 当前是验证样本；若要长期保留，应补 feature package/role 绑定，避免变成“有入口、弱权限模型”的半成品。
+
+### 2026-04-12 Phase B 实现收口：第六节独立域名编码全量完成（Phase B）
+
+**本次改动**
+- 完成第六节 8 个实现节点并回写任务树：后端新增动态安全中间件（按 APP 动态 CORS/CSP、shared_cookie 策略头）、APP 健康检查端点 `/health/apps`、日志 trace 标签（`app_key/space_key/auth_mode/request_id`）注入。
+- 前端补齐 APP 运行时入口上下文（frontend/backend/health URL）并接入 `v5Client` 动态 base URL；路由守卫新增跨域 APP 入口兜底跳转；APP 切换器改为写入完整 runtime app context。
+- 完成一轮迁移 + 重启 + 联编 + 浏览器验证：`go run cmd/migrate/main.go`、`go test ./internal/api/... -count=1`、`pnpm exec vue-tsc --noEmit`、`pnpm run build` 通过；8080/5174 服务监听正常，Playwright 验证 `/account/auth/login` 与 `/health/apps` 可访问。
+
+**下次方向**
+- 将 shared_cookie 从“策略头”推进到“真实会话 cookie 主链”（登录/刷新接口写入 HttpOnly cookie，并补 OpenAPI 契约与 E2E）。
+- 在系统应用治理页补 `cors_origins/csp` 的结构化编辑与预校验，减少仅靠 JSON capabilities 维护的运维成本。
+- 补 tenant context 中间件全链路注入，确保日志与 trace 的 `tenant_id` 字段从空值变为实值。
+
+### 2026-04-12 导航收口：APP 切换与登录后回跳修复（Phase A）
+
+**本次改动**
+- 修复菜单空间 host binding 选择策略：`platform-admin/default` 同时存在 `localhost` 与 `127.0.0.1` 绑定时，前端改为优先匹配当前浏览器 host，不再盲取第一条绑定，登录后不再错误跳到 `http://localhost/`。
+- 修复 `ArtAppSwitcher` 的入口回退链路：优先使用已注册路由与当前 space landing，再兜底 `frontendEntryUrl`，`account-portal` 切换后稳定落到 `/account/auth/login`，不再进入 `/account` 404。
+- 修复路由守卫的运行时 app 上下文切换：当目标路径明显属于另一个 app（如 `/dashboard/*`、`/system/*`、`/account/*`）时，先切换 managed app 再刷新 runtime navigation，保证从 `account-portal` 回到后台时能重新加载 `platform-admin` 导航清单。
+- 浏览器回归通过：`admin` 登录后落到 `http://127.0.0.1:5174/dashboard/console`；`platform-admin -> account-portal -> platform-admin` 全链路稳定，控制台 error 为 0。
+
+**下次方向**
+- 若后续继续做多 host/多域名部署，应把 host binding 的优先级规则沉到后端返回顺序或显式优先级字段，减少前端推断成本。
+- 当前仍有 1 条非阻断 warning 未纳入本次节点处理；若后续复现，应单开节点按 warning 类型拆解，不与导航主链收口混做。

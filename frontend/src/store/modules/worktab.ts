@@ -38,12 +38,14 @@
  * @author Art Design Pro Team
  */
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { router } from '@/router'
 import { LocationQueryRaw, Router } from 'vue-router'
 import { WorkTab } from '@/types'
 import { useCommon } from '@/hooks/core/useCommon'
 import { hasRegisteredRoutePath } from '@/utils/router'
+import { useAppContextStore } from '@/store/modules/app-context'
+import { APP_SCOPE_GLOBAL, normalizeAppScopeKey } from '@/utils/app-scope'
 
 interface WorktabState {
   current: Partial<WorkTab>
@@ -63,16 +65,66 @@ export const useWorktabStore = defineStore(
       }
     }
 
+    const appContextStore = useAppContextStore()
+    const activeScopeKey = ref(APP_SCOPE_GLOBAL)
+    const scopedStateMap = ref<Record<string, WorktabState>>({})
+
     // 状态定义
     const current = ref<Partial<WorkTab>>({})
     const opened = ref<WorkTab[]>([])
     const keepAliveExclude = ref<string[]>([])
+
+    const cloneState = (): WorktabState => ({
+      current: { ...current.value },
+      opened: [...opened.value],
+      keepAliveExclude: [...keepAliveExclude.value]
+    })
+
+    const persistCurrentScopeState = () => {
+      scopedStateMap.value = {
+        ...scopedStateMap.value,
+        [activeScopeKey.value]: cloneState()
+      }
+    }
+
+    const restoreScopeState = (scopeKey: string) => {
+      const snapshot = scopedStateMap.value[scopeKey]
+      if (!snapshot) {
+        current.value = {}
+        opened.value = []
+        keepAliveExclude.value = []
+        return
+      }
+      current.value = { ...snapshot.current }
+      opened.value = [...snapshot.opened]
+      keepAliveExclude.value = [...snapshot.keepAliveExclude]
+    }
+
+    const switchScope = (nextScopeKey: string) => {
+      if (nextScopeKey === activeScopeKey.value) return
+      persistCurrentScopeState()
+      activeScopeKey.value = nextScopeKey
+      restoreScopeState(nextScopeKey)
+    }
 
     // 计算属性
     const hasOpenedTabs = computed(() => opened.value.length > 0)
     const hasMultipleTabs = computed(() => opened.value.length > 1)
     const currentTabIndex = computed(() =>
       current.value.path ? opened.value.findIndex((tab) => tab.path === current.value.path) : -1
+    )
+    const resolvedScopeKey = computed(() =>
+      normalizeAppScopeKey(
+        appContextStore.effectiveManagedAppKey || appContextStore.currentRuntimeAppKey
+      )
+    )
+
+    watch(
+      resolvedScopeKey,
+      (value) => {
+        switchScope(value || APP_SCOPE_GLOBAL)
+      },
+      { immediate: true }
     )
 
     /**
@@ -487,6 +539,7 @@ export const useWorktabStore = defineStore(
       current.value = {}
       opened.value = []
       keepAliveExclude.value = []
+      persistCurrentScopeState()
     }
 
     /**
@@ -533,6 +586,8 @@ export const useWorktabStore = defineStore(
       current,
       opened,
       keepAliveExclude,
+      activeScopeKey,
+      scopedStateMap,
 
       // 计算属性
       hasOpenedTabs,
@@ -565,8 +620,8 @@ export const useWorktabStore = defineStore(
   },
   {
     persist: {
-      key: 'worktab',
-      storage: localStorage
+      storage: localStorage,
+      pick: ['current', 'opened', 'keepAliveExclude', 'activeScopeKey', 'scopedStateMap']
     }
   }
 )

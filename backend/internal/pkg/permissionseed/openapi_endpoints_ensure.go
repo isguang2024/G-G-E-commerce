@@ -84,10 +84,28 @@ func EnsureOpenAPIEndpoints(db *gorm.DB) (int, error) {
 			err = db.Where("method = ? AND path = ? AND deleted_at IS NULL",
 				method, path).First(&existing).Error
 		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Fallback for historical data: a soft-deleted row may still occupy
+			// the deterministic UUID primary key and cause duplicate pkey errors.
+			err = db.Unscoped().
+				Where("id = ? OR code = ? OR (method = ? AND path = ?)",
+					stableID, stableCode, method, path).
+				First(&existing).Error
+		}
 
 		if err == nil {
 			// Row exists — back-fill empty fields only (preserve operator edits).
 			updates := map[string]interface{}{"updated_at": now}
+			if existing.DeletedAt.Valid {
+				// Revive historical soft-deleted rows to keep startup idempotent.
+				updates["deleted_at"] = nil
+				updates["status"] = "normal"
+			}
+			if existing.ID == stableID {
+				// Deterministic ID row should stay aligned with its source operation.
+				updates["method"] = method
+				updates["path"] = path
+			}
 			if strings.TrimSpace(existing.Code) == "" {
 				updates["code"] = stableCode
 			}
@@ -167,6 +185,27 @@ func EnsureOpenAPIPermissionBindings(db *gorm.DB) (int, error) {
 			return created, err
 		}
 
+		stableBindingID := StableID("openapi-endpoint-binding", endpointCode+":"+permKey)
+		// Fallback for historical soft-deleted rows with the same deterministic ID.
+		if err := db.Unscoped().Where("id = ? OR (endpoint_code = ? AND permission_key = ?)",
+			stableBindingID, endpointCode, permKey).First(&binding).Error; err == nil {
+			updates := map[string]interface{}{
+				"updated_at": now,
+			}
+			if binding.DeletedAt.Valid {
+				updates["deleted_at"] = nil
+			}
+			if strings.TrimSpace(binding.MatchMode) == "" {
+				updates["match_mode"] = "ANY"
+			}
+			if len(updates) > 1 {
+				if err := db.Unscoped().Model(&binding).Updates(updates).Error; err != nil {
+					return created, err
+				}
+			}
+			continue
+		}
+
 		// Ensure the endpoint row exists (created by EnsureOpenAPIEndpoints).
 		var count int64
 		if err := db.Model(&systemmodels.APIEndpoint{}).
@@ -178,7 +217,7 @@ func EnsureOpenAPIPermissionBindings(db *gorm.DB) (int, error) {
 		}
 
 		row := systemmodels.APIEndpointPermissionBinding{
-			ID:            StableID("openapi-endpoint-binding", endpointCode+":"+permKey),
+			ID:            stableBindingID,
 			EndpointCode:  endpointCode,
 			PermissionKey: permKey,
 			MatchMode:     "ANY",

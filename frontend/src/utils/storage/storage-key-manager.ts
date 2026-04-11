@@ -30,6 +30,7 @@
  * @author Art Design Pro Team
  */
 import { StorageConfig } from '@/utils/storage'
+import { APP_SCOPE_GLOBAL, readActiveAppScopeKey } from '@/utils/app-scope'
 
 /**
  * 存储键名管理器
@@ -46,11 +47,26 @@ export class StorageKeyManager {
     'collaboration-workspace-adapter'
   ]
 
+  private static readonly APP_SCOPED_STORE_IDS = new Set([
+    'menuSpaceStore',
+    'worktabStore'
+  ])
+
+  private static readonly LEGACY_PLAIN_KEYS: Record<string, string[]> = {
+    menuSpaceStore: ['menu-space'],
+    worktabStore: ['worktab']
+  }
+
   /**
    * 获取当前版本的存储键名
    */
   private getCurrentVersionKey(storeId: string): string {
     return StorageConfig.generateStorageKey(storeId)
+  }
+
+  private getCurrentAppScopedVersionKey(storeId: string): string {
+    const appKey = readActiveAppScopeKey() || APP_SCOPE_GLOBAL
+    return StorageConfig.generateAppScopedStorageKey(storeId, appKey)
   }
 
   /**
@@ -87,8 +103,18 @@ export class StorageKeyManager {
   private findExistingKey(storeId: string): string | null {
     const storageKeys = Object.keys(localStorage)
     const pattern = StorageConfig.createKeyPattern(storeId)
+    const matchedVersionedKey =
+      storageKeys.find((key) => pattern.test(key) && localStorage.getItem(key)) || null
+    if (matchedVersionedKey) return matchedVersionedKey
 
-    return storageKeys.find((key) => pattern.test(key) && localStorage.getItem(key)) || null
+    const legacyKeys = StorageKeyManager.LEGACY_PLAIN_KEYS[storeId] || []
+    for (const key of legacyKeys) {
+      if (localStorage.getItem(key)) {
+        return key
+      }
+    }
+
+    return null
   }
 
   /**
@@ -129,7 +155,9 @@ export class StorageKeyManager {
   getStorageKey(storeId: string): string {
     this.cleanupLegacyKeysOnce()
 
-    const currentKey = this.getCurrentVersionKey(storeId)
+    const currentKey = StorageKeyManager.APP_SCOPED_STORE_IDS.has(storeId)
+      ? this.getCurrentAppScopedVersionKey(storeId)
+      : this.getCurrentVersionKey(storeId)
 
     // 优先使用当前版本的数据
     if (this.hasCurrentVersionData(currentKey)) {

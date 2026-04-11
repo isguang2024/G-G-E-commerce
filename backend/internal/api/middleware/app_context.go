@@ -29,7 +29,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 			path = c.Request.URL.Path
 		}
 		requestedAppKey := appctx.RequestAppKey(c)
-		appKey, _, appResolvedBy, err := apppkg.ResolveAppEntry(db, host, path, requestedAppKey)
+		appKey, appBinding, appResolvedBy, err := apppkg.ResolveAppEntry(db, host, path, requestedAppKey)
 		if err != nil {
 			appKey = appctx.NormalizeAppKey(requestedAppKey)
 			if appKey == "" {
@@ -73,6 +73,9 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		c.Set("request_host", host)
 		c.Set("app_key", appKey)
 		c.Set("app_resolved_by", appResolvedBy)
+		if appBinding != nil {
+			c.Set("app_entry_binding", appBinding)
+		}
 		c.Set("space_key", spaceKey)
 		c.Set("resolved_by", spaceResolvedBy)
 		if collaborationWorkspaceID != nil {

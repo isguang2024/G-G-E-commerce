@@ -3634,6 +3634,9 @@ export interface components {
             /** Format: int64 */
             user_count: number;
         };
+        SystemAppCapabilities: {
+            [key: string]: unknown;
+        };
         SystemMeta: {
             [key: string]: unknown;
         };
@@ -3646,6 +3649,9 @@ export interface components {
             default_space_key: string;
             space_mode: string;
             auth_mode?: string;
+            frontend_entry_url?: string;
+            backend_entry_url?: string;
+            health_check_url?: string;
             is_default: boolean;
             status: string;
             /** Format: int64 */
@@ -3657,6 +3663,7 @@ export interface components {
             /** Format: int64 */
             page_count: number;
             primary_hosts?: string[];
+            capabilities: components["schemas"]["SystemAppCapabilities"];
             meta: components["schemas"]["SystemMeta"];
             /** Format: date-time */
             created_at: string;
@@ -3785,6 +3792,10 @@ export interface components {
             sort_order: number;
             children?: components["schemas"]["MenuTreeItem"][];
         };
+        PageSpaceBindingItem: {
+            space_key: string;
+            source?: string;
+        };
         PageMeta: {
             spaceKeys?: string[];
             spaceScope?: string;
@@ -3812,6 +3823,7 @@ export interface components {
             component?: string;
             space_key?: string;
             space_keys?: string[];
+            page_space_bindings?: components["schemas"]["PageSpaceBindingItem"][];
             space_scope?: string;
             page_type?: string;
             visibility_scope?: string;
@@ -4098,6 +4110,10 @@ export interface components {
             space_mode?: string;
             default_space_key?: string;
             auth_mode?: string;
+            frontend_entry_url?: string;
+            backend_entry_url?: string;
+            health_check_url?: string;
+            capabilities?: components["schemas"]["SystemAppCapabilities"];
             status?: string;
             is_default?: boolean;
             meta?: components["schemas"]["SystemMeta"];

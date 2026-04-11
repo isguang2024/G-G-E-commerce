@@ -61,7 +61,7 @@ import { fetchGetRuntimeNavigation, fetchGetRuntimePublicPageList } from '@/api/
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
-import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+import { DEFAULT_MENU_SPACE_KEY, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 /**
  * 运行时 manifest 校验失败错误
@@ -103,19 +103,59 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
   const requestedSpaceKey = normalizeMenuSpaceKey(
     preferredSpaceKey || menuSpaceStore.currentSpaceKey
   )
-  const manifest = await fetchGetRuntimeNavigation(requestedSpaceKey)
-  if (!manifest || !Array.isArray(manifest.menuTree) || manifest.menuTree.length === 0) {
+  let requestedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
+  if (!requestedAppKey) {
+    try {
+      await menuSpaceStore.refreshRuntimeConfig(false)
+      requestedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
+    } catch (error) {
+      console.warn('[RouteGuard] 预热运行时 app 上下文失败，继续按现有上下文请求导航', error)
+    }
+  }
+  const fallbackSpaceKey = normalizeMenuSpaceKey(menuSpaceStore.defaultSpaceKey)
+  const candidateSpaceKeys = Array.from(
+    new Set(
+      [requestedSpaceKey, fallbackSpaceKey, '']
+        .map((item) => normalizeMenuSpaceKey(item))
+        .filter((item, index, source) => index === source.indexOf(item))
+    )
+  )
+  let manifest: Api.SystemManage.RuntimeNavigationManifest | null = null
+  let menuTree: any[] = []
+  let managedPages: any[] = []
+  let usedSpaceKey = requestedSpaceKey
+
+  for (const candidate of candidateSpaceKeys) {
+    const current = await fetchGetRuntimeNavigation(candidate || undefined, requestedAppKey || undefined)
+    const currentMenuTree = Array.isArray(current?.menuTree) ? current.menuTree : []
+    const currentManagedPages = Array.isArray(current?.managedPages) ? current.managedPages : []
+    if (current && (currentMenuTree.length > 0 || currentManagedPages.length > 0)) {
+      manifest = current
+      menuTree = currentMenuTree
+      managedPages = currentManagedPages
+      usedSpaceKey = candidate
+      break
+    }
+  }
+
+  if (!manifest || (menuTree.length === 0 && managedPages.length === 0)) {
     throw new RuntimeManifestInvalidError(
-      `[RouteGuard] runtime navigation manifest 缺失或 menuList 为空 (space=${requestedSpaceKey || 'default'})`
+      `[RouteGuard] runtime navigation manifest 缺失或无可注册路由 (space=${requestedSpaceKey || 'default'})`
     )
   }
   const resolvedAppKey =
     `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
   if (resolvedAppKey) {
-    appContextStore.setRuntimeAppKey(resolvedAppKey)
+    appContextStore.setRuntimeAppContext({
+      appKey: resolvedAppKey,
+      frontendEntryUrl: manifest.currentApp?.app?.frontendEntryUrl || '',
+      backendEntryUrl: manifest.currentApp?.app?.backendEntryUrl || '',
+      healthCheckUrl: manifest.currentApp?.app?.healthCheckUrl || '',
+      capabilities: manifest.currentApp?.app?.capabilities
+    })
   }
   const resolvedSpaceKey = normalizeMenuSpaceKey(
-    manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || requestedSpaceKey
+    manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || usedSpaceKey
   )
 
   if (
@@ -125,17 +165,17 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
     menuSpaceStore.setActiveSpaceKey(resolvedSpaceKey)
   }
 
-  const menuList = menuProcessor.normalizeMenuList(manifest.menuTree || [])
+  const menuList = menuProcessor.normalizeMenuList(menuTree)
   const currentUser = userStore.getUserInfo as Api.Auth.UserInfo
   const manifestVersion = `${
     (manifest as { version?: string | number }).version ||
     (manifest.context as { version?: string | number } | undefined)?.version ||
     'v0'
   }`
-  const cacheKey = `${resolvedSpaceKey || requestedSpaceKey || 'default'}:${currentUser?.id || currentUser?.userId || 'anon'}:${manifestVersion}`
+  const cacheKey = `${resolvedSpaceKey || usedSpaceKey || DEFAULT_MENU_SPACE_KEY}:${currentUser?.id || currentUser?.userId || 'anon'}:${manifestVersion}`
   const runtimeRoutes = managedPageProcessor.buildRoutes(
     menuList,
-    manifest.managedPages || [],
+    managedPages,
     currentUser,
     { trustBackend: true, cacheKey }
   )
@@ -441,6 +481,13 @@ async function handleRouteGuard(
     return
   }
 
+  const crossDomainTarget = buildCrossDomainAppRedirectTarget(to)
+  if (crossDomainTarget) {
+    window.location.assign(crossDomainTarget)
+    next(false)
+    return
+  }
+
   // 6. 未匹配到路由，跳转到 404
   next({ name: 'Exception404', replace: true })
 }
@@ -493,10 +540,13 @@ async function ensurePublicRuntimeRoutes(
   try {
     const menuSpaceStore = useMenuSpaceStore()
     const appContextStore = useAppContextStore()
-    const inferredPublicAppKey = inferPublicRuntimeAppKey(to.path, appContextStore.currentRuntimeAppKey)
+    const inferredPublicAppKey = inferPublicRuntimeAppKey(
+      to.path,
+      appContextStore.currentRuntimeAppKey
+    )
     const runtimeRes = await fetchGetRuntimePublicPageList(
       menuSpaceStore.currentSpaceKey,
-      inferredPublicAppKey
+      `${appContextStore.effectiveManagedAppKey || inferredPublicAppKey || ''}`.trim() || undefined
     )
     const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null, {
       trustBackend: true
@@ -521,9 +571,24 @@ async function ensurePublicRuntimeRoutes(
 }
 
 function inferPublicRuntimeAppKey(path: string, runtimeAppKey?: string): string {
+  return inferRuntimeAppKeyByPath(path, runtimeAppKey)
+}
+
+function inferRuntimeAppKeyByPath(path: string, runtimeAppKey?: string): string {
   const normalizedPath = `${path || ''}`.trim()
   if (normalizedPath.startsWith('/account/')) {
     return 'account-portal'
+  }
+  if (
+    normalizedPath.startsWith('/dashboard/') ||
+    normalizedPath.startsWith('/system/') ||
+    normalizedPath.startsWith('/workspace/') ||
+    normalizedPath.startsWith('/collaboration-workspace/')
+  ) {
+    return 'platform-admin'
+  }
+  if (normalizedPath.startsWith('/demo/')) {
+    return 'demo-app'
   }
   return `${runtimeAppKey || ''}`.trim()
 }
@@ -568,6 +633,12 @@ async function handleDynamicRoutes(
   next: NavigationGuardNext,
   router: Router
 ): Promise<void> {
+  const appContextStore = useAppContextStore()
+  const inferredAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
+  if (inferredAppKey && inferredAppKey !== appContextStore.effectiveManagedAppKey) {
+    appContextStore.setManagedAppKey(inferredAppKey)
+  }
+
   // 显示 loading
   pendingLoading = true
   loadingService.showLoading()
@@ -778,6 +849,7 @@ async function tryRefreshMissingDynamicRoute(
   router: Router
 ): Promise<boolean> {
   const userStore = useUserStore()
+  const appContextStore = useAppContextStore()
   if (!userStore.isLogin || isStaticRoute(to.path) || isPublicRuntimeRoute(to)) {
     return false
   }
@@ -788,6 +860,10 @@ async function tryRefreshMissingDynamicRoute(
 
   routeRefreshAttempted.add(to.fullPath)
   try {
+    const inferredAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
+    if (inferredAppKey && inferredAppKey !== appContextStore.effectiveManagedAppKey) {
+      appContextStore.setManagedAppKey(inferredAppKey)
+    }
     // 仅刷新菜单，不再重新拉取用户信息（避免双重 user info fetch）
     await refreshUserMenus()
     // 刷新访问图后若目标路由仍不存在，说明它已经不在当前运行时导航清单里，
@@ -809,5 +885,28 @@ async function tryRefreshMissingDynamicRoute(
     console.error('[RouteGuard] 动态路由缺失自动刷新失败:', error)
     routeRefreshAttempted.delete(to.fullPath)
     return false
+  }
+}
+
+function buildCrossDomainAppRedirectTarget(to: RouteLocationNormalized): string {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+  const appContextStore = useAppContextStore()
+  const entry = `${appContextStore.currentRuntimeFrontendEntryURL || ''}`.trim()
+  if (!/^https?:\/\//i.test(entry)) {
+    return ''
+  }
+  try {
+    const target = new URL(entry)
+    if (target.origin === window.location.origin) {
+      return ''
+    }
+    if (!target.searchParams.has('redirect')) {
+      target.searchParams.set('redirect', to.fullPath || '/')
+    }
+    return target.toString()
+  } catch {
+    return ''
   }
 }

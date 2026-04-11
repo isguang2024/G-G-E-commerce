@@ -12,6 +12,7 @@ import { h } from 'vue'
 export class ComponentLoader {
   private modules: Record<string, () => Promise<any>>
   private readonly componentPathAliases: Array<[string, string]> = []
+  private readonly missingPathCache = new Set<string>()
 
   constructor() {
     // 动态导入 views 目录下所有 .vue 组件
@@ -33,10 +34,11 @@ export class ComponentLoader {
     const module = this.modules[fullPath] || this.modules[fullPathWithIndex]
 
     if (!module) {
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV && !this.missingPathCache.has(resolvedPath)) {
         console.warn(
           `[ComponentLoader] 未找到组件: ${componentPath}（解析后: ${resolvedPath}），尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
         )
+        this.missingPathCache.add(resolvedPath)
       }
       return this.createErrorComponent(componentPath)
     }
@@ -66,6 +68,13 @@ export class ComponentLoader {
    */
   loadIframe(): () => Promise<any> {
     return () => import('@/views/outside/Iframe.vue')
+  }
+
+  /**
+   * 清理 APP 切换期间的组件解析缓存，避免跨 APP 的历史 miss 污染日志与调试判断。
+   */
+  clearCache(): void {
+    this.missingPathCache.clear()
   }
 
   /**

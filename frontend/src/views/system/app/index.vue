@@ -73,6 +73,8 @@
                 <span>·</span>
                 <span>{{ item.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
                 <span>·</span>
+                <span>{{ authModeLabel(item.authMode) }}</span>
+                <span>·</span>
                 <span>默认 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
                 <span>·</span>
                 <span>{{ item.menuSpaceCount || 0 }} 空间 / {{ item.menuCount || 0 }} 菜单 / {{ item.pageCount || 0 }} 页面</span>
@@ -115,6 +117,11 @@
             <span>·</span>
             <span
               >默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span
+            >
+            <span>·</span>
+            <span
+              >前端入口
+              <strong>{{ selectedAppRecord.frontendEntryUrl || '继承当前地址' }}</strong></span
             >
           </div>
           <div class="app-overview__actions">
@@ -257,11 +264,45 @@
             />
           </ElSelect>
         </ElFormItem>
+        <div v-if="editingAppKey" class="app-form-hint">
+          这里控制 APP 首次解析落到哪个空间；空间内首页请到“高级空间配置”里调整
+          <code>default_home_path</code>。
+        </div>
         <ElFormItem label="空间模式">
           <ElSelect v-model="appForm.space_mode" style="width: 100%">
             <ElOption label="单空间" value="single" />
             <ElOption label="多空间" value="multi" />
           </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="认证模式">
+          <ElSelect v-model="appForm.auth_mode" style="width: 100%">
+            <ElOption label="继承当前 Host" value="inherit_host" />
+            <ElOption label="共享 Cookie" value="shared_cookie" />
+            <ElOption label="独立认证中心" value="centralized_login" />
+          </ElSelect>
+        </ElFormItem>
+        <div class="app-drawer-grid">
+          <ElFormItem label="前端入口地址">
+            <ElInput v-model="appForm.frontend_entry_url" placeholder="例如 /account 或 https://account.example.com" />
+          </ElFormItem>
+          <ElFormItem label="后端入口地址">
+            <ElInput v-model="appForm.backend_entry_url" placeholder="例如 /api 或 https://api.example.com" />
+          </ElFormItem>
+        </div>
+        <ElFormItem label="健康检查地址">
+          <ElInput v-model="appForm.health_check_url" placeholder="例如 /health" />
+        </ElFormItem>
+        <ElFormItem label="运行能力声明">
+          <ElInput
+            v-model="appCapabilitiesText"
+            type="textarea"
+            :rows="8"
+            placeholder='例如 {"runtime":{"supports_worktab":true}}'
+          />
+          <div class="app-form-hint">
+            使用 JSON 对象描述 routing/runtime/navigation/integration 能力；这里不重复填写
+            `space_mode`、`auth_mode` 之类顶层字段。
+          </div>
         </ElFormItem>
         <ElFormItem label="说明">
           <ElInput
@@ -482,10 +523,16 @@
     description: '',
     space_mode: 'single',
     default_space_key: '',
+    auth_mode: 'inherit_host',
+    frontend_entry_url: '',
+    backend_entry_url: '',
+    health_check_url: '',
+    capabilities: {},
     is_default: false,
     status: 'normal',
     meta: {}
   })
+  const appCapabilitiesText = ref('{}')
 
   const entryForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
     id: '',
@@ -521,9 +568,18 @@
     path_prefix: '路径',
     host_and_path: '域名+路径'
   }
+  const authModeLabelMap: Record<string, string> = {
+    inherit_host: '继承 Host',
+    shared_cookie: '共享 Cookie',
+    centralized_login: '独立认证'
+  }
 
   function matchTypeLabel(type?: string) {
     return matchTypeLabelMap[type || 'host_exact'] || type || ''
+  }
+
+  function authModeLabel(type?: string) {
+    return authModeLabelMap[type || 'inherit_host'] || type || 'inherit_host'
   }
 
   function describeEntryRule(item: { matchType?: string; host?: string; pathPattern?: string }) {
@@ -618,6 +674,26 @@
     return resolveSpaceKey(...candidates) || '未设置'
   }
 
+  function formatCapabilitiesText(value?: Record<string, any>) {
+    try {
+      return JSON.stringify(value && Object.keys(value).length ? value : {}, null, 2)
+    } catch {
+      return '{}'
+    }
+  }
+
+  function parseCapabilitiesText() {
+    const raw = `${appCapabilitiesText.value || ''}`.trim()
+    if (!raw) {
+      return {}
+    }
+    const parsed = JSON.parse(raw)
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+      throw new Error('运行能力声明必须是 JSON 对象')
+    }
+    return parsed as Record<string, any>
+  }
+
   async function loadSelectedAppContext(appKey: string) {
     const normalizedAppKey = resolveAppKey(appKey)
     if (!normalizedAppKey) {
@@ -669,9 +745,15 @@
     appForm.description = ''
     appForm.space_mode = 'single'
     appForm.default_space_key = ''
+    appForm.auth_mode = 'inherit_host'
+    appForm.frontend_entry_url = ''
+    appForm.backend_entry_url = ''
+    appForm.health_check_url = ''
+    appForm.capabilities = {}
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
+    appCapabilitiesText.value = '{}'
   }
 
   function resetEntryForm() {
@@ -713,9 +795,15 @@
       appForm.description = item.description || ''
       appForm.space_mode = item.spaceMode === 'multi' ? 'multi' : 'single'
       appForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey)
+      appForm.auth_mode = item.authMode || 'inherit_host'
+      appForm.frontend_entry_url = item.frontendEntryUrl || ''
+      appForm.backend_entry_url = item.backendEntryUrl || ''
+      appForm.health_check_url = item.healthCheckUrl || ''
+      appForm.capabilities = item.capabilities || {}
       appForm.is_default = Boolean(item.isDefault)
       appForm.status = item.status || 'normal'
       appForm.meta = item.meta || {}
+      appCapabilitiesText.value = formatCapabilitiesText(item.capabilities)
     }
     appDrawerVisible.value = true
   }
@@ -770,6 +858,13 @@
       ElMessage.warning('请输入应用名称')
       return
     }
+    let capabilities: Record<string, any>
+    try {
+      capabilities = parseCapabilitiesText()
+    } catch (error: any) {
+      ElMessage.warning(error?.message || '运行能力声明格式错误')
+      return
+    }
     savingApp.value = true
     try {
       const payload: Api.SystemManage.AppSaveParams = {
@@ -777,7 +872,12 @@
         app_key: appForm.app_key.trim(),
         name: appForm.name.trim(),
         description: appForm.description?.trim() || '',
-        space_mode: appForm.space_mode === 'multi' ? 'multi' : 'single'
+        space_mode: appForm.space_mode === 'multi' ? 'multi' : 'single',
+        auth_mode: appForm.auth_mode || 'inherit_host',
+        frontend_entry_url: `${appForm.frontend_entry_url || ''}`.trim(),
+        backend_entry_url: `${appForm.backend_entry_url || ''}`.trim(),
+        health_check_url: `${appForm.health_check_url || ''}`.trim(),
+        capabilities
       }
       const nextDefaultSpaceKey = resolveSpaceKey(appForm.default_space_key)
       if (editingAppKey.value && nextDefaultSpaceKey) {

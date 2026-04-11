@@ -16,19 +16,23 @@ const (
 )
 
 type App struct {
-	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey          string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"app_key"`
-	Name            string         `gorm:"type:varchar(150);not null" json:"name"`
-	Description     string         `gorm:"type:text;not null;default:''" json:"description"`
-	SpaceMode       string         `gorm:"type:varchar(20);not null;default:'single'" json:"space_mode"`
-	DefaultSpaceKey string         `gorm:"type:varchar(100);not null;default:'default'" json:"default_space_key"`
-	AuthMode        string         `gorm:"type:varchar(30);not null;default:'inherit_host'" json:"auth_mode"`
-	Status          string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	IsDefault       bool           `gorm:"not null;default:false" json:"is_default"`
-	Meta            MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey           string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"app_key"`
+	Name             string         `gorm:"type:varchar(150);not null" json:"name"`
+	Description      string         `gorm:"type:text;not null;default:''" json:"description"`
+	SpaceMode        string         `gorm:"type:varchar(20);not null;default:'single'" json:"space_mode"`
+	DefaultSpaceKey  string         `gorm:"type:varchar(100);not null;default:'default'" json:"default_space_key"`
+	AuthMode         string         `gorm:"type:varchar(30);not null;default:'inherit_host'" json:"auth_mode"`
+	FrontendEntryURL string         `gorm:"type:varchar(500);not null;default:''" json:"frontend_entry_url"`
+	BackendEntryURL  string         `gorm:"type:varchar(500);not null;default:''" json:"backend_entry_url"`
+	HealthCheckURL   string         `gorm:"type:varchar(500);not null;default:''" json:"health_check_url"`
+	Capabilities     MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"capabilities"`
+	Status           string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	IsDefault        bool           `gorm:"not null;default:false" json:"is_default"`
+	Meta             MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (App) TableName() string {
@@ -86,4 +90,51 @@ type MenuSpaceEntryBinding struct {
 
 func (MenuSpaceEntryBinding) TableName() string {
 	return "menu_space_entry_bindings"
+}
+
+func DefaultPlatformAdminCapabilities() MetaJSON {
+	return MetaJSON{
+		"routing": MetaJSON{
+			"entry_mode":              "inherit_host",
+			"route_prefix":            "/",
+			"supports_public_runtime": false,
+		},
+		"runtime": MetaJSON{
+			"kind":                    "local",
+			"supports_dynamic_routes": true,
+			"supports_worktab":        true,
+		},
+		"navigation": MetaJSON{
+			"supports_multi_space":  true,
+			"default_landing_mode":  "menu_space",
+			"supports_space_badges": true,
+		},
+		"integration": MetaJSON{
+			"supports_app_switch":        true,
+			"supports_broadcast_channel": true,
+		},
+	}
+}
+
+func DefaultAccountPortalCapabilities() MetaJSON {
+	return MetaJSON{
+		"routing": MetaJSON{
+			"entry_mode":              "path_prefix",
+			"route_prefix":            "/account",
+			"supports_public_runtime": true,
+		},
+		"runtime": MetaJSON{
+			"kind":                    "local",
+			"supports_dynamic_routes": true,
+			"supports_worktab":        false,
+		},
+		"navigation": MetaJSON{
+			"supports_multi_space": false,
+			"default_landing_mode": "menu_space",
+		},
+		"integration": MetaJSON{
+			"supports_app_switch":        true,
+			"supports_broadcast_channel": false,
+		},
+	}
 }

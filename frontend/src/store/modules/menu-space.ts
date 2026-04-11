@@ -97,7 +97,9 @@ export const useMenuSpaceStore = defineStore(
       return normalizeMenuHost(host)
     })
 
-    const currentAppKey = computed(() => normalizeManagedAppKey(appContextStore.runtimeAppKey))
+    const currentAppKey = computed(() =>
+      normalizeManagedAppKey(appContextStore.effectiveManagedAppKey || appContextStore.runtimeAppKey)
+    )
     const currentMenuSpaceConfig = computed(() => {
       const appKey = currentAppKey.value
       if (!appKey) {
@@ -200,7 +202,9 @@ export const useMenuSpaceStore = defineStore(
     }
 
     const ensureRuntimeAppKey = async () => {
-      const existingAppKey = normalizeManagedAppKey(appContextStore.runtimeAppKey)
+      const existingAppKey = normalizeManagedAppKey(
+        appContextStore.effectiveManagedAppKey || appContextStore.runtimeAppKey
+      )
       if (existingAppKey) {
         return existingAppKey
       }
@@ -209,13 +213,19 @@ export const useMenuSpaceStore = defineStore(
         return runtimeAppLoading.value
       }
 
-      const pending = fetchGetCurrentApp()
+      const pending = fetchGetCurrentApp(appContextStore.currentManagedAppKey || undefined)
         .then((response) => {
           const resolvedAppKey = normalizeManagedAppKey(response?.app?.appKey)
           if (!resolvedAppKey) {
             throw new Error('缺少运行时 app 上下文')
           }
-          appContextStore.setRuntimeAppKey(resolvedAppKey)
+          appContextStore.setRuntimeAppContext({
+            appKey: resolvedAppKey,
+            frontendEntryUrl: response?.app?.frontendEntryUrl || '',
+            backendEntryUrl: response?.app?.backendEntryUrl || '',
+            healthCheckUrl: response?.app?.healthCheckUrl || '',
+            capabilities: response?.app?.capabilities
+          })
           return resolvedAppKey
         })
         .finally(() => {
@@ -390,7 +400,8 @@ export const useMenuSpaceStore = defineStore(
     const resolveHostBinding = (spaceKey?: string) => {
       return resolveMenuSpaceHostBinding(
         normalizeMenuSpaceKey(spaceKey) || currentSpaceKey.value,
-        currentMenuSpaceConfig.value
+        currentMenuSpaceConfig.value,
+        typeof window !== 'undefined' ? window.location.host : runtimeHost.value
       )
     }
 
@@ -473,7 +484,6 @@ export const useMenuSpaceStore = defineStore(
   },
   {
     persist: {
-      key: 'menu-space',
       storage: localStorage
     }
   }

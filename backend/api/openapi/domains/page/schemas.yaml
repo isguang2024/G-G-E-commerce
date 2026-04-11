@@ -32,6 +32,10 @@ components:
           type: array
           items:
             type: string
+        page_space_bindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageSpaceBindingItem'
         space_scope:
           type: string
         page_type:
@@ -81,6 +85,16 @@ components:
         updated_at:
           type: string
           format: date-time
+    PageSpaceBindingItem:
+      type: object
+      additionalProperties: false
+      required:
+      - space_key
+      properties:
+        space_key:
+          type: string
+        source:
+          type: string
     PageMeta:
       type: object
       additionalProperties: false

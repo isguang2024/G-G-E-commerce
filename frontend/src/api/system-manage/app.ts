@@ -104,7 +104,11 @@ export async function fetchSaveApp(data: Api.SystemManage.AppSaveParams) {
     description: data.description,
     space_mode: data.space_mode,
     default_space_key: data.default_space_key,
-    auth_mode: (data as Api.SystemManage.AppSaveParams & { auth_mode?: string }).auth_mode,
+    auth_mode: data.auth_mode,
+    frontend_entry_url: data.frontend_entry_url,
+    backend_entry_url: data.backend_entry_url,
+    health_check_url: data.health_check_url,
+    capabilities: data.capabilities,
     status: data.status,
     is_default: data.is_default,
     meta: data.meta

@@ -727,15 +727,19 @@ func ensureAppBootstrap() error {
 	}
 
 	defaultApp := models.App{
-		AppKey:          models.DefaultAppKey,
-		Name:            models.DefaultAppName,
-		Description:     "当前内置管理员后台应用",
-		SpaceMode:       "single",
-		DefaultSpaceKey: models.DefaultMenuSpaceKey,
-		AuthMode:        "inherit_host",
-		Status:          "normal",
-		IsDefault:       true,
-		Meta:            models.MetaJSON{},
+		AppKey:           models.DefaultAppKey,
+		Name:             models.DefaultAppName,
+		Description:      "当前内置管理员后台应用",
+		SpaceMode:        "single",
+		DefaultSpaceKey:  models.DefaultMenuSpaceKey,
+		AuthMode:         "inherit_host",
+		FrontendEntryURL: "/",
+		BackendEntryURL:  "",
+		HealthCheckURL:   "/health",
+		Status:           "normal",
+		IsDefault:        true,
+		Capabilities:     models.DefaultPlatformAdminCapabilities(),
+		Meta:             models.MetaJSON{},
 	}
 
 	var existing models.App
@@ -743,13 +747,17 @@ func ensureAppBootstrap() error {
 	switch {
 	case err == nil:
 		if updateErr := DB.Model(&existing).Updates(map[string]interface{}{
-			"name":              defaultApp.Name,
-			"description":       defaultApp.Description,
-			"space_mode":        defaultApp.SpaceMode,
-			"default_space_key": defaultApp.DefaultSpaceKey,
-			"auth_mode":         defaultApp.AuthMode,
-			"status":            "normal",
-			"is_default":        true,
+			"name":               defaultApp.Name,
+			"description":        defaultApp.Description,
+			"space_mode":         defaultApp.SpaceMode,
+			"default_space_key":  defaultApp.DefaultSpaceKey,
+			"auth_mode":          defaultApp.AuthMode,
+			"frontend_entry_url": defaultApp.FrontendEntryURL,
+			"backend_entry_url":  defaultApp.BackendEntryURL,
+			"health_check_url":   defaultApp.HealthCheckURL,
+			"capabilities":       defaultApp.Capabilities,
+			"status":             "normal",
+			"is_default":         true,
 		}).Error; updateErr != nil {
 			return updateErr
 		}

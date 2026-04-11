@@ -65,6 +65,7 @@ export class RouteRegistry {
     this.removeRouteFns.forEach((fn) => fn())
     this.removeRouteFns = []
     this.registered = false
+    this.componentLoader.clearCache()
   }
 
   /**

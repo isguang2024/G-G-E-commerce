@@ -61,6 +61,7 @@
       </div>
 
       <div class="flex-c gap-2.5">
+        <ArtAppSwitcher class="max-xl:!hidden" />
         <ArtCollaborationWorkspaceSwitcher class="max-lg:!hidden" />
 
         <!-- 搜索 -->
@@ -167,6 +168,7 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
+  import ArtAppSwitcher from './widget/ArtAppSwitcher.vue'
   import ArtCollaborationWorkspaceSwitcher from './widget/ArtCollaborationWorkspaceSwitcher.vue'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 

@@ -208,6 +208,11 @@ declare namespace Api {
       description?: string
       spaceMode?: 'single' | 'multi' | string
       defaultSpaceKey?: string
+      authMode?: 'inherit_host' | 'shared_cookie' | 'centralized_login' | string
+      frontendEntryUrl?: string
+      backendEntryUrl?: string
+      healthCheckUrl?: string
+      capabilities?: Record<string, any>
       isDefault?: boolean
       status?: 'normal' | 'disabled' | string
       hostCount?: number
@@ -227,6 +232,11 @@ declare namespace Api {
       space_mode?: 'single' | 'multi' | string
       // 创建 App 时由服务端自动创建当前 App 自己的 default 空间；编辑时才需要显式修改默认空间。
       default_space_key?: string
+      auth_mode?: 'inherit_host' | 'shared_cookie' | 'centralized_login' | string
+      frontend_entry_url?: string
+      backend_entry_url?: string
+      health_check_url?: string
+      capabilities?: Record<string, any>
       is_default?: boolean
       status?: 'normal' | 'disabled' | string
       meta?: Record<string, any>
@@ -356,6 +366,7 @@ declare namespace Api {
     interface AppContext {
       runtimeAppKey?: string
       managedAppKey?: string
+      activeAppKey?: string
       currentSpaceKey?: string
     }
 
@@ -944,6 +955,10 @@ declare namespace Api {
       spaceKey?: string
       // 后端会把独立页的空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
       spaceKeys?: string[]
+      pageSpaceBindings?: Array<{
+        spaceKey: string
+        source?: string
+      }>
       visibilityScope?: 'inherit' | 'app' | 'spaces' | string
       // inherit=继承父菜单/父页面；app=当前 App 全局；spaces=仅在绑定空间可见。
       spaceScope?: 'inherit' | 'app' | 'spaces' | string

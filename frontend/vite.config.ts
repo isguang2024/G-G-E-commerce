@@ -70,15 +70,23 @@ export default ({ mode }: { mode: string }) => {
         output: {
           // 重型依赖按 vendor chunk 拆分，避免主 chunk 膨胀
           manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/')
+            // APP 维度分包：保持 account-portal / platform-admin / demo-app 代码边界稳定
+            if (normalizedId.includes('/src/views/account-portal/')) return 'app-account-portal'
+            if (normalizedId.includes('/src/views/system/') || normalizedId.includes('/src/views/dashboard/')) {
+              return 'app-platform-admin'
+            }
+            if (normalizedId.includes('/src/views/demo/')) return 'app-demo'
+
             if (!id.includes('node_modules')) return
-            if (id.includes('echarts') || id.includes('zrender')) return 'vendor-echarts'
-            if (id.includes('xlsx')) return 'vendor-xlsx'
-            if (id.includes('xgplayer')) return 'vendor-xgplayer'
-            if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element-plus'
-            if (id.includes('vue-img-cutter')) return 'vendor-image-cutter'
-            if (id.includes('crypto-js')) return 'vendor-crypto'
-            if (id.includes('@iconify')) return 'vendor-iconify'
-            if (id.includes('@vue') || id.includes('vue-router') || id.includes('pinia')) return 'vendor-vue'
+            if (normalizedId.includes('echarts') || normalizedId.includes('zrender')) return 'vendor-echarts'
+            if (normalizedId.includes('xlsx')) return 'vendor-xlsx'
+            if (normalizedId.includes('xgplayer')) return 'vendor-xgplayer'
+            if (normalizedId.includes('element-plus') || normalizedId.includes('@element-plus')) return 'vendor-element-plus'
+            if (normalizedId.includes('vue-img-cutter')) return 'vendor-image-cutter'
+            if (normalizedId.includes('crypto-js')) return 'vendor-crypto'
+            if (normalizedId.includes('@iconify')) return 'vendor-iconify'
+            if (normalizedId.includes('@vue') || normalizedId.includes('vue-router') || normalizedId.includes('pinia')) return 'vendor-vue'
           }
         }
       }

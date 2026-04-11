@@ -33,6 +33,7 @@ export class StorageConfig {
 
   /** 存储键前缀 */
   static readonly STORAGE_PREFIX = 'sys-v'
+  static readonly APP_SCOPE_SEGMENT = ':app:'
 
   /** 版本键名 */
   static readonly VERSION_KEY = 'sys-version'
@@ -62,6 +63,18 @@ export class StorageConfig {
   }
 
   /**
+   * 生成 APP 隔离存储键
+   * 格式：sys-v{version}:app:{appKey}:{storeId}
+   */
+  static generateAppScopedStorageKey(
+    storeId: string,
+    appKey: string,
+    version: string = this.CURRENT_VERSION
+  ): string {
+    return `${this.STORAGE_PREFIX}${version}${this.APP_SCOPE_SEGMENT}${appKey}:${storeId}`
+  }
+
+  /**
    * 生成旧版本的存储键名（不带分隔符）
    * @param version 版本号，默认使用当前版本
    */
@@ -74,7 +87,9 @@ export class StorageConfig {
    * @param storeId 存储ID
    */
   static createKeyPattern(storeId: string): RegExp {
-    return new RegExp(`^${this.STORAGE_PREFIX}[^-]+-${storeId}$`)
+    return new RegExp(
+      `^${this.STORAGE_PREFIX}(?:[^-]+-${storeId}|[^:]+${this.APP_SCOPE_SEGMENT}[^:]+:${storeId})$`
+    )
   }
 
   /**

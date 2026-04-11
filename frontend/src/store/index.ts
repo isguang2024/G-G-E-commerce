@@ -15,7 +15,8 @@
  * ## 持久化策略
  *
  * - 使用 StorageKeyManager 生成版本化的存储键
- * - 格式：sys-v{version}-{storeId}
+ * - 共享层格式：sys-v{version}-{storeId}
+ * - APP 隔离层格式：sys-v{version}:app:{appKey}:{storeId}
  * - 自动迁移旧版本数据到当前版本
  * - 使用 localStorage 作为存储介质
  *

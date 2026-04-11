@@ -18,23 +18,25 @@
       <!-- 缓存路由动画 -->
       <Transition :name="showTransitionMask ? '' : actualTransition" mode="out-in" appear>
         <KeepAlive :max="10" :exclude="keepAliveExclude">
-          <component
-            class="art-page-view"
-            :is="Component"
-            :key="route.path"
+          <ArtAppErrorBoundary
+            :app-key="activeAppKey"
+            :is-public-app="isPublicApp"
             v-if="route.meta.keepAlive"
-          />
+          >
+            <component class="art-page-view" :is="Component" :key="route.path" />
+          </ArtAppErrorBoundary>
         </KeepAlive>
       </Transition>
 
       <!-- 非缓存路由动画 -->
       <Transition :name="showTransitionMask ? '' : actualTransition" mode="out-in" appear>
-        <component
-          class="art-page-view"
-          :is="Component"
-          :key="route.path"
+        <ArtAppErrorBoundary
+          :app-key="activeAppKey"
+          :is-public-app="isPublicApp"
           v-if="!route.meta.keepAlive"
-        />
+        >
+          <component class="art-page-view" :is="Component" :key="route.path" />
+        </ArtAppErrorBoundary>
       </Transition>
     </RouterView>
 
@@ -53,6 +55,8 @@
   import { useAutoLayoutHeight } from '@/hooks/core/useLayoutHeight'
   import { useSettingStore } from '@/store/modules/setting'
   import { useWorktabStore } from '@/store/modules/worktab'
+  import { useAppContextStore } from '@/store/modules/app-context'
+  import ArtAppErrorBoundary from '@/components/core/runtime/ArtAppErrorBoundary.vue'
 
   defineOptions({ name: 'ArtPageContent' })
 
@@ -60,6 +64,7 @@
   const { containerMinHeight } = useAutoLayoutHeight()
   const { pageTransition, containerWidth, refresh } = storeToRefs(useSettingStore())
   const { keepAliveExclude } = storeToRefs(useWorktabStore())
+  const appContextStore = useAppContextStore()
 
   const isRefresh = shallowRef(true)
   const isOpenRouteInfo = import.meta.env.VITE_OPEN_ROUTE_INFO
@@ -67,6 +72,10 @@
 
   // 标记是否是首次加载（浏览器刷新）
   const isFirstLoad = ref(true)
+  const activeAppKey = computed(
+    () => `${appContextStore.effectiveManagedAppKey || appContextStore.currentRuntimeAppKey || ''}`.trim()
+  )
+  const isPublicApp = computed(() => activeAppKey.value === 'account-portal')
 
   // 检查当前路由是否需要使用无基础布局模式
   const isFullPage = computed(() => route.matched.some((r) => r.meta?.isFullPage))

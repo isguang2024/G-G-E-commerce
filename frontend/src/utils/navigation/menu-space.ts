@@ -179,18 +179,24 @@ export function resolveMenuSpaceDefinition(
 
 export function resolveMenuSpaceHostBinding(
   spaceKey: string,
-  config: MenuSpaceConfig
+  config: MenuSpaceConfig,
+  preferredHost?: string
 ): MenuSpaceHostBinding | undefined {
   const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey)
   if (!normalizedSpaceKey) {
     return undefined
   }
+  const normalizedPreferredHost = normalizeMenuHost(preferredHost)
   const bindings = (config.hostBindings || []).filter((item) => {
     if (!item) return false
     if (item.enabled === false) return false
     return normalizeMenuSpaceKey(item.spaceKey) === normalizedSpaceKey
   })
-  return bindings.find((item) => Boolean(item.isPrimary)) || bindings[0]
+  return (
+    bindings.find((item) => normalizeMenuHost(item.host) === normalizedPreferredHost) ||
+    bindings.find((item) => Boolean(item.isPrimary)) ||
+    bindings[0]
+  )
 }
 
 export function buildMenuSpaceTargetUrl(
