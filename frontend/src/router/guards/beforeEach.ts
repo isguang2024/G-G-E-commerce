@@ -344,7 +344,7 @@ async function handleRouteGuard(
   }
 
   // 0. 未登录时，先尝试注册公开运行时页面
-  if (!userStore.isLogin && !isStaticRoute(to.path) && to.path !== RoutesAlias.Login) {
+  if (!userStore.isLogin && !isStaticRoute(to.path)) {
     const alreadyMatchedPublicRoute = isPublicRuntimeRoute(to)
     const matchedPublicRoute = await ensurePublicRuntimeRoutes(to, router)
     if (matchedPublicRoute && !alreadyMatchedPublicRoute) {
@@ -465,13 +465,13 @@ function handleLoginStatus(
   }
 
   // 未登录且访问需要权限的页面，跳转到登录页并携带 redirect 参数
-  userStore.logOut()
-  next({
-    name: 'Login',
-    query: { redirect: to.fullPath }
-  })
-  return false
-}
+    userStore.logOut()
+    next({
+      path: RoutesAlias.Login,
+      query: { redirect: to.fullPath }
+    })
+    return false
+  }
 
 async function ensurePublicRuntimeRoutes(
   to: RouteLocationNormalized,
@@ -492,7 +492,12 @@ async function ensurePublicRuntimeRoutes(
   }
   try {
     const menuSpaceStore = useMenuSpaceStore()
-    const runtimeRes = await fetchGetRuntimePublicPageList(menuSpaceStore.currentSpaceKey)
+    const appContextStore = useAppContextStore()
+    const inferredPublicAppKey = inferPublicRuntimeAppKey(to.path, appContextStore.currentRuntimeAppKey)
+    const runtimeRes = await fetchGetRuntimePublicPageList(
+      menuSpaceStore.currentSpaceKey,
+      inferredPublicAppKey
+    )
     const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null, {
       trustBackend: true
     })
@@ -513,6 +518,14 @@ async function ensurePublicRuntimeRoutes(
     routeRegistrationMode = 'none'
     return false
   }
+}
+
+function inferPublicRuntimeAppKey(path: string, runtimeAppKey?: string): string {
+  const normalizedPath = `${path || ''}`.trim()
+  if (normalizedPath.startsWith('/account/')) {
+    return 'account-portal'
+  }
+  return `${runtimeAppKey || ''}`.trim()
 }
 
 function isPublicRuntimeRoute(to: RouteLocationNormalized): boolean {

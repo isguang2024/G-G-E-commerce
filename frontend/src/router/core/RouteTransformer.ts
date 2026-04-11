@@ -58,6 +58,8 @@ export class RouteTransformer {
     // 处理不同类型的路由
     if (route.meta?.isIframe) {
       this.handleIframeRoute(converted, route, depth)
+    } else if (this.shouldKeepStandalone(route, depth, componentPath)) {
+      this.handleNormalRoute(converted, componentPath)
     } else if (this.isFirstLevelRoute(route, depth)) {
       this.handleFirstLevelRoute(converted, route, componentPath)
     } else if (this.shouldAutoInjectLayout(route, depth, componentPath)) {
@@ -79,6 +81,18 @@ export class RouteTransformer {
    */
   private isFirstLevelRoute(route: AppRouteRecord, depth: number): boolean {
     return depth === 0 && (!route.children || route.children.length === 0)
+  }
+
+  /**
+   * 公开认证页需要保持绝对路径，避免多个 /account 顶级容器互相遮挡。
+   */
+  private shouldKeepStandalone(route: AppRouteRecord, depth: number, component: string): boolean {
+    if (depth !== 0) return false
+    if (!component) return false
+    if (!route.meta?.isInnerPage) return false
+    if (`${route.meta?.accessMode || ''}`.trim() !== 'public') return false
+    const normalizedPath = `/${String(route.path || '').replace(/^\/+/, '')}`.replace(/\/+/g, '/')
+    return normalizedPath.startsWith('/account/')
   }
 
   /**

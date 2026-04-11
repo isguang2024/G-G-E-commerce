@@ -64,6 +64,93 @@ func EnsureRegisterSystemSeeds(db *gorm.DB) error {
 	if err := ensureDefaultRegisterEntry(db); err != nil {
 		return err
 	}
+	if err := ensureAccountPortalPublicPages(db); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ensureAccountPortalPublicPages(db *gorm.DB) error {
+	specs := []systemmodels.UIPage{
+		{
+			AppKey:          AccountPortalAppKey,
+			PageKey:         "account_portal.auth.login",
+			Name:            "账号登录",
+			RouteName:       "Login",
+			RoutePath:       "/account/auth/login",
+			Component:       "/account-portal/auth/login",
+			PageType:        "standalone",
+			VisibilityScope: "app",
+			Source:          "manual",
+			ModuleKey:       "auth",
+			SortOrder:       10,
+			AccessMode:      "public",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"authScene": "login"},
+		},
+		{
+			AppKey:          AccountPortalAppKey,
+			PageKey:         "account_portal.auth.register",
+			Name:            "账号注册",
+			RouteName:       "Register",
+			RoutePath:       "/account/auth/register",
+			Component:       "/account-portal/auth/register",
+			PageType:        "standalone",
+			VisibilityScope: "app",
+			Source:          "manual",
+			ModuleKey:       "auth",
+			SortOrder:       11,
+			AccessMode:      "public",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"authScene": "register"},
+		},
+		{
+			AppKey:          AccountPortalAppKey,
+			PageKey:         "account_portal.auth.forget_password",
+			Name:            "找回密码",
+			RouteName:       "ForgetPassword",
+			RoutePath:       "/account/auth/forget-password",
+			Component:       "/account-portal/auth/forget-password",
+			PageType:        "standalone",
+			VisibilityScope: "app",
+			Source:          "manual",
+			ModuleKey:       "auth",
+			SortOrder:       12,
+			AccessMode:      "public",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"authScene": "forget-password"},
+		},
+	}
+	for i := range specs {
+		spec := specs[i]
+		var existing systemmodels.UIPage
+		err := db.Where("app_key = ? AND page_key = ?", spec.AppKey, spec.PageKey).First(&existing).Error
+		switch {
+		case err == nil:
+			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
+				"name":             spec.Name,
+				"route_name":       spec.RouteName,
+				"route_path":       spec.RoutePath,
+				"component":        spec.Component,
+				"page_type":        spec.PageType,
+				"visibility_scope": spec.VisibilityScope,
+				"source":           spec.Source,
+				"module_key":       spec.ModuleKey,
+				"sort_order":       spec.SortOrder,
+				"access_mode":      spec.AccessMode,
+				"status":           spec.Status,
+				"meta":             spec.Meta,
+			}).Error; updateErr != nil {
+				return updateErr
+			}
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if createErr := db.Create(&spec).Error; createErr != nil {
+				return createErr
+			}
+		default:
+			return err
+		}
+	}
 	return nil
 }
 

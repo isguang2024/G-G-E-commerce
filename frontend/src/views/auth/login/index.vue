@@ -41,7 +41,7 @@
               <ElCheckbox v-model="formData.rememberPassword">{{
                 $t('login.rememberPwd')
               }}</ElCheckbox>
-              <RouterLink class="text-theme" :to="{ name: 'ForgetPassword' }">{{
+              <RouterLink class="text-theme" to="/account/auth/forget-password">{{
                 $t('login.forgetPwd')
               }}</RouterLink>
             </div>
@@ -60,7 +60,7 @@
 
             <div class="mt-5 text-sm text-gray-600">
               <span>{{ $t('login.noAccount') }}</span>
-              <RouterLink class="text-theme" :to="{ name: 'Register' }">{{
+              <RouterLink class="text-theme" to="/account/auth/register">{{
                 $t('login.register')
               }}</RouterLink>
             </div>
@@ -181,7 +181,9 @@
       return normalized.slice(2)
     }
     if (!normalized || !normalized.startsWith('/')) return '/'
-    if (normalized.startsWith('/auth/login')) return '/'
+    if (normalized.startsWith('/auth/login') || normalized.startsWith('/account/auth/login')) {
+      return '/'
+    }
 
     return normalized
   }

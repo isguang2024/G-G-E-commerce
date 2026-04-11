@@ -18,35 +18,20 @@ export const staticRoutes: AppRouteRecordRaw[] = [
   //   component: () => import('@views/dashboard/console/index.vue'),
   //   meta: { title: 'menus.dashboard.title' }
   // },
-  {
-    path: '/account/auth/login',
-    name: 'AccountLogin',
-    component: () => import('@views/auth/login/index.vue'),
-    meta: { title: 'menus.login.title', isHideTab: true }
-  },
-  {
-    path: '/account/auth/register',
-    name: 'AccountRegister',
-    component: () => import('@views/auth/register/index.vue'),
-    meta: { title: 'menus.register.title', isHideTab: true }
-  },
   // 旧路径兼容：重定向到 account-portal 下的新入口
   {
     path: '/auth/login',
-    name: 'Login',
     redirect: '/account/auth/login',
     meta: { title: 'menus.login.title', isHideTab: true }
   },
   {
     path: '/auth/register',
-    name: 'Register',
     redirect: '/account/auth/register',
     meta: { title: 'menus.register.title', isHideTab: true }
   },
   {
     path: '/auth/forget-password',
-    name: 'ForgetPassword',
-    component: () => import('@views/auth/forget-password/index.vue'),
+    redirect: '/account/auth/forget-password',
     meta: { title: 'menus.forgetPassword.title', isHideTab: true }
   },
   {

@@ -25,6 +25,16 @@
       <ElTableColumn prop="register_entry_code" label="入口 Code" width="160" />
       <ElTableColumn prop="register_policy_code" label="策略 Code" width="160" />
       <ElTableColumn prop="register_app_key" label="注册 App" width="140" />
+      <ElTableColumn label="策略快照" min-width="260">
+        <template #default="{ row }">
+          <div class="snapshot-tags">
+            <ElTag v-for="tag in buildSnapshotTags(row.policy_snapshot)" :key="tag" effect="plain">
+              {{ tag }}
+            </ElTag>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">{{ buildSnapshotLanding(row.policy_snapshot) }}</div>
+        </template>
+      </ElTableColumn>
       <ElTableColumn prop="register_ip" label="IP" width="140" />
       <ElTableColumn prop="agreement_version" label="协议版本" width="110" />
       <ElTableColumn prop="created_at" label="注册时间" width="200" />
@@ -80,5 +90,36 @@
     load(1)
   }
 
+  const buildSnapshotTags = (snapshot?: Record<string, any> | null) => {
+    if (!snapshot) return ['未冻结快照']
+    const tags = [snapshot.allow_public_register ? '公开注册' : '关闭公开注册']
+    if (snapshot.require_invite) tags.push('邀请码')
+    if (snapshot.require_email_verify) tags.push('邮箱验证')
+    if (snapshot.require_captcha) tags.push('人机验证')
+    if (snapshot.auto_login) tags.push('自动登录')
+    if (Array.isArray(snapshot.role_codes) && snapshot.role_codes.length) {
+      tags.push(`角色:${snapshot.role_codes.join(',')}`)
+    }
+    if (Array.isArray(snapshot.feature_package_keys) && snapshot.feature_package_keys.length) {
+      tags.push(`功能包:${snapshot.feature_package_keys.join(',')}`)
+    }
+    return tags
+  }
+
+  const buildSnapshotLanding = (snapshot?: Record<string, any> | null) => {
+    if (!snapshot) return '未记录 landing 快照'
+    return `${snapshot.target_app_key || '-'} / ${snapshot.target_navigation_space_key || '-'} / ${
+      snapshot.target_home_path || '-'
+    }`
+  }
+
   onMounted(() => load(1))
 </script>
+
+<style scoped>
+  .snapshot-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+</style>

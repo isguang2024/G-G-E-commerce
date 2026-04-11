@@ -563,3 +563,16 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 剩余已知开放项（受控动态边界，不属于技术债）：
   - `optSystemMetaToMap`、`permissionBatchTemplatePayloadToMap`（helpers.go）：仍在使用，对应 `SystemMeta`/`PermissionActionBatchTemplatePayload` 这两类有合理动态性的边界字段，属于受控保留。
   - `evaluator.go:51` `RoleKeys` TODO、`openapiperm.go:8` account-only path TODO、`MenuProcessor.ts:30` manifest.normalized TODO：三处已知未完成功能，文档级标注，不影响当前主链路。
+
+### 2026-04-12 注册体系配置引导与页面归属收口（Phase 13）
+
+**本次改动**
+- 将公开认证页的真相从 `staticRoutes` 收回到 `account-portal`：`backend/internal/pkg/permissionseed/register_seed.go` 新增 `account-portal` 下 login/register/forget-password 三个 `public ui_pages` seed，前端新增 `frontend/src/views/account-portal/auth/*` 包装页，`/auth/*` 仅保留兼容跳转到 `/account/auth/*`。
+- 重构 `frontend/src/views/system/register-entry/index.vue` 与 `frontend/src/views/system/register-policy/index.vue`：补了“先策略、再入口、后验证”的顶部说明区、默认模板入口、关键字段语义说明、命中 URL / landing / 字段要求预览，把“注册模板”收口为“注册策略预设”，不再新增领域对象。
+- 补强 `frontend/src/views/auth/register/index.vue`：基于 `register-context` 直接展示命中的入口 Code、策略 Code、注册来源、landing 和必填项，并在未开放公开注册时禁用提交按钮、给出明确提示；`frontend/src/views/system/register-log/index.vue` 同步展示 `policy_snapshot`，便于审计当时实际生效的策略。
+- 新增 `docs/register-setup-guide.md`，把页面归属、默认 seed、三类模板场景、配置顺序和验证步骤写成可直接执行的实施手册。
+
+**下次方向**
+- 让“页面管理”后台对 `account-portal` 公开页给出更显式的扫描/注册提示，减少运维还要理解 `/auth/*` 历史排除规则的心智负担。
+- 若后续需要把邀请码、邮箱验证、人机验证做成真正可选的开箱能力，应继续补齐对应消息模板、验证码提供商配置和回执页，而不是只停留在字段开关层。
+- 可以补一轮 Playwright 端到端验证，覆盖“命中入口 -> 展示字段 -> 注册成功跳转/回登录页”主链路，避免后续路由调整再次把公开页打回静态逻辑。

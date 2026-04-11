@@ -33,6 +33,7 @@
  * @author Art Design Pro Team
  */
 import { router } from '@/router'
+import { RoutesAlias } from '@/router/routesAlias'
 import { useUserStore } from '@/store/modules/user'
 import { StorageConfig } from '@/utils/storage/storage-config'
 
@@ -90,7 +91,7 @@ class StorageCompatibilityManager {
       try {
         localStorage.clear()
         useUserStore().logOut()
-        router.push({ name: 'Login' })
+        router.push({ path: RoutesAlias.Login })
         console.info('[Storage] 已执行系统登出')
       } catch (error) {
         console.error('[Storage] 系统登出失败:', error)
