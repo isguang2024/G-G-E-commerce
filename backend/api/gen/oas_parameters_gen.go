@@ -1447,6 +1447,63 @@ func decodeGetApiEndpointOverviewParams(args [0]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
+// GetAppPreflightParams is parameters of getAppPreflight operation.
+type GetAppPreflightParams struct {
+	AppKey string
+}
+
+func unpackGetAppPreflightParams(packed middleware.Parameters) (params GetAppPreflightParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		params.AppKey = packed[key].(string)
+	}
+	return params
+}
+
+func decodeGetAppPreflightParams(args [0]string, argsEscaped bool, r *http.Request) (params GetAppPreflightParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.AppKey = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // GetCollaborationWorkspaceParams is parameters of getCollaborationWorkspace operation.
 type GetCollaborationWorkspaceParams struct {
 	ID uuid.UUID

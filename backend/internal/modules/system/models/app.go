@@ -94,6 +94,11 @@ func (MenuSpaceEntryBinding) TableName() string {
 
 func DefaultPlatformAdminCapabilities() MetaJSON {
 	return MetaJSON{
+		"auth": MetaJSON{
+			"is_auth_center": false,
+			"login_strategy": "centralized_login",
+			"session_mode":   "token_exchange",
+		},
 		"routing": MetaJSON{
 			"entry_mode":              "inherit_host",
 			"route_prefix":            "/",
@@ -118,6 +123,11 @@ func DefaultPlatformAdminCapabilities() MetaJSON {
 
 func DefaultAccountPortalCapabilities() MetaJSON {
 	return MetaJSON{
+		"auth": MetaJSON{
+			"is_auth_center": true,
+			"login_strategy": "local",
+			"session_mode":   "first_party",
+		},
 		"routing": MetaJSON{
 			"entry_mode":              "path_prefix",
 			"route_prefix":            "/account",

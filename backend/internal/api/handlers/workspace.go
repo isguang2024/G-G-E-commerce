@@ -75,6 +75,8 @@ type APIHandler struct {
 	boundarySvc        collaborationworkspaceboundary.Service
 	personalAccess     platformaccess.Service
 	cwMemberRepo       user.CollaborationWorkspaceMemberRepository
+	fastEnterSvc       systemmod.FastEnterService
+	viewPagesSvc       systemmod.ViewPagesService
 	systemFacade       *systemmod.Facade
 	refresher          permissionrefresh.Service
 	// Phase 4: CW boundary ops
@@ -211,6 +213,8 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		boundarySvc:      boundarySvc,
 		personalAccess:   personalAccess,
 		cwMemberRepo:     cwMemberRepo,
+		fastEnterSvc:     systemmod.NewFastEnterService(db),
+		viewPagesSvc:     systemmod.NewViewPagesService(logger, nil),
 		systemFacade:     systemmod.NewFacade(db, logger, nil),
 		refresher:        refresher,
 		roleRepo:         roleRepo,

@@ -204,6 +204,10 @@ func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequ
 	}, nil
 }
 
+func (h *APIHandler) Logout(ctx context.Context) (gen.LogoutRes, error) {
+	return ok(), nil
+}
+
 func (h *APIHandler) ExchangeAuthCallback(ctx context.Context, req *gen.AuthCallbackExchangeRequest) (gen.ExchangeAuthCallbackRes, error) {
 	if req == nil || h.centralizedAuthSvc == nil {
 		return nil, &apperr.ParamError{Msg: "callback exchange 未启用"}

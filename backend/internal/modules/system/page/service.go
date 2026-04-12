@@ -67,7 +67,21 @@ type SaveRequest struct {
 	KeepAlive         *bool                  `json:"keep_alive"`
 	IsFullPage        *bool                  `json:"is_full_page"`
 	Status            string                 `json:"status"`
+	RemoteBinding     *RemoteBinding         `json:"remote_binding"`
 	Meta              map[string]interface{} `json:"meta"`
+}
+
+type RemoteBinding struct {
+	ManifestURL      string `json:"manifest_url"`
+	RemoteAppKey     string `json:"remote_app_key"`
+	RemotePageKey    string `json:"remote_page_key"`
+	RemoteEntryURL   string `json:"remote_entry_url"`
+	RemoteRoutePath  string `json:"remote_route_path"`
+	RemoteModule     string `json:"remote_module"`
+	RemoteModuleName string `json:"remote_module_name"`
+	RemoteURL        string `json:"remote_url"`
+	RuntimeVersion   string `json:"runtime_version"`
+	HealthCheckURL   string `json:"health_check_url"`
 }
 
 type Record struct {
@@ -955,6 +969,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if meta == nil {
 		meta = models.MetaJSON{}
 	}
+	applyRemoteBindingContract(meta, req.RemoteBinding)
 
 	item := &models.UIPage{
 		AppKey:            appKey,
@@ -1129,6 +1144,49 @@ func pageToUpdateMap(item *models.UIPage) map[string]interface{} {
 		"status":             item.Status,
 		"meta":               item.Meta,
 	}
+}
+
+func applyRemoteBindingContract(meta models.MetaJSON, binding *RemoteBinding) {
+	if meta == nil {
+		return
+	}
+	if binding == nil {
+		return
+	}
+	writeRemoteMetaString(meta, "manifest_url", binding.ManifestURL)
+	writeRemoteMetaString(meta, "remote_app_key", binding.RemoteAppKey)
+	writeRemoteMetaString(meta, "remote_page_key", binding.RemotePageKey)
+	writeRemoteMetaString(meta, "remote_entry_url", binding.RemoteEntryURL)
+	writeRemoteMetaString(meta, "remote_route_path", binding.RemoteRoutePath)
+	writeRemoteMetaString(meta, "remote_module", binding.RemoteModule)
+	writeRemoteMetaString(meta, "remote_module_name", binding.RemoteModuleName)
+	writeRemoteMetaString(meta, "remote_url", binding.RemoteURL)
+	writeRemoteMetaString(meta, "runtime_version", binding.RuntimeVersion)
+	writeRemoteMetaString(meta, "health_check_url", binding.HealthCheckURL)
+	for _, key := range []string{
+		"manifestUrl",
+		"remoteAppKey",
+		"remotePageKey",
+		"remoteEntryUrl",
+		"remoteRoutePath",
+		"remoteModule",
+		"remoteModuleName",
+		"remoteUrl",
+		"runtimeVersion",
+		"version",
+		"healthCheckUrl",
+	} {
+		delete(meta, key)
+	}
+}
+
+func writeRemoteMetaString(meta models.MetaJSON, key string, value string) {
+	normalized := strings.TrimSpace(value)
+	if normalized == "" {
+		delete(meta, key)
+		return
+	}
+	meta[key] = normalized
 }
 
 func (s *service) hydrateManagedRecord(record *Record) error {

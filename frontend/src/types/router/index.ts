@@ -79,6 +79,8 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   customParent?: string
   /** 菜单访问模式：permission 需要权限，jwt 登录可见，public 公开可见 */
   accessMode?: 'permission' | 'jwt' | 'public' | string
+  /** 运行时/静态路由所属 app_key */
+  appKey?: string
   /** 运行时注入的完整面包屑链（不包含当前页） */
   breadcrumbChain?: Array<{
     title: string

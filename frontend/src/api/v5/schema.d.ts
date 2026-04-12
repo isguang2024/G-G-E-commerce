@@ -161,6 +161,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 退出登录 */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/callback/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** centralized_login 回调换取令牌 */
+        post: operations["exchangeAuthCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/me": {
         parameters: {
             query?: never;
@@ -1823,6 +1857,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/apps/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取应用接入预检查结果 */
+        get: operations["getAppPreflight"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/app-host-bindings": {
         parameters: {
             query?: never;
@@ -2515,6 +2566,17 @@ export interface components {
         LoginRequest: {
             username: string;
             password: string;
+            /** @description centralized_login 场景下的目标业务 APP */
+            target_app_key?: string;
+            /** @description centralized_login 场景下的 callback 绝对地址 */
+            redirect_uri?: string;
+            /** @description 登录成功后最终回跳的业务页相对路径 */
+            target_path?: string;
+            /** @description 期望进入的菜单空间，仅作 landing 提示 */
+            navigation_space_key?: string;
+            state?: string;
+            nonce?: string;
+            auth_protocol_version?: string;
         };
         LoginResponse: {
             access_token?: string | null;
@@ -2530,6 +2592,7 @@ export interface components {
                 navigation_space_key?: string;
                 home_path?: string;
             } | null;
+            callback?: components["schemas"]["AuthCallbackPayload"];
         };
         RegisterRequest: {
             username: string;
@@ -2543,6 +2606,8 @@ export interface components {
         };
         RefreshTokenRequest: {
             refresh_token: string;
+            client_app_key?: string;
+            auth_protocol_version?: string;
         };
         TokenResponse: {
             access_token: string;
@@ -2825,6 +2890,7 @@ export interface components {
             space_key?: string;
             sort_order?: number;
             status?: string;
+            permission_keys?: string[];
         };
         PageSaveRequest: {
             page_key: string;
@@ -2848,6 +2914,7 @@ export interface components {
             inherit_permission?: boolean;
             keep_alive?: boolean;
             is_full_page?: boolean;
+            remote_binding?: components["schemas"]["PageRemoteBinding"];
             meta?: components["schemas"]["PageMeta"];
             status?: string;
         };
@@ -3089,6 +3156,18 @@ export interface components {
             records: components["schemas"]["RegisterLogItem"][];
             total: number;
         };
+        AuthCallbackPayload: {
+            /** @enum {string} */
+            mode: "token_exchange";
+            code: string;
+            state: string;
+            target_app_key: string;
+            redirect_uri: string;
+            redirect_to: string;
+            target_path?: string;
+            navigation_space_key?: string;
+            auth_protocol_version?: string;
+        };
         RegisterContext: {
             entry_code: string;
             entry_name?: string;
@@ -3109,6 +3188,14 @@ export interface components {
             captcha_provider?: string;
             /** @description 对应提供商的公开 site_key，前端渲染 captcha widget 使用 */
             captcha_site_key?: string;
+        };
+        AuthCallbackExchangeRequest: {
+            code: string;
+            state: string;
+            nonce: string;
+            target_app_key: string;
+            redirect_uri: string;
+            auth_protocol_version?: string;
         };
         CollaborationWorkspaceItem: {
             /** Format: uuid */
@@ -3652,6 +3739,13 @@ export interface components {
             frontend_entry_url?: string;
             backend_entry_url?: string;
             health_check_url?: string;
+            manifest_url?: string;
+            runtime_version?: string;
+            probe_status?: string;
+            probe_target?: string;
+            probe_message?: string;
+            /** Format: date-time */
+            probe_checked_at?: string;
             is_default: boolean;
             status: string;
             /** Format: int64 */
@@ -3812,6 +3906,18 @@ export interface components {
             hostKey?: string;
             spaceType?: string;
         };
+        PageRemoteBinding: {
+            manifest_url?: string;
+            remote_app_key?: string;
+            remote_page_key?: string;
+            remote_entry_url?: string;
+            remote_route_path?: string;
+            remote_module?: string;
+            remote_module_name?: string;
+            remote_url?: string;
+            runtime_version?: string;
+            health_check_url?: string;
+        };
         PageListItem: {
             /** Format: uuid */
             id?: string;
@@ -3846,6 +3952,7 @@ export interface components {
             is_full_page?: boolean;
             status?: string;
             meta?: components["schemas"]["PageMeta"];
+            remote_binding?: components["schemas"]["PageRemoteBinding"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -4113,10 +4220,51 @@ export interface components {
             frontend_entry_url?: string;
             backend_entry_url?: string;
             health_check_url?: string;
+            manifest_url?: string;
+            runtime_version?: string;
             capabilities?: components["schemas"]["SystemAppCapabilities"];
             status?: string;
             is_default?: boolean;
             meta?: components["schemas"]["SystemMeta"];
+        };
+        SystemAppPreflightSummary: {
+            level: string;
+            /** Format: int64 */
+            blocking_count: number;
+            /** Format: int64 */
+            warning_count: number;
+            /** Format: int64 */
+            info_count: number;
+            /** Format: int64 */
+            success_count: number;
+        };
+        SystemAppPreflightCheckItem: {
+            key: string;
+            title: string;
+            level: string;
+            passed: boolean;
+            value: string;
+            hint: string;
+        };
+        SystemAppPreflightPreviewItem: {
+            label: string;
+            value: string;
+            hint: string;
+        };
+        SystemAppPreflightResponse: {
+            app_key: string;
+            name: string;
+            request_host: string;
+            manifest_url?: string;
+            runtime_version?: string;
+            probe_status?: string;
+            probe_target?: string;
+            probe_message?: string;
+            /** Format: date-time */
+            probe_checked_at?: string;
+            summary: components["schemas"]["SystemAppPreflightSummary"];
+            checks: components["schemas"]["SystemAppPreflightCheckItem"][];
+            preview_items: components["schemas"]["SystemAppPreflightPreviewItem"][];
         };
         SystemAppHostBindingListResponse: {
             records: components["schemas"]["SystemAppHostBindingItem"][];
@@ -5232,6 +5380,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    exchangeAuthCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthCallbackExchangeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
             /** @description Unauthorized */
@@ -8851,6 +9070,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemCurrentAppResponse"];
+                };
+            };
+        };
+    };
+    getAppPreflight: {
+        parameters: {
+            query: {
+                app_key: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemAppPreflightResponse"];
                 };
             };
         };

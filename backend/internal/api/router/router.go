@@ -129,6 +129,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
 		{
 			authenticated.GET("/auth/me", ogenBridge)
+			authenticated.POST("/auth/logout", ogenBridge)
 			authenticated.POST("/workspaces/switch", ogenBridge)
 			authenticated.GET("/workspaces/my", ogenBridge)
 			authenticated.GET("/workspaces/current", ogenBridge)
@@ -203,16 +204,13 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/permission-actions/templates", ogenBridge)
 			authenticated.POST("/permission-actions/groups", ogenBridge)
 			authenticated.PUT("/permission-actions/groups/:id", ogenBridge)
+			authenticated.DELETE("/permission-actions/groups/:id", ogenBridge)
 
 			// menu
 			authenticated.GET("/menus/tree", ogenBridge)
 			authenticated.POST("/menus", ogenBridge)
 			authenticated.PUT("/menus/:id", ogenBridge)
 			authenticated.DELETE("/menus/:id", ogenBridge)
-			authenticated.GET("/menus/groups", ogenBridge)
-			authenticated.POST("/menus/groups", ogenBridge)
-			authenticated.PUT("/menus/groups/:id", ogenBridge)
-			authenticated.DELETE("/menus/groups/:id", ogenBridge)
 			authenticated.GET("/menus/:id/delete-preview", ogenBridge)
 
 			// page
@@ -251,6 +249,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/system/apps", ogenBridge)
 			authenticated.POST("/system/apps", ogenBridge)
 			authenticated.GET("/system/apps/current", ogenBridge)
+			authenticated.GET("/system/apps/preflight", ogenBridge)
 			authenticated.GET("/system/app-host-bindings", ogenBridge)
 			authenticated.POST("/system/app-host-bindings", ogenBridge)
 			authenticated.DELETE("/system/app-host-bindings/:id", ogenBridge)
@@ -346,13 +345,13 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 
 			// ── api-endpoints ─────────────────────────────────────────────
 			authenticated.GET("/api-endpoints", ogenBridge)
-			authenticated.POST("/api-endpoints", ogenBridge)
 			authenticated.GET("/api-endpoints/overview", ogenBridge)
 			authenticated.GET("/api-endpoints/stale", ogenBridge)
 			authenticated.POST("/api-endpoints/sync", ogenBridge)
 			authenticated.POST("/api-endpoints/cleanup-stale", ogenBridge)
 			authenticated.GET("/api-endpoints/unregistered", ogenBridge)
 			authenticated.GET("/api-endpoints/categories", ogenBridge)
+			authenticated.POST("/api-endpoints/categories", ogenBridge)
 			authenticated.PUT("/api-endpoints/categories/:id", ogenBridge)
 			authenticated.PUT("/api-endpoints/:id", ogenBridge)
 			authenticated.PUT("/api-endpoints/:id/context-scope", ogenBridge)

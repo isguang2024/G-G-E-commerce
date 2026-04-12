@@ -232,9 +232,26 @@ function hasRemoteMeta(meta?: Record<string, any>) {
   ].some((item) => `${item || ''}`.trim())
 }
 
+function hasRemoteBinding(row: PageItem) {
+  const binding = row.remoteBinding
+  if (!binding || typeof binding !== 'object') return false
+  return [
+    binding.manifestUrl,
+    binding.remoteAppKey,
+    binding.remotePageKey,
+    binding.remoteEntryUrl,
+    binding.remoteRoutePath,
+    binding.remoteModule,
+    binding.remoteModuleName,
+    binding.remoteUrl,
+    binding.runtimeVersion,
+    binding.healthCheckUrl
+  ].some((item) => `${item || ''}`.trim())
+}
+
 export function getPageSourceKind(row: PageItem) {
   const link = `${row.link || ''}`.trim()
-  if (/^https?:\/\//i.test(link) || hasRemoteMeta(row.meta)) {
+  if (/^https?:\/\//i.test(link) || hasRemoteBinding(row) || hasRemoteMeta(row.meta)) {
     return 'remote'
   }
   if (row.source === 'sync') return 'sync'
@@ -261,7 +278,13 @@ export function getPageSourceTag(row: PageItem) {
 export function getPageGovernanceText(row: PageItem) {
   const sourceKind = getPageSourceKind(row)
   if (sourceKind === 'remote') {
-    return '远端接入页应以 link 或 remote meta 作为唯一入口，避免再为同一路由补本地组件。'
+    const binding = row.remoteBinding
+    const manifest = `${binding?.manifestUrl || ''}`.trim()
+    const version = `${binding?.runtimeVersion || ''}`.trim()
+    if (manifest || version) {
+      return `远端接入页已声明${manifest ? ' manifest' : ''}${manifest && version ? ' / ' : ''}${version ? '版本' : ''}契约，应优先以治理后端下发字段为准，不再回退到 link/meta 猜测。`
+    }
+    return '远端接入页应以 link 或 remote contract 作为唯一入口，避免再为同一路由补本地组件。'
   }
   if (sourceKind === 'sync') {
     return '扫描同步页应优先回到扫描源修正，避免人工编辑后再次被覆盖。'
@@ -314,6 +337,20 @@ export function toPageSaveParams(
     permission_key: row.permissionKey || '',
     keep_alive: Boolean(row.keepAlive),
     is_full_page: Boolean(row.isFullPage),
+    remote_binding: row.remoteBinding
+      ? {
+          manifest_url: row.remoteBinding.manifestUrl || '',
+          remote_app_key: row.remoteBinding.remoteAppKey || '',
+          remote_page_key: row.remoteBinding.remotePageKey || '',
+          remote_entry_url: row.remoteBinding.remoteEntryUrl || '',
+          remote_route_path: row.remoteBinding.remoteRoutePath || '',
+          remote_module: row.remoteBinding.remoteModule || '',
+          remote_module_name: row.remoteBinding.remoteModuleName || '',
+          remote_url: row.remoteBinding.remoteUrl || '',
+          runtime_version: row.remoteBinding.runtimeVersion || '',
+          health_check_url: row.remoteBinding.healthCheckUrl || ''
+        }
+      : undefined,
     status: row.status || 'normal',
     meta: {
       ...(row.meta || {}),

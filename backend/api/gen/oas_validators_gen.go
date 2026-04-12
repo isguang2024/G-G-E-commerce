@@ -2836,6 +2836,40 @@ func (s *SystemAppListResponse) Validate() error {
 	return nil
 }
 
+func (s *SystemAppPreflightResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Checks == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "checks",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.PreviewItems == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "preview_items",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SystemCurrentMenuSpaceResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

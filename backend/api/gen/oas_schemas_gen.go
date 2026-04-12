@@ -3056,6 +3056,7 @@ func (*Error) listMyWorkspacesRes()     {}
 func (*Error) listRegisterEntriesRes()  {}
 func (*Error) listRegisterLogsRes()     {}
 func (*Error) listRegisterPoliciesRes() {}
+func (*Error) logoutRes()               {}
 func (*Error) refreshTokenRes()         {}
 func (*Error) registerRes()             {}
 func (*Error) updateRegisterEntryRes()  {}
@@ -5170,20 +5171,21 @@ func (s *MenuDeletePreviewResponse) SetAffectedRelationCount(val int) {
 
 // Ref: #/components/schemas/MenuSaveRequest
 type MenuSaveRequest struct {
-	Name      string     `json:"name"`
-	ParentID  OptNilUUID `json:"parent_id"`
-	Icon      OptString  `json:"icon"`
-	Path      OptString  `json:"path"`
-	Component OptString  `json:"component"`
-	Kind      string     `json:"kind"`
-	RouteType OptString  `json:"route_type"`
-	RouteName OptString  `json:"route_name"`
-	RoutePath OptString  `json:"route_path"`
-	AppKeys   []string   `json:"app_keys"`
-	AppKey    OptString  `json:"app_key"`
-	SpaceKey  OptString  `json:"space_key"`
-	SortOrder OptInt     `json:"sort_order"`
-	Status    OptString  `json:"status"`
+	Name           string     `json:"name"`
+	ParentID       OptNilUUID `json:"parent_id"`
+	Icon           OptString  `json:"icon"`
+	Path           OptString  `json:"path"`
+	Component      OptString  `json:"component"`
+	Kind           string     `json:"kind"`
+	RouteType      OptString  `json:"route_type"`
+	RouteName      OptString  `json:"route_name"`
+	RoutePath      OptString  `json:"route_path"`
+	AppKeys        []string   `json:"app_keys"`
+	AppKey         OptString  `json:"app_key"`
+	SpaceKey       OptString  `json:"space_key"`
+	SortOrder      OptInt     `json:"sort_order"`
+	Status         OptString  `json:"status"`
+	PermissionKeys []string   `json:"permission_keys"`
 }
 
 // GetName returns the value of Name.
@@ -5256,6 +5258,11 @@ func (s *MenuSaveRequest) GetStatus() OptString {
 	return s.Status
 }
 
+// GetPermissionKeys returns the value of PermissionKeys.
+func (s *MenuSaveRequest) GetPermissionKeys() []string {
+	return s.PermissionKeys
+}
+
 // SetName sets the value of Name.
 func (s *MenuSaveRequest) SetName(val string) {
 	s.Name = val
@@ -5324,6 +5331,11 @@ func (s *MenuSaveRequest) SetSortOrder(val OptInt) {
 // SetStatus sets the value of Status.
 func (s *MenuSaveRequest) SetStatus(val OptString) {
 	s.Status = val
+}
+
+// SetPermissionKeys sets the value of PermissionKeys.
+func (s *MenuSaveRequest) SetPermissionKeys(val []string) {
+	s.PermissionKeys = val
 }
 
 // Ref: #/components/schemas/MenuSourceEntry
@@ -7501,6 +7513,7 @@ func (s *MutationResult) SetSuccess(val bool) {
 }
 
 func (*MutationResult) deleteMediaRes()      {}
+func (*MutationResult) logoutRes()           {}
 func (*MutationResult) syncApiEndpointsRes() {}
 
 // Ref: #/components/schemas/NavigationContext
@@ -8936,6 +8949,52 @@ func (o OptPageMeta) Or(d PageMeta) PageMeta {
 	return d
 }
 
+// NewOptPageRemoteBinding returns new OptPageRemoteBinding with value set to v.
+func NewOptPageRemoteBinding(v PageRemoteBinding) OptPageRemoteBinding {
+	return OptPageRemoteBinding{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPageRemoteBinding is optional PageRemoteBinding.
+type OptPageRemoteBinding struct {
+	Value PageRemoteBinding
+	Set   bool
+}
+
+// IsSet returns true if OptPageRemoteBinding was set.
+func (o OptPageRemoteBinding) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPageRemoteBinding) Reset() {
+	var v PageRemoteBinding
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPageRemoteBinding) SetTo(v PageRemoteBinding) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPageRemoteBinding) Get() (v PageRemoteBinding, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPageRemoteBinding) Or(d PageRemoteBinding) PageRemoteBinding {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptPermissionActionBatchTemplatePayload returns new OptPermissionActionBatchTemplatePayload with value set to v.
 func NewOptPermissionActionBatchTemplatePayload(v PermissionActionBatchTemplatePayload) OptPermissionActionBatchTemplatePayload {
 	return OptPermissionActionBatchTemplatePayload{
@@ -10202,6 +10261,7 @@ type PageListItem struct {
 	IsFullPage        OptBool                `json:"is_full_page"`
 	Status            OptString              `json:"status"`
 	Meta              OptPageMeta            `json:"meta"`
+	RemoteBinding     OptPageRemoteBinding   `json:"remote_binding"`
 	CreatedAt         OptDateTime            `json:"created_at"`
 	UpdatedAt         OptDateTime            `json:"updated_at"`
 }
@@ -10359,6 +10419,11 @@ func (s *PageListItem) GetStatus() OptString {
 // GetMeta returns the value of Meta.
 func (s *PageListItem) GetMeta() OptPageMeta {
 	return s.Meta
+}
+
+// GetRemoteBinding returns the value of RemoteBinding.
+func (s *PageListItem) GetRemoteBinding() OptPageRemoteBinding {
+	return s.RemoteBinding
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10524,6 +10589,11 @@ func (s *PageListItem) SetStatus(val OptString) {
 // SetMeta sets the value of Meta.
 func (s *PageListItem) SetMeta(val OptPageMeta) {
 	s.Meta = val
+}
+
+// SetRemoteBinding sets the value of RemoteBinding.
+func (s *PageListItem) SetRemoteBinding(val OptPageRemoteBinding) {
+	s.RemoteBinding = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -10805,31 +10875,146 @@ func (s *PageMeta) SetSpaceType(val OptString) {
 	s.SpaceType = val
 }
 
+// Ref: #/components/schemas/PageRemoteBinding
+type PageRemoteBinding struct {
+	ManifestURL      OptString `json:"manifest_url"`
+	RemoteAppKey     OptString `json:"remote_app_key"`
+	RemotePageKey    OptString `json:"remote_page_key"`
+	RemoteEntryURL   OptString `json:"remote_entry_url"`
+	RemoteRoutePath  OptString `json:"remote_route_path"`
+	RemoteModule     OptString `json:"remote_module"`
+	RemoteModuleName OptString `json:"remote_module_name"`
+	RemoteURL        OptString `json:"remote_url"`
+	RuntimeVersion   OptString `json:"runtime_version"`
+	HealthCheckURL   OptString `json:"health_check_url"`
+}
+
+// GetManifestURL returns the value of ManifestURL.
+func (s *PageRemoteBinding) GetManifestURL() OptString {
+	return s.ManifestURL
+}
+
+// GetRemoteAppKey returns the value of RemoteAppKey.
+func (s *PageRemoteBinding) GetRemoteAppKey() OptString {
+	return s.RemoteAppKey
+}
+
+// GetRemotePageKey returns the value of RemotePageKey.
+func (s *PageRemoteBinding) GetRemotePageKey() OptString {
+	return s.RemotePageKey
+}
+
+// GetRemoteEntryURL returns the value of RemoteEntryURL.
+func (s *PageRemoteBinding) GetRemoteEntryURL() OptString {
+	return s.RemoteEntryURL
+}
+
+// GetRemoteRoutePath returns the value of RemoteRoutePath.
+func (s *PageRemoteBinding) GetRemoteRoutePath() OptString {
+	return s.RemoteRoutePath
+}
+
+// GetRemoteModule returns the value of RemoteModule.
+func (s *PageRemoteBinding) GetRemoteModule() OptString {
+	return s.RemoteModule
+}
+
+// GetRemoteModuleName returns the value of RemoteModuleName.
+func (s *PageRemoteBinding) GetRemoteModuleName() OptString {
+	return s.RemoteModuleName
+}
+
+// GetRemoteURL returns the value of RemoteURL.
+func (s *PageRemoteBinding) GetRemoteURL() OptString {
+	return s.RemoteURL
+}
+
+// GetRuntimeVersion returns the value of RuntimeVersion.
+func (s *PageRemoteBinding) GetRuntimeVersion() OptString {
+	return s.RuntimeVersion
+}
+
+// GetHealthCheckURL returns the value of HealthCheckURL.
+func (s *PageRemoteBinding) GetHealthCheckURL() OptString {
+	return s.HealthCheckURL
+}
+
+// SetManifestURL sets the value of ManifestURL.
+func (s *PageRemoteBinding) SetManifestURL(val OptString) {
+	s.ManifestURL = val
+}
+
+// SetRemoteAppKey sets the value of RemoteAppKey.
+func (s *PageRemoteBinding) SetRemoteAppKey(val OptString) {
+	s.RemoteAppKey = val
+}
+
+// SetRemotePageKey sets the value of RemotePageKey.
+func (s *PageRemoteBinding) SetRemotePageKey(val OptString) {
+	s.RemotePageKey = val
+}
+
+// SetRemoteEntryURL sets the value of RemoteEntryURL.
+func (s *PageRemoteBinding) SetRemoteEntryURL(val OptString) {
+	s.RemoteEntryURL = val
+}
+
+// SetRemoteRoutePath sets the value of RemoteRoutePath.
+func (s *PageRemoteBinding) SetRemoteRoutePath(val OptString) {
+	s.RemoteRoutePath = val
+}
+
+// SetRemoteModule sets the value of RemoteModule.
+func (s *PageRemoteBinding) SetRemoteModule(val OptString) {
+	s.RemoteModule = val
+}
+
+// SetRemoteModuleName sets the value of RemoteModuleName.
+func (s *PageRemoteBinding) SetRemoteModuleName(val OptString) {
+	s.RemoteModuleName = val
+}
+
+// SetRemoteURL sets the value of RemoteURL.
+func (s *PageRemoteBinding) SetRemoteURL(val OptString) {
+	s.RemoteURL = val
+}
+
+// SetRuntimeVersion sets the value of RuntimeVersion.
+func (s *PageRemoteBinding) SetRuntimeVersion(val OptString) {
+	s.RuntimeVersion = val
+}
+
+// SetHealthCheckURL sets the value of HealthCheckURL.
+func (s *PageRemoteBinding) SetHealthCheckURL(val OptString) {
+	s.HealthCheckURL = val
+}
+
 // Ref: #/components/schemas/PageSaveRequest
 type PageSaveRequest struct {
-	PageKey           string      `json:"page_key"`
-	Name              string      `json:"name"`
-	RouteName         string      `json:"route_name"`
-	RoutePath         string      `json:"route_path"`
-	Component         string      `json:"component"`
-	SpaceKeys         []string    `json:"space_keys"`
-	PageType          OptString   `json:"page_type"`
-	VisibilityScope   OptString   `json:"visibility_scope"`
-	Source            OptString   `json:"source"`
-	ModuleKey         OptString   `json:"module_key"`
-	SortOrder         OptInt      `json:"sort_order"`
-	ParentMenuID      OptString   `json:"parent_menu_id"`
-	ParentPageKey     OptString   `json:"parent_page_key"`
-	DisplayGroupKey   OptString   `json:"display_group_key"`
-	ActiveMenuPath    OptString   `json:"active_menu_path"`
-	BreadcrumbMode    OptString   `json:"breadcrumb_mode"`
-	AccessMode        OptString   `json:"access_mode"`
-	PermissionKey     OptString   `json:"permission_key"`
-	InheritPermission OptBool     `json:"inherit_permission"`
-	KeepAlive         OptBool     `json:"keep_alive"`
-	IsFullPage        OptBool     `json:"is_full_page"`
-	Meta              OptPageMeta `json:"meta"`
-	Status            OptString   `json:"status"`
+	PageKey           string               `json:"page_key"`
+	Name              string               `json:"name"`
+	RouteName         string               `json:"route_name"`
+	RoutePath         string               `json:"route_path"`
+	Component         string               `json:"component"`
+	SpaceKeys         []string             `json:"space_keys"`
+	PageType          OptString            `json:"page_type"`
+	VisibilityScope   OptString            `json:"visibility_scope"`
+	Source            OptString            `json:"source"`
+	ModuleKey         OptString            `json:"module_key"`
+	SortOrder         OptInt               `json:"sort_order"`
+	ParentMenuID      OptString            `json:"parent_menu_id"`
+	ParentPageKey     OptString            `json:"parent_page_key"`
+	DisplayGroupKey   OptString            `json:"display_group_key"`
+	ActiveMenuPath    OptString            `json:"active_menu_path"`
+	BreadcrumbMode    OptString            `json:"breadcrumb_mode"`
+	AccessMode        OptString            `json:"access_mode"`
+	PermissionKey     OptString            `json:"permission_key"`
+	InheritPermission OptBool              `json:"inherit_permission"`
+	KeepAlive         OptBool              `json:"keep_alive"`
+	IsFullPage        OptBool              `json:"is_full_page"`
+	RemoteBinding     OptPageRemoteBinding `json:"remote_binding"`
+	Meta              OptPageMeta          `json:"meta"`
+	Status            OptString            `json:"status"`
 }
 
 // GetPageKey returns the value of PageKey.
@@ -10935,6 +11120,11 @@ func (s *PageSaveRequest) GetKeepAlive() OptBool {
 // GetIsFullPage returns the value of IsFullPage.
 func (s *PageSaveRequest) GetIsFullPage() OptBool {
 	return s.IsFullPage
+}
+
+// GetRemoteBinding returns the value of RemoteBinding.
+func (s *PageSaveRequest) GetRemoteBinding() OptPageRemoteBinding {
+	return s.RemoteBinding
 }
 
 // GetMeta returns the value of Meta.
@@ -11050,6 +11240,11 @@ func (s *PageSaveRequest) SetKeepAlive(val OptBool) {
 // SetIsFullPage sets the value of IsFullPage.
 func (s *PageSaveRequest) SetIsFullPage(val OptBool) {
 	s.IsFullPage = val
+}
+
+// SetRemoteBinding sets the value of RemoteBinding.
+func (s *PageSaveRequest) SetRemoteBinding(val OptPageRemoteBinding) {
+	s.RemoteBinding = val
 }
 
 // SetMeta sets the value of Meta.
@@ -16222,6 +16417,12 @@ type SystemAppItem struct {
 	FrontendEntryURL OptString             `json:"frontend_entry_url"`
 	BackendEntryURL  OptString             `json:"backend_entry_url"`
 	HealthCheckURL   OptString             `json:"health_check_url"`
+	ManifestURL      OptString             `json:"manifest_url"`
+	RuntimeVersion   OptString             `json:"runtime_version"`
+	ProbeStatus      OptString             `json:"probe_status"`
+	ProbeTarget      OptString             `json:"probe_target"`
+	ProbeMessage     OptString             `json:"probe_message"`
+	ProbeCheckedAt   OptDateTime           `json:"probe_checked_at"`
 	IsDefault        bool                  `json:"is_default"`
 	Status           string                `json:"status"`
 	HostCount        int64                 `json:"host_count"`
@@ -16283,6 +16484,36 @@ func (s *SystemAppItem) GetBackendEntryURL() OptString {
 // GetHealthCheckURL returns the value of HealthCheckURL.
 func (s *SystemAppItem) GetHealthCheckURL() OptString {
 	return s.HealthCheckURL
+}
+
+// GetManifestURL returns the value of ManifestURL.
+func (s *SystemAppItem) GetManifestURL() OptString {
+	return s.ManifestURL
+}
+
+// GetRuntimeVersion returns the value of RuntimeVersion.
+func (s *SystemAppItem) GetRuntimeVersion() OptString {
+	return s.RuntimeVersion
+}
+
+// GetProbeStatus returns the value of ProbeStatus.
+func (s *SystemAppItem) GetProbeStatus() OptString {
+	return s.ProbeStatus
+}
+
+// GetProbeTarget returns the value of ProbeTarget.
+func (s *SystemAppItem) GetProbeTarget() OptString {
+	return s.ProbeTarget
+}
+
+// GetProbeMessage returns the value of ProbeMessage.
+func (s *SystemAppItem) GetProbeMessage() OptString {
+	return s.ProbeMessage
+}
+
+// GetProbeCheckedAt returns the value of ProbeCheckedAt.
+func (s *SystemAppItem) GetProbeCheckedAt() OptDateTime {
+	return s.ProbeCheckedAt
 }
 
 // GetIsDefault returns the value of IsDefault.
@@ -16390,6 +16621,36 @@ func (s *SystemAppItem) SetHealthCheckURL(val OptString) {
 	s.HealthCheckURL = val
 }
 
+// SetManifestURL sets the value of ManifestURL.
+func (s *SystemAppItem) SetManifestURL(val OptString) {
+	s.ManifestURL = val
+}
+
+// SetRuntimeVersion sets the value of RuntimeVersion.
+func (s *SystemAppItem) SetRuntimeVersion(val OptString) {
+	s.RuntimeVersion = val
+}
+
+// SetProbeStatus sets the value of ProbeStatus.
+func (s *SystemAppItem) SetProbeStatus(val OptString) {
+	s.ProbeStatus = val
+}
+
+// SetProbeTarget sets the value of ProbeTarget.
+func (s *SystemAppItem) SetProbeTarget(val OptString) {
+	s.ProbeTarget = val
+}
+
+// SetProbeMessage sets the value of ProbeMessage.
+func (s *SystemAppItem) SetProbeMessage(val OptString) {
+	s.ProbeMessage = val
+}
+
+// SetProbeCheckedAt sets the value of ProbeCheckedAt.
+func (s *SystemAppItem) SetProbeCheckedAt(val OptDateTime) {
+	s.ProbeCheckedAt = val
+}
+
 // SetIsDefault sets the value of IsDefault.
 func (s *SystemAppItem) SetIsDefault(val bool) {
 	s.IsDefault = val
@@ -16471,6 +16732,308 @@ func (s *SystemAppListResponse) SetTotal(val int64) {
 	s.Total = val
 }
 
+// Ref: #/components/schemas/SystemAppPreflightCheckItem
+type SystemAppPreflightCheckItem struct {
+	Key    string `json:"key"`
+	Title  string `json:"title"`
+	Level  string `json:"level"`
+	Passed bool   `json:"passed"`
+	Value  string `json:"value"`
+	Hint   string `json:"hint"`
+}
+
+// GetKey returns the value of Key.
+func (s *SystemAppPreflightCheckItem) GetKey() string {
+	return s.Key
+}
+
+// GetTitle returns the value of Title.
+func (s *SystemAppPreflightCheckItem) GetTitle() string {
+	return s.Title
+}
+
+// GetLevel returns the value of Level.
+func (s *SystemAppPreflightCheckItem) GetLevel() string {
+	return s.Level
+}
+
+// GetPassed returns the value of Passed.
+func (s *SystemAppPreflightCheckItem) GetPassed() bool {
+	return s.Passed
+}
+
+// GetValue returns the value of Value.
+func (s *SystemAppPreflightCheckItem) GetValue() string {
+	return s.Value
+}
+
+// GetHint returns the value of Hint.
+func (s *SystemAppPreflightCheckItem) GetHint() string {
+	return s.Hint
+}
+
+// SetKey sets the value of Key.
+func (s *SystemAppPreflightCheckItem) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTitle sets the value of Title.
+func (s *SystemAppPreflightCheckItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetLevel sets the value of Level.
+func (s *SystemAppPreflightCheckItem) SetLevel(val string) {
+	s.Level = val
+}
+
+// SetPassed sets the value of Passed.
+func (s *SystemAppPreflightCheckItem) SetPassed(val bool) {
+	s.Passed = val
+}
+
+// SetValue sets the value of Value.
+func (s *SystemAppPreflightCheckItem) SetValue(val string) {
+	s.Value = val
+}
+
+// SetHint sets the value of Hint.
+func (s *SystemAppPreflightCheckItem) SetHint(val string) {
+	s.Hint = val
+}
+
+// Ref: #/components/schemas/SystemAppPreflightPreviewItem
+type SystemAppPreflightPreviewItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+	Hint  string `json:"hint"`
+}
+
+// GetLabel returns the value of Label.
+func (s *SystemAppPreflightPreviewItem) GetLabel() string {
+	return s.Label
+}
+
+// GetValue returns the value of Value.
+func (s *SystemAppPreflightPreviewItem) GetValue() string {
+	return s.Value
+}
+
+// GetHint returns the value of Hint.
+func (s *SystemAppPreflightPreviewItem) GetHint() string {
+	return s.Hint
+}
+
+// SetLabel sets the value of Label.
+func (s *SystemAppPreflightPreviewItem) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetValue sets the value of Value.
+func (s *SystemAppPreflightPreviewItem) SetValue(val string) {
+	s.Value = val
+}
+
+// SetHint sets the value of Hint.
+func (s *SystemAppPreflightPreviewItem) SetHint(val string) {
+	s.Hint = val
+}
+
+// Ref: #/components/schemas/SystemAppPreflightResponse
+type SystemAppPreflightResponse struct {
+	AppKey         string                          `json:"app_key"`
+	Name           string                          `json:"name"`
+	RequestHost    string                          `json:"request_host"`
+	ManifestURL    OptString                       `json:"manifest_url"`
+	RuntimeVersion OptString                       `json:"runtime_version"`
+	ProbeStatus    OptString                       `json:"probe_status"`
+	ProbeTarget    OptString                       `json:"probe_target"`
+	ProbeMessage   OptString                       `json:"probe_message"`
+	ProbeCheckedAt OptDateTime                     `json:"probe_checked_at"`
+	Summary        SystemAppPreflightSummary       `json:"summary"`
+	Checks         []SystemAppPreflightCheckItem   `json:"checks"`
+	PreviewItems   []SystemAppPreflightPreviewItem `json:"preview_items"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SystemAppPreflightResponse) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetName returns the value of Name.
+func (s *SystemAppPreflightResponse) GetName() string {
+	return s.Name
+}
+
+// GetRequestHost returns the value of RequestHost.
+func (s *SystemAppPreflightResponse) GetRequestHost() string {
+	return s.RequestHost
+}
+
+// GetManifestURL returns the value of ManifestURL.
+func (s *SystemAppPreflightResponse) GetManifestURL() OptString {
+	return s.ManifestURL
+}
+
+// GetRuntimeVersion returns the value of RuntimeVersion.
+func (s *SystemAppPreflightResponse) GetRuntimeVersion() OptString {
+	return s.RuntimeVersion
+}
+
+// GetProbeStatus returns the value of ProbeStatus.
+func (s *SystemAppPreflightResponse) GetProbeStatus() OptString {
+	return s.ProbeStatus
+}
+
+// GetProbeTarget returns the value of ProbeTarget.
+func (s *SystemAppPreflightResponse) GetProbeTarget() OptString {
+	return s.ProbeTarget
+}
+
+// GetProbeMessage returns the value of ProbeMessage.
+func (s *SystemAppPreflightResponse) GetProbeMessage() OptString {
+	return s.ProbeMessage
+}
+
+// GetProbeCheckedAt returns the value of ProbeCheckedAt.
+func (s *SystemAppPreflightResponse) GetProbeCheckedAt() OptDateTime {
+	return s.ProbeCheckedAt
+}
+
+// GetSummary returns the value of Summary.
+func (s *SystemAppPreflightResponse) GetSummary() SystemAppPreflightSummary {
+	return s.Summary
+}
+
+// GetChecks returns the value of Checks.
+func (s *SystemAppPreflightResponse) GetChecks() []SystemAppPreflightCheckItem {
+	return s.Checks
+}
+
+// GetPreviewItems returns the value of PreviewItems.
+func (s *SystemAppPreflightResponse) GetPreviewItems() []SystemAppPreflightPreviewItem {
+	return s.PreviewItems
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SystemAppPreflightResponse) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetName sets the value of Name.
+func (s *SystemAppPreflightResponse) SetName(val string) {
+	s.Name = val
+}
+
+// SetRequestHost sets the value of RequestHost.
+func (s *SystemAppPreflightResponse) SetRequestHost(val string) {
+	s.RequestHost = val
+}
+
+// SetManifestURL sets the value of ManifestURL.
+func (s *SystemAppPreflightResponse) SetManifestURL(val OptString) {
+	s.ManifestURL = val
+}
+
+// SetRuntimeVersion sets the value of RuntimeVersion.
+func (s *SystemAppPreflightResponse) SetRuntimeVersion(val OptString) {
+	s.RuntimeVersion = val
+}
+
+// SetProbeStatus sets the value of ProbeStatus.
+func (s *SystemAppPreflightResponse) SetProbeStatus(val OptString) {
+	s.ProbeStatus = val
+}
+
+// SetProbeTarget sets the value of ProbeTarget.
+func (s *SystemAppPreflightResponse) SetProbeTarget(val OptString) {
+	s.ProbeTarget = val
+}
+
+// SetProbeMessage sets the value of ProbeMessage.
+func (s *SystemAppPreflightResponse) SetProbeMessage(val OptString) {
+	s.ProbeMessage = val
+}
+
+// SetProbeCheckedAt sets the value of ProbeCheckedAt.
+func (s *SystemAppPreflightResponse) SetProbeCheckedAt(val OptDateTime) {
+	s.ProbeCheckedAt = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *SystemAppPreflightResponse) SetSummary(val SystemAppPreflightSummary) {
+	s.Summary = val
+}
+
+// SetChecks sets the value of Checks.
+func (s *SystemAppPreflightResponse) SetChecks(val []SystemAppPreflightCheckItem) {
+	s.Checks = val
+}
+
+// SetPreviewItems sets the value of PreviewItems.
+func (s *SystemAppPreflightResponse) SetPreviewItems(val []SystemAppPreflightPreviewItem) {
+	s.PreviewItems = val
+}
+
+// Ref: #/components/schemas/SystemAppPreflightSummary
+type SystemAppPreflightSummary struct {
+	Level         string `json:"level"`
+	BlockingCount int64  `json:"blocking_count"`
+	WarningCount  int64  `json:"warning_count"`
+	InfoCount     int64  `json:"info_count"`
+	SuccessCount  int64  `json:"success_count"`
+}
+
+// GetLevel returns the value of Level.
+func (s *SystemAppPreflightSummary) GetLevel() string {
+	return s.Level
+}
+
+// GetBlockingCount returns the value of BlockingCount.
+func (s *SystemAppPreflightSummary) GetBlockingCount() int64 {
+	return s.BlockingCount
+}
+
+// GetWarningCount returns the value of WarningCount.
+func (s *SystemAppPreflightSummary) GetWarningCount() int64 {
+	return s.WarningCount
+}
+
+// GetInfoCount returns the value of InfoCount.
+func (s *SystemAppPreflightSummary) GetInfoCount() int64 {
+	return s.InfoCount
+}
+
+// GetSuccessCount returns the value of SuccessCount.
+func (s *SystemAppPreflightSummary) GetSuccessCount() int64 {
+	return s.SuccessCount
+}
+
+// SetLevel sets the value of Level.
+func (s *SystemAppPreflightSummary) SetLevel(val string) {
+	s.Level = val
+}
+
+// SetBlockingCount sets the value of BlockingCount.
+func (s *SystemAppPreflightSummary) SetBlockingCount(val int64) {
+	s.BlockingCount = val
+}
+
+// SetWarningCount sets the value of WarningCount.
+func (s *SystemAppPreflightSummary) SetWarningCount(val int64) {
+	s.WarningCount = val
+}
+
+// SetInfoCount sets the value of InfoCount.
+func (s *SystemAppPreflightSummary) SetInfoCount(val int64) {
+	s.InfoCount = val
+}
+
+// SetSuccessCount sets the value of SuccessCount.
+func (s *SystemAppPreflightSummary) SetSuccessCount(val int64) {
+	s.SuccessCount = val
+}
+
 // Ref: #/components/schemas/SystemAppSaveRequest
 type SystemAppSaveRequest struct {
 	AppKey           string                   `json:"app_key"`
@@ -16482,6 +17045,8 @@ type SystemAppSaveRequest struct {
 	FrontendEntryURL OptString                `json:"frontend_entry_url"`
 	BackendEntryURL  OptString                `json:"backend_entry_url"`
 	HealthCheckURL   OptString                `json:"health_check_url"`
+	ManifestURL      OptString                `json:"manifest_url"`
+	RuntimeVersion   OptString                `json:"runtime_version"`
 	Capabilities     OptSystemAppCapabilities `json:"capabilities"`
 	Status           OptString                `json:"status"`
 	IsDefault        OptBool                  `json:"is_default"`
@@ -16531,6 +17096,16 @@ func (s *SystemAppSaveRequest) GetBackendEntryURL() OptString {
 // GetHealthCheckURL returns the value of HealthCheckURL.
 func (s *SystemAppSaveRequest) GetHealthCheckURL() OptString {
 	return s.HealthCheckURL
+}
+
+// GetManifestURL returns the value of ManifestURL.
+func (s *SystemAppSaveRequest) GetManifestURL() OptString {
+	return s.ManifestURL
+}
+
+// GetRuntimeVersion returns the value of RuntimeVersion.
+func (s *SystemAppSaveRequest) GetRuntimeVersion() OptString {
+	return s.RuntimeVersion
 }
 
 // GetCapabilities returns the value of Capabilities.
@@ -16596,6 +17171,16 @@ func (s *SystemAppSaveRequest) SetBackendEntryURL(val OptString) {
 // SetHealthCheckURL sets the value of HealthCheckURL.
 func (s *SystemAppSaveRequest) SetHealthCheckURL(val OptString) {
 	s.HealthCheckURL = val
+}
+
+// SetManifestURL sets the value of ManifestURL.
+func (s *SystemAppSaveRequest) SetManifestURL(val OptString) {
+	s.ManifestURL = val
+}
+
+// SetRuntimeVersion sets the value of RuntimeVersion.
+func (s *SystemAppSaveRequest) SetRuntimeVersion(val OptString) {
+	s.RuntimeVersion = val
 }
 
 // SetCapabilities sets the value of Capabilities.

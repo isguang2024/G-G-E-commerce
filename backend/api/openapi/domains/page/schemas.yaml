@@ -79,6 +79,8 @@ components:
           type: string
         meta:
           $ref: '#/components/schemas/PageMeta'
+        remote_binding:
+          $ref: '#/components/schemas/PageRemoteBinding'
         created_at:
           type: string
           format: date-time
@@ -119,6 +121,20 @@ components:
           items: {type: string}
         hostKey: {type: string}
         spaceType: {type: string}
+    PageRemoteBinding:
+      type: object
+      additionalProperties: false
+      properties:
+        manifest_url: { type: string }
+        remote_app_key: { type: string }
+        remote_page_key: { type: string }
+        remote_entry_url: { type: string }
+        remote_route_path: { type: string }
+        remote_module: { type: string }
+        remote_module_name: { type: string }
+        remote_url: { type: string }
+        runtime_version: { type: string }
+        health_check_url: { type: string }
     PageBreadcrumbPreviewItem:
       type: object
       required:

@@ -382,6 +382,15 @@ func (UnimplementedHandler) GetApiEndpointOverview(ctx context.Context, params G
 	return r, ht.ErrNotImplemented
 }
 
+// GetAppPreflight implements getAppPreflight operation.
+//
+// 获取应用接入预检查结果.
+//
+// GET /system/apps/preflight
+func (UnimplementedHandler) GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (r *SystemAppPreflightResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetAuthMe implements getAuthMe operation.
 //
 // 获取当前登录账户信息.
@@ -1315,6 +1324,15 @@ func (UnimplementedHandler) ListUsers(ctx context.Context, params ListUsersParam
 //
 // POST /auth/login
 func (UnimplementedHandler) Login(ctx context.Context, req *LoginRequest) (r LoginRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// Logout implements logout operation.
+//
+// 退出登录.
+//
+// POST /auth/logout
+func (UnimplementedHandler) Logout(ctx context.Context) (r LogoutRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

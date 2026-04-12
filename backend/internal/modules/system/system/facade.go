@@ -1,6 +1,5 @@
-// facade.go — Phase 4 ogen migration helpers. Exposes the unexported
-// fastEnterService, messageService and view-page enumeration through a thin
-// Facade so internal/api/handlers can call them without re-implementing logic.
+// facade.go keeps the remaining message facade plus exported view-page service
+// helpers used by ogen handlers.
 package system
 
 import (
@@ -17,55 +16,42 @@ import (
 	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 )
 
-// Facade bundles the legacy unexported services for use by ogen handlers.
+// Facade currently only wraps the message service while the remaining
+// Phase 4 leftovers have been promoted to explicit services.
 type Facade struct {
-	logger     *zap.Logger
-	cache      *cachepkg.Cache
-	fastEnter  *fastEnterService
 	messageSvc *messageService
 }
 
 // NewFacade builds a Facade. cache may be nil.
 func NewFacade(db *gorm.DB, logger *zap.Logger, cache *cachepkg.Cache) *Facade {
+	_ = cache
 	return &Facade{
-		logger:     logger,
-		cache:      cache,
-		fastEnter:  NewFastEnterService(db),
 		messageSvc: NewMessageService(db, logger),
 	}
 }
 
-// ── Fast enter ─────────────────────────────────────────────────────────────
-
-func (f *Facade) GetFastEnterConfig() (FastEnterConfig, error) {
-	return f.fastEnter.GetConfig()
+type ViewPagesService interface {
+	GetPages(ctx context.Context, force bool) ([]ViewPageItem, bool, time.Time, error)
 }
 
-type FastEnterSaveRequestPublic struct {
-	Applications []FastEnterApplication `json:"applications"`
-	QuickLinks   []FastEnterQuickLink   `json:"quickLinks"`
-	MinWidth     int                    `json:"minWidth"`
+type viewPagesService struct {
+	logger *zap.Logger
+	cache  *cachepkg.Cache
 }
 
-func (f *Facade) UpdateFastEnterConfig(req FastEnterSaveRequestPublic) (FastEnterConfig, error) {
-	return f.fastEnter.SaveConfig(FastEnterConfig{
-		Applications: req.Applications,
-		QuickLinks:   req.QuickLinks,
-		MinWidth:     req.MinWidth,
-	})
+func NewViewPagesService(logger *zap.Logger, cache *cachepkg.Cache) ViewPagesService {
+	return &viewPagesService{logger: logger, cache: cache}
 }
 
-// ── View pages ─────────────────────────────────────────────────────────────
-
-func (f *Facade) GetViewPages(ctx context.Context, force bool) ([]ViewPageItem, bool, time.Time, error) {
+func (s *viewPagesService) GetPages(ctx context.Context, force bool) ([]ViewPageItem, bool, time.Time, error) {
 	projectRoot, err := findProjectRoot()
 	if err != nil {
 		return nil, false, time.Time{}, err
 	}
 	cacheKey := "system:view-pages:frontend-src-views"
-	if f.cache != nil && !force {
+	if s.cache != nil && !force {
 		var cached ViewPagesResponse
-		if err := f.cache.Get(ctx, cacheKey, &cached); err == nil {
+		if err := s.cache.Get(ctx, cacheKey, &cached); err == nil {
 			return cached.Pages, false, time.Now(), nil
 		}
 	}
@@ -74,10 +60,10 @@ func (f *Facade) GetViewPages(ctx context.Context, force bool) ([]ViewPageItem, 
 		return nil, false, time.Time{}, err
 	}
 	now := time.Now()
-	if f.cache != nil {
+	if s.cache != nil {
 		resp := ViewPagesResponse{Pages: pages, Refreshed: true, RefreshedAt: now.Format(time.RFC3339)}
-		if err := f.cache.Set(ctx, cacheKey, resp, 30*24*time.Hour); err != nil {
-			f.logger.Warn("Failed to cache view pages", zap.Error(err))
+		if err := s.cache.Set(ctx, cacheKey, resp, 30*24*time.Hour); err != nil {
+			s.logger.Warn("Failed to cache view pages", zap.Error(err))
 		}
 	}
 	return pages, true, now, nil

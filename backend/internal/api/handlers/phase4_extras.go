@@ -16,7 +16,7 @@ import (
 // ── system fast-enter ───────────────────────────────────────────────────────
 
 func (h *APIHandler) GetFastEnterConfig(ctx context.Context) (*gen.SystemFastEnterConfig, error) {
-	cfg, err := h.systemFacade.GetFastEnterConfig()
+	cfg, err := h.fastEnterSvc.GetConfig()
 	if err != nil {
 		h.logger.Error("get fast enter config failed", zap.Error(err))
 		return nil, err
@@ -29,12 +29,12 @@ func (h *APIHandler) UpdateFastEnterConfig(ctx context.Context, req *gen.SystemF
 	if req == nil {
 		req = &gen.SystemFastEnterConfig{}
 	}
-	body := systemmod.FastEnterSaveRequestPublic{
+	body := systemmod.FastEnterConfig{
 		Applications: fastEnterApplicationsFromGen(req.Applications),
 		QuickLinks:   fastEnterQuickLinksFromGen(req.QuickLinks),
 		MinWidth:     optInt(req.MinWidth, 0),
 	}
-	cfg, err := h.systemFacade.UpdateFastEnterConfig(body)
+	cfg, err := h.fastEnterSvc.SaveConfig(body)
 	if err != nil {
 		h.logger.Error("update fast enter config failed", zap.Error(err))
 		return nil, err
@@ -125,7 +125,7 @@ func (h *APIHandler) GetSystemViewPages(ctx context.Context, params gen.GetSyste
 		v := strings.ToLower(strings.TrimSpace(params.Force.Value))
 		force = v == "1" || v == "true"
 	}
-	pages, refreshed, refreshedAt, err := h.systemFacade.GetViewPages(ctx, force)
+	pages, refreshed, refreshedAt, err := h.viewPagesSvc.GetPages(ctx, force)
 	if err != nil {
 		h.logger.Error("get system view pages failed", zap.Error(err))
 		return nil, err

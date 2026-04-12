@@ -12,58 +12,64 @@ components:
     SystemAppItem:
       type: object
       required:
-      - id
-      - app_key
-      - name
-      - description
-      - default_space_key
-      - space_mode
-      - is_default
-      - status
-      - host_count
-      - space_count
-      - menu_count
-      - page_count
-      - capabilities
-      - meta
-      - created_at
-      - updated_at
+        - id
+        - app_key
+        - name
+        - description
+        - default_space_key
+        - space_mode
+        - is_default
+        - status
+        - host_count
+        - space_count
+        - menu_count
+        - page_count
+        - capabilities
+        - meta
+        - created_at
+        - updated_at
       properties:
-        id: {type: string, format: uuid}
-        app_key: {type: string}
-        name: {type: string}
-        description: {type: string}
-        default_space_key: {type: string}
-        space_mode: {type: string}
-        auth_mode: {type: string}
-        frontend_entry_url: {type: string}
-        backend_entry_url: {type: string}
-        health_check_url: {type: string}
-        is_default: {type: boolean}
-        status: {type: string}
-        host_count: {type: integer, format: int64}
-        space_count: {type: integer, format: int64}
-        menu_count: {type: integer, format: int64}
-        page_count: {type: integer, format: int64}
+        id: { type: string, format: uuid }
+        app_key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        default_space_key: { type: string }
+        space_mode: { type: string }
+        auth_mode: { type: string }
+        frontend_entry_url: { type: string }
+        backend_entry_url: { type: string }
+        health_check_url: { type: string }
+        manifest_url: { type: string }
+        runtime_version: { type: string }
+        probe_status: { type: string }
+        probe_target: { type: string }
+        probe_message: { type: string }
+        probe_checked_at: { type: string, format: date-time }
+        is_default: { type: boolean }
+        status: { type: string }
+        host_count: { type: integer, format: int64 }
+        space_count: { type: integer, format: int64 }
+        menu_count: { type: integer, format: int64 }
+        page_count: { type: integer, format: int64 }
         primary_hosts:
           type: array
-          items: {type: string}
+          items: { type: string }
         capabilities:
-          $ref: '#/components/schemas/SystemAppCapabilities'
+          $ref: "#/components/schemas/SystemAppCapabilities"
         meta:
-          $ref: '#/components/schemas/SystemMeta'
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
+          $ref: "#/components/schemas/SystemMeta"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     SystemAppListResponse:
       type: object
       required:
-      - records
-      - total
+        - records
+        - total
       properties:
         records:
           type: array
           items:
-            $ref: '#/components/schemas/SystemAppItem'
+            $ref: "#/components/schemas/SystemAppItem"
         total:
           type: integer
           format: int64
@@ -75,11 +81,11 @@ components:
         applications:
           type: array
           items:
-            $ref: '#/components/schemas/SystemFastEnterApplication'
+            $ref: "#/components/schemas/SystemFastEnterApplication"
         quickLinks:
           type: array
           items:
-            $ref: '#/components/schemas/SystemFastEnterQuickLink'
+            $ref: "#/components/schemas/SystemFastEnterQuickLink"
         minWidth:
           type: integer
     SystemFastEnterApplication:
@@ -87,332 +93,404 @@ components:
       additionalProperties: false
       required: [id, name, description, icon, iconColor, enabled, order]
       properties:
-        id: {type: string}
-        name: {type: string}
-        description: {type: string}
-        icon: {type: string}
-        iconColor: {type: string}
-        enabled: {type: boolean}
-        order: {type: integer}
-        routeName: {type: string}
-        link: {type: string}
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        icon: { type: string }
+        iconColor: { type: string }
+        enabled: { type: boolean }
+        order: { type: integer }
+        routeName: { type: string }
+        link: { type: string }
     SystemFastEnterQuickLink:
       type: object
       additionalProperties: false
       required: [id, name, enabled, order]
       properties:
-        id: {type: string}
-        name: {type: string}
-        enabled: {type: boolean}
-        order: {type: integer}
-        routeName: {type: string}
-        link: {type: string}
+        id: { type: string }
+        name: { type: string }
+        enabled: { type: boolean }
+        order: { type: integer }
+        routeName: { type: string }
+        link: { type: string }
     SystemAppSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, name]
       properties:
-        app_key: {type: string}
-        name: {type: string}
-        description: {type: string}
-        space_mode: {type: string}
-        default_space_key: {type: string}
-        auth_mode: {type: string}
-        frontend_entry_url: {type: string}
-        backend_entry_url: {type: string}
-        health_check_url: {type: string}
+        app_key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        space_mode: { type: string }
+        default_space_key: { type: string }
+        auth_mode: { type: string }
+        frontend_entry_url: { type: string }
+        backend_entry_url: { type: string }
+        health_check_url: { type: string }
+        manifest_url: { type: string }
+        runtime_version: { type: string }
         capabilities:
-          $ref: '#/components/schemas/SystemAppCapabilities'
-        status: {type: string}
-        is_default: {type: boolean}
+          $ref: "#/components/schemas/SystemAppCapabilities"
+        status: { type: string }
+        is_default: { type: boolean }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
+          $ref: "#/components/schemas/SystemMeta"
     SystemAppHostBindingItem:
       type: object
       required:
-      - id
-      - app_key
-      - app_name
-      - match_type
-      - host
-      - path_pattern
-      - priority
-      - description
-      - is_primary
-      - default_space_key
-      - status
-      - meta
-      - created_at
-      - updated_at
+        - id
+        - app_key
+        - app_name
+        - match_type
+        - host
+        - path_pattern
+        - priority
+        - description
+        - is_primary
+        - default_space_key
+        - status
+        - meta
+        - created_at
+        - updated_at
       properties:
-        id: {type: string, format: uuid}
-        app_key: {type: string}
-        app_name: {type: string}
-        match_type: {type: string}
-        host: {type: string}
-        path_pattern: {type: string}
-        priority: {type: integer, format: int64}
-        description: {type: string}
-        is_primary: {type: boolean}
-        default_space_key: {type: string}
-        status: {type: string}
+        id: { type: string, format: uuid }
+        app_key: { type: string }
+        app_name: { type: string }
+        match_type: { type: string }
+        host: { type: string }
+        path_pattern: { type: string }
+        priority: { type: integer, format: int64 }
+        description: { type: string }
+        is_primary: { type: boolean }
+        default_space_key: { type: string }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
+          $ref: "#/components/schemas/SystemMeta"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     SystemAppHostBindingListResponse:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/SystemAppHostBindingItem'}
-        total: {type: integer, format: int64}
+          items: { $ref: "#/components/schemas/SystemAppHostBindingItem" }
+        total: { type: integer, format: int64 }
     SystemCurrentAppResponse:
       type: object
       required: [app, resolved_by, request_host]
       properties:
         app:
-          $ref: '#/components/schemas/SystemAppItem'
+          $ref: "#/components/schemas/SystemAppItem"
         binding:
-          $ref: '#/components/schemas/SystemAppHostBindingItem'
-        resolved_by: {type: string}
-        request_host: {type: string}
+          $ref: "#/components/schemas/SystemAppHostBindingItem"
+        resolved_by: { type: string }
+        request_host: { type: string }
+    SystemAppPreflightSummary:
+      type: object
+      required:
+        - level
+        - blocking_count
+        - warning_count
+        - info_count
+        - success_count
+      properties:
+        level: { type: string }
+        blocking_count: { type: integer, format: int64 }
+        warning_count: { type: integer, format: int64 }
+        info_count: { type: integer, format: int64 }
+        success_count: { type: integer, format: int64 }
+    SystemAppPreflightCheckItem:
+      type: object
+      required:
+        - key
+        - title
+        - level
+        - passed
+        - value
+        - hint
+      properties:
+        key: { type: string }
+        title: { type: string }
+        level: { type: string }
+        passed: { type: boolean }
+        value: { type: string }
+        hint: { type: string }
+    SystemAppPreflightPreviewItem:
+      type: object
+      required:
+        - label
+        - value
+        - hint
+      properties:
+        label: { type: string }
+        value: { type: string }
+        hint: { type: string }
+    SystemAppPreflightResponse:
+      type: object
+      required:
+        - app_key
+        - name
+        - request_host
+        - summary
+        - checks
+        - preview_items
+      properties:
+        app_key: { type: string }
+        name: { type: string }
+        request_host: { type: string }
+        manifest_url: { type: string }
+        runtime_version: { type: string }
+        probe_status: { type: string }
+        probe_target: { type: string }
+        probe_message: { type: string }
+        probe_checked_at: { type: string, format: date-time }
+        summary:
+          $ref: "#/components/schemas/SystemAppPreflightSummary"
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemAppPreflightCheckItem"
+        preview_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemAppPreflightPreviewItem"
     SystemAppHostBindingSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, host]
       properties:
-        id: {type: string}
-        app_key: {type: string}
-        match_type: {type: string}
-        host: {type: string}
-        path_pattern: {type: string}
-        priority: {type: integer}
-        description: {type: string}
-        is_primary: {type: boolean}
-        default_space_key: {type: string}
-        status: {type: string}
+        id: { type: string }
+        app_key: { type: string }
+        match_type: { type: string }
+        host: { type: string }
+        path_pattern: { type: string }
+        priority: { type: integer }
+        description: { type: string }
+        is_primary: { type: boolean }
+        default_space_key: { type: string }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
+          $ref: "#/components/schemas/SystemMeta"
     SystemMenuSpaceEntryBindingItem:
       type: object
       required:
-      - id
-      - app_key
-      - app_name
-      - space_key
-      - space_name
-      - match_type
-      - host
-      - path_pattern
-      - priority
-      - is_primary
-      - description
-      - status
-      - meta
-      - created_at
-      - updated_at
+        - id
+        - app_key
+        - app_name
+        - space_key
+        - space_name
+        - match_type
+        - host
+        - path_pattern
+        - priority
+        - is_primary
+        - description
+        - status
+        - meta
+        - created_at
+        - updated_at
       properties:
-        id: {type: string, format: uuid}
-        app_key: {type: string}
-        app_name: {type: string}
-        space_key: {type: string}
-        space_name: {type: string}
-        match_type: {type: string}
-        host: {type: string}
-        path_pattern: {type: string}
-        priority: {type: integer, format: int64}
-        is_primary: {type: boolean}
-        description: {type: string}
-        status: {type: string}
+        id: { type: string, format: uuid }
+        app_key: { type: string }
+        app_name: { type: string }
+        space_key: { type: string }
+        space_name: { type: string }
+        match_type: { type: string }
+        host: { type: string }
+        path_pattern: { type: string }
+        priority: { type: integer, format: int64 }
+        is_primary: { type: boolean }
+        description: { type: string }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
+          $ref: "#/components/schemas/SystemMeta"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     SystemMenuSpaceEntryBindingListResponse:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/SystemMenuSpaceEntryBindingItem'}
-        total: {type: integer, format: int64}
+          items:
+            { $ref: "#/components/schemas/SystemMenuSpaceEntryBindingItem" }
+        total: { type: integer, format: int64 }
     SystemMenuSpaceEntryBindingSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, space_key, host]
       properties:
-        id: {type: string}
-        app_key: {type: string}
-        space_key: {type: string}
-        match_type: {type: string}
-        host: {type: string}
-        path_pattern: {type: string}
-        priority: {type: integer}
-        description: {type: string}
-        is_primary: {type: boolean}
-        status: {type: string}
+        id: { type: string }
+        app_key: { type: string }
+        space_key: { type: string }
+        match_type: { type: string }
+        host: { type: string }
+        path_pattern: { type: string }
+        priority: { type: integer }
+        description: { type: string }
+        is_primary: { type: boolean }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
+          $ref: "#/components/schemas/SystemMeta"
     SystemMenuSpaceItem:
       type: object
       required:
-      - id
-      - app_key
-      - space_key
-      - name
-      - description
-      - default_home_path
-      - is_default
-      - status
-      - host_count
-      - menu_count
-      - page_count
-      - access_mode
-      - allowed_role_codes
-      - meta
-      - created_at
-      - updated_at
+        - id
+        - app_key
+        - space_key
+        - name
+        - description
+        - default_home_path
+        - is_default
+        - status
+        - host_count
+        - menu_count
+        - page_count
+        - access_mode
+        - allowed_role_codes
+        - meta
+        - created_at
+        - updated_at
       properties:
-        id: {type: string, format: uuid}
-        app_key: {type: string}
-        space_key: {type: string}
-        name: {type: string}
-        description: {type: string}
-        default_home_path: {type: string}
-        is_default: {type: boolean}
-        status: {type: string}
-        host_count: {type: integer, format: int64}
+        id: { type: string, format: uuid }
+        app_key: { type: string }
+        space_key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        default_home_path: { type: string }
+        is_default: { type: boolean }
+        status: { type: string }
+        host_count: { type: integer, format: int64 }
         hosts:
           type: array
-          items: {type: string}
-        menu_count: {type: integer, format: int64}
-        page_count: {type: integer, format: int64}
-        access_mode: {type: string}
+          items: { type: string }
+        menu_count: { type: integer, format: int64 }
+        page_count: { type: integer, format: int64 }
+        access_mode: { type: string }
         allowed_role_codes:
           type: array
-          items: {type: string}
+          items: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
+          $ref: "#/components/schemas/SystemMeta"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     SystemMenuSpaceListResponse:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/SystemMenuSpaceItem'}
-        total: {type: integer, format: int64}
+          items: { $ref: "#/components/schemas/SystemMenuSpaceItem" }
+        total: { type: integer, format: int64 }
     SystemCurrentMenuSpaceResponse:
       type: object
       required: [space, resolved_by, request_host, access_granted]
       properties:
         space:
-          $ref: '#/components/schemas/SystemMenuSpaceItem'
+          $ref: "#/components/schemas/SystemMenuSpaceItem"
         binding:
-          $ref: '#/components/schemas/SystemMenuSpaceHostBindingItem'
-        resolved_by: {type: string}
-        request_host: {type: string}
-        access_granted: {type: boolean}
+          $ref: "#/components/schemas/SystemMenuSpaceHostBindingItem"
+        resolved_by: { type: string }
+        request_host: { type: string }
+        access_granted: { type: boolean }
     SystemMenuSpaceModeResponse:
       type: object
       required: [mode]
       properties:
-        mode: {type: string}
+        mode: { type: string }
     SystemMenuSpaceModeSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, mode]
       properties:
-        app_key: {type: string}
-        mode: {type: string}
+        app_key: { type: string }
+        mode: { type: string }
     SystemMenuSpaceSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, space_key, name]
       properties:
-        app_key: {type: string}
-        space_key: {type: string}
-        name: {type: string}
-        description: {type: string}
-        default_home_path: {type: string}
-        is_default: {type: boolean}
-        status: {type: string}
-        access_mode: {type: string}
+        app_key: { type: string }
+        space_key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        default_home_path: { type: string }
+        is_default: { type: boolean }
+        status: { type: string }
+        access_mode: { type: string }
         allowed_role_codes:
           type: array
-          items: {type: string}
+          items: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
+          $ref: "#/components/schemas/SystemMeta"
     SystemMenuSpaceInitializeResult:
       type: object
       required:
-      - source_space_key
-      - target_space_key
-      - force_reinitialized
-      - cleared_menu_count
-      - cleared_page_count
-      - cleared_package_menu_link_count
-      - created_menu_count
-      - created_page_count
-      - created_package_menu_link_count
+        - source_space_key
+        - target_space_key
+        - force_reinitialized
+        - cleared_menu_count
+        - cleared_page_count
+        - cleared_package_menu_link_count
+        - created_menu_count
+        - created_page_count
+        - created_package_menu_link_count
       properties:
-        source_space_key: {type: string}
-        target_space_key: {type: string}
-        force_reinitialized: {type: boolean}
-        cleared_menu_count: {type: integer, format: int64}
-        cleared_page_count: {type: integer, format: int64}
-        cleared_package_menu_link_count: {type: integer, format: int64}
-        created_menu_count: {type: integer, format: int64}
-        created_page_count: {type: integer, format: int64}
-        created_package_menu_link_count: {type: integer, format: int64}
+        source_space_key: { type: string }
+        target_space_key: { type: string }
+        force_reinitialized: { type: boolean }
+        cleared_menu_count: { type: integer, format: int64 }
+        cleared_page_count: { type: integer, format: int64 }
+        cleared_package_menu_link_count: { type: integer, format: int64 }
+        created_menu_count: { type: integer, format: int64 }
+        created_page_count: { type: integer, format: int64 }
+        created_package_menu_link_count: { type: integer, format: int64 }
     SystemMenuSpaceHostBindingItem:
       type: object
       required:
-      - id
-      - app_key
-      - host
-      - space_key
-      - space_name
-      - description
-      - is_default
-      - status
-      - meta
-      - created_at
-      - updated_at
+        - id
+        - app_key
+        - host
+        - space_key
+        - space_name
+        - description
+        - is_default
+        - status
+        - meta
+        - created_at
+        - updated_at
       properties:
-        id: {type: string, format: uuid}
-        app_key: {type: string}
-        host: {type: string}
-        space_key: {type: string}
-        space_name: {type: string}
-        description: {type: string}
-        is_default: {type: boolean}
-        status: {type: string}
+        id: { type: string, format: uuid }
+        app_key: { type: string }
+        host: { type: string }
+        space_key: { type: string }
+        space_name: { type: string }
+        description: { type: string }
+        is_default: { type: boolean }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
+          $ref: "#/components/schemas/SystemMeta"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     SystemMenuSpaceHostBindingListResponse:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/SystemMenuSpaceHostBindingItem'}
-        total: {type: integer, format: int64}
+          items: { $ref: "#/components/schemas/SystemMenuSpaceHostBindingItem" }
+        total: { type: integer, format: int64 }
     SystemMenuSpaceHostBindingSaveRequest:
       type: object
       additionalProperties: false
       required: [app_key, host, space_key]
       properties:
-        app_key: {type: string}
-        host: {type: string}
-        space_key: {type: string}
-        description: {type: string}
-        is_default: {type: boolean}
-        status: {type: string}
+        app_key: { type: string }
+        host: { type: string }
+        space_key: { type: string }
+        description: { type: string }
+        is_default: { type: boolean }
+        status: { type: string }
         meta:
-          $ref: '#/components/schemas/SystemMeta'
+          $ref: "#/components/schemas/SystemMeta"

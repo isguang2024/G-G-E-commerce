@@ -1,6 +1,7 @@
 import { v5Client, SKIP_WORKSPACE_CONTEXT_HEADER } from '@/api/v5/client'
 import { unwrap, createV5HttpError } from '@/api/system-manage/_shared'
 import { useAppContextStore } from '@/store/modules/app-context'
+import { useUserStore } from '@/store/modules/user'
 import { AUTH_PROTOCOL_VERSION } from '@/utils/auth/centralized-login'
 
 /**
@@ -102,7 +103,7 @@ export async function fetchExchangeAuthCallback(body: {
   target_app_key: string
   redirect_uri: string
 }) {
-  const { data, error, response } = await v5Client.POST('/auth/callback/exchange' as any, {
+  const { data, error, response } = await v5Client.POST('/auth/callback/exchange', {
     body: {
       ...body,
       auth_protocol_version: AUTH_PROTOCOL_VERSION
@@ -117,6 +118,24 @@ export async function fetchExchangeAuthCallback(body: {
     )
   }
   return data as Api.Auth.LoginResponse
+}
+
+export async function fetchLogout() {
+  const { accessToken } = useUserStore()
+  const headers: Record<string, string> = {
+    [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+  }
+  if (accessToken) {
+    headers.Authorization = accessToken.startsWith('Bearer ')
+      ? accessToken
+      : `Bearer ${accessToken}`
+  }
+  const { error, response } = await v5Client.POST('/auth/logout', {
+    headers
+  })
+  if (error) {
+    throw createV5HttpError(error, response)
+  }
 }
 
 /**

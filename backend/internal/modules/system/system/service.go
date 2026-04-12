@@ -37,11 +37,16 @@ type FastEnterConfig struct {
 	MinWidth     int                    `json:"minWidth"`
 }
 
+type FastEnterService interface {
+	GetConfig() (FastEnterConfig, error)
+	SaveConfig(config FastEnterConfig) (FastEnterConfig, error)
+}
+
 type fastEnterService struct {
 	db *gorm.DB
 }
 
-func NewFastEnterService(db *gorm.DB) *fastEnterService {
+func NewFastEnterService(db *gorm.DB) FastEnterService {
 	return &fastEnterService{db: db}
 }
 

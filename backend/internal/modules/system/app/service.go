@@ -3,8 +3,12 @@ package app
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -17,11 +21,17 @@ import (
 
 type AppRecord struct {
 	models.App
-	HostCount    int      `json:"host_count"`
-	SpaceCount   int      `json:"space_count"`
-	MenuCount    int      `json:"menu_count"`
-	PageCount    int      `json:"page_count"`
-	PrimaryHosts []string `json:"primary_hosts,omitempty"`
+	HostCount      int        `json:"host_count"`
+	SpaceCount     int        `json:"space_count"`
+	MenuCount      int        `json:"menu_count"`
+	PageCount      int        `json:"page_count"`
+	PrimaryHosts   []string   `json:"primary_hosts,omitempty"`
+	ManifestURL    string     `json:"manifest_url"`
+	RuntimeVersion string     `json:"runtime_version"`
+	ProbeStatus    string     `json:"probe_status"`
+	ProbeTarget    string     `json:"probe_target"`
+	ProbeMessage   string     `json:"probe_message"`
+	ProbeCheckedAt *time.Time `json:"probe_checked_at,omitempty"`
 }
 
 type HostBindingRecord struct {
@@ -36,6 +46,44 @@ type CurrentResponse struct {
 	RequestHost string             `json:"request_host"`
 }
 
+type AppPreflightSummary struct {
+	Level         string `json:"level"`
+	BlockingCount int    `json:"blocking_count"`
+	WarningCount  int    `json:"warning_count"`
+	InfoCount     int    `json:"info_count"`
+	SuccessCount  int    `json:"success_count"`
+}
+
+type AppPreflightCheckItem struct {
+	Key    string `json:"key"`
+	Title  string `json:"title"`
+	Level  string `json:"level"`
+	Passed bool   `json:"passed"`
+	Value  string `json:"value"`
+	Hint   string `json:"hint"`
+}
+
+type AppPreflightPreviewItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+	Hint  string `json:"hint"`
+}
+
+type AppPreflightResponse struct {
+	AppKey         string                    `json:"app_key"`
+	Name           string                    `json:"name"`
+	RequestHost    string                    `json:"request_host"`
+	ManifestURL    string                    `json:"manifest_url"`
+	RuntimeVersion string                    `json:"runtime_version"`
+	ProbeStatus    string                    `json:"probe_status"`
+	ProbeTarget    string                    `json:"probe_target"`
+	ProbeMessage   string                    `json:"probe_message"`
+	ProbeCheckedAt *time.Time                `json:"probe_checked_at,omitempty"`
+	Summary        AppPreflightSummary       `json:"summary"`
+	Checks         []AppPreflightCheckItem   `json:"checks"`
+	PreviewItems   []AppPreflightPreviewItem `json:"preview_items"`
+}
+
 type SaveAppRequest struct {
 	AppKey           string                 `json:"app_key"`
 	Name             string                 `json:"name"`
@@ -46,6 +94,8 @@ type SaveAppRequest struct {
 	FrontendEntryURL string                 `json:"frontend_entry_url"`
 	BackendEntryURL  string                 `json:"backend_entry_url"`
 	HealthCheckURL   string                 `json:"health_check_url"`
+	ManifestURL      string                 `json:"manifest_url"`
+	RuntimeVersion   string                 `json:"runtime_version"`
 	Capabilities     map[string]interface{} `json:"capabilities"`
 	Status           string                 `json:"status"`
 	IsDefault        bool                   `json:"is_default"`
@@ -89,6 +139,7 @@ type SaveMenuSpaceEntryBindingRequest struct {
 type Service interface {
 	ListApps() ([]AppRecord, error)
 	GetCurrent(host, requestedAppKey string) (*CurrentResponse, error)
+	GetAppPreflight(appKey, requestHost string) (*AppPreflightResponse, error)
 	SaveApp(req *SaveAppRequest) (*AppRecord, error)
 	DeleteApp(appKey string) error
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
@@ -102,6 +153,8 @@ type Service interface {
 type service struct {
 	db *gorm.DB
 }
+
+var appProbeHTTPClient = &http.Client{Timeout: 1500 * time.Millisecond}
 
 func NewService(db *gorm.DB) Service {
 	return &service{db: db}
@@ -309,13 +362,20 @@ func (s *service) ListApps() ([]AppRecord, error) {
 	records := make([]AppRecord, 0, len(apps))
 	for _, item := range apps {
 		key := NormalizeAppKey(item.AppKey)
+		probe := probeAppHealth(item, primaryHosts[key])
 		records = append(records, AppRecord{
-			App:          item,
-			HostCount:    hostCounts[key],
-			SpaceCount:   spaceCounts[key],
-			MenuCount:    menuCounts[key],
-			PageCount:    pageCounts[key],
-			PrimaryHosts: primaryHosts[key],
+			App:            item,
+			HostCount:      hostCounts[key],
+			SpaceCount:     spaceCounts[key],
+			MenuCount:      menuCounts[key],
+			PageCount:      pageCounts[key],
+			PrimaryHosts:   primaryHosts[key],
+			ManifestURL:    appManifestURL(item.Meta),
+			RuntimeVersion: appRuntimeVersion(item.Meta),
+			ProbeStatus:    probe.Status,
+			ProbeTarget:    probe.Target,
+			ProbeMessage:   probe.Message,
+			ProbeCheckedAt: probe.CheckedAt,
 		})
 	}
 	return records, nil
@@ -348,6 +408,245 @@ func (s *service) GetCurrent(host, requestedAppKey string) (*CurrentResponse, er
 	}, nil
 }
 
+func (s *service) GetAppPreflight(appKey, requestHost string) (*AppPreflightResponse, error) {
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, errors.New("app_key 不能为空")
+	}
+	record, err := s.getAppRecord(normalizedAppKey)
+	if err != nil {
+		return nil, err
+	}
+	hostBindings, err := s.ListHostBindings(normalizedAppKey)
+	if err != nil {
+		return nil, err
+	}
+	spaceEntryBindings := make([]MenuSpaceEntryBindingRecord, 0)
+	if record.SpaceMode == "multi" {
+		spaceEntryBindings, err = s.ListMenuSpaceEntryBindings(normalizedAppKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	primaryBinding := pickPrimaryHostBinding(hostBindings)
+	allowedRedirectHosts := collectAllowedRedirectHosts(hostBindings)
+	checks := make([]AppPreflightCheckItem, 0, 8)
+	checks = append(checks,
+		newPreflightCheck(
+			"binding",
+			"入口绑定",
+			primaryBinding != nil,
+			"warning",
+			describePrimaryBinding(primaryBinding),
+			func() string {
+				if primaryBinding != nil {
+					return fmt.Sprintf("当前共 %d 条 APP 入口规则，主入口可作为接入命中基准。", len(hostBindings))
+				}
+				return "缺少主入口绑定，治理台只能依赖默认 App 回退。"
+			}(),
+		),
+		newPreflightCheck(
+			"frontend_entry",
+			"前端入口",
+			strings.TrimSpace(record.FrontendEntryURL) != "",
+			"warning",
+			firstNonEmpty(strings.TrimSpace(record.FrontendEntryURL), "继承当前地址"),
+			func() string {
+				if strings.TrimSpace(record.FrontendEntryURL) != "" {
+					return "前端入口已声明，可作为登录后或切换后的首跳落点。"
+				}
+				return "未声明前端入口，仍会依赖当前地址或守卫逻辑推断。"
+			}(),
+		),
+		newPreflightCheck(
+			"backend_entry",
+			"后端入口",
+			strings.TrimSpace(record.BackendEntryURL) != "",
+			"info",
+			firstNonEmpty(strings.TrimSpace(record.BackendEntryURL), "沿用主站 API"),
+			func() string {
+				if strings.TrimSpace(record.BackendEntryURL) != "" {
+					return "后端入口已声明，适合独立网关或跨域 API 场景。"
+				}
+				return "未声明后端入口，表示当前仍与主站共用 API 网关。"
+			}(),
+		),
+		newPreflightCheck(
+			"manifest",
+			"远端清单",
+			strings.TrimSpace(record.ManifestURL) != "",
+			"info",
+			firstNonEmpty(strings.TrimSpace(record.ManifestURL), "未配置"),
+			func() string {
+				if strings.TrimSpace(record.ManifestURL) != "" {
+					return "已声明 manifest 地址，治理后台可直接展示远端接入清单来源。"
+				}
+				return "未声明 manifest 地址时，远端页来源仍只能回落到页面 meta 推断。"
+			}(),
+		),
+		newPreflightCheck(
+			"runtime_version",
+			"运行版本",
+			strings.TrimSpace(record.RuntimeVersion) != "",
+			"info",
+			firstNonEmpty(strings.TrimSpace(record.RuntimeVersion), "未声明"),
+			func() string {
+				if strings.TrimSpace(record.RuntimeVersion) != "" {
+					return "已声明运行版本，可作为治理比对与 smoke 输出的版本锚点。"
+				}
+				return "未声明运行版本时，治理后台无法直接比对远端接入版本。"
+			}(),
+		),
+		newPreflightCheck(
+			"health_check",
+			"运行探针",
+			strings.TrimSpace(record.HealthCheckURL) != "",
+			"info",
+			firstNonEmpty(strings.TrimSpace(record.HealthCheckURL), "未配置"),
+			func() string {
+				if strings.TrimSpace(record.HealthCheckURL) != "" {
+					return "已声明健康检查地址，可供后续聚合探测和治理观测使用。"
+				}
+				return "未声明健康检查地址，后续统一探测只能显示为未配置。"
+			}(),
+		),
+		newPreflightCheck(
+			"capabilities",
+			"能力声明",
+			len(record.Capabilities) > 0,
+			"info",
+			fmt.Sprintf("%d 个一级分组", len(record.Capabilities)),
+			func() string {
+				if len(record.Capabilities) > 0 {
+					return "已声明 runtime/navigation/integration 等能力，可继续下沉到运行时消费。"
+				}
+				return "尚未声明能力分组，后续特性开关和壳层行为仍需靠约定。"
+			}(),
+		),
+	)
+
+	authMode := strings.TrimSpace(record.AuthMode)
+	if authMode == "" {
+		authMode = "inherit_host"
+	}
+	authHint := fmt.Sprintf("当前认证模式为 %s。", authMode)
+	authValue := authMode
+	authPassed := true
+	authLevel := "success"
+	if authMode == "centralized_login" {
+		authValue = firstNonEmpty(strings.Join(allowedRedirectHosts, ", "), "未登记 callback host")
+		authPassed = len(allowedRedirectHosts) > 0
+		authLevel = "warning"
+		if authPassed {
+			authHint = "centralized_login 已具备可解释的回调白名单来源，回跳域名不再只能靠前端约定。"
+		} else {
+			authHint = "centralized_login 缺少可用于 redirect_uri 校验的 host，回调链路存在拒绝风险。"
+		}
+	} else if authMode == "shared_cookie" {
+		authHint = "shared_cookie 仍需补真实登录/刷新/登出主链，本次只检查注册中心配置完整度。"
+		authLevel = "info"
+	}
+	checks = append(checks, newPreflightCheck("auth_mode", "认证预检查", authPassed, authLevel, authValue, authHint))
+
+	if record.SpaceMode == "multi" {
+		checks = append(checks, newPreflightCheck(
+			"space_entries",
+			"菜单空间入口",
+			len(spaceEntryBindings) > 0,
+			"info",
+			fmt.Sprintf("%d 条 Level 2 规则", len(spaceEntryBindings)),
+			func() string {
+				if len(spaceEntryBindings) > 0 {
+					return "多空间 APP 已配置菜单空间入口，可进一步校验是否落在 APP 入口规则范围内。"
+				}
+				return "未配置菜单空间入口时，将统一回退到 APP 默认空间。"
+			}(),
+		))
+	}
+
+	previews := []AppPreflightPreviewItem{
+		{
+			Label: "诊断标签",
+			Value: fmt.Sprintf("app=%s · auth=%s · probe=%s", record.AppKey, authMode, record.ProbeStatus),
+			Hint:  fmt.Sprintf("结合 request_host=%s 与空间入口规则，可快速定位当前是入口解析问题、认证策略问题还是探针未配置问题。", spacepkg.NormalizeHost(requestHost)),
+		},
+		{
+			Label: "入口命中",
+			Value: describePrimaryBinding(primaryBinding),
+			Hint: func() string {
+				if primaryBinding != nil {
+					return fmt.Sprintf("按 %s 规则进入 %s。", primaryBinding.MatchType, record.AppKey)
+				}
+				return "当前没有 APP 入口规则，只能依赖默认 App 回退。"
+			}(),
+		},
+		{
+			Label: "Manifest",
+			Value: firstNonEmpty(strings.TrimSpace(record.ManifestURL), "未配置"),
+			Hint: func() string {
+				if strings.TrimSpace(record.ManifestURL) != "" {
+					return "远端页面与运行版本应优先以该 manifest 为治理真相源。"
+				}
+				return "未配置 manifest 时，远端页治理仍只能依赖页面级 remote contract。"
+			}(),
+		},
+		{
+			Label: "首跳落点",
+			Value: firstNonEmpty(strings.TrimSpace(record.FrontendEntryURL), "继承当前地址"),
+			Hint: func() string {
+				if authMode == "centralized_login" {
+					return "登录前先进入认证中心，回调交换 token 后再跳回这里。"
+				}
+				return "登录后将以这个入口或当前 URL 作为首跳落点。"
+			}(),
+		},
+		{
+			Label: "健康探针",
+			Value: func() string {
+				if strings.TrimSpace(record.ProbeStatus) == "" || record.ProbeStatus == "missing" {
+					return firstNonEmpty(strings.TrimSpace(record.HealthCheckURL), "未配置")
+				}
+				if strings.TrimSpace(record.ProbeTarget) != "" {
+					return fmt.Sprintf("%s · %s", record.ProbeStatus, record.ProbeTarget)
+				}
+				return record.ProbeStatus
+			}(),
+			Hint: func() string {
+				if strings.TrimSpace(record.ProbeMessage) != "" {
+					return record.ProbeMessage
+				}
+				if strings.TrimSpace(record.HealthCheckURL) != "" {
+					return "该地址可作为后续治理聚合、观测与 smoke probe 的落点。"
+				}
+				return "未配置探针地址时，治理后台无法展示统一运行状态。"
+			}(),
+		},
+	}
+	if authMode == "centralized_login" {
+		previews = append(previews, AppPreflightPreviewItem{
+			Label: "认证回跳",
+			Value: firstNonEmpty(strings.Join(allowedRedirectHosts, ", "), "未登记 callback host"),
+			Hint:  "redirect_uri 校验当前复用 APP host binding 与 callback_host 元数据。",
+		})
+	}
+
+	return &AppPreflightResponse{
+		AppKey:         record.AppKey,
+		Name:           record.Name,
+		RequestHost:    spacepkg.NormalizeHost(requestHost),
+		ManifestURL:    record.ManifestURL,
+		RuntimeVersion: record.RuntimeVersion,
+		ProbeStatus:    record.ProbeStatus,
+		ProbeTarget:    record.ProbeTarget,
+		ProbeMessage:   record.ProbeMessage,
+		ProbeCheckedAt: record.ProbeCheckedAt,
+		Summary:        buildAppPreflightSummary(checks),
+		Checks:         checks,
+		PreviewItems:   previews,
+	}, nil
+}
+
 func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	if req == nil {
 		return nil, errors.New("应用参数不能为空")
@@ -372,6 +671,11 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	if authMode == "" {
 		authMode = "inherit_host"
 	}
+	normalizedMeta, err := normalizeGovernanceMeta(req.Meta)
+	if err != nil {
+		return nil, err
+	}
+	applyAppRemoteContract(normalizedMeta, req.ManifestURL, req.RuntimeVersion)
 
 	payload := models.App{
 		AppKey:           appKey,
@@ -386,7 +690,7 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		Capabilities:     normalizeMetaJSON(req.Capabilities),
 		Status:           status,
 		IsDefault:        req.IsDefault || appKey == models.DefaultAppKey,
-		Meta:             normalizeMetaJSON(req.Meta),
+		Meta:             normalizedMeta,
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -975,6 +1279,521 @@ func normalizeMetaJSON(value map[string]interface{}) models.MetaJSON {
 		return models.MetaJSON{}
 	}
 	return models.MetaJSON(value)
+}
+
+func appManifestURL(meta models.MetaJSON) string {
+	if len(meta) == 0 {
+		return ""
+	}
+	for _, key := range []string{"manifest_url", "manifestUrl", "remote_manifest_url", "remoteManifestUrl"} {
+		if value := strings.TrimSpace(fmt.Sprint(meta[key])); value != "" && value != "<nil>" {
+			return value
+		}
+	}
+	return ""
+}
+
+func appRuntimeVersion(meta models.MetaJSON) string {
+	if len(meta) == 0 {
+		return ""
+	}
+	for _, key := range []string{"runtime_version", "runtimeVersion", "version"} {
+		if value := strings.TrimSpace(fmt.Sprint(meta[key])); value != "" && value != "<nil>" {
+			return value
+		}
+	}
+	return ""
+}
+
+func appProbeStatus(item models.App) string {
+	if strings.TrimSpace(item.HealthCheckURL) == "" {
+		return "missing"
+	}
+	return "configured"
+}
+
+type appProbeResult struct {
+	Status    string
+	Target    string
+	Message   string
+	CheckedAt *time.Time
+}
+
+func applyAppRemoteContract(meta models.MetaJSON, manifestURL string, runtimeVersion string) {
+	if meta == nil {
+		return
+	}
+	upsertMetaString(meta, "manifest_url", strings.TrimSpace(manifestURL))
+	delete(meta, "manifestUrl")
+	delete(meta, "remote_manifest_url")
+	delete(meta, "remoteManifestUrl")
+	upsertMetaString(meta, "runtime_version", strings.TrimSpace(runtimeVersion))
+	delete(meta, "runtimeVersion")
+	delete(meta, "version")
+}
+
+func upsertMetaString(meta models.MetaJSON, key string, value string) {
+	if meta == nil {
+		return
+	}
+	if value == "" {
+		delete(meta, key)
+		return
+	}
+	meta[key] = value
+}
+
+func probeAppHealth(item models.App, primaryHosts []string) appProbeResult {
+	healthPath := strings.TrimSpace(item.HealthCheckURL)
+	if healthPath == "" {
+		return appProbeResult{Status: "missing", Message: "未配置 health_check_url"}
+	}
+
+	targets := collectAppProbeTargets(item, primaryHosts)
+	if len(targets) == 0 {
+		return appProbeResult{Status: "unreachable", Message: "缺少可探测 host 或绝对探针地址"}
+	}
+
+	var (
+		lastMessage  string
+		timeoutCount int
+	)
+	for _, target := range targets {
+		status, message := probeHealthTarget(target)
+		checkedAt := time.Now()
+		if status == "healthy" {
+			return appProbeResult{
+				Status:    status,
+				Target:    target,
+				Message:   message,
+				CheckedAt: &checkedAt,
+			}
+		}
+		if status == "timeout" {
+			timeoutCount++
+		}
+		lastMessage = message
+	}
+
+	checkedAt := time.Now()
+	if timeoutCount == len(targets) {
+		return appProbeResult{
+			Status:    "timeout",
+			Target:    targets[0],
+			Message:   firstNonEmpty(lastMessage, "探针请求超时"),
+			CheckedAt: &checkedAt,
+		}
+	}
+	return appProbeResult{
+		Status:    "unreachable",
+		Target:    targets[0],
+		Message:   firstNonEmpty(lastMessage, "探针请求失败"),
+		CheckedAt: &checkedAt,
+	}
+}
+
+func collectAppProbeTargets(item models.App, primaryHosts []string) []string {
+	healthPath := strings.TrimSpace(item.HealthCheckURL)
+	if healthPath == "" {
+		return nil
+	}
+	if absoluteProbeURL(healthPath) {
+		return []string{healthPath}
+	}
+
+	targets := make([]string, 0, len(primaryHosts))
+	for _, rawHost := range primaryHosts {
+		normalizedHost := strings.TrimSpace(rawHost)
+		if normalizedHost == "" {
+			continue
+		}
+		scheme := "http"
+		if strings.HasPrefix(strings.ToLower(normalizedHost), "https://") {
+			scheme = "https"
+			normalizedHost = strings.TrimPrefix(strings.TrimPrefix(normalizedHost, "https://"), "http://")
+		} else if strings.HasPrefix(strings.ToLower(normalizedHost), "http://") {
+			normalizedHost = strings.TrimPrefix(strings.TrimPrefix(normalizedHost, "http://"), "https://")
+		}
+		targets = append(targets, fmt.Sprintf("%s://%s%s", scheme, normalizedHost, ensureLeadingSlash(healthPath)))
+	}
+	return dedupeStrings(targets)
+}
+
+func probeHealthTarget(target string) (string, string) {
+	req, err := http.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		return "unreachable", fmt.Sprintf("探针地址非法: %v", err)
+	}
+	resp, err := appProbeHTTPClient.Do(req)
+	if err != nil {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return "timeout", "探针请求超时"
+		}
+		return "unreachable", err.Error()
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+		return "healthy", fmt.Sprintf("HTTP %d", resp.StatusCode)
+	}
+	return "unreachable", fmt.Sprintf("HTTP %d", resp.StatusCode)
+}
+
+func absoluteProbeURL(value string) bool {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	return err == nil && parsed != nil && parsed.Scheme != "" && parsed.Host != ""
+}
+
+func ensureLeadingSlash(value string) string {
+	if strings.HasPrefix(value, "/") {
+		return value
+	}
+	return "/" + value
+}
+
+func dedupeStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		normalized := strings.TrimSpace(value)
+		if normalized == "" {
+			continue
+		}
+		if _, ok := seen[normalized]; ok {
+			continue
+		}
+		seen[normalized] = struct{}{}
+		out = append(out, normalized)
+	}
+	return out
+}
+
+func normalizeGovernanceMeta(value map[string]interface{}) (models.MetaJSON, error) {
+	normalized := normalizeMetaJSON(value)
+	if len(normalized) == 0 {
+		return models.MetaJSON{}, nil
+	}
+
+	out := models.MetaJSON{}
+	for key, raw := range normalized {
+		out[key] = raw
+	}
+
+	if raw, ok := normalized["env_profiles"]; ok {
+		section, err := normalizeEnvProfiles(raw)
+		if err != nil {
+			return nil, err
+		}
+		out["env_profiles"] = section
+	}
+	if raw, ok := normalized["feature_flags"]; ok {
+		section, err := normalizeFeatureFlags(raw)
+		if err != nil {
+			return nil, err
+		}
+		out["feature_flags"] = section
+	}
+	if raw, ok := normalized["sensitive_config"]; ok {
+		section, err := normalizeSensitiveConfig(raw)
+		if err != nil {
+			return nil, err
+		}
+		out["sensitive_config"] = section
+	}
+
+	return out, nil
+}
+
+func normalizeEnvProfiles(raw interface{}) (models.MetaJSON, error) {
+	items, ok := toMetaObject(raw)
+	if !ok {
+		return nil, errors.New("meta.env_profiles 必须是对象，且每个环境节点都必须是对象")
+	}
+	out := models.MetaJSON{}
+	for key, value := range items {
+		name := strings.TrimSpace(key)
+		if name == "" {
+			return nil, errors.New("meta.env_profiles 环境名不能为空")
+		}
+		profile, ok := toMetaObject(value)
+		if !ok {
+			return nil, fmt.Errorf("meta.env_profiles.%s 必须是对象", name)
+		}
+		normalizedValue, err := normalizeJSONObject(profile)
+		if err != nil {
+			return nil, fmt.Errorf("meta.env_profiles.%s %w", name, err)
+		}
+		out[name] = normalizedValue
+	}
+	return out, nil
+}
+
+func normalizeFeatureFlags(raw interface{}) (models.MetaJSON, error) {
+	items, ok := toMetaObject(raw)
+	if !ok {
+		return nil, errors.New("meta.feature_flags 必须是对象")
+	}
+	out := models.MetaJSON{}
+	for key, value := range items {
+		name := strings.TrimSpace(key)
+		if name == "" {
+			return nil, errors.New("meta.feature_flags flag 名不能为空")
+		}
+		switch typed := value.(type) {
+		case bool:
+			out[name] = typed
+		case map[string]interface{}:
+			override := models.MetaJSON{}
+			for env, envValue := range typed {
+				envKey := strings.TrimSpace(env)
+				if envKey == "" {
+					return nil, fmt.Errorf("meta.feature_flags.%s 覆盖键不能为空", name)
+				}
+				boolValue, ok := envValue.(bool)
+				if !ok {
+					return nil, fmt.Errorf("meta.feature_flags.%s.%s 必须是布尔值", name, envKey)
+				}
+				override[envKey] = boolValue
+			}
+			out[name] = override
+		default:
+			return nil, fmt.Errorf("meta.feature_flags.%s 必须是布尔值或环境覆盖对象", name)
+		}
+	}
+	return out, nil
+}
+
+func normalizeSensitiveConfig(raw interface{}) (models.MetaJSON, error) {
+	items, ok := toMetaObject(raw)
+	if !ok {
+		return nil, errors.New("meta.sensitive_config 必须是对象")
+	}
+	out := models.MetaJSON{}
+	for key, value := range items {
+		name := strings.TrimSpace(key)
+		if name == "" {
+			return nil, errors.New("meta.sensitive_config 键不能为空")
+		}
+		normalizedValue, err := normalizeSensitiveValue(value)
+		if err != nil {
+			return nil, fmt.Errorf("meta.sensitive_config.%s %w", name, err)
+		}
+		out[name] = normalizedValue
+	}
+	return out, nil
+}
+
+func normalizeJSONObject(input map[string]interface{}) (models.MetaJSON, error) {
+	out := models.MetaJSON{}
+	for key, value := range input {
+		name := strings.TrimSpace(key)
+		if name == "" {
+			return nil, errors.New("对象键不能为空")
+		}
+		normalizedValue, err := normalizeLooseJSONValue(value)
+		if err != nil {
+			return nil, fmt.Errorf("%s", err)
+		}
+		out[name] = normalizedValue
+	}
+	return out, nil
+}
+
+func normalizeLooseJSONValue(value interface{}) (interface{}, error) {
+	switch typed := value.(type) {
+	case nil:
+		return nil, nil
+	case string:
+		return strings.TrimSpace(typed), nil
+	case bool, float64, float32, int, int32, int64, uint, uint32, uint64:
+		return typed, nil
+	case map[string]interface{}:
+		return normalizeJSONObject(typed)
+	case []interface{}:
+		out := make([]interface{}, 0, len(typed))
+		for _, item := range typed {
+			normalized, err := normalizeLooseJSONValue(item)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, normalized)
+		}
+		return out, nil
+	default:
+		return nil, fmt.Errorf("包含不支持的值类型 %T", value)
+	}
+}
+
+func normalizeSensitiveValue(value interface{}) (interface{}, error) {
+	switch typed := value.(type) {
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if trimmed == "" {
+			return "", errors.New("字符串不能为空")
+		}
+		return trimmed, nil
+	case []interface{}:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			raw, ok := item.(string)
+			if !ok {
+				return nil, errors.New("数组元素必须全部为字符串")
+			}
+			trimmed := strings.TrimSpace(raw)
+			if trimmed == "" {
+				return nil, errors.New("数组元素不能为空字符串")
+			}
+			out = append(out, trimmed)
+		}
+		return out, nil
+	case map[string]interface{}:
+		return normalizeJSONObject(typed)
+	default:
+		return nil, fmt.Errorf("必须是字符串、字符串数组或对象，当前为 %T", value)
+	}
+}
+
+func toMetaObject(value interface{}) (map[string]interface{}, bool) {
+	if value == nil {
+		return map[string]interface{}{}, true
+	}
+	switch typed := value.(type) {
+	case map[string]interface{}:
+		return typed, true
+	case models.MetaJSON:
+		out := make(map[string]interface{}, len(typed))
+		for key, item := range typed {
+			out[key] = item
+		}
+		return out, true
+	default:
+		return nil, false
+	}
+}
+
+func newPreflightCheck(key, title string, passed bool, failLevel string, value, hint string) AppPreflightCheckItem {
+	level := "success"
+	if !passed {
+		level = strings.TrimSpace(failLevel)
+		if level == "" {
+			level = "warning"
+		}
+	}
+	return AppPreflightCheckItem{
+		Key:    key,
+		Title:  title,
+		Level:  level,
+		Passed: passed,
+		Value:  strings.TrimSpace(value),
+		Hint:   strings.TrimSpace(hint),
+	}
+}
+
+func buildAppPreflightSummary(checks []AppPreflightCheckItem) AppPreflightSummary {
+	summary := AppPreflightSummary{Level: "success"}
+	for _, item := range checks {
+		switch item.Level {
+		case "blocking":
+			summary.BlockingCount++
+		case "warning":
+			summary.WarningCount++
+		case "info":
+			summary.InfoCount++
+		default:
+			summary.SuccessCount++
+		}
+	}
+	switch {
+	case summary.BlockingCount > 0:
+		summary.Level = "blocking"
+	case summary.WarningCount > 0:
+		summary.Level = "warning"
+	case summary.InfoCount > 0:
+		summary.Level = "info"
+	default:
+		summary.Level = "success"
+	}
+	return summary
+}
+
+func pickPrimaryHostBinding(items []HostBindingRecord) *HostBindingRecord {
+	if len(items) == 0 {
+		return nil
+	}
+	for i := range items {
+		if items[i].IsPrimary {
+			return &items[i]
+		}
+	}
+	return &items[0]
+}
+
+func describePrimaryBinding(item *HostBindingRecord) string {
+	if item == nil {
+		return "未配置"
+	}
+	host := strings.TrimSpace(item.Host)
+	pathPattern := strings.TrimSpace(item.PathPattern)
+	switch item.MatchType {
+	case pathmatch.PathPrefix:
+		return firstNonEmpty(pathPattern, "未配置")
+	case pathmatch.HostAndPath:
+		if host != "" && pathPattern != "" {
+			return host + pathPattern
+		}
+		return firstNonEmpty(host, pathPattern, "未配置")
+	default:
+		if host != "" {
+			return host
+		}
+		return firstNonEmpty(pathPattern, "未配置")
+	}
+}
+
+func collectAllowedRedirectHosts(items []HostBindingRecord) []string {
+	seen := make(map[string]struct{}, len(items)*2)
+	out := make([]string, 0, len(items)*2)
+	for _, item := range items {
+		for _, candidate := range []string{
+			strings.TrimSpace(item.Host),
+			strings.TrimSpace(metaString(item.Meta, "callback_host", "callbackHost")),
+		} {
+			normalized := strings.TrimSpace(candidate)
+			if normalized == "" {
+				continue
+			}
+			if _, ok := seen[normalized]; ok {
+				continue
+			}
+			seen[normalized] = struct{}{}
+			out = append(out, normalized)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func metaString(meta models.MetaJSON, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := meta[key]; ok {
+			if text, ok := value.(string); ok {
+				return strings.TrimSpace(text)
+			}
+		}
+	}
+	return ""
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func loadDefaultApp(db *gorm.DB) (*models.App, error) {

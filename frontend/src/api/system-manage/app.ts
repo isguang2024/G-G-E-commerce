@@ -65,9 +65,7 @@ export async function fetchGetCurrentMenuSpace(spaceKey: string | undefined, app
   const query: V5Query<'/system/menu-spaces/current', 'get'> = {}
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
-  const res = await unwrap(
-    v5Client.GET('/system/menu-spaces/current', { params: { query } })
-  )
+  const res = await unwrap(v5Client.GET('/system/menu-spaces/current', { params: { query } }))
   return {
     space: normalizeMenuSpace(res?.space || {}),
     binding: res?.binding ? normalizeMenuSpaceHostBinding(res.binding) : undefined,
@@ -108,6 +106,8 @@ export async function fetchSaveApp(data: Api.SystemManage.AppSaveParams) {
     frontend_entry_url: data.frontend_entry_url,
     backend_entry_url: data.backend_entry_url,
     health_check_url: data.health_check_url,
+    manifest_url: data.manifest_url,
+    runtime_version: data.runtime_version,
     capabilities: data.capabilities,
     status: data.status,
     is_default: data.is_default,
@@ -130,6 +130,46 @@ export async function fetchGetCurrentApp(appKey?: string) {
     resolvedBy: `${res?.resolved_by || ''}`.trim(),
     requestHost: `${res?.request_host || ''}`.trim()
   }
+}
+
+export async function fetchGetAppPreflight(appKey: string) {
+  const query: V5Query<'/system/apps/preflight', 'get'> = { app_key: appKey }
+  const res = await unwrap(
+    v5Client.GET('/system/apps/preflight', {
+      params: { query }
+    })
+  )
+  return {
+    appKey: `${res?.app_key || appKey}`.trim(),
+    name: `${res?.name || ''}`.trim(),
+    requestHost: `${res?.request_host || ''}`.trim(),
+    manifestUrl: `${res?.manifest_url || ''}`.trim(),
+    runtimeVersion: `${res?.runtime_version || ''}`.trim(),
+    probeStatus: `${res?.probe_status || ''}`.trim(),
+    probeTarget: `${res?.probe_target || ''}`.trim(),
+    probeMessage: `${res?.probe_message || ''}`.trim(),
+    probeCheckedAt: `${res?.probe_checked_at || ''}`.trim(),
+    summary: {
+      level: `${res?.summary?.level || 'info'}`.trim() || 'info',
+      blockingCount: Number(res?.summary?.blocking_count || 0),
+      warningCount: Number(res?.summary?.warning_count || 0),
+      infoCount: Number(res?.summary?.info_count || 0),
+      successCount: Number(res?.summary?.success_count || 0)
+    },
+    checks: (res?.checks || []).map((item) => ({
+      key: `${item?.key || ''}`.trim(),
+      title: `${item?.title || ''}`.trim(),
+      level: `${item?.level || 'info'}`.trim() || 'info',
+      passed: Boolean(item?.passed),
+      value: `${item?.value || ''}`.trim(),
+      hint: `${item?.hint || ''}`.trim()
+    })),
+    previewItems: (res?.preview_items || []).map((item) => ({
+      label: `${item?.label || ''}`.trim(),
+      value: `${item?.value || ''}`.trim(),
+      hint: `${item?.hint || ''}`.trim()
+    }))
+  } as Api.SystemManage.AppPreflightResponse
 }
 
 export async function fetchGetAppHostBindings(appKey?: string) {
@@ -262,8 +302,7 @@ export async function fetchInitializeMenuSpaceFromDefault(
   )
   return {
     sourceSpaceKey: res?.source_space_key || '',
-    targetSpaceKey:
-      res?.target_space_key || normalizeMenuSpaceKey(spaceKey),
+    targetSpaceKey: res?.target_space_key || normalizeMenuSpaceKey(spaceKey),
     forceReinitialized: Boolean(res?.force_reinitialized ?? false),
     clearedMenuCount: Number(res?.cleared_menu_count ?? 0),
     clearedPageCount: Number(res?.cleared_page_count ?? 0),
@@ -276,10 +315,7 @@ export async function fetchInitializeMenuSpaceFromDefault(
 
 export async function fetchGetMenuSpaceHostBindings(appKey: string) {
   void appKey
-  const res = await unwrap(
-    v5Client.GET('/system/menu-space-host-bindings', {
-    })
-  )
+  const res = await unwrap(v5Client.GET('/system/menu-space-host-bindings', {}))
   return {
     records: (res?.records || []).map(normalizeMenuSpaceHostBinding),
     total: res?.total || 0

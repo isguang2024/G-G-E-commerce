@@ -41,6 +41,8 @@ func (h *APIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest)
 		FrontendEntryURL: optString(req.FrontendEntryURL),
 		BackendEntryURL:  optString(req.BackendEntryURL),
 		HealthCheckURL:   optString(req.HealthCheckURL),
+		ManifestURL:      optString(req.ManifestURL),
+		RuntimeVersion:   optString(req.RuntimeVersion),
 		Capabilities:     optSystemAppCapabilitiesToMap(req.Capabilities),
 		Status:           optString(req.Status),
 		IsDefault:        optBool(req.IsDefault),
@@ -167,6 +169,15 @@ func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentApp
 		return nil, err
 	}
 	return systemCurrentAppResponseFromModel(resp)
+}
+
+func (h *APIHandler) GetAppPreflight(ctx context.Context, params gen.GetAppPreflightParams) (*gen.SystemAppPreflightResponse, error) {
+	resp, err := h.appSvc.GetAppPreflight(params.AppKey, requestHostFromCtx(ctx))
+	if err != nil {
+		h.logger.Error("get app preflight failed", zap.Error(err))
+		return nil, err
+	}
+	return systemAppPreflightResponseFromModel(resp)
 }
 
 // -------- spaces --------
@@ -366,6 +377,17 @@ func systemCurrentAppResponseFromModel(item *appmod.CurrentResponse) (*gen.Syste
 		return &gen.SystemCurrentAppResponse{}, nil
 	}
 	out, err := mapJSON[gen.SystemCurrentAppResponse](item)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func systemAppPreflightResponseFromModel(item *appmod.AppPreflightResponse) (*gen.SystemAppPreflightResponse, error) {
+	if item == nil {
+		return &gen.SystemAppPreflightResponse{}, nil
+	}
+	out, err := mapJSON[gen.SystemAppPreflightResponse](item)
 	if err != nil {
 		return nil, err
 	}

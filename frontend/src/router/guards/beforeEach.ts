@@ -57,7 +57,11 @@ import { useWorkspaceStore } from '@/store/modules/workspace'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { useAppContextStore } from '@/store/modules/app-context'
 import { fetchGetUserInfo } from '@/api/auth'
-import { fetchGetRuntimeNavigation, fetchGetRuntimePublicPageList } from '@/api/system-manage'
+import {
+  fetchGetCurrentApp,
+  fetchGetRuntimeNavigation,
+  fetchGetRuntimePublicPageList
+} from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
@@ -156,7 +160,9 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
       frontendEntryUrl: manifest.currentApp?.app?.frontendEntryUrl || '',
       backendEntryUrl: manifest.currentApp?.app?.backendEntryUrl || '',
       healthCheckUrl: manifest.currentApp?.app?.healthCheckUrl || '',
-      capabilities: manifest.currentApp?.app?.capabilities
+      authMode: manifest.currentApp?.app?.authMode || '',
+      capabilities: manifest.currentApp?.app?.capabilities,
+      meta: manifest.currentApp?.app?.meta || {}
     })
   }
   const resolvedSpaceKey = normalizeMenuSpaceKey(
@@ -404,7 +410,7 @@ async function handleRouteGuard(
   }
 
   // 1. 检查登录状态
-  if (!handleLoginStatus(to, userStore, next)) {
+  if (!(await handleLoginStatus(to, userStore, next))) {
     return
   }
 
@@ -505,7 +511,7 @@ function handleLoginStatus(
   to: RouteLocationNormalized,
   userStore: ReturnType<typeof useUserStore>,
   next: NavigationGuardNext
-): boolean {
+): Promise<boolean> {
   // 已登录或访问登录页或静态路由，直接放行
   if (
     userStore.isLogin ||
@@ -513,18 +519,27 @@ function handleLoginStatus(
     isStaticRoute(to.path) ||
     isPublicRuntimeRoute(to)
   ) {
-    return true
+    return Promise.resolve(true)
   }
+  return resolveLoginRedirectPolicy(to, userStore, next)
+}
 
+async function resolveLoginRedirectPolicy(
+  to: RouteLocationNormalized,
+  userStore: ReturnType<typeof useUserStore>,
+  next: NavigationGuardNext
+): Promise<boolean> {
   const appContextStore = useAppContextStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const targetAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
+  const targetAppKey = await resolveTargetAppKey(to, appContextStore)
   const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
   const binding = menuSpaceStore.resolveHostBinding(preferredSpaceKey)
-  const shouldUseCentralizedLogin =
-    Boolean(targetAppKey) && targetAppKey !== 'account-portal'
+  const shouldUseCentralizedLogin = await resolveCentralizedLoginPolicy(
+    targetAppKey,
+    appContextStore
+  )
 
-  if (shouldUseCentralizedLogin && typeof window !== 'undefined') {
+  if (shouldUseCentralizedLogin && targetAppKey && typeof window !== 'undefined') {
     userStore.clearSessionState()
     const redirectUri = new URL(RoutesAlias.AuthCallback, window.location.origin).toString()
     const attempt = createCentralizedAuthAttempt(
@@ -609,6 +624,93 @@ async function ensurePublicRuntimeRoutes(
 
 function inferPublicRuntimeAppKey(path: string, runtimeAppKey?: string): string {
   return inferRuntimeAppKeyByPath(path, runtimeAppKey)
+}
+
+function resolveRouteMetaAppKey(to: RouteLocationNormalized): string {
+  for (const record of [...to.matched].reverse()) {
+    const appKey = `${record.meta?.appKey || ''}`.trim()
+    if (appKey) {
+      return appKey
+    }
+  }
+  return ''
+}
+
+async function resolveTargetAppKey(
+  to: RouteLocationNormalized,
+  appContextStore: ReturnType<typeof useAppContextStore>
+): Promise<string> {
+  const routeMetaAppKey = resolveRouteMetaAppKey(to)
+  if (routeMetaAppKey) {
+    return routeMetaAppKey
+  }
+
+  const inferredPathAppKey = inferRuntimeAppKeyByPath(to.path, '')
+  if (inferredPathAppKey) {
+    return inferredPathAppKey
+  }
+
+  const managedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
+  if (managedAppKey) {
+    return managedAppKey
+  }
+
+  const runtimeAppKey = `${appContextStore.currentRuntimeAppKey || ''}`.trim()
+  if (runtimeAppKey) {
+    return runtimeAppKey
+  }
+
+  return inferRuntimeAppKeyByPath(to.path, runtimeAppKey)
+}
+
+async function resolveCentralizedLoginPolicy(
+  targetAppKey: string,
+  appContextStore: ReturnType<typeof useAppContextStore>
+): Promise<boolean> {
+  const normalizedAppKey = `${targetAppKey || ''}`.trim()
+  if (!normalizedAppKey) {
+    return false
+  }
+
+  if (
+    !appContextStore.resolveAppAuthMode(normalizedAppKey) &&
+    Object.keys(appContextStore.resolveAppCapabilities(normalizedAppKey)).length === 0
+  ) {
+    try {
+      const response = await fetchGetCurrentApp(normalizedAppKey)
+      appContextStore.setAppProfile({
+        appKey: response?.app?.appKey || normalizedAppKey,
+        authMode: response?.app?.authMode || '',
+        capabilities: response?.app?.capabilities || {},
+        meta: response?.app?.meta || {}
+      })
+    } catch (error) {
+      console.warn('[RouteGuard] 预热 app 认证策略失败，回退本地上下文', error)
+    }
+  }
+
+  if (appContextStore.shouldUseCentralizedLoginForApp(normalizedAppKey)) {
+    return true
+  }
+
+  const authMode = `${appContextStore.resolveAppAuthMode(normalizedAppKey) || ''}`.trim()
+  const capabilities = appContextStore.resolveAppCapabilities(normalizedAppKey)
+  const authConfig =
+    capabilities && typeof capabilities.auth === 'object' && !Array.isArray(capabilities.auth)
+      ? capabilities.auth
+      : null
+
+  if (normalizedAppKey === 'account-portal') {
+    return false
+  }
+
+  if (!authMode || authMode === 'inherit_host') {
+    if (!authConfig || Object.keys(authConfig).length === 0) {
+      return true
+    }
+  }
+
+  return false
 }
 
 function inferRuntimeAppKeyByPath(path: string, runtimeAppKey?: string): string {

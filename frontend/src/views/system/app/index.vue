@@ -77,7 +77,10 @@
                 <span>·</span>
                 <span>默认 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
                 <span>·</span>
-                <span>{{ item.menuSpaceCount || 0 }} 空间 / {{ item.menuCount || 0 }} 菜单 / {{ item.pageCount || 0 }} 页面</span>
+                <span
+                  >{{ item.menuSpaceCount || 0 }} 空间 / {{ item.menuCount || 0 }} 菜单 /
+                  {{ item.pageCount || 0 }} 页面</span
+                >
               </div>
               <p v-if="item.description" class="app-manage-item__desc">{{ item.description }}</p>
             </div>
@@ -95,7 +98,8 @@
             <div>
               <div class="app-manage-panel__title">APP 入口解析绑定</div>
               <div class="app-manage-panel__desc"
-                >按 Host / 路径模式匹配进入 APP，未命中时退回默认 App。支持精确域名、子域名通配、路径前缀和 host+path 组合。</div
+                >按 Host / 路径模式匹配进入 APP，未命中时退回默认
+                App。支持精确域名、子域名通配、路径前缀和 host+path 组合。</div
               >
             </div>
             <div class="app-manage-panel__status">
@@ -116,7 +120,8 @@
             >
             <span>·</span>
             <span
-              >默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span
+              >默认空间
+              <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span
             >
             <span>·</span>
             <span
@@ -136,14 +141,18 @@
             <div class="app-governance-card__header">
               <div>
                 <div class="app-governance-card__title">注册中心字段总览</div>
-                <div class="app-governance-card__desc">把入口、认证、运行能力与治理约束拆开看，避免都堆在 JSON 里。</div>
+                <div class="app-governance-card__desc"
+                  >把入口、认证、运行能力与治理约束拆开看，避免都堆在 JSON 里。</div
+                >
               </div>
               <ElTag size="small" effect="plain" :type="appReadinessTagType">
                 {{ appReadinessLabel }}
               </ElTag>
             </div>
             <div class="app-governance-meta">
-              <span>空间模式 {{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
+              <span
+                >空间模式 {{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</span
+              >
               <span>认证 {{ authModeLabel(selectedAppRecord.authMode) }}</span>
               <span>入口绑定 {{ hostBindings.length || 0 }}</span>
               <span>空间入口 {{ spaceEntryBindings.length || 0 }}</span>
@@ -165,15 +174,14 @@
             <div class="app-governance-card__header">
               <div>
                 <div class="app-governance-card__title">接入预检查与本地预演</div>
-                <div class="app-governance-card__desc">当前没有后端 dry-run 接口，这里只做基于现有配置的静态演练，不替代真实联调。</div>
+                <div class="app-governance-card__desc"
+                  >后端会聚合注册中心、入口绑定和认证配置输出 dry-run
+                  结果，前端只负责展示，不再本地拼接结论。</div
+                >
               </div>
             </div>
             <div class="app-preview-list">
-              <div
-                v-for="item in appDryRunPreview"
-                :key="item.label"
-                class="app-preview-item"
-              >
+              <div v-for="item in appDryRunPreview" :key="item.label" class="app-preview-item">
                 <div class="app-preview-item__label">{{ item.label }}</div>
                 <code class="app-preview-item__value">{{ item.value }}</code>
                 <div class="app-preview-item__hint">{{ item.hint }}</div>
@@ -185,15 +193,14 @@
             <div class="app-governance-card__header">
               <div>
                 <div class="app-governance-card__title">运行能力与敏感配置</div>
-                <div class="app-governance-card__desc">能力声明适合描述 runtime/navigation/integration；密钥、证书、回调域名不要直接写在公开表单。</div>
+                <div class="app-governance-card__desc"
+                  >能力声明适合描述
+                  runtime/navigation/integration；密钥、证书、回调域名不要直接写在公开表单。</div
+                >
               </div>
             </div>
             <div class="app-capability-pills">
-              <span
-                v-for="item in capabilityHighlights"
-                :key="item"
-                class="app-capability-pill"
-              >
+              <span v-for="item in capabilityHighlights" :key="item" class="app-capability-pill">
                 {{ item }}
               </span>
               <span v-if="!capabilityHighlights.length" class="app-capability-pill is-soft">
@@ -201,11 +208,7 @@
               </span>
             </div>
             <div class="app-capability-pills app-capability-pills--meta">
-              <span
-                v-for="item in appMetaSections"
-                :key="item"
-                class="app-capability-pill is-soft"
-              >
+              <span v-for="item in appMetaSections" :key="item" class="app-capability-pill is-soft">
                 {{ item }}
               </span>
             </div>
@@ -260,7 +263,9 @@
                   <span v-if="item.description">{{ item.description }}</span>
                 </div>
               </div>
-              <ElButton text type="danger" size="small" @click.stop="deleteEntry(item)">删除</ElButton>
+              <ElButton text type="danger" size="small" @click.stop="deleteEntry(item)"
+                >删除</ElButton
+              >
             </div>
           </div>
         </div>
@@ -328,7 +333,9 @@
       <ElForm :model="appForm" label-position="top">
         <div class="app-form-section">
           <div class="app-form-section__title">基础标识</div>
-          <div class="app-form-section__desc">面向注册中心的稳定标识。`app_key` 创建后即作为跨端导航、权限和 host 解析主键。</div>
+          <div class="app-form-section__desc"
+            >面向注册中心的稳定标识。`app_key` 创建后即作为跨端导航、权限和 host 解析主键。</div
+          >
         </div>
         <ElFormItem label="应用名称">
           <ElInput v-model="appForm.name" placeholder="例如 平台管理后台" />
@@ -345,7 +352,9 @@
         </div>
         <div class="app-form-section">
           <div class="app-form-section__title">空间与认证</div>
-          <div class="app-form-section__desc">先决定多空间/单空间，再决定登录如何发生。登录方式决定是否需要单独的认证中心回跳治理。</div>
+          <div class="app-form-section__desc"
+            >先决定多空间/单空间，再决定登录如何发生。登录方式决定是否需要单独的认证中心回跳治理。</div
+          >
         </div>
         <ElFormItem v-if="editingAppKey" label="默认空间">
           <ElSelect
@@ -382,14 +391,32 @@
         </ElFormItem>
         <div class="app-form-section">
           <div class="app-form-section__title">运行入口与部署探针</div>
-          <div class="app-form-section__desc">这里放可公开的入口地址和健康检查地址。环境差异、feature flag 和部署 profile 建议继续放进 `meta` 的环境分组，而不是散落在 description。</div>
+          <div class="app-form-section__desc"
+            >这里放可公开的入口地址和健康检查地址。环境差异、feature flag 和部署 profile
+            建议继续放进 `meta` 的环境分组，而不是散落在 description。</div
+          >
         </div>
         <div class="app-drawer-grid">
           <ElFormItem label="前端入口地址">
-            <ElInput v-model="appForm.frontend_entry_url" placeholder="例如 /account 或 https://account.example.com" />
+            <ElInput
+              v-model="appForm.frontend_entry_url"
+              placeholder="例如 /account 或 https://account.example.com"
+            />
           </ElFormItem>
           <ElFormItem label="后端入口地址">
-            <ElInput v-model="appForm.backend_entry_url" placeholder="例如 /api 或 https://api.example.com" />
+            <ElInput
+              v-model="appForm.backend_entry_url"
+              placeholder="例如 /api 或 https://api.example.com"
+            />
+          </ElFormItem>
+          <ElFormItem label="Manifest 地址">
+            <ElInput
+              v-model="appForm.manifest_url"
+              placeholder="例如 https://cdn.example.com/app/manifest.json"
+            />
+          </ElFormItem>
+          <ElFormItem label="运行版本">
+            <ElInput v-model="appForm.runtime_version" placeholder="例如 2026.04.12-rc1" />
           </ElFormItem>
         </div>
         <ElFormItem label="健康检查地址">
@@ -397,7 +424,9 @@
         </ElFormItem>
         <div class="app-form-section">
           <div class="app-form-section__title">运行能力声明</div>
-          <div class="app-form-section__desc">把前端能力、集成方式、feature flag 读取能力写成结构化 JSON，避免靠命名约定猜测。</div>
+          <div class="app-form-section__desc"
+            >把前端能力、集成方式、feature flag 读取能力写成结构化 JSON，避免靠命名约定猜测。</div
+          >
         </div>
         <ElFormItem label="运行能力声明">
           <ElInput
@@ -413,7 +442,10 @@
         </ElFormItem>
         <div class="app-form-section">
           <div class="app-form-section__title">多环境与 Feature Flag</div>
-          <div class="app-form-section__desc">按 APP 维度维护环境 profile 与 feature flag。这里统一写结构化配置，避免同一应用的 dev/test/prod 规则散落在说明字段。</div>
+          <div class="app-form-section__desc"
+            >按 APP 维度维护环境 profile 与 feature flag。这里统一写结构化配置，避免同一应用的
+            dev/test/prod 规则散落在说明字段。</div
+          >
         </div>
         <ElFormItem label="环境配置（meta.env_profiles）">
           <ElInput
@@ -439,7 +471,9 @@
         </ElFormItem>
         <div class="app-form-section">
           <div class="app-form-section__title">治理补充</div>
-          <div class="app-form-section__desc">说明里写产品边界；敏感配置只记录键名、归属和托管方式，不直接录入明文。</div>
+          <div class="app-form-section__desc"
+            >说明里写产品边界；敏感配置只记录键名、归属和托管方式，不直接录入明文。</div
+          >
         </div>
         <ElFormItem label="敏感配置引用（meta.sensitive_config）">
           <ElInput
@@ -463,7 +497,8 @@
         <div class="app-sensitive-note">
           <div class="app-sensitive-note__title">敏感配置约束</div>
           <div class="app-sensitive-note__text">
-            密钥、证书、回调域名白名单、第三方 client secret 不要直接填在表单明文里；这里只保留引用键、用途和托管位置，实际值交给环境变量或密钥系统。
+            密钥、证书、回调域名白名单、第三方 client secret
+            不要直接填在表单明文里；这里只保留引用键、用途和托管位置，实际值交给环境变量或密钥系统。
           </div>
         </div>
         <div class="app-drawer-grid">
@@ -508,7 +543,8 @@
         <ElFormItem v-if="entryNeedsPath" label="路径模式">
           <ElInput v-model="entryForm.path_pattern" placeholder="例如 /admin/** 或 /shop/:id/**" />
           <div class="app-form-hint">
-            支持 <code>*</code>（单段通配）、<code>**</code>（多段通配）、<code>:name</code>（命名参数）
+            支持
+            <code>*</code>（单段通配）、<code>**</code>（多段通配）、<code>:name</code>（命名参数）
           </div>
         </ElFormItem>
         <ElFormItem label="默认空间">
@@ -590,7 +626,8 @@
         <ElFormItem v-if="spaceEntryNeedsPath" label="路径模式">
           <ElInput v-model="spaceEntryForm.path_pattern" placeholder="例如 /a/** 或 /shop/:id" />
           <div class="app-form-hint">
-            支持 <code>*</code> / <code>**</code> / <code>:name</code>，且必须落在 APP 入口规则范围内。
+            支持 <code>*</code> / <code>**</code> / <code>:name</code>，且必须落在 APP
+            入口规则范围内。
           </div>
         </ElFormItem>
         <ElFormItem label="说明">
@@ -637,6 +674,7 @@
   import {
     fetchGetApps,
     fetchGetAppHostBindings,
+    fetchGetAppPreflight,
     fetchGetCurrentApp,
     fetchGetMenuSpaces,
     fetchSaveApp,
@@ -661,6 +699,7 @@
   const spaceEntryBindings = ref<Api.SystemManage.MenuSpaceEntryBindingItem[]>([])
   const spaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const currentApp = ref<Api.SystemManage.CurrentAppResponse>()
+  const appPreflight = ref<Api.SystemManage.AppPreflightResponse>()
   const selectedAppKey = ref('')
 
   const appDrawerVisible = ref(false)
@@ -681,6 +720,8 @@
     frontend_entry_url: '',
     backend_entry_url: '',
     health_check_url: '',
+    manifest_url: '',
+    runtime_version: '',
     capabilities: {},
     is_default: false,
     status: 'normal',
@@ -810,10 +851,14 @@
   const appRegistrationChecks = computed(() => {
     const record = selectedAppRecord.value
     if (!record) return []
-    const hasPrimaryBinding = Boolean(record.primaryHost) || hostBindings.value.some((item) => item.isPrimary)
+    const hasPrimaryBinding =
+      Boolean(record.primaryHost) || hostBindings.value.some((item) => item.isPrimary)
     const hasFrontendEntry = Boolean(`${record.frontendEntryUrl || ''}`.trim())
     const hasBackendEntry = Boolean(`${record.backendEntryUrl || ''}`.trim())
     const hasHealthCheck = Boolean(`${record.healthCheckUrl || ''}`.trim())
+    const hasManifest = Boolean(`${record.manifestUrl || ''}`.trim())
+    const hasRuntimeVersion = Boolean(`${record.runtimeVersion || ''}`.trim())
+    const probeStatus = `${record.probeStatus || ''}`.trim()
     const hasRuntimeCapabilities = Boolean(
       record.capabilities && Object.keys(record.capabilities).length > 0
     )
@@ -844,12 +889,36 @@
           : '未声明后端入口，适合仍与主站共用 API 网关的场景。'
       },
       {
+        key: 'manifest',
+        title: '远端清单',
+        level: hasManifest ? 'success' : 'info',
+        text: hasManifest
+          ? `已声明 manifest 地址 ${record.manifestUrl}。`
+          : '未声明 manifest 地址，远端页来源仍需从页面契约补齐。'
+      },
+      {
+        key: 'runtime-version',
+        title: '运行版本',
+        level: hasRuntimeVersion ? 'success' : 'info',
+        text: hasRuntimeVersion
+          ? `当前登记运行版本 ${record.runtimeVersion}。`
+          : '未声明运行版本，治理台暂时无法直接比对远端接入版本。'
+      },
+      {
         key: 'health',
         title: '运行探针',
-        level: hasHealthCheck ? 'success' : 'info',
-        text: hasHealthCheck
-          ? `已声明健康检查地址 ${record.healthCheckUrl}。`
-          : '未声明健康检查地址，平台暂时无法统一展示运行探针。'
+        level:
+          probeStatus === 'healthy'
+            ? 'success'
+            : probeStatus === 'missing'
+              ? 'info'
+              : 'warning',
+        text:
+          probeStatus === 'healthy'
+            ? `探针最近一次探测成功：${record.probeTarget || record.healthCheckUrl || '已探测'}，${record.probeMessage || '运行正常'}。`
+            : probeStatus === 'missing'
+              ? '未声明健康检查地址，平台暂时无法统一展示运行探针。'
+              : `探针最近一次探测失败：${record.probeTarget || record.healthCheckUrl || '未命中目标'}，${record.probeMessage || '待排查'}。`
       },
       {
         key: 'auth',
@@ -871,6 +940,9 @@
     ]
   })
   const appReadinessTagType = computed(() => {
+    const backendLevel = `${appPreflight.value?.summary?.level || ''}`.trim()
+    if (backendLevel === 'blocking' || backendLevel === 'warning') return 'warning'
+    if (backendLevel === 'info') return 'info'
     const levels = appRegistrationChecks.value.map((item) => item.level)
     if (levels.includes('warning')) return 'warning'
     if (levels.includes('info')) return 'info'
@@ -887,12 +959,19 @@
     }
   })
   const appDryRunPreview = computed(() => {
+    if (appPreflight.value?.previewItems?.length) {
+      return appPreflight.value.previewItems
+    }
     const record = selectedAppRecord.value
     if (!record) return []
-    const primaryBinding = hostBindings.value.find((item) => item.isPrimary) || hostBindings.value[0]
+    const primaryBinding =
+      hostBindings.value.find((item) => item.isPrimary) || hostBindings.value[0]
     const entryRule = primaryBinding ? describeEntryRule(primaryBinding) : '未配置'
     const landing = `${record.frontendEntryUrl || ''}`.trim() || '继承当前地址'
-    const health = `${record.healthCheckUrl || ''}`.trim() || '未配置'
+    const manifest = `${record.manifestUrl || ''}`.trim() || '未配置'
+    const health = `${record.probeStatus || ''}`.trim()
+      ? `${record.probeStatus}${record.probeTarget ? ` · ${record.probeTarget}` : ''}`
+      : `${record.healthCheckUrl || ''}`.trim() || '未配置'
     return [
       {
         label: '入口命中',
@@ -900,6 +979,14 @@
         hint: primaryBinding
           ? `按 ${matchTypeLabel(primaryBinding.matchType)} 规则进入 ${record.appKey}。`
           : '当前没有 APP 入口规则，只能依赖默认 App。'
+      },
+      {
+        label: 'Manifest',
+        value: manifest,
+        hint:
+          manifest === '未配置'
+            ? '远端页治理仍会缺少统一清单来源。'
+            : '远端模块、版本和页面入口应优先与该清单对齐。'
       },
       {
         label: '首跳落点',
@@ -912,7 +999,10 @@
       {
         label: '健康探针',
         value: health,
-        hint: health === '未配置' ? '暂时无法做统一探针聚合。' : '可作为联调和运行状态检查入口。'
+        hint:
+          health === '未配置'
+            ? '暂时无法做统一探针聚合。'
+            : record.probeMessage || '可作为联调和运行状态检查入口。'
       }
     ]
   })
@@ -1057,14 +1147,16 @@
     }
     selectedAppKey.value = normalizedAppKey
     await setManagedAppKey(normalizedAppKey)
-    const [hostRes, spaceRes, entryRes] = await Promise.all([
+    const [hostRes, spaceRes, entryRes, preflightRes] = await Promise.all([
       fetchGetAppHostBindings(normalizedAppKey),
       fetchGetMenuSpaces(normalizedAppKey),
-      fetchGetMenuSpaceEntryBindings(normalizedAppKey).catch(() => ({ records: [] as any[] }))
+      fetchGetMenuSpaceEntryBindings(normalizedAppKey).catch(() => ({ records: [] as any[] })),
+      fetchGetAppPreflight(normalizedAppKey).catch(() => undefined)
     ])
     hostBindings.value = hostRes.records || []
     spaces.value = spaceRes.records || []
     spaceEntryBindings.value = (entryRes.records || []) as any
+    appPreflight.value = preflightRes
   }
 
   async function loadData() {
@@ -1079,6 +1171,7 @@
         selectedAppKey.value = ''
         hostBindings.value = []
         spaces.value = []
+        appPreflight.value = undefined
         loadError.value = managedAppMissingText
         return
       }
@@ -1088,6 +1181,7 @@
       hostBindings.value = []
       spaces.value = []
       spaceEntryBindings.value = []
+      appPreflight.value = undefined
       loadError.value = error?.message || '应用数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
@@ -1101,11 +1195,13 @@
     appForm.description = ''
     appForm.space_mode = 'single'
     appForm.default_space_key = ''
-    appForm.auth_mode = 'inherit_host'
-    appForm.frontend_entry_url = ''
-    appForm.backend_entry_url = ''
-    appForm.health_check_url = ''
-    appForm.capabilities = {}
+      appForm.auth_mode = 'inherit_host'
+      appForm.frontend_entry_url = ''
+      appForm.backend_entry_url = ''
+      appForm.health_check_url = ''
+      appForm.manifest_url = ''
+      appForm.runtime_version = ''
+      appForm.capabilities = {}
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
@@ -1159,13 +1255,17 @@
       appForm.frontend_entry_url = item.frontendEntryUrl || ''
       appForm.backend_entry_url = item.backendEntryUrl || ''
       appForm.health_check_url = item.healthCheckUrl || ''
+      appForm.manifest_url = item.manifestUrl || ''
+      appForm.runtime_version = item.runtimeVersion || ''
       appForm.capabilities = item.capabilities || {}
       appForm.is_default = Boolean(item.isDefault)
       appForm.status = item.status || 'normal'
       appForm.meta = item.meta || {}
       appCapabilitiesText.value = formatCapabilitiesText(item.capabilities)
       appMetaBase.value = omitGovernedMetaSections(item.meta || {})
-      appEnvProfilesText.value = formatCapabilitiesText(pickMetaObject(item.meta || {}, 'env_profiles'))
+      appEnvProfilesText.value = formatCapabilitiesText(
+        pickMetaObject(item.meta || {}, 'env_profiles')
+      )
       appFeatureFlagsText.value = formatCapabilitiesText(
         pickMetaObject(item.meta || {}, 'feature_flags')
       )
@@ -1255,6 +1355,8 @@
         frontend_entry_url: `${appForm.frontend_entry_url || ''}`.trim(),
         backend_entry_url: `${appForm.backend_entry_url || ''}`.trim(),
         health_check_url: `${appForm.health_check_url || ''}`.trim(),
+        manifest_url: `${appForm.manifest_url || ''}`.trim(),
+        runtime_version: `${appForm.runtime_version || ''}`.trim(),
         capabilities,
         meta
       }

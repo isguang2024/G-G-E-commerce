@@ -34,6 +34,7 @@
   import { useAppContextStore } from '@/store/modules/app-context'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useMenuStore } from '@/store/modules/menu'
+  import { useUserStore } from '@/store/modules/user'
   import { useWorktabStore } from '@/store/modules/worktab'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
@@ -48,7 +49,9 @@
   const appContextStore = useAppContextStore()
   const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
+  const userStore = useUserStore()
   const worktabStore = useWorktabStore()
+  const { isLogin } = storeToRefs(userStore)
 
   const loading = ref(false)
   const apps = ref<Api.SystemManage.AppItem[]>([])
@@ -100,7 +103,10 @@
     })
   })
 
-  const shouldShowSwitcher = computed(() => sortedApps.value.length > 1)
+  const shouldShowSwitcher = computed(() => {
+    if (sortedApps.value.length <= 1) return false
+    return appContextStore.supportsAppSwitchForApp(selectedValue.value)
+  })
 
   const buildOptionLabel = (item: Api.SystemManage.AppItem) => {
     const name = `${item.name || item.appKey || ''}`.trim()
@@ -156,19 +162,31 @@
   }
 
   const loadApps = async (force = false) => {
+    if (!isLogin.value) {
+      apps.value = []
+      return
+    }
     if (loading.value) return
     if (apps.value.length > 0 && !force) return
     loading.value = true
     try {
       const res = await fetchGetApps()
       apps.value = res.records || []
+      for (const item of apps.value) {
+        appContextStore.setAppProfile({
+          appKey: item.appKey,
+          authMode: item.authMode || '',
+          capabilities: item.capabilities || {},
+          meta: item.meta || {}
+        })
+      }
     } finally {
       loading.value = false
     }
   }
 
   const handleVisibleChange = (visible: boolean) => {
-    if (visible) {
+    if (visible && isLogin.value) {
       void loadApps(true)
     }
   }
@@ -193,7 +211,9 @@
         frontendEntryUrl: targetApp.frontendEntryUrl || '',
         backendEntryUrl: targetApp.backendEntryUrl || '',
         healthCheckUrl: targetApp.healthCheckUrl || '',
-        capabilities: targetApp.capabilities || {}
+        authMode: targetApp.authMode || '',
+        capabilities: targetApp.capabilities || {},
+        meta: targetApp.meta || {}
       })
       appContextStore.setManagedAppKey(nextAppKey)
       worktabStore.clearAll()
@@ -237,6 +257,18 @@
   onMounted(() => {
     void loadApps()
   })
+
+  watch(
+    isLogin,
+    (loggedIn) => {
+      if (loggedIn) {
+        void loadApps(true)
+        return
+      }
+      apps.value = []
+    },
+    { flush: 'post' }
+  )
 </script>
 
 <style scoped lang="scss">

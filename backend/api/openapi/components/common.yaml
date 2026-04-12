@@ -1113,10 +1113,10 @@ components:
           type: integer
         status:
           type: string
-          permission_keys:
-            type: array
-            items:
-              type: string
+        permission_keys:
+          type: array
+          items:
+            type: string
     UserPermissionMenuTreeItem:
       type: object
       required:
@@ -1202,6 +1202,8 @@ components:
           type: boolean
         is_full_page:
           type: boolean
+        remote_binding:
+          $ref: '../domains/page/schemas.yaml#/components/schemas/PageRemoteBinding'
         meta:
           $ref: '../domains/page/schemas.yaml#/components/schemas/PageMeta'
         status:

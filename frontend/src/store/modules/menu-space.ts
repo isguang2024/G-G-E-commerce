@@ -224,7 +224,9 @@ export const useMenuSpaceStore = defineStore(
             frontendEntryUrl: response?.app?.frontendEntryUrl || '',
             backendEntryUrl: response?.app?.backendEntryUrl || '',
             healthCheckUrl: response?.app?.healthCheckUrl || '',
-            capabilities: response?.app?.capabilities
+            authMode: response?.app?.authMode || '',
+            capabilities: response?.app?.capabilities,
+            meta: response?.app?.meta || {}
           })
           return resolvedAppKey
         })

@@ -902,6 +902,20 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         permission_key: form.accessMode === 'permission' ? form.permissionKey.trim() : '',
         keep_alive: form.isIframe ? false : form.keepAlive,
         is_full_page: form.isFullPage,
+        remote_binding: props.pageData?.remoteBinding
+          ? {
+              manifest_url: props.pageData.remoteBinding.manifestUrl || '',
+              remote_app_key: props.pageData.remoteBinding.remoteAppKey || '',
+              remote_page_key: props.pageData.remoteBinding.remotePageKey || '',
+              remote_entry_url: props.pageData.remoteBinding.remoteEntryUrl || '',
+              remote_route_path: props.pageData.remoteBinding.remoteRoutePath || '',
+              remote_module: props.pageData.remoteBinding.remoteModule || '',
+              remote_module_name: props.pageData.remoteBinding.remoteModuleName || '',
+              remote_url: props.pageData.remoteBinding.remoteUrl || '',
+              runtime_version: props.pageData.remoteBinding.runtimeVersion || '',
+              health_check_url: props.pageData.remoteBinding.healthCheckUrl || ''
+            }
+          : undefined,
         status: form.status,
         meta: {
           isIframe: form.isIframe,

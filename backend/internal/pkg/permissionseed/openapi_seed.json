@@ -132,6 +132,16 @@
       "access_mode": "public"
     },
     {
+      "operation_id": "logout",
+      "method": "post",
+      "path": "/auth/logout",
+      "permission_key": "",
+      "summary": "退出登录",
+      "tags": "auth",
+      "api_category": "auth",
+      "access_mode": "authenticated"
+    },
+    {
       "operation_id": "getAuthMe",
       "method": "get",
       "path": "/auth/me",
@@ -1620,6 +1630,16 @@
       "tags": "system",
       "api_category": "system",
       "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "getAppPreflight",
+      "method": "get",
+      "path": "/system/apps/preflight",
+      "permission_key": "system.menu.manage",
+      "summary": "获取应用接入预检查结果",
+      "tags": "system",
+      "api_category": "system",
+      "access_mode": "permission"
     },
     {
       "operation_id": "getFastEnterConfig",

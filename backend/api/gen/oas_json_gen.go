@@ -15327,9 +15327,19 @@ func (s *MenuSaveRequest) encodeFields(e *jx.Encoder) {
 			s.Status.Encode(e)
 		}
 	}
+	{
+		if s.PermissionKeys != nil {
+			e.FieldStart("permission_keys")
+			e.ArrStart()
+			for _, elem := range s.PermissionKeys {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfMenuSaveRequest = [14]string{
+var jsonFieldsNameOfMenuSaveRequest = [15]string{
 	0:  "name",
 	1:  "parent_id",
 	2:  "icon",
@@ -15344,6 +15354,7 @@ var jsonFieldsNameOfMenuSaveRequest = [14]string{
 	11: "space_key",
 	12: "sort_order",
 	13: "status",
+	14: "permission_keys",
 }
 
 // Decode decodes MenuSaveRequest from json.
@@ -15507,6 +15518,25 @@ func (s *MenuSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "permission_keys":
+			if err := func() error {
+				s.PermissionKeys = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.PermissionKeys = append(s.PermissionKeys, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permission_keys\"")
 			}
 		default:
 			return d.Skip()
@@ -22304,6 +22334,39 @@ func (s *OptPageMeta) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes PageRemoteBinding as json.
+func (o OptPageRemoteBinding) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes PageRemoteBinding from json.
+func (o *OptPageRemoteBinding) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptPageRemoteBinding to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptPageRemoteBinding) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptPageRemoteBinding) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes PermissionActionBatchTemplatePayload as json.
 func (o OptPermissionActionBatchTemplatePayload) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24310,6 +24373,12 @@ func (s *PageListItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.RemoteBinding.Set {
+			e.FieldStart("remote_binding")
+			s.RemoteBinding.Encode(e)
+		}
+	}
+	{
 		if s.CreatedAt.Set {
 			e.FieldStart("created_at")
 			s.CreatedAt.Encode(e, json.EncodeDateTime)
@@ -24323,7 +24392,7 @@ func (s *PageListItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPageListItem = [33]string{
+var jsonFieldsNameOfPageListItem = [34]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "page_key",
@@ -24355,8 +24424,9 @@ var jsonFieldsNameOfPageListItem = [33]string{
 	28: "is_full_page",
 	29: "status",
 	30: "meta",
-	31: "created_at",
-	32: "updated_at",
+	31: "remote_binding",
+	32: "created_at",
+	33: "updated_at",
 }
 
 // Decode decodes PageListItem from json.
@@ -24699,6 +24769,16 @@ func (s *PageListItem) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"meta\"")
+			}
+		case "remote_binding":
+			if err := func() error {
+				s.RemoteBinding.Reset()
+				if err := s.RemoteBinding.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_binding\"")
 			}
 		case "created_at":
 			if err := func() error {
@@ -25524,6 +25604,222 @@ func (s *PageMeta) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *PageRemoteBinding) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *PageRemoteBinding) encodeFields(e *jx.Encoder) {
+	{
+		if s.ManifestURL.Set {
+			e.FieldStart("manifest_url")
+			s.ManifestURL.Encode(e)
+		}
+	}
+	{
+		if s.RemoteAppKey.Set {
+			e.FieldStart("remote_app_key")
+			s.RemoteAppKey.Encode(e)
+		}
+	}
+	{
+		if s.RemotePageKey.Set {
+			e.FieldStart("remote_page_key")
+			s.RemotePageKey.Encode(e)
+		}
+	}
+	{
+		if s.RemoteEntryURL.Set {
+			e.FieldStart("remote_entry_url")
+			s.RemoteEntryURL.Encode(e)
+		}
+	}
+	{
+		if s.RemoteRoutePath.Set {
+			e.FieldStart("remote_route_path")
+			s.RemoteRoutePath.Encode(e)
+		}
+	}
+	{
+		if s.RemoteModule.Set {
+			e.FieldStart("remote_module")
+			s.RemoteModule.Encode(e)
+		}
+	}
+	{
+		if s.RemoteModuleName.Set {
+			e.FieldStart("remote_module_name")
+			s.RemoteModuleName.Encode(e)
+		}
+	}
+	{
+		if s.RemoteURL.Set {
+			e.FieldStart("remote_url")
+			s.RemoteURL.Encode(e)
+		}
+	}
+	{
+		if s.RuntimeVersion.Set {
+			e.FieldStart("runtime_version")
+			s.RuntimeVersion.Encode(e)
+		}
+	}
+	{
+		if s.HealthCheckURL.Set {
+			e.FieldStart("health_check_url")
+			s.HealthCheckURL.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfPageRemoteBinding = [10]string{
+	0: "manifest_url",
+	1: "remote_app_key",
+	2: "remote_page_key",
+	3: "remote_entry_url",
+	4: "remote_route_path",
+	5: "remote_module",
+	6: "remote_module_name",
+	7: "remote_url",
+	8: "runtime_version",
+	9: "health_check_url",
+}
+
+// Decode decodes PageRemoteBinding from json.
+func (s *PageRemoteBinding) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode PageRemoteBinding to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "manifest_url":
+			if err := func() error {
+				s.ManifestURL.Reset()
+				if err := s.ManifestURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"manifest_url\"")
+			}
+		case "remote_app_key":
+			if err := func() error {
+				s.RemoteAppKey.Reset()
+				if err := s.RemoteAppKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_app_key\"")
+			}
+		case "remote_page_key":
+			if err := func() error {
+				s.RemotePageKey.Reset()
+				if err := s.RemotePageKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_page_key\"")
+			}
+		case "remote_entry_url":
+			if err := func() error {
+				s.RemoteEntryURL.Reset()
+				if err := s.RemoteEntryURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_entry_url\"")
+			}
+		case "remote_route_path":
+			if err := func() error {
+				s.RemoteRoutePath.Reset()
+				if err := s.RemoteRoutePath.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_route_path\"")
+			}
+		case "remote_module":
+			if err := func() error {
+				s.RemoteModule.Reset()
+				if err := s.RemoteModule.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_module\"")
+			}
+		case "remote_module_name":
+			if err := func() error {
+				s.RemoteModuleName.Reset()
+				if err := s.RemoteModuleName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_module_name\"")
+			}
+		case "remote_url":
+			if err := func() error {
+				s.RemoteURL.Reset()
+				if err := s.RemoteURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_url\"")
+			}
+		case "runtime_version":
+			if err := func() error {
+				s.RuntimeVersion.Reset()
+				if err := s.RuntimeVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"runtime_version\"")
+			}
+		case "health_check_url":
+			if err := func() error {
+				s.HealthCheckURL.Reset()
+				if err := s.HealthCheckURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"health_check_url\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode PageRemoteBinding")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *PageRemoteBinding) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *PageRemoteBinding) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *PageSaveRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -25653,6 +25949,12 @@ func (s *PageSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.RemoteBinding.Set {
+			e.FieldStart("remote_binding")
+			s.RemoteBinding.Encode(e)
+		}
+	}
+	{
 		if s.Meta.Set {
 			e.FieldStart("meta")
 			s.Meta.Encode(e)
@@ -25666,7 +25968,7 @@ func (s *PageSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPageSaveRequest = [23]string{
+var jsonFieldsNameOfPageSaveRequest = [24]string{
 	0:  "page_key",
 	1:  "name",
 	2:  "route_name",
@@ -25688,8 +25990,9 @@ var jsonFieldsNameOfPageSaveRequest = [23]string{
 	18: "inherit_permission",
 	19: "keep_alive",
 	20: "is_full_page",
-	21: "meta",
-	22: "status",
+	21: "remote_binding",
+	22: "meta",
+	23: "status",
 }
 
 // Decode decodes PageSaveRequest from json.
@@ -25929,6 +26232,16 @@ func (s *PageSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"is_full_page\"")
+			}
+		case "remote_binding":
+			if err := func() error {
+				s.RemoteBinding.Reset()
+				if err := s.RemoteBinding.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"remote_binding\"")
 			}
 		case "meta":
 			if err := func() error {
@@ -39445,6 +39758,42 @@ func (s *SystemAppItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ManifestURL.Set {
+			e.FieldStart("manifest_url")
+			s.ManifestURL.Encode(e)
+		}
+	}
+	{
+		if s.RuntimeVersion.Set {
+			e.FieldStart("runtime_version")
+			s.RuntimeVersion.Encode(e)
+		}
+	}
+	{
+		if s.ProbeStatus.Set {
+			e.FieldStart("probe_status")
+			s.ProbeStatus.Encode(e)
+		}
+	}
+	{
+		if s.ProbeTarget.Set {
+			e.FieldStart("probe_target")
+			s.ProbeTarget.Encode(e)
+		}
+	}
+	{
+		if s.ProbeMessage.Set {
+			e.FieldStart("probe_message")
+			s.ProbeMessage.Encode(e)
+		}
+	}
+	{
+		if s.ProbeCheckedAt.Set {
+			e.FieldStart("probe_checked_at")
+			s.ProbeCheckedAt.Encode(e, json.EncodeDateTime)
+		}
+	}
+	{
 		e.FieldStart("is_default")
 		e.Bool(s.IsDefault)
 	}
@@ -39496,7 +39845,7 @@ func (s *SystemAppItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSystemAppItem = [21]string{
+var jsonFieldsNameOfSystemAppItem = [27]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "name",
@@ -39507,17 +39856,23 @@ var jsonFieldsNameOfSystemAppItem = [21]string{
 	7:  "frontend_entry_url",
 	8:  "backend_entry_url",
 	9:  "health_check_url",
-	10: "is_default",
-	11: "status",
-	12: "host_count",
-	13: "space_count",
-	14: "menu_count",
-	15: "page_count",
-	16: "primary_hosts",
-	17: "capabilities",
-	18: "meta",
-	19: "created_at",
-	20: "updated_at",
+	10: "manifest_url",
+	11: "runtime_version",
+	12: "probe_status",
+	13: "probe_target",
+	14: "probe_message",
+	15: "probe_checked_at",
+	16: "is_default",
+	17: "status",
+	18: "host_count",
+	19: "space_count",
+	20: "menu_count",
+	21: "page_count",
+	22: "primary_hosts",
+	23: "capabilities",
+	24: "meta",
+	25: "created_at",
+	26: "updated_at",
 }
 
 // Decode decodes SystemAppItem from json.
@@ -39525,7 +39880,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SystemAppItem to nil")
 	}
-	var requiredBitSet [3]uint8
+	var requiredBitSet [4]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -39641,8 +39996,68 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"health_check_url\"")
 			}
+		case "manifest_url":
+			if err := func() error {
+				s.ManifestURL.Reset()
+				if err := s.ManifestURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"manifest_url\"")
+			}
+		case "runtime_version":
+			if err := func() error {
+				s.RuntimeVersion.Reset()
+				if err := s.RuntimeVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"runtime_version\"")
+			}
+		case "probe_status":
+			if err := func() error {
+				s.ProbeStatus.Reset()
+				if err := s.ProbeStatus.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_status\"")
+			}
+		case "probe_target":
+			if err := func() error {
+				s.ProbeTarget.Reset()
+				if err := s.ProbeTarget.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_target\"")
+			}
+		case "probe_message":
+			if err := func() error {
+				s.ProbeMessage.Reset()
+				if err := s.ProbeMessage.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_message\"")
+			}
+		case "probe_checked_at":
+			if err := func() error {
+				s.ProbeCheckedAt.Reset()
+				if err := s.ProbeCheckedAt.Decode(d, json.DecodeDateTime); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_checked_at\"")
+			}
 		case "is_default":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				v, err := d.Bool()
 				s.IsDefault = bool(v)
@@ -39654,7 +40069,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"is_default\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -39666,7 +40081,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
 		case "host_count":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int64()
 				s.HostCount = int64(v)
@@ -39678,7 +40093,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"host_count\"")
 			}
 		case "space_count":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int64()
 				s.SpaceCount = int64(v)
@@ -39690,7 +40105,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"space_count\"")
 			}
 		case "menu_count":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int64()
 				s.MenuCount = int64(v)
@@ -39702,7 +40117,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"menu_count\"")
 			}
 		case "page_count":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int64()
 				s.PageCount = int64(v)
@@ -39733,7 +40148,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"primary_hosts\"")
 			}
 		case "capabilities":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 7
 			if err := func() error {
 				if err := s.Capabilities.Decode(d); err != nil {
 					return err
@@ -39743,7 +40158,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"capabilities\"")
 			}
 		case "meta":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[3] |= 1 << 0
 			if err := func() error {
 				if err := s.Meta.Decode(d); err != nil {
 					return err
@@ -39753,7 +40168,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"meta\"")
 			}
 		case "created_at":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[3] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -39765,7 +40180,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"created_at\"")
 			}
 		case "updated_at":
-			requiredBitSet[2] |= 1 << 4
+			requiredBitSet[3] |= 1 << 2
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.UpdatedAt = v
@@ -39785,10 +40200,11 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [3]uint8{
+	for i, mask := range [4]uint8{
 		0b00111111,
-		0b11111100,
-		0b00011110,
+		0b00000000,
+		0b10111111,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -39958,6 +40374,783 @@ func (s *SystemAppListResponse) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SystemAppPreflightCheckItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SystemAppPreflightCheckItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("title")
+		e.Str(s.Title)
+	}
+	{
+		e.FieldStart("level")
+		e.Str(s.Level)
+	}
+	{
+		e.FieldStart("passed")
+		e.Bool(s.Passed)
+	}
+	{
+		e.FieldStart("value")
+		e.Str(s.Value)
+	}
+	{
+		e.FieldStart("hint")
+		e.Str(s.Hint)
+	}
+}
+
+var jsonFieldsNameOfSystemAppPreflightCheckItem = [6]string{
+	0: "key",
+	1: "title",
+	2: "level",
+	3: "passed",
+	4: "value",
+	5: "hint",
+}
+
+// Decode decodes SystemAppPreflightCheckItem from json.
+func (s *SystemAppPreflightCheckItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SystemAppPreflightCheckItem to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "title":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Title = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"title\"")
+			}
+		case "level":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Level = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"level\"")
+			}
+		case "passed":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.Passed = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"passed\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.Value = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		case "hint":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.Hint = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hint\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SystemAppPreflightCheckItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSystemAppPreflightCheckItem) {
+					name = jsonFieldsNameOfSystemAppPreflightCheckItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SystemAppPreflightCheckItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SystemAppPreflightCheckItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SystemAppPreflightPreviewItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SystemAppPreflightPreviewItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("label")
+		e.Str(s.Label)
+	}
+	{
+		e.FieldStart("value")
+		e.Str(s.Value)
+	}
+	{
+		e.FieldStart("hint")
+		e.Str(s.Hint)
+	}
+}
+
+var jsonFieldsNameOfSystemAppPreflightPreviewItem = [3]string{
+	0: "label",
+	1: "value",
+	2: "hint",
+}
+
+// Decode decodes SystemAppPreflightPreviewItem from json.
+func (s *SystemAppPreflightPreviewItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SystemAppPreflightPreviewItem to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "label":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Label = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"label\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Value = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		case "hint":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Hint = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hint\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SystemAppPreflightPreviewItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSystemAppPreflightPreviewItem) {
+					name = jsonFieldsNameOfSystemAppPreflightPreviewItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SystemAppPreflightPreviewItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SystemAppPreflightPreviewItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SystemAppPreflightResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SystemAppPreflightResponse) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		e.FieldStart("request_host")
+		e.Str(s.RequestHost)
+	}
+	{
+		if s.ManifestURL.Set {
+			e.FieldStart("manifest_url")
+			s.ManifestURL.Encode(e)
+		}
+	}
+	{
+		if s.RuntimeVersion.Set {
+			e.FieldStart("runtime_version")
+			s.RuntimeVersion.Encode(e)
+		}
+	}
+	{
+		if s.ProbeStatus.Set {
+			e.FieldStart("probe_status")
+			s.ProbeStatus.Encode(e)
+		}
+	}
+	{
+		if s.ProbeTarget.Set {
+			e.FieldStart("probe_target")
+			s.ProbeTarget.Encode(e)
+		}
+	}
+	{
+		if s.ProbeMessage.Set {
+			e.FieldStart("probe_message")
+			s.ProbeMessage.Encode(e)
+		}
+	}
+	{
+		if s.ProbeCheckedAt.Set {
+			e.FieldStart("probe_checked_at")
+			s.ProbeCheckedAt.Encode(e, json.EncodeDateTime)
+		}
+	}
+	{
+		e.FieldStart("summary")
+		s.Summary.Encode(e)
+	}
+	{
+		e.FieldStart("checks")
+		e.ArrStart()
+		for _, elem := range s.Checks {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("preview_items")
+		e.ArrStart()
+		for _, elem := range s.PreviewItems {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSystemAppPreflightResponse = [12]string{
+	0:  "app_key",
+	1:  "name",
+	2:  "request_host",
+	3:  "manifest_url",
+	4:  "runtime_version",
+	5:  "probe_status",
+	6:  "probe_target",
+	7:  "probe_message",
+	8:  "probe_checked_at",
+	9:  "summary",
+	10: "checks",
+	11: "preview_items",
+}
+
+// Decode decodes SystemAppPreflightResponse from json.
+func (s *SystemAppPreflightResponse) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SystemAppPreflightResponse to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "app_key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "request_host":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.RequestHost = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"request_host\"")
+			}
+		case "manifest_url":
+			if err := func() error {
+				s.ManifestURL.Reset()
+				if err := s.ManifestURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"manifest_url\"")
+			}
+		case "runtime_version":
+			if err := func() error {
+				s.RuntimeVersion.Reset()
+				if err := s.RuntimeVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"runtime_version\"")
+			}
+		case "probe_status":
+			if err := func() error {
+				s.ProbeStatus.Reset()
+				if err := s.ProbeStatus.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_status\"")
+			}
+		case "probe_target":
+			if err := func() error {
+				s.ProbeTarget.Reset()
+				if err := s.ProbeTarget.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_target\"")
+			}
+		case "probe_message":
+			if err := func() error {
+				s.ProbeMessage.Reset()
+				if err := s.ProbeMessage.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_message\"")
+			}
+		case "probe_checked_at":
+			if err := func() error {
+				s.ProbeCheckedAt.Reset()
+				if err := s.ProbeCheckedAt.Decode(d, json.DecodeDateTime); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"probe_checked_at\"")
+			}
+		case "summary":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				if err := s.Summary.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"summary\"")
+			}
+		case "checks":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				s.Checks = make([]SystemAppPreflightCheckItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SystemAppPreflightCheckItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Checks = append(s.Checks, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"checks\"")
+			}
+		case "preview_items":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				s.PreviewItems = make([]SystemAppPreflightPreviewItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SystemAppPreflightPreviewItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.PreviewItems = append(s.PreviewItems, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"preview_items\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SystemAppPreflightResponse")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000111,
+		0b00001110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSystemAppPreflightResponse) {
+					name = jsonFieldsNameOfSystemAppPreflightResponse[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SystemAppPreflightResponse) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SystemAppPreflightResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SystemAppPreflightSummary) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SystemAppPreflightSummary) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("level")
+		e.Str(s.Level)
+	}
+	{
+		e.FieldStart("blocking_count")
+		e.Int64(s.BlockingCount)
+	}
+	{
+		e.FieldStart("warning_count")
+		e.Int64(s.WarningCount)
+	}
+	{
+		e.FieldStart("info_count")
+		e.Int64(s.InfoCount)
+	}
+	{
+		e.FieldStart("success_count")
+		e.Int64(s.SuccessCount)
+	}
+}
+
+var jsonFieldsNameOfSystemAppPreflightSummary = [5]string{
+	0: "level",
+	1: "blocking_count",
+	2: "warning_count",
+	3: "info_count",
+	4: "success_count",
+}
+
+// Decode decodes SystemAppPreflightSummary from json.
+func (s *SystemAppPreflightSummary) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SystemAppPreflightSummary to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "level":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Level = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"level\"")
+			}
+		case "blocking_count":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int64()
+				s.BlockingCount = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"blocking_count\"")
+			}
+		case "warning_count":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int64()
+				s.WarningCount = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warning_count\"")
+			}
+		case "info_count":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int64()
+				s.InfoCount = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"info_count\"")
+			}
+		case "success_count":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int64()
+				s.SuccessCount = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"success_count\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SystemAppPreflightSummary")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSystemAppPreflightSummary) {
+					name = jsonFieldsNameOfSystemAppPreflightSummary[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SystemAppPreflightSummary) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SystemAppPreflightSummary) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SystemAppSaveRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -40017,6 +41210,18 @@ func (s *SystemAppSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ManifestURL.Set {
+			e.FieldStart("manifest_url")
+			s.ManifestURL.Encode(e)
+		}
+	}
+	{
+		if s.RuntimeVersion.Set {
+			e.FieldStart("runtime_version")
+			s.RuntimeVersion.Encode(e)
+		}
+	}
+	{
 		if s.Capabilities.Set {
 			e.FieldStart("capabilities")
 			s.Capabilities.Encode(e)
@@ -40042,7 +41247,7 @@ func (s *SystemAppSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSystemAppSaveRequest = [13]string{
+var jsonFieldsNameOfSystemAppSaveRequest = [15]string{
 	0:  "app_key",
 	1:  "name",
 	2:  "description",
@@ -40052,10 +41257,12 @@ var jsonFieldsNameOfSystemAppSaveRequest = [13]string{
 	6:  "frontend_entry_url",
 	7:  "backend_entry_url",
 	8:  "health_check_url",
-	9:  "capabilities",
-	10: "status",
-	11: "is_default",
-	12: "meta",
+	9:  "manifest_url",
+	10: "runtime_version",
+	11: "capabilities",
+	12: "status",
+	13: "is_default",
+	14: "meta",
 }
 
 // Decode decodes SystemAppSaveRequest from json.
@@ -40160,6 +41367,26 @@ func (s *SystemAppSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"health_check_url\"")
+			}
+		case "manifest_url":
+			if err := func() error {
+				s.ManifestURL.Reset()
+				if err := s.ManifestURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"manifest_url\"")
+			}
+		case "runtime_version":
+			if err := func() error {
+				s.RuntimeVersion.Reset()
+				if err := s.RuntimeVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"runtime_version\"")
 			}
 		case "capabilities":
 			if err := func() error {

@@ -5,40 +5,40 @@ paths:
       operationId: getSystemViewPages
       summary: 获取页面文件映射
       tags:
-      - system
+        - system
       x-permission-key: system.page_catalog.view
       x-access-mode: permission
       parameters:
-      - name: force
-        in: query
-        schema:
-          type: string
+        - name: force
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/ViewPagesResponse'
+                $ref: "../../components/common.yaml#/components/schemas/ViewPagesResponse"
   /system/fast-enter:
     get:
       operationId: getFastEnterConfig
       summary: 获取快捷入口配置
       tags:
-      - system
+        - system
       x-access-mode: authenticated
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemFastEnterConfig'
+                $ref: "./schemas.yaml#/components/schemas/SystemFastEnterConfig"
     put:
       operationId: updateFastEnterConfig
       summary: 更新快捷入口配置
       tags:
-      - system
+        - system
       x-permission-key: system.fast_enter.manage
       x-access-mode: permission
       requestBody:
@@ -46,34 +46,34 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemFastEnterConfig'
+              $ref: "./schemas.yaml#/components/schemas/SystemFastEnterConfig"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemFastEnterConfig'
+                $ref: "./schemas.yaml#/components/schemas/SystemFastEnterConfig"
   /system/apps:
     get:
       operationId: listApps
       summary: 获取应用列表
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemAppListResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemAppListResponse"
     post:
       operationId: saveApp
       summary: 保存应用
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -81,58 +81,79 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemAppSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemAppSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemAppItem'
+                $ref: "./schemas.yaml#/components/schemas/SystemAppItem"
   /system/apps/current:
     get:
       operationId: getCurrentApp
       summary: 获取当前应用
       tags:
-      - system
+        - system
       x-access-mode: authenticated
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemCurrentAppResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemCurrentAppResponse"
+  /system/apps/preflight:
+    get:
+      operationId: getAppPreflight
+      summary: 获取应用接入预检查结果
+      tags:
+        - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas.yaml#/components/schemas/SystemAppPreflightResponse"
   /system/app-host-bindings:
     get:
       operationId: listAppHostBindings
       summary: 获取应用入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemAppHostBindingListResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemAppHostBindingListResponse"
     post:
       operationId: saveAppHostBinding
       summary: 保存应用入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -140,64 +161,64 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemAppHostBindingSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemAppHostBindingSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemAppHostBindingItem'
+                $ref: "./schemas.yaml#/components/schemas/SystemAppHostBindingItem"
   /system/app-host-bindings/{id}:
     delete:
       operationId: deleteAppHostBinding
       summary: 删除应用入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: "../../components/common.yaml#/components/schemas/MutationResult"
   /system/menu-space-entry-bindings:
     get:
       operationId: listMenuSpaceEntryBindings
       summary: 获取菜单空间入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingListResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingListResponse"
     post:
       operationId: saveMenuSpaceEntryBinding
       summary: 保存菜单空间入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -205,87 +226,87 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingItem'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceEntryBindingItem"
   /system/menu-space-entry-bindings/{id}:
     delete:
       operationId: deleteMenuSpaceEntryBinding
       summary: 删除菜单空间入口解析绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: "../../components/common.yaml#/components/schemas/MutationResult"
   /system/menu-spaces/current:
     get:
       operationId: getCurrentMenuSpace
       summary: 获取当前菜单空间
       tags:
-      - system
+        - system
       x-access-mode: authenticated
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
-      - name: space_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemCurrentMenuSpaceResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemCurrentMenuSpaceResponse"
   /system/menu-space-mode:
     get:
       operationId: getMenuSpaceMode
       summary: 获取菜单空间模式
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceModeResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceModeResponse"
     put:
       operationId: saveMenuSpaceMode
       summary: 保存菜单空间模式
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -293,39 +314,39 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceModeSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceModeSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceModeResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceModeResponse"
   /system/menu-spaces:
     get:
       operationId: listMenuSpaces
       summary: 获取菜单空间列表
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: app_key
-        in: query
-        schema:
-          type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceListResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceListResponse"
     post:
       operationId: saveMenuSpace
       summary: 保存菜单空间
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -333,55 +354,55 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceItem'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceItem"
   /system/menu-spaces/{spaceKey}/initialize-default:
     post:
       operationId: initializeMenuSpaceFromDefault
       summary: 从默认空间初始化菜单空间
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-      - name: spaceKey
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceKey
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceInitializeResult'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceInitializeResult"
   /system/menu-space-host-bindings:
     get:
       operationId: listMenuSpaceHostBindings
       summary: 获取菜单空间 Host 绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingListResponse'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingListResponse"
     post:
       operationId: saveMenuSpaceHostBinding
       summary: 保存菜单空间 Host 绑定
       tags:
-      - system
+        - system
       x-permission-key: system.menu.manage
       x-access-mode: permission
       requestBody:
@@ -389,11 +410,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingSaveRequest'
+              $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingSaveRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingItem'
+                $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceHostBindingItem"

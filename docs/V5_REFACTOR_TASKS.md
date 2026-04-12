@@ -696,3 +696,57 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - `menu-space-host-bindings` 这一组路由目前仍只有 `GET/POST` 桥接；若前端后续补删除能力，应同步检查 OpenAPI 与 Gin 路由是否一致，避免再次出现“spec/handler 在、路由没挂”的半接通状态。
 - 这类问题本质上是路由桥接遗漏；后续如果继续扩 OpenAPI-first 链路，建议补一层“spec path 与 Gin bridge 对账”的自动检查，别再靠浏览器控制台发现。 
+
+### 2026-04-12 V2 第一波推进：APP 接入 dry-run / preflight 后端闭环（Phase V2）
+
+**本次改动**
+- 新增 `GET /system/apps/preflight` OpenAPI 契约，并落地 `summary / checks / preview_items` 结构化返回，把治理台“接入预检查与本地预演”从前端静态推导切到后端聚合真相源。
+- 后端 `app` 服务新增 `GetAppPreflight`，聚合 app、Level 1/Level 2 入口、callback host、能力声明、前后端入口与健康探针配置，输出接入检查项和预演结果。
+- 前端 `App 管理` 页已接入 preflight 接口，预演卡片改为直接展示后端返回的 `入口命中 / 首跳落点 / 健康探针` 等结果；Gin bridge 同步补挂 `/api/v1/system/apps/preflight`。
+- 已按 OpenAPI-first 链路完成 `bundle -> ogen -> gen-permissions -> pnpm run gen:api`，并通过 `go test ./internal/api/handlers -count=1`、`go build ./...`、`pnpm exec vue-tsc --noEmit` 与浏览器实测验证。
+
+**下次方向**
+- 继续执行 V2 `1.2`，把远端页面 / manifest / health / version 升级为治理后端真契约，收掉页面来源仍靠前端启发式推断的问题。
+- 继续执行 V2 `4.1`，补 spec path / Gin bridge / 权限绑定自动对账，避免以后再出现“spec 已有但运行时仍 404”的半接通状态。
+- 当前 preflight 仍是注册中心配置聚合，不做外部网络探测；真正 probe/manifest 深度校验应放到 `1.2` 与 `5.2` 继续收口。
+
+### 2026-04-12 V2 第一波收口：OpenAPI 对账测试、陈旧引用清理与 facade 拆薄（Phase V2）
+
+**本次改动**
+- 在 `backend/internal/api/router/router_contract_test.go` 新增静态对账测试，直接用 `openapi_seed.json` 对比 Gin bridge 注册，校验 `spec path / access_mode / permission_key` 与 `router.go` 是否一致，避免再靠浏览器 404 才发现桥接遗漏。
+- 按测试结果修正 `backend/internal/api/router/router.go`：补挂 `DELETE /permission-actions/groups/:id` 与 `POST /api-endpoints/categories`，删除已脱离 spec 的陈旧桥接 `POST /api-endpoints` 和 `/menus/groups/*`。
+- 清理已失效旧测试桩：删除 `backend/internal/modules/system/app/handler_test.go`，并把 `service_test.go` 中两条历史英文错误断言同步到当前中文契约。
+- 收掉 `fetchExchangeAuthCallback` 的 `as any` 临时绕过；同时把 `GetFastEnterConfig`、`UpdateFastEnterConfig`、`GetSystemViewPages` 三条 Phase 4 leftover handler 从 `system.Facade` 拆到显式 `FastEnterService` / `ViewPagesService` 依赖，降低继续堆积 legacy facade 的风险。
+- 回归通过：`go test ./internal/modules/system/app -count=1`、`go test ./internal/api/handlers -count=1`、`go test ./internal/api/router -count=1`、`go build ./...`、`pnpm exec vue-tsc --noEmit`。
+
+**下次方向**
+- 优先切 V2 `2.1`，把前端 `shouldUseCentralizedLogin` 从路径前缀猜测改成读取 app `authMode/capabilities`，把认证行为真正绑定到 app 元数据。
+- 继续推进 V2 `1.2` 时，建议直接复用这轮 preflight 输出，把远端页 `manifest / health / version` 聚合结果也纳入治理后端真相源，而不是再让前端猜 `link/meta`。
+
+### 2026-04-12 V2 第二波推进：认证公开页收口、远端契约显式化与治理观测补齐（Phase V2）
+
+**本次改动**
+- 修正公开壳层未登录态的错误请求：`ArtHeaderBar` 未登录时不再拉消息摘要，`ArtAppSwitcher` 未登录时不再请求 APP 列表，收掉 `demo-app` 公开页被 401 覆盖成普通登录的历史边角；浏览器实测 `/demo/lab` 未登录可稳定停留，`/system/page` 未登录仍会进入带 `target_app_key/redirect_uri/target_path/state/nonce` 的 centralized login URL。
+- 新增 [docs/multi-app-playwright-smoke.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/multi-app-playwright-smoke.md)，把 admin/account/demo 三类主链固化成 smoke matrix，并补“观测与排障字段”章节，明确 `app_key / space_key / auth_mode / request_host / probe_status / request_id` 的使用入口。
+- 扩展 OpenAPI page/system schema：`SystemAppItem` / `SystemAppPreflightResponse` 新增 `manifest_url / runtime_version / probe_status`，`PageListItem` 新增 `remote_binding`；后端从现有 `meta` 归一输出这些字段，前端页面来源判定优先读取 `remoteBinding`，不再主要依赖 `link/meta` 猜测。
+- `App 管理` 的预检查与治理卡片开始展示 manifest/version/probe 相关信息，preflight 预演项新增“诊断标签”，把 `app/auth/probe/request_host` 组合成可直接用于排障的治理视图。
+- 已按 OpenAPI-first 链路执行 `bundle -> ogen -> gen-permissions -> pnpm run gen:api`，并通过 `go test ./internal/api/handlers -count=1`、`go build ./...`、`pnpm exec vue-tsc --noEmit`。
+
+**下次方向**
+- `SystemAppSaveRequest` 与 `PageSaveRequest` 目前仍是“读链显式、写链兼容”：后续应把 `manifest_url / runtime_version / remote_binding` 的保存契约也显式化，不再只回写到 `meta`。
+- `probe_status` 当前还是配置态（`configured/missing`），不是实际探活结果；继续推进 `5.2` 时应把最近一次 probe 结果与错误摘要纳入治理台。
+- `redocly lint` 当前仍被仓库既有 spec 结构错误阻断（`MenuSaveRequest.status.permission_keys`），这不是本轮新增改动引入的问题，但后续若继续强化 OpenAPI-first，应把该旧问题独立收口。
+
+### 2026-04-12 V2 与残余专项并行收口：共享会话、显式写链、真实探活与 OpenAPI 严格链恢复（Phase V2）
+
+**本次改动**
+- 完成 V2 `2.2 / 2.3 / 3.2` 与残余专项 `1.1 / 1.2 / 2.1 / 2.2 / 3.1 / 3.2` 的并行收口：`SystemAppSaveRequest` 显式新增 `manifest_url / runtime_version`，`PageSaveRequest` 显式新增 `remote_binding`，后端保存链统一写入规范 snake_case 契约并清理旧 camelCase 别名，前端保存链同步显式透传，不再只靠 `meta` 隐式兼容。
+- `app` 治理链升级为真实探活：`SystemAppItem` 与 `SystemAppPreflightResponse` 新增 `probe_status / probe_target / probe_message / probe_checked_at`，后端按 `health_check_url + primary host` 做实际 HTTP 探测并把结果下沉到 `App 管理`；前端预检查区和治理卡片改为直接消费真实 probe 结果，不再把“已配置地址”误当成“运行正常”。
+- 完成跨 APP 会话与壳层联动硬化：`app-context` 开始真实消费 `env_profiles / feature_flags / capabilities`，运行时前后端入口与 health 地址支持按环境 profile 回落；`demo-app` seed 切到 `shared_cookie` 可验证模式；`v5 client` 增加 shared session 下的 401→refresh→单次重试链路；`userStore` 增加 storage 广播同步与统一 session 清理；`logout` 新增 OpenAPI 契约、Gin bridge 与显式 `Authorization` 透传，退出登录后可稳定回到登录页。
+- 恢复 OpenAPI-first 严格链：修复 `MenuSaveRequest.permission_keys` 历史结构错误，补挂 `/auth/logout` root path 与 Gin bridge，完整执行 `bundle -> ogen -> gen-permissions -> pnpm run gen:api`；`redocly lint` 现已恢复为“valid with warnings”，不再被结构错误阻断，只剩仓库存量 warning。
+- 浏览器联调通过：登录后访问 `App 管理`，`platform-admin` 预检查明确显示 `probe=unreachable` 与真实目标 `http://localhost/health`；`platform-admin -> demo-app -> platform-admin` 切换稳定；退出登录后 `POST /api/v1/auth/logout` 返回 `200`，受保护后台页会回到 `account-portal` 登录页，`demo-app` 公开页在登出后仍可直接访问且当前页面无新增 console error。
+
+**下次方向**
+- 这轮已经把“probe 是真实结果”补起来，但探活仍是同步轻探针；后续如需治理大规模远端应用，应改成后台异步采集 + 最近结果缓存，避免列表页阻塞在外部网络波动上。
+- `redocly lint` 现在剩余的是仓库级 warning，不再是结构断路；如果要继续提升 OpenAPI 质量，建议单开规范治理任务，批量补 tag description、4xx response 和 ambiguous path。
+- `Page.remote_binding` 当前已显式进写链，但 UI 仍以“保留并透传现有远端契约”为主；若后续要支持后台直接新建远端页，应再补专门的 remote binding 编辑表单。 

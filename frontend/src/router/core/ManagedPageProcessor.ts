@@ -328,7 +328,8 @@ export class ManagedPageProcessor {
       isHideTab: Boolean(pageMeta.isHideTab),
       link: this.normalizeValue(pageMeta.link),
       isEnable: page.status === 'normal',
-      accessMode: resolved.effectiveAccessMode
+      accessMode: resolved.effectiveAccessMode,
+      appKey: this.normalizeValue(page.appKey)
     }
 
     if (resolved.spaceKey) {

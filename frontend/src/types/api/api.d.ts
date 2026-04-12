@@ -235,6 +235,12 @@ declare namespace Api {
       frontendEntryUrl?: string
       backendEntryUrl?: string
       healthCheckUrl?: string
+      manifestUrl?: string
+      runtimeVersion?: string
+      probeStatus?: 'healthy' | 'timeout' | 'unreachable' | 'missing' | string
+      probeTarget?: string
+      probeMessage?: string
+      probeCheckedAt?: string
       capabilities?: Record<string, any>
       isDefault?: boolean
       status?: 'normal' | 'disabled' | string
@@ -259,6 +265,8 @@ declare namespace Api {
       frontend_entry_url?: string
       backend_entry_url?: string
       health_check_url?: string
+      manifest_url?: string
+      runtime_version?: string
       capabilities?: Record<string, any>
       is_default?: boolean
       status?: 'normal' | 'disabled' | string
@@ -335,6 +343,44 @@ declare namespace Api {
       binding?: AppHostBindingItem
       resolvedBy?: string
       requestHost?: string
+    }
+
+    interface AppPreflightSummary {
+      level: 'success' | 'info' | 'warning' | 'blocking' | string
+      blockingCount: number
+      warningCount: number
+      infoCount: number
+      successCount: number
+    }
+
+    interface AppPreflightCheckItem {
+      key: string
+      title: string
+      level: 'success' | 'info' | 'warning' | 'blocking' | string
+      passed: boolean
+      value: string
+      hint: string
+    }
+
+    interface AppPreflightPreviewItem {
+      label: string
+      value: string
+      hint: string
+    }
+
+    interface AppPreflightResponse {
+      appKey: string
+      name: string
+      requestHost?: string
+      manifestUrl?: string
+      runtimeVersion?: string
+      probeStatus?: string
+      probeTarget?: string
+      probeMessage?: string
+      probeCheckedAt?: string
+      summary: AppPreflightSummary
+      checks: AppPreflightCheckItem[]
+      previewItems: AppPreflightPreviewItem[]
     }
 
     interface MenuSpaceInitializeResult {
@@ -974,6 +1020,18 @@ declare namespace Api {
       isIframe?: boolean
       isHideTab?: boolean
       link?: string
+      remoteBinding?: {
+        manifestUrl?: string
+        remoteAppKey?: string
+        remotePageKey?: string
+        remoteEntryUrl?: string
+        remoteRoutePath?: string
+        remoteModule?: string
+        remoteModuleName?: string
+        remoteUrl?: string
+        runtimeVersion?: string
+        healthCheckUrl?: string
+      }
       // 仅保留少量运行时桥接语义；管理态主语义统一看 visibilityScope + spaceKeys。
       spaceKey?: string
       // 后端会把独立页的空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
@@ -1122,6 +1180,18 @@ declare namespace Api {
       space_type?: string
       host_key?: string
       status?: 'normal' | 'suspended' | string
+      remote_binding?: {
+        manifest_url?: string
+        remote_app_key?: string
+        remote_page_key?: string
+        remote_entry_url?: string
+        remote_route_path?: string
+        remote_module?: string
+        remote_module_name?: string
+        remote_url?: string
+        runtime_version?: string
+        health_check_url?: string
+      }
       meta?: Record<string, any>
     }
 
@@ -1599,7 +1669,6 @@ declare namespace Api {
       affected_page_count?: number
       affected_relation_count?: number
     }
-
   }
 
   namespace Message {

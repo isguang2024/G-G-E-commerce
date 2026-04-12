@@ -44,6 +44,9 @@ import { useMenuStore } from './menu'
 import { StorageConfig } from '@/utils/storage/storage-config'
 import { useCollaborationWorkspaceStore } from './collaboration-workspace'
 import { RoutesAlias } from '@/router/routesAlias'
+import { useAppContextStore } from './app-context'
+
+const SESSION_SYNC_EVENT_KEY = 'gge:session-sync'
 
 /**
  * 用户状态管理
@@ -68,6 +71,17 @@ export const useUserStore = defineStore(
     const accessToken = ref('')
     // 刷新令牌
     const refreshToken = ref('')
+
+    const broadcastSessionEvent = (payload: Record<string, any>) => {
+      if (typeof window === 'undefined') return
+      localStorage.setItem(
+        SESSION_SYNC_EVENT_KEY,
+        JSON.stringify({
+          ...payload,
+          emittedAt: Date.now()
+        })
+      )
+    }
 
     // 计算属性：获取用户信息
     const getUserInfo = computed(() => info.value)
@@ -137,13 +151,24 @@ export const useUserStore = defineStore(
       }
     }
 
-    const applySession = (payload: {
-      accessToken: string
-      refreshToken?: string
-      isLogin?: boolean
-    }) => {
+    const applySession = (
+      payload: {
+        accessToken: string
+        refreshToken?: string
+        isLogin?: boolean
+      },
+      options: { broadcast?: boolean } = {}
+    ) => {
       setToken(payload.accessToken, payload.refreshToken)
       setLoginStatus(payload.isLogin ?? true)
+      if (options.broadcast !== false) {
+        broadcastSessionEvent({
+          type: 'session:update',
+          accessToken: payload.accessToken,
+          refreshToken: payload.refreshToken,
+          isLogin: payload.isLogin ?? true
+        })
+      }
     }
 
     const resolveCurrentUserId = (): string => {
@@ -173,7 +198,7 @@ export const useUserStore = defineStore(
      * 清空所有用户相关状态并跳转到登录页
      * 如果是同一账号重新登录，保留工作台标签页
      */
-    const clearSessionState = (options: { preserveLastUserId?: boolean } = {}) => {
+    const clearSessionState = (options: { preserveLastUserId?: boolean; broadcast?: boolean } = {}) => {
       if (options.preserveLastUserId) {
         const currentUserId = info.value.userId
         if (currentUserId) {
@@ -190,15 +215,25 @@ export const useUserStore = defineStore(
       sessionStorage.removeItem('iframeRoutes')
       useMenuStore().setHomePath('')
       useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
+      useAppContextStore().clearAppContext()
       resetRouterState(500)
+      if (options.broadcast !== false) {
+        broadcastSessionEvent({ type: 'session:clear' })
+      }
     }
 
-    const logOut = () => {
+    const logOut = async () => {
+      try {
+        const { fetchLogout } = await import('@/api/auth')
+        await fetchLogout()
+      } catch {
+        // stateless JWT 登出允许前端本地兜底
+      }
       clearSessionState({ preserveLastUserId: true })
       // 跳转到登录页，携带当前路由作为 redirect 参数
       const currentRoute = router.currentRoute.value
       const redirect = currentRoute.path !== RoutesAlias.Login ? currentRoute.fullPath : undefined
-      router.push({
+      void router.push({
         path: RoutesAlias.Login,
         query: redirect ? { redirect } : undefined
       })
@@ -228,6 +263,36 @@ export const useUserStore = defineStore(
 
       // 清除临时存储
       localStorage.removeItem(StorageConfig.LAST_USER_ID_KEY)
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key !== SESSION_SYNC_EVENT_KEY || !event.newValue) return
+        try {
+          const payload = JSON.parse(event.newValue) as {
+            type?: string
+            accessToken?: string
+            refreshToken?: string
+            isLogin?: boolean
+          }
+          if (payload.type === 'session:update' && payload.accessToken) {
+            applySession(
+              {
+                accessToken: payload.accessToken,
+                refreshToken: payload.refreshToken,
+                isLogin: payload.isLogin ?? true
+              },
+              { broadcast: false }
+            )
+            return
+          }
+          if (payload.type === 'session:clear') {
+            clearSessionState({ broadcast: false })
+          }
+        } catch {
+          // ignore malformed sync payload
+        }
+      })
     }
 
     return {

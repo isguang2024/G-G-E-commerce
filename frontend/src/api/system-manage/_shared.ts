@@ -74,6 +74,18 @@ type V5PageLike = {
   space_type?: string
   host_key?: string
   status?: string
+  remote_binding?: {
+    manifest_url?: string
+    remote_app_key?: string
+    remote_page_key?: string
+    remote_entry_url?: string
+    remote_route_path?: string
+    remote_module?: string
+    remote_module_name?: string
+    remote_url?: string
+    runtime_version?: string
+    health_check_url?: string
+  }
   meta?: {
     spaceKeys?: string[]
     spaceScope?: string
@@ -89,6 +101,27 @@ type V5PageLike = {
     breadcrumbChain?: string[]
     hostKey?: string
     spaceType?: string
+    manifest_url?: string
+    manifestUrl?: string
+    remote_app_key?: string
+    remoteAppKey?: string
+    remote_page_key?: string
+    remotePageKey?: string
+    remote_entry_url?: string
+    remoteEntryUrl?: string
+    remote_route_path?: string
+    remoteRoutePath?: string
+    remote_module?: string
+    remoteModule?: string
+    remote_module_name?: string
+    remoteModuleName?: string
+    remote_url?: string
+    remoteUrl?: string
+    runtime_version?: string
+    runtimeVersion?: string
+    version?: string
+    health_check_url?: string
+    healthCheckUrl?: string
   }
   created_at?: string
   updated_at?: string
@@ -525,6 +558,20 @@ export function normalizeCollaborationWorkspace(
 
 export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
+  const rawRemoteBinding = item?.remote_binding || {}
+  const remoteBinding = {
+    manifestUrl: `${rawRemoteBinding?.manifest_url || meta?.manifest_url || meta?.manifestUrl || ''}`.trim(),
+    remoteAppKey: `${rawRemoteBinding?.remote_app_key || meta?.remote_app_key || meta?.remoteAppKey || ''}`.trim(),
+    remotePageKey: `${rawRemoteBinding?.remote_page_key || meta?.remote_page_key || meta?.remotePageKey || ''}`.trim(),
+    remoteEntryUrl: `${rawRemoteBinding?.remote_entry_url || meta?.remote_entry_url || meta?.remoteEntryUrl || ''}`.trim(),
+    remoteRoutePath: `${rawRemoteBinding?.remote_route_path || meta?.remote_route_path || meta?.remoteRoutePath || ''}`.trim(),
+    remoteModule: `${rawRemoteBinding?.remote_module || meta?.remote_module || meta?.remoteModule || ''}`.trim(),
+    remoteModuleName: `${rawRemoteBinding?.remote_module_name || meta?.remote_module_name || meta?.remoteModuleName || ''}`.trim(),
+    remoteUrl: `${rawRemoteBinding?.remote_url || meta?.remote_url || meta?.remoteUrl || ''}`.trim(),
+    runtimeVersion: `${rawRemoteBinding?.runtime_version || meta?.runtime_version || meta?.runtimeVersion || meta?.version || ''}`.trim(),
+    healthCheckUrl: `${rawRemoteBinding?.health_check_url || meta?.health_check_url || meta?.healthCheckUrl || ''}`.trim()
+  }
+  const hasRemoteBinding = Object.values(remoteBinding).some(Boolean)
   const rawVisibilityScope =
     `${item?.visibility_scope || meta?.visibilityScope || ''}`.trim()
   const rawSpaceKeysSource = item?.space_keys || meta?.spaceKeys
@@ -572,6 +619,7 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
     isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? false),
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? false),
     link: `${meta?.link || ''}`.trim(),
+    remoteBinding: hasRemoteBinding ? remoteBinding : undefined,
     spaceKeys,
     pageSpaceBindings,
     spaceScope:
@@ -711,6 +759,12 @@ export function normalizeApp(item: any): Api.SystemManage.AppItem {
     frontendEntryUrl: `${item?.frontend_entry_url || ''}`.trim(),
     backendEntryUrl: `${item?.backend_entry_url || ''}`.trim(),
     healthCheckUrl: `${item?.health_check_url || ''}`.trim(),
+    manifestUrl: `${item?.manifest_url || item?.meta?.manifest_url || item?.meta?.manifestUrl || ''}`.trim(),
+    runtimeVersion: `${item?.runtime_version || item?.meta?.runtime_version || item?.meta?.runtimeVersion || item?.meta?.version || ''}`.trim(),
+    probeStatus: `${item?.probe_status || ''}`.trim() || undefined,
+    probeTarget: `${item?.probe_target || ''}`.trim() || undefined,
+    probeMessage: `${item?.probe_message || ''}`.trim() || undefined,
+    probeCheckedAt: `${item?.probe_checked_at || ''}`.trim() || undefined,
     capabilities,
     isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',

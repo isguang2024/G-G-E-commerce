@@ -142,6 +142,7 @@ export async function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
     is_full_page: data.is_full_page,
     space_keys: data.space_keys,
     visibility_scope: data.visibility_scope,
+    remote_binding: data.remote_binding,
     status: data.status,
     meta: data.meta
   }
@@ -179,6 +180,7 @@ export async function fetchUpdatePage(id: string, data: Api.SystemManage.PageSav
     is_full_page: data.is_full_page,
     space_keys: data.space_keys,
     visibility_scope: data.visibility_scope,
+    remote_binding: data.remote_binding,
     status: data.status,
     meta: data.meta
   }

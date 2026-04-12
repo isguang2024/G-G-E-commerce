@@ -43,25 +43,25 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     path: '/account/auth/login',
     name: 'AccountPortalLogin',
     component: () => import('@views/auth/login/index.vue'),
-    meta: { title: 'menus.login.title', isHideTab: true }
+    meta: { title: 'menus.login.title', isHideTab: true, appKey: 'account-portal' }
   },
   {
     path: '/account/auth/register',
     name: 'AccountPortalRegister',
     component: () => import('@views/auth/register/index.vue'),
-    meta: { title: 'menus.register.title', isHideTab: true }
+    meta: { title: 'menus.register.title', isHideTab: true, appKey: 'account-portal' }
   },
   {
     path: '/account/auth/forget-password',
     name: 'AccountPortalForgetPassword',
     component: () => import('@views/auth/forget-password/index.vue'),
-    meta: { title: 'menus.forgetPassword.title', isHideTab: true }
+    meta: { title: 'menus.forgetPassword.title', isHideTab: true, appKey: 'account-portal' }
   },
   {
     path: '/account/auth/callback',
     name: 'AuthCallback',
     component: () => import('@views/auth/callback/index.vue'),
-    meta: { title: 'auth-callback', isHideTab: true }
+    meta: { title: 'auth-callback', isHideTab: true, appKey: 'account-portal' }
   },
   {
     path: '/403',

@@ -121,6 +121,10 @@ type LoginRes interface {
 	loginRes()
 }
 
+type LogoutRes interface {
+	logoutRes()
+}
+
 type RefreshTokenRes interface {
 	refreshTokenRes()
 }

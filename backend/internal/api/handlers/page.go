@@ -4,6 +4,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -272,6 +274,9 @@ func pageSaveRequestFromGen(req *gen.PageSaveRequest, appKey string) *page.SaveR
 	if req.Meta.Set {
 		saveReq.Meta = pageMetaToMap(req.Meta.Value)
 	}
+	if req.RemoteBinding.Set {
+		saveReq.RemoteBinding = pageRemoteBindingSaveFromGen(req.RemoteBinding.Value)
+	}
 	return saveReq
 }
 
@@ -356,6 +361,9 @@ func pageListItemFromModel(record *page.Record) gen.PageListItem {
 		CreatedAt:         gen.NewOptDateTime(record.CreatedAt),
 		UpdatedAt:         gen.NewOptDateTime(record.UpdatedAt),
 	}
+	if remoteBinding, ok := pageRemoteBindingFromMap(record.Meta); ok {
+		item.RemoteBinding = gen.NewOptPageRemoteBinding(remoteBinding)
+	}
 	if record.ParentMenuID != nil {
 		item.ParentMenuID = gen.NewOptUUID(*record.ParentMenuID)
 	}
@@ -419,6 +427,58 @@ func pageMetaFromMap(meta map[string]interface{}) gen.PageMeta {
 		out.SpaceType = gen.NewOptString(value)
 	}
 	return out
+}
+
+func pageRemoteBindingFromMap(meta map[string]interface{}) (gen.PageRemoteBinding, bool) {
+	if len(meta) == 0 {
+		return gen.PageRemoteBinding{}, false
+	}
+	readValue := func(keys ...string) string {
+		for _, key := range keys {
+			if value := strings.TrimSpace(fmt.Sprint(meta[key])); value != "" && value != "<nil>" {
+				return value
+			}
+		}
+		return ""
+	}
+
+	binding := gen.PageRemoteBinding{}
+	hasValue := false
+	assign := func(target *gen.OptString, value string) {
+		if value == "" {
+			return
+		}
+		*target = gen.NewOptString(value)
+		hasValue = true
+	}
+
+	assign(&binding.ManifestURL, readValue("manifest_url", "manifestUrl"))
+	assign(&binding.RemoteAppKey, readValue("remote_app_key", "remoteAppKey"))
+	assign(&binding.RemotePageKey, readValue("remote_page_key", "remotePageKey"))
+	assign(&binding.RemoteEntryURL, readValue("remote_entry_url", "remoteEntryUrl"))
+	assign(&binding.RemoteRoutePath, readValue("remote_route_path", "remoteRoutePath"))
+	assign(&binding.RemoteModule, readValue("remote_module", "remoteModule"))
+	assign(&binding.RemoteModuleName, readValue("remote_module_name", "remoteModuleName"))
+	assign(&binding.RemoteURL, readValue("remote_url", "remoteUrl"))
+	assign(&binding.RuntimeVersion, readValue("runtime_version", "runtimeVersion", "version"))
+	assign(&binding.HealthCheckURL, readValue("health_check_url", "healthCheckUrl"))
+
+	return binding, hasValue
+}
+
+func pageRemoteBindingSaveFromGen(binding gen.PageRemoteBinding) *page.RemoteBinding {
+	return &page.RemoteBinding{
+		ManifestURL:      optString(binding.ManifestURL),
+		RemoteAppKey:     optString(binding.RemoteAppKey),
+		RemotePageKey:    optString(binding.RemotePageKey),
+		RemoteEntryURL:   optString(binding.RemoteEntryURL),
+		RemoteRoutePath:  optString(binding.RemoteRoutePath),
+		RemoteModule:     optString(binding.RemoteModule),
+		RemoteModuleName: optString(binding.RemoteModuleName),
+		RemoteURL:        optString(binding.RemoteURL),
+		RuntimeVersion:   optString(binding.RuntimeVersion),
+		HealthCheckURL:   optString(binding.HealthCheckURL),
+	}
 }
 
 func pageMetaToMap(meta gen.PageMeta) map[string]interface{} {

@@ -254,6 +254,12 @@ type Handler interface {
 	//
 	// GET /api-endpoints/overview
 	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
+	// GetAppPreflight implements getAppPreflight operation.
+	//
+	// 获取应用接入预检查结果.
+	//
+	// GET /system/apps/preflight
+	GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (*SystemAppPreflightResponse, error)
 	// GetAuthMe implements getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -878,6 +884,12 @@ type Handler interface {
 	//
 	// POST /auth/login
 	Login(ctx context.Context, req *LoginRequest) (LoginRes, error)
+	// Logout implements logout operation.
+	//
+	// 退出登录.
+	//
+	// POST /auth/logout
+	Logout(ctx context.Context) (LogoutRes, error)
 	// MarkInboxRead implements markInboxRead operation.
 	//
 	// 标记消息已读.

@@ -203,7 +203,7 @@
 
   const { menuOpen, menuType, isDark, tabStyle } = storeToRefs(settingStore)
 
-  const { language } = storeToRefs(userStore)
+  const { language, isLogin } = storeToRefs(userStore)
   const { menuList } = storeToRefs(menuStore)
   const { hasUnread } = storeToRefs(messageStore)
 
@@ -220,9 +220,25 @@
 
   onMounted(() => {
     initLanguage()
-    messageStore.loadSummary().catch(() => undefined)
+    if (isLogin.value) {
+      messageStore.loadSummary().catch(() => undefined)
+    } else {
+      messageStore.resetState()
+    }
     document.addEventListener('click', bodyCloseNotice)
   })
+
+  watch(
+    isLogin,
+    (loggedIn) => {
+      if (loggedIn) {
+        void messageStore.loadSummary(true).catch(() => undefined)
+        return
+      }
+      messageStore.resetState()
+    },
+    { flush: 'post' }
+  )
 
   onUnmounted(() => {
     document.removeEventListener('click', bodyCloseNotice)

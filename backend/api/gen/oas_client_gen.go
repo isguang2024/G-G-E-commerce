@@ -274,6 +274,12 @@ type Invoker interface {
 	//
 	// GET /api-endpoints/overview
 	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
+	// GetAppPreflight invokes getAppPreflight operation.
+	//
+	// 获取应用接入预检查结果.
+	//
+	// GET /system/apps/preflight
+	GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (*SystemAppPreflightResponse, error)
 	// GetAuthMe invokes getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -898,6 +904,12 @@ type Invoker interface {
 	//
 	// POST /auth/login
 	Login(ctx context.Context, request *LoginRequest) (LoginRes, error)
+	// Logout invokes logout operation.
+	//
+	// 退出登录.
+	//
+	// POST /auth/logout
+	Logout(ctx context.Context) (LogoutRes, error)
 	// MarkInboxRead invokes markInboxRead operation.
 	//
 	// 标记消息已读.
@@ -6134,6 +6146,131 @@ func (c *Client) sendGetApiEndpointOverview(ctx context.Context, params GetApiEn
 
 	stage = "DecodeResponse"
 	result, err := decodeGetApiEndpointOverviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetAppPreflight invokes getAppPreflight operation.
+//
+// 获取应用接入预检查结果.
+//
+// GET /system/apps/preflight
+func (c *Client) GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (*SystemAppPreflightResponse, error) {
+	res, err := c.sendGetAppPreflight(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetAppPreflight(ctx context.Context, params GetAppPreflightParams) (res *SystemAppPreflightResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getAppPreflight"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/apps/preflight"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetAppPreflightOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/apps/preflight"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetAppPreflightOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetAppPreflightResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -20176,6 +20313,113 @@ func (c *Client) sendLogin(ctx context.Context, request *LoginRequest) (res Logi
 
 	stage = "DecodeResponse"
 	result, err := decodeLoginResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// Logout invokes logout operation.
+//
+// 退出登录.
+//
+// POST /auth/logout
+func (c *Client) Logout(ctx context.Context) (LogoutRes, error) {
+	res, err := c.sendLogout(ctx)
+	return res, err
+}
+
+func (c *Client) sendLogout(ctx context.Context) (res LogoutRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("logout"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/logout"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, LogoutOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/logout"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, LogoutOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeLogoutResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -54,6 +54,8 @@ paths:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register-context
   /auth/refresh:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1refresh
+  /auth/logout:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1logout
   /auth/callback/exchange:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1exchange
   /auth/me:
@@ -246,6 +248,8 @@ paths:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1apps
   /system/apps/current:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1apps~1current
+  /system/apps/preflight:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1apps~1preflight
   /system/app-host-bindings:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1app-host-bindings
   /system/app-host-bindings/{id}:
