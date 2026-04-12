@@ -8,7 +8,7 @@
 - OpenAPI 前端生成产物当前位于 `frontend/src/api/v5/`；业务封装位于 `frontend/src/api/*.ts` 与 `frontend/src/api/system-manage/*.ts`。
 - 统一通过 `v5Client` / 生成 schema 类型访问接口，**禁止新增第二套请求体系、手写 axios DTO 或直接改生成文件**。
 - 后端契约变更后，必须执行 `pnpm run gen:api` 并同步修正前端调用层；不允许前端临时改字段绕过 spec。
-- normalizer 仅负责 snake_case → camelCase、运行时展示归一和少量兼容；新增接口优先直接消费生成类型，避免继续扩散 `any` 解析。
+- normalizer 仅负责 snake_case → camelCase、运行时展示归一和少量兼容；新增接口优先直接消费生成类型，避免扩散 `any` 解析。
 - 路由守卫与权限判断消费后端真实权限接口（如 `/permissions/explain`、权限诊断、运行时导航），不在前端手写权限规则。
 - 前端不感知 `tenant_id`，由后端中间件解析。
 

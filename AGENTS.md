@@ -4,20 +4,18 @@
 
 - 使用中文沟通。
 - 通过 Shell 读写文本必须显式 UTF-8，避免乱码。
-- 当前仓库已完成 5.0 基线落地，日常工作以**增量开发 + 历史收口**为主；涉及架构、API、权限、迁移的任务，先核对 `docs/V5_REFACTOR_TASKS.md` 与外部基线文档《GGE_5.0_初始化架构文档.docx》。
 - 当前协作文档真相源如下，其余说明若与它们冲突，一律按这里为准：
   - `AGENTS.md`
   - `PROJECT_FRAMEWORK.md`
   - `FRONTEND_GUIDELINE.md`
   - `backend/CLAUDE.md`
-  - `docs/V5_REFACTOR_TASKS.md`
 
 ## 实施原则
 
 - 搜索代码优先用 `rg`；若 Windows 终端编码导致结果异常，再回退到 PowerShell 的 `Get-Content` / `Select-String`，并显式指定 UTF-8。
 - 数据库允许清空重建；迁移只负责一次性结构变更或历史数据修正，**默认数据走 seed / ensure 幂等逻辑**，不要把长期默认状态反复写进迁移链。
 - 临时修复型迁移在目标状态达成后必须删除，不长期保留。
-- 不手写已有成熟模块能解决的能力（路由、校验、API 文档、权限模型、迁移、DI、缓存）。新增依赖前先核对 V5 任务文档的技术栈定锤表。
+- 不手写已有成熟模块能解决的能力（路由、校验、API 文档、权限模型、迁移、DI、缓存）。新增依赖前先核对当前技术栈。
 - 新模块 / 新表 / 新接口在评审时必须显式回答：**是否带 tenant_id、是否在仓储层强制过滤**。
 - API 一律走 OpenAPI-first：spec 即真相，先改 `backend/api/openapi/`，再刷新生成物，再写实现；不允许手写 router/dto 绕开 ogen 生成。
 - `backend/api/gen/` 与 `frontend/src/api/v5/`（当前包含 `client.ts`、`types.ts`、`schema.d.ts`、`error-codes.ts`）属于生成产物，禁止手改生成文件本体；业务封装只能写在生成层之外。
@@ -46,7 +44,7 @@
   7. 执行 `pnpm exec vue-tsc --noEmit`。
 - 常规情况下优先执行上面的显式步骤；若需要一次性刷新后端 OpenAPI 生成链，可使用 `backend/update-openapi.bat`，但仍要补做前端 `pnpm run gen:api` 与联编校验。
 - 若本次 API 变更同时影响权限点、默认数据或错误码，还必须继续执行对应生成步骤（如 `go run ./cmd/gen-permissions`）并检查受影响产物。
-- 未完成上述生成、修正、校验前，不得判定“接口改造完成”，也不得开始依赖该接口继续开发下游功能。
+- 未完成上述生成、修正、校验前，不得判定"接口改造完成"，也不得开始依赖该接口继续开发下游功能。
 
 ## 协作技能位置（Claude Code 与 Codex 共用）
 
@@ -54,7 +52,6 @@
 - 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `gge/<skill-name>` 加载。
 - 当仓库内技能与全局技能同名时，以全局技能为准。
 - 若需调整技能规则，优先修改全局技能，不要求回灌仓库副本。
-
 
 ## 风险动作纪律
 

@@ -6,17 +6,16 @@
 
 1. `backend/` —— Go 1.25 + Gin + GORM + Postgres + Redis + Elasticsearch + ogen + goose + OpenTelemetry
    - 唯一有效的后端工程
-   - OpenAPI 生成链已落地：`backend/api/openapi/` → `backend/api/gen/`
+   - OpenAPI 生成链：`backend/api/openapi/` → `backend/api/gen/`
    - 运行与维护入口以 `backend/cmd/` 下的 `server`、`migrate`、`gen-permissions`、`init-admin`、`repair-workspaces` 等命令为准
-   - 模块边界、术语、表结构以《GGE_5.0_初始化架构文档.docx》与 `docs/V5_REFACTOR_TASKS.md` 为准
 
 2. `frontend/` —— Vue 3 + TypeScript + Vite + Element Plus + Pinia + openapi-fetch
    - 唯一有效的管理端前端工程
-   - **已接真实接口**，不再走 mock
-   - OpenAPI 前端生成产物当前位于 `frontend/src/api/v5/`（如 `client.ts`、`types.ts`、`schema.d.ts`、`error-codes.ts`）
+   - **已接真实接口**，不走 mock
+   - OpenAPI 前端生成产物位于 `frontend/src/api/v5/`（`client.ts`、`types.ts`、`schema.d.ts`、`error-codes.ts`）
    - 业务 API 封装写在 `frontend/src/api/*.ts` 与 `frontend/src/api/system-manage/*.ts`，不直接改生成文件
 
-## 核心语义（5.0 基线）
+## 核心语义
 
 - **Tenant 租户**：数据隔离的最外层边界。当前仅内置 `default`，前端无感知。
 - **Account 账号**：tenant 内的全局认证主体，不跨 tenant。
@@ -34,7 +33,7 @@
 - 权限判断只走 `backend/internal/pkg/permission/evaluator`，不允许散写。
 - 所有业务表必须带 `tenant_id`，仓储层强制过滤；唯一性约束写成 `(tenant_id, business_key)`。
 - 缓存 key、日志、trace、审计事件必须携带 `tenant_id`。
-- 大改动收尾时同步更新 `docs/V5_REFACTOR_TASKS.md` 中的阶段进度；API 改动必须同步更新 OpenAPI 与前端生成 client。
+- API 改动必须同步更新 OpenAPI 与前端生成 client。
 
 ## 新增能力固定闭环
 
@@ -51,5 +50,5 @@
 
 - 不开放跨 tenant 能力、不暴露 tenant 管理界面、不做 schema 分片。
 - 不引入消息队列、GraphQL、插件化、跨服务 RPC。
-- 历史字段与过渡术语允许继续存在于兼容层；但新增设计不得再以 4.5 的“菜单反推权限 / mock 接口 / 手写权限规则”模式扩散。
+- 新增设计不得以"菜单反推权限 / mock 接口 / 手写权限规则"模式扩散。
 - 不维护第二套后台前端、不重启第二个后端工程。

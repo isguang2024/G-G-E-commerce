@@ -1,17 +1,16 @@
 # backend/CLAUDE.md
 
-Backend-specific guidance for the GGE 5.0 Go service. Read `AGENTS.md`,
-`PROJECT_FRAMEWORK.md`, `FRONTEND_GUIDELINE.md`, and
-`docs/V5_REFACTOR_TASKS.md` first for the shared V5 rules.
+Backend-specific guidance for the GGE Go service. Read `AGENTS.md`,
+`PROJECT_FRAMEWORK.md`, `FRONTEND_GUIDELINE.md` first for the shared rules.
 If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 ## Documentation Navigation
 
-- Progress and stage tracking lives in `docs/V5_REFACTOR_TASKS.md` and `docs/reports/`.
 - Execution-oriented feature/flow documents are under `.claude/Instructions/`.
 - Backend API contract truth source remains `backend/api/openapi/README.md`.
+- Development guides are in `docs/guides/`.
 
-## How to add a v5 endpoint
+## How to add an endpoint
 
 The OpenAPI spec is the single source of truth. Adding an endpoint is a
 mechanical process. Do **not** shortcut it by editing generated code or
@@ -34,7 +33,7 @@ Every operation MUST carry the four `x-` extensions:
     operationId: getWidget
     tags: [widget]
     x-permission-key: widget.read     # required unless x-access-mode = public/authenticated
-    x-tenant-scoped: true             # always true for v5
+    x-tenant-scoped: true             # always true
     x-app-scope: optional             # required | optional | none
     x-access-mode: permission         # permission | authenticated | public
     parameters: [...]
@@ -71,9 +70,8 @@ matches the generated `gen.Handler` signature. Reach into the existing
 service-layer (`internal/modules/system/{domain}`) for business logic.
 
 Do NOT re-introduce a legacy Gin module shell
-(`internal/modules/system/*/module.go`). Those files have been deleted;
-the ogen bridge in `internal/api/router/router.go` already covers every
-operation declared in the spec.
+(`internal/modules/system/*/module.go`). The ogen bridge in
+`internal/api/router/router.go` covers every operation declared in the spec.
 
 ### 4. Ensure the permission key exists in the DB
 

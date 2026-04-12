@@ -66,4 +66,4 @@
 - 根 `README.md`：仓库总入口。
 - `docs/README.md`：文档中枢入口。
 - `docs/INDEX.md`：全量索引导航。
-- 核心子目录 `README.md`（如 `frontend/`、`docs/reports/`）。
+- 核心子目录 `README.md`（如 `frontend/`、`docs/guides/`）。

@@ -2,15 +2,14 @@
 
 这份文档用于统一仓库内文档怎么放、怎么写、怎么引用。目标是让新来的人能快速找到真相源，也让协作时不会把说明文写成第二套实现。
 
-若本文件与以下文档冲突，以这些真相源为准：`AGENTS.md`、`PROJECT_FRAMEWORK.md`、`FRONTEND_GUIDELINE.md`、`backend/CLAUDE.md`、`docs/V5_REFACTOR_TASKS.md`。
+若本文件与以下文档冲突，以这些真相源为准：`AGENTS.md`、`PROJECT_FRAMEWORK.md`、`FRONTEND_GUIDELINE.md`、`backend/CLAUDE.md`。
 
 ## 1. 分层原则
 
 - `README.md`：仓库总入口，回答“先看什么”
 - `docs/README.md`：`docs/` 目录入口，回答“文档从哪开始翻”
 - `docs/INDEX.md`：文档索引中枢，回答“每份文档负责什么”
-- `docs/V5_REFACTOR_TASKS.md`：阶段任务真入口，回答“当前要做什么”
-- `backend/api/openapi/README.md`：API 契约真入口，回答“接口怎么改”
+- `backend/api/openapi/README.md`：API 契约真入口，回答”接口怎么改”
 - `frontend/`：前端实现真入口，回答“页面和调用怎么落”
 - `Instructions/`：agent 执行型说明，回答“协作时怎么做”
 
@@ -43,9 +42,8 @@
 - 专题文档优先从 `docs/guides/README.md` 进入，再去看具体条目
 - 当一个主题已有专门入口时，新文档不要重复造同义页
 
-## 4. V5 协作约定
+## 4. 协作约定
 
-- 任务推进先看 `docs/V5_REFACTOR_TASKS.md`
 - API 相关工作先看 `backend/api/openapi/README.md`
 - 前端实现先看 `FRONTEND_GUIDELINE.md`
 - 当前结构和边界优先参考 `PROJECT_FRAMEWORK.md` 与 `docs/project-structure.md`
