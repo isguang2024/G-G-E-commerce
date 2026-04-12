@@ -36,7 +36,7 @@ api-front: api-bundle ## bundle→前端 TS 类型（需在 frontend/ 配 gen:ap
 	@echo "[api] generating frontend types..."
 	@cd ../frontend && npm run gen:api
 
-# ── 旧 target 保留（过渡期兼容）────────────────────────────────────────────
+# ── 常用命令与兼容别名 ─────────────────────────────────────────────────────
 
 help: ## 显示帮助信息
 	@echo "可用命令:"
@@ -67,9 +67,9 @@ migrate: ## 运行数据库迁移
 	@echo "运行数据库迁移..."
 	@go run cmd/migrate/main.go
 
-gen: api-gen ## 由 OpenAPI 生成 Go server/client 代码（ogen）— 同 api-gen
+gen: api-gen ## OpenAPI 生成 Go server/client 代码（api-gen 的简写别名）
 
-gen-permissions: api-perms ## 由 OpenAPI 派生 permission_keys / api_endpoints seed — 同 api-perms
+gen-permissions: api-perms ## 权限种子生成（api-perms 的简写别名）
 
 deps: ## 安装依赖
 	@go mod download

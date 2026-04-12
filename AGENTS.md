@@ -25,6 +25,16 @@
 
 ## API 变更固定步骤
 
+- 新能力默认按以下顺序推进，不允许倒序跳步：
+  `model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → gin bridge/router → handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
+- 其中：
+  - 结构变更先落 `model + migration`
+  - 长期默认数据走 `seed / ensure`，不反复写进 migration
+  - API 契约只改 `backend/api/openapi/`
+  - 生成物只通过 `bundle / ogen / gen-permissions / pnpm run gen:api` 刷新，不手改
+  - API 网关配置在本仓库内等价于 `OpenAPI 扩展字段 + gin bridge/router + middleware 分组`
+  - handler 写完不算完成，必须继续收口前端类型、前端封装、UI 联调和校验
+
 - 每次**新增 API**或**修改 API 契约**后，必须按以下顺序执行，不允许跳步：
   1. 先修改 `backend/api/openapi/` 下的 spec，保持 OpenAPI 为唯一真相源。
   2. 执行 `bundle`，生成最新 `backend/api/openapi/dist/openapi.yaml`。

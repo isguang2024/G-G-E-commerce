@@ -22,6 +22,7 @@
   const settingStore = useSettingStore()
   const { basicSettingsConfig } = useSettingsConfig()
   const { basicHandlers } = useSettingsHandlers()
+  type BasicHandlerName = keyof typeof basicHandlers
   const warnDev = (...args: unknown[]) => {
     if (import.meta.env.DEV) {
       console.warn(...args)
@@ -70,13 +71,20 @@
     return settingRef?.value ?? null
   }
 
+  const isBasicHandlerName = (handlerName: string): handlerName is BasicHandlerName =>
+    handlerName in basicHandlers
+
   // 统一的设置变更处理
-  const handleSettingChange = (handlerName: string, value: any) => {
-    const handler = (basicHandlers as any)[handlerName]
+  const handleSettingChange = (handlerName: string, value: unknown) => {
+    if (!isBasicHandlerName(handlerName)) {
+      warnDev(`Handler "${handlerName}" not found in basicHandlers`)
+      return
+    }
+    const handler = basicHandlers[handlerName] as (value?: unknown) => void
     if (typeof handler === 'function') {
       handler(value)
-    } else {
-      warnDev(`Handler "${handlerName}" not found in basicHandlers`)
+      return
     }
+    warnDev(`Handler "${handlerName}" not found in basicHandlers`)
   }
 </script>

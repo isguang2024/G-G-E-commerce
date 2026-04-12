@@ -22,10 +22,7 @@
  *
  *   <!-- 配合 Markdown 渲染 -->
  *   <div v-highlight>
- *     <pre><code class="language-javascript">
- *       const hello = 'world';
- *       console.log(hello);
- *     </code></pre>
+ *     <pre><code class="language-javascript">const hello = 'world';</code></pre>
  *   </div>
  * </template>
  * ```
@@ -43,6 +40,10 @@
 
 import { App, Directive } from 'vue'
 import hljs from 'highlight.js'
+
+type HighlightHostElement = HTMLElement & {
+  _highlightObserver?: MutationObserver
+}
 
 // 高亮代码
 function highlightCode(block: HTMLElement) {
@@ -223,7 +224,7 @@ const highlightDirective: Directive<HTMLElement> = {
     })
 
     // 将 observer 存储到元素上，以便在 unmounted 时清理
-    ;(el as any)._highlightObserver = observer
+    ;(el as HighlightHostElement)._highlightObserver = observer
   },
 
   updated(el: HTMLElement) {
@@ -235,10 +236,11 @@ const highlightDirective: Directive<HTMLElement> = {
 
   unmounted(el: HTMLElement) {
     // 清理 MutationObserver
-    const observer = (el as any)._highlightObserver
+    const host = el as HighlightHostElement
+    const observer = host._highlightObserver
     if (observer) {
       observer.disconnect()
-      delete (el as any)._highlightObserver
+      delete host._highlightObserver
     }
   }
 }

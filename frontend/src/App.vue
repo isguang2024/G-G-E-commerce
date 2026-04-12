@@ -1,10 +1,11 @@
 <template>
-  <ElConfigProvider size="default" :locale="locales[language] as any" :z-index="3000">
+  <ElConfigProvider size="default" :locale="locales[language]" :z-index="3000">
     <RouterView></RouterView>
   </ElConfigProvider>
 </template>
 
 <script setup lang="ts">
+  import { LanguageEnum } from '@/enums/appEnum'
   import { useUserStore } from './store/modules/user'
   import { storeToRefs } from 'pinia'
   import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -18,9 +19,9 @@
   const userStore = useUserStore()
   const { language } = storeToRefs(userStore)
 
-  const locales: Record<string, any> = {
-    zh: zhCn,
-    en: en
+  const locales: Record<LanguageEnum, typeof zhCn> = {
+    [LanguageEnum.ZH]: zhCn,
+    [LanguageEnum.EN]: en
   }
 
   onBeforeMount(() => {

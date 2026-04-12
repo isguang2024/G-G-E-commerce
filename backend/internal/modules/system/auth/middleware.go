@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/jwt"
@@ -20,17 +20,13 @@ func JWTAuth(secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "未授权，请先登录")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Unauthorized(c, "未授权，请先登录")
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			status, resp := errcode.Response(errcode.ErrTokenBadFormat)
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.TokenBadFormat(c, "")
 			return
 		}
 
@@ -39,13 +35,10 @@ func JWTAuth(secret string, db *gorm.DB) gin.HandlerFunc {
 		claims, err := jwt.ParseToken(token, secret)
 		if err != nil {
 			if err == jwt.ErrExpiredToken {
-				status, resp := errcode.Response(errcode.ErrTokenExpired)
-				c.JSON(status, resp)
+				legacyresp.TokenExpired(c, "")
 			} else {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "无效的 Token")
-				c.JSON(status, resp)
+				legacyresp.Unauthorized(c, "无效的 Token")
 			}
-			c.Abort()
 			return
 		}
 

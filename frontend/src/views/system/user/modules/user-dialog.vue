@@ -225,7 +225,7 @@
   )
 
   watch(
-    () => [props.type, (props.userData as any)?.userId ?? (props.userData as any)?.id],
+    () => [props.type, props.userData?.id],
     () => {
       if (props.visible && roleList.value.length > 0) initFormData()
     }

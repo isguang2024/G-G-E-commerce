@@ -194,6 +194,18 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 
 ## 阶段进度
 
+### 2026-04-12 项目清理优化收口（Phase Cleanup）
+
+**本次改动**
+- 清理前后端低风险历史残留：`frontend/src` 的 `as any` 已清零，`console.log` 已清零，删除消息模块 `_unused` 占位函数与旧欢迎信息残留。
+- 删除废弃 `internal/api/errcode` 包，新增轻量 `legacyresp` 兼容 helper，完成最后 4 处 legacy gin 错误响应迁移。
+- 收口源码 TODO/FIXME 标记、将 `backend/cmd/diagnose` 改为结构化日志，并规范 `backend/Makefile` 兼容别名说明。
+- 补 `backend/.env.example`，为 `backend/docker-compose.yml` 的 Elasticsearch/MinIO 增加 `optional` profile 与默认凭证安全警告；删除根目录 `start-frontend-shadcn.debug.log`。
+
+**下次方向**
+- 如确认 `.claude/worktrees/` 下 9 个历史 worktree 无需保留，再执行物理删除并收口清理任务最后一个阻塞节点。
+- 若继续做类型治理，可把剩余 `any` 注解与隐式组件内部类型访问继续替换为公开 schema / 组件类型。
+
 ### 2026-04-08 Phase 4 全量推进：role/navigation/featurepackage/permission/menu/page/cw 迁移到 ogen（Phase 4）
 
 **本次改动**
@@ -750,3 +762,14 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 这轮已经把“probe 是真实结果”补起来，但探活仍是同步轻探针；后续如需治理大规模远端应用，应改成后台异步采集 + 最近结果缓存，避免列表页阻塞在外部网络波动上。
 - `redocly lint` 现在剩余的是仓库级 warning，不再是结构断路；如果要继续提升 OpenAPI 质量，建议单开规范治理任务，批量补 tag description、4xx response 和 ambiguous path。
 - `Page.remote_binding` 当前已显式进写链，但 UI 仍以“保留并透传现有远端契约”为主；若后续要支持后台直接新建远端页，应再补专门的 remote binding 编辑表单。 
+
+### 2026-04-12 OpenAPI 固定闭环文档化：基础约束与详细流程固化（Phase Cleanup）
+
+**本次改动**
+- 在 [AGENTS.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/AGENTS.md) 补充“新增能力固定顺序”短链，统一为 `model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → gin bridge/router → handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`，并明确 API 网关配置在本仓库内等价于 `OpenAPI 扩展字段 + gin bridge/router + middleware 分组`。
+- 在 [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md) 新增“新增能力固定闭环”章节，把同一条顺序提升为项目基础框架约束，补齐“先定模型和默认数据策略，再定契约和桥接”的统一口径。
+- 新增 [docs/API_OPENAPI_FIXED_FLOW.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/API_OPENAPI_FIXED_FLOW.md)，把固定顺序展开成详细执行文档，覆盖 `model / migration / seed / OpenAPI / bundle / lint / ogen / gen-permissions / gin bridge / handler / frontend gen:api / frontend API 封装 / UI / build/test/browser verify` 全流程，并整理常见疏漏点，供后续沉淀成标准流程文本。
+
+**下次方向**
+- 如果后续要把这套流程进一步做成团队模板，建议再补一版“最小执行清单”，按“新增 API / 改契约 / 改权限 / 改默认数据”四类场景拆成 checklist，而不是只保留通用大链路。
+- 当前这轮只做流程文档化，不涉及代码或契约变更；后续若再调整 OpenAPI 生成链，应同步回写这三份文档，保持基础约束与执行文档一致。 

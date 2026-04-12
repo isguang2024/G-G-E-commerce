@@ -27,8 +27,6 @@ export class MenuProcessor {
    * 前端这里只保留路径规范化与兜底清洗，避免再次和后端做两套显隐判断。
    */
   normalizeMenuList(menuList: AppRouteRecord[]): AppRouteRecord[] {
-    // TODO: 后端 manifest 已完成启用态裁剪，应新增 manifest.normalized 标志，
-    // 前端据此跳过 filterDisabledMenus；暂时保留当前行为以保证兼容。
     const filteredByEnabled = this.filterDisabledMenus(menuList)
     this.validateMenuPaths(filteredByEnabled)
     return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByEnabled))

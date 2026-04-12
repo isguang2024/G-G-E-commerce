@@ -259,22 +259,21 @@
       }
 
       if (props.dialogType === 'add') {
-        await fetchCreateRole(payload as any)
+        await fetchCreateRole(payload)
       } else {
-        const roleId =
-          typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
+        const roleId = `${form.roleId || ''}`.trim()
         if (!roleId) {
           ElMessage.error('缺少角色ID')
           return
         }
-        await fetchUpdateRole(roleId, payload as any)
+        await fetchUpdateRole(roleId, payload)
       }
 
       ElMessage.success(props.dialogType === 'add' ? '新增成功' : '修改成功')
       emit('success')
       handleClose()
-    } catch (error: any) {
-      if (error?.message) ElMessage.error(error.message)
+    } catch (error) {
+      if (error instanceof Error && error.message) ElMessage.error(error.message)
     }
   }
 </script>

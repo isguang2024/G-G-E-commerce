@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
@@ -147,9 +147,7 @@ func (s *service) RequireActiveEndpoint() gin.HandlerFunc {
 		c.Set("api_endpoint_id", meta.ID.String())
 		c.Set("api_endpoint_status", meta.Status)
 		if endpointStatusCode(meta.Status) == 1 {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 API 已停用")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Forbidden(c, "当前 API 已停用")
 			return
 		}
 

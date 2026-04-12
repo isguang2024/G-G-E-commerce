@@ -65,6 +65,14 @@ interface CacheEntry {
 }
 const inflightMap = new Map<string, Promise<unknown>>()
 const responseCache = new Map<string, CacheEntry>()
+const AUTH_FLOW_ENDPOINTS = [
+  '/auth/login',
+  '/auth/logout',
+  '/auth/refresh',
+  '/auth/register',
+  '/auth/register-context',
+  '/auth/callback/exchange'
+]
 
 function buildCacheKey(config: ExtendedAxiosRequestConfig): string {
   const method = (config.method || 'GET').toUpperCase()
@@ -76,6 +84,21 @@ function buildCacheKey(config: ExtendedAxiosRequestConfig): string {
     params = ''
   }
   return `${method}|${url}|${params}`
+}
+
+function normalizeRequestPath(url?: string): string {
+  const raw = `${url || ''}`.trim()
+  if (!raw) return ''
+  try {
+    return new URL(raw, window.location.origin).pathname
+  } catch {
+    return raw
+  }
+}
+
+function shouldBypassUnauthorizedLogout(url?: string): boolean {
+  const path = normalizeRequestPath(url)
+  return AUTH_FLOW_ENDPOINTS.some((endpoint) => path.endsWith(endpoint))
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -152,6 +175,9 @@ axiosInstance.interceptors.response.use(
     // 401 未授权错误
     const errorMsg = message || msg || $t('httpMsg.requestFailed')
     if (code === 401 || response.status === ApiStatus.unauthorized) {
+      if (shouldBypassUnauthorizedLogout(response.config.url)) {
+        throw createHttpError(errorMsg, ApiStatus.unauthorized, { data: response.data.data })
+      }
       handleUnauthorizedError(errorMsg)
     }
     // 传递完整的响应数据，包括data字段（可能包含角色列表等信息）
@@ -160,6 +186,9 @@ axiosInstance.interceptors.response.use(
   (error) => {
     // HTTP 状态码错误处理
     if (error.response?.status === ApiStatus.unauthorized) {
+      if (shouldBypassUnauthorizedLogout(error.config?.url)) {
+        return Promise.reject(handleError(error))
+      }
       handleUnauthorizedError()
     }
     return Promise.reject(handleError(error))

@@ -202,7 +202,7 @@ export function useMenuPage() {
     const walk = (items: AppRouteRecord[]) => {
       items.forEach((item) => {
         stats.total += 1
-        const kind = `${(item as any).kind || ''}`.trim()
+        const kind = `${(item as AppRouteRecord & { kind?: string }).kind || ''}`.trim()
         if (kind === 'external') {
           stats.external += 1
         } else if (kind === 'entry') {
@@ -275,7 +275,7 @@ export function useMenuPage() {
       align: 'center',
       className: 'menu-selection-column',
       labelClassName: 'menu-selection-column'
-    } as any,
+    },
     { prop: 'title', label: '菜单名称', minWidth: 200, useSlot: true, slotName: 'title' },
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
     { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },

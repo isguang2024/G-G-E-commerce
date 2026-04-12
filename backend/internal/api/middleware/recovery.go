@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
 )
 
 // Recovery 恢复中间件
@@ -21,9 +21,7 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("remote_addr", c.ClientIP()),
 				)
 				logger.Error("Stack trace", zap.String("stack", string(debug.Stack())))
-				status, resp := errcode.Response(errcode.ErrInternal)
-				c.JSON(status, resp)
-				c.Abort()
+				legacyresp.Internal(c, "")
 			}
 		}()
 		c.Next()

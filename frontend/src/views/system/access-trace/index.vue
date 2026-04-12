@@ -9,7 +9,9 @@
             访问链路测试
           </div>
           <div class="intro-desc">
-            按 <b>用户 → 角色/协作空间 → 菜单可见 → 页面可见性</b> 的链路模拟运行时权限评估，用于排查菜单/页面不可见、权限命中异常等问题。
+            按
+            <b>用户 → 角色/协作空间 → 菜单可见 → 页面可见性</b>
+            的链路模拟运行时权限评估，用于排查菜单/页面不可见、权限命中异常等问题。
           </div>
         </div>
         <div class="intro-tips">
@@ -26,9 +28,7 @@
           <span class="card-header-title">筛选条件</span>
           <div class="card-header-actions">
             <ElButton plain :disabled="loading" @click="handleReset">重置</ElButton>
-            <ElButton type="primary" :loading="loading" @click="handleQuery">
-              测试链路
-            </ElButton>
+            <ElButton type="primary" :loading="loading" @click="handleQuery"> 测试链路 </ElButton>
           </div>
         </div>
       </template>
@@ -173,12 +173,7 @@
         <div class="stat-card">
           <div class="stat-label">超级管理员</div>
           <div class="stat-value">
-            <ElTag
-              :type="result.superAdmin ? 'warning' : 'info'"
-              size="large"
-              effect="light"
-              round
-            >
+            <ElTag :type="result.superAdmin ? 'warning' : 'info'" size="large" effect="light" round>
               {{ result.superAdmin ? '是' : '否' }}
             </ElTag>
           </div>
@@ -232,9 +227,7 @@
             </span>
             <span class="card-header-hint">
               {{
-                result.collaborationWorkspaceId
-                  ? '来自协作空间有效启用角色'
-                  : '来自账号级个人角色'
+                result.collaborationWorkspaceId ? '来自协作空间有效启用角色' : '来自账号级个人角色'
               }}
             </span>
           </div>
@@ -335,9 +328,7 @@
                 {{ data.kind }}
               </ElTag>
               <span v-if="data.fullPath" class="menu-node-path mono">{{ data.fullPath }}</span>
-              <ElTag v-if="data.hidden" size="small" effect="plain" type="info">
-                hidden
-              </ElTag>
+              <ElTag v-if="data.hidden" size="small" effect="plain" type="info"> hidden </ElTag>
             </div>
           </template>
         </ElTree>
@@ -383,12 +374,7 @@
         >
           <ElTableColumn label="可见" width="84" align="center">
             <template #default="{ row }">
-              <ElTag
-                :type="row.visible ? 'success' : 'danger'"
-                effect="light"
-                size="small"
-                round
-              >
+              <ElTag :type="row.visible ? 'success' : 'danger'" effect="light" size="small" round>
                 {{ row.visible ? '可见' : '拒绝' }}
               </ElTag>
             </template>
@@ -420,11 +406,7 @@
           </ElTableColumn>
           <ElTableColumn label="判定" min-width="160">
             <template #default="{ row }">
-              <ElTag
-                size="small"
-                effect="plain"
-                :type="row.visible ? 'success' : 'danger'"
-              >
+              <ElTag size="small" effect="plain" :type="row.visible ? 'success' : 'danger'">
                 {{ formatReason(row.reason) }}
               </ElTag>
             </template>
@@ -547,6 +529,12 @@
 
   // 菜单树
   type MenuNode = Api.SystemManage.PageAccessTraceMenuItem & { children: MenuNode[] }
+  type MenuTreeNodeState = { expanded?: boolean }
+  type MenuTreeStore = { nodesMap?: Record<string, MenuTreeNodeState> }
+  type MenuTreeExposed = InstanceType<typeof ElTreeType> & {
+    store?: MenuTreeStore
+    filter?: (keyword: string) => void
+  }
   const menuKeyword = ref('')
   const menuVisibleFilter = ref<'all' | 'visible' | 'hidden'>('all')
   const menuExpandAll = ref(true)
@@ -587,18 +575,18 @@
   function handleToggleMenuExpand() {
     menuExpandAll.value = !menuExpandAll.value
     nextTick(() => {
-      const tree = menuTreeRef.value as any
+      const tree = menuTreeRef.value as MenuTreeExposed | null
       if (!tree) return
       const store = tree.store
       if (!store) return
-      Object.values(store.nodesMap || {}).forEach((node: any) => {
+      Object.values(store.nodesMap || {}).forEach((node) => {
         node.expanded = menuExpandAll.value
       })
     })
   }
   watch([menuKeyword, menuVisibleFilter], () => {
     nextTick(() => {
-      const tree = menuTreeRef.value as any
+      const tree = menuTreeRef.value as MenuTreeExposed | null
       tree?.filter?.(menuKeyword.value)
     })
   })

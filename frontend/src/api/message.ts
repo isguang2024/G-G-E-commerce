@@ -1,18 +1,10 @@
-import {
-  v5Client,
-  unwrap,
-  type V5Query,
-  type V5RequestBody
-} from '@/api/system-manage/_shared'
+import { v5Client, unwrap, type V5Query, type V5RequestBody } from '@/api/system-manage/_shared'
 import type { components } from '@/api/v5/schema'
 
 interface MessageRequestOptions {
   skipAuthWorkspaceHeader?: boolean
   skipCollaborationWorkspaceHeader?: boolean
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _unused(_: MessageRequestOptions | undefined) {}
 
 type V5InboxItem = components['schemas']['InboxItem']
 type V5InboxSummary = components['schemas']['InboxSummary']
@@ -68,7 +60,9 @@ function normalizeInboxSummary(item: V5InboxSummary | undefined): Api.Message.In
   }
 }
 
-function normalizeDispatchOptions(item: V5DispatchOptions | undefined): Api.Message.DispatchOptions {
+function normalizeDispatchOptions(
+  item: V5DispatchOptions | undefined
+): Api.Message.DispatchOptions {
   return {
     sender_scope: item?.sender_scope || 'personal',
     current_collaboration_workspace_id: item?.current_collaboration_workspace_id || '',
@@ -76,7 +70,9 @@ function normalizeDispatchOptions(item: V5DispatchOptions | undefined): Api.Mess
     sender_options: Array.isArray(item?.sender_options) ? item.sender_options : [],
     default_sender_id: item?.default_sender_id || '',
     audience_options: Array.isArray(item?.audience_options) ? item.audience_options : [],
-    template_options: (Array.isArray(item?.template_options) ? item.template_options : []) as Api.Message.DispatchTemplateOption[],
+    template_options: (Array.isArray(item?.template_options)
+      ? item.template_options
+      : []) as Api.Message.DispatchTemplateOption[],
     collaboration_workspaces: Array.isArray(item?.collaboration_workspaces)
       ? item.collaboration_workspaces
       : [],
@@ -237,7 +233,10 @@ export async function fetchMarkInboxReadAll(boxType?: Api.Message.BoxType | '') 
   if (error) throw error
 }
 
-export async function fetchHandleInboxTodo(deliveryId: string, params: Api.Message.TodoActionParams) {
+export async function fetchHandleInboxTodo(
+  deliveryId: string,
+  params: Api.Message.TodoActionParams
+) {
   const body: V5RequestBody<'/messages/inbox/{deliveryId}/todo-action', 'post'> = {
     action: params.action
   }

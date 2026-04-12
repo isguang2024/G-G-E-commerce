@@ -62,7 +62,7 @@
         @refresh="handleRefresh"
       >
         <template #left>
-      <div class="permission-toolbar-tip">
+          <div class="permission-toolbar-tip">
             优先处理“未被消费”和“疑似重复”，跨空间镜像键保留独立授权。
           </div>
         </template>
@@ -434,14 +434,13 @@
       ]
     },
     transform: {
-      responseAdapter: (response: PermissionActionListResponse) =>
-        ({
-          records: response?.records || [],
-          total: response?.total || 0,
-          current: response?.current,
-          size: response?.size,
-          auditSummary: response?.auditSummary || createEmptyAuditSummary()
-        }) as any
+      responseAdapter: (response: PermissionActionListResponse) => ({
+        records: response?.records || [],
+        total: response?.total || 0,
+        current: response?.current,
+        size: response?.size,
+        auditSummary: response?.auditSummary || createEmptyAuditSummary()
+      })
     },
     hooks: {
       onSuccess: (_rows, response: any) => {

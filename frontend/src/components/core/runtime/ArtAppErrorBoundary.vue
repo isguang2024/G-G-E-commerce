@@ -40,11 +40,13 @@
   onErrorCaptured((error, instance, info) => {
     hasError.value = true
     errorHint.value = `${info || '运行时错误'}（app=${props.appKey || 'unknown'}）`
+    const componentName =
+      (instance as { $options?: { name?: string } } | null)?.$options?.name || 'anonymous'
     // telemetry 挂点：保留 APP 维度上下文，方便后续接入 Sentry/日志平台
     console.error('[AppErrorBoundary]', {
       appKey: props.appKey || 'unknown',
       info,
-      component: (instance as any)?.$options?.name || 'anonymous',
+      component: componentName,
       error
     })
     return false

@@ -143,10 +143,26 @@
   defineOptions({ name: 'CollaborationWorkspaceManagement' })
 
   type CollaborationWorkspaceListItem = Api.SystemManage.CollaborationWorkspaceListItem
+  type AdminCandidate = {
+    id?: string
+    user_id?: string
+    nickname?: string
+    username?: string
+    email?: string
+  }
+  type CollaborationWorkspaceWithAdmins = CollaborationWorkspaceListItem & {
+    adminUsers?: AdminCandidate[]
+    admin_users?: AdminCandidate[]
+  }
   const { hasAction } = useAuth()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
+
+  const resolveAdminUsers = (item?: CollaborationWorkspaceListItem): AdminCandidate[] => {
+    const normalized = item as CollaborationWorkspaceWithAdmins | undefined
+    return normalized?.adminUsers || normalized?.admin_users || []
+  }
 
   const dialogType = ref<DialogType>('add')
   const appList = ref<Api.SystemManage.AppItem[]>([])
@@ -187,11 +203,7 @@
     },
     {
       label: '管理员覆盖',
-      value: data.value.reduce(
-        (total, item) =>
-          total + (((item as any).adminUsers || (item as any).admin_users || []).length || 0),
-        0
-      )
+      value: data.value.reduce((total, item) => total + resolveAdminUsers(item).length, 0)
     }
   ])
   const appOptions = computed(() =>
@@ -220,8 +232,8 @@
           return {
             records: [],
             total: 0,
-            current: Number((params as any)?.current || 1),
-            size: Number((params as any)?.size || 20)
+            current: Number(params?.current || 1),
+            size: Number(params?.size || 20)
           }
         }
         return fetchGetCollaborationWorkspaceList(
@@ -244,16 +256,17 @@
           width: 200,
           formatter: (row: CollaborationWorkspaceListItem) => {
             // 兼容 adminUsers 和 admin_users 两种字段名
-            const admins = (row as any).adminUsers || (row as any).admin_users || []
+            const admins = resolveAdminUsers(row)
             if (!admins.length) return '-'
             return h('div', { class: 'flex flex-wrap gap-1' }, [
-              ...admins.slice(0, 2).map((admin: any) =>
+              ...admins.slice(0, 2).map((admin) =>
                 h(ElTag, { size: 'small', type: 'info' }, () => {
+                  const fallbackId = `${admin.user_id || admin.id || ''}`
                   return (
                     admin.nickname ||
                     admin.username ||
                     admin.email ||
-                    admin.user_id.substring(0, 8) + '...'
+                    `${fallbackId.substring(0, 8)}...`
                   )
                 })
               ),

@@ -43,13 +43,12 @@ func (r *ResolvedPermissions) Has(key string) bool {
 
 // Explanation augments ResolvedPermissions with attribution metadata so the
 // /permissions/explain endpoint can show *why* a key was granted (which
-// feature package, which role). Phase 3 only fills FeaturePackageKeys; the
-// role provenance lands together with the role-side intersection.
+// feature package, which role). 当前实现同时返回功能包与角色来源。
 type Explanation struct {
-	Resolved            *ResolvedPermissions
-	FeaturePackageKeys  map[string][]uuid.UUID // permission_key -> source feature package ids
-	RoleKeys            map[string][]uuid.UUID // permission_key -> source role ids (TODO)
-	UnresolvedKeys      []string               // requested keys that were not granted
+	Resolved           *ResolvedPermissions
+	FeaturePackageKeys map[string][]uuid.UUID // permission_key -> source feature package ids
+	RoleKeys           map[string][]uuid.UUID // permission_key -> source role ids
+	UnresolvedKeys     []string               // requested keys that were not granted
 }
 
 // Evaluator is the single entry point for permission decisions. Every

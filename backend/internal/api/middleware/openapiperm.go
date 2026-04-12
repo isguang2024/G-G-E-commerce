@@ -4,8 +4,7 @@
 // invokes evaluator.Can. If a workspace UUID can be derived from the
 // operation parameters (path "id" or query/path "workspace_id"), the check
 // is workspace-scoped; otherwise the middleware passes through with a
-// debug log so that account-level operations don't get blocked while the
-// evaluator's account-only path is still TODO.
+// debug log and falls back to the evaluator account-union path.
 package middleware
 
 import (

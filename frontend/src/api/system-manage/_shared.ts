@@ -162,6 +162,14 @@ type V5PermissionActionLike = {
 }
 
 let unauthorizedHandling: Promise<void> | null = null
+const AUTH_FLOW_ENDPOINTS = [
+  '/auth/login',
+  '/auth/logout',
+  '/auth/refresh',
+  '/auth/register',
+  '/auth/register-context',
+  '/auth/callback/exchange'
+]
 
 // V5 真相源：HTTP status + spec error.code/error.message。
 // 旧 axios 错误协议（statusCode、msg、error 字段）已废弃。
@@ -191,6 +199,17 @@ function normalizeV5ErrorMessage(error: any, statusCode: number): string {
   return $t('httpMsg.requestFailed')
 }
 
+function shouldBypassUnauthorizedLogout(url?: string): boolean {
+  const raw = `${url || ''}`.trim()
+  if (!raw) return false
+  try {
+    const path = new URL(raw, window.location.origin).pathname
+    return AUTH_FLOW_ENDPOINTS.some((endpoint) => path.endsWith(endpoint))
+  } catch {
+    return AUTH_FLOW_ENDPOINTS.some((endpoint) => raw.endsWith(endpoint))
+  }
+}
+
 function handleV5Unauthorized(error: HttpError): void {
   if (!unauthorizedHandling) {
     unauthorizedHandling = (async () => {
@@ -214,7 +233,7 @@ export function createV5HttpError(error: any, response?: Response): HttpError {
     method: undefined
   })
 
-  if (statusCode === ApiStatus.unauthorized) {
+  if (statusCode === ApiStatus.unauthorized && !shouldBypassUnauthorizedLogout(response?.url)) {
     handleV5Unauthorized(httpError)
   }
 

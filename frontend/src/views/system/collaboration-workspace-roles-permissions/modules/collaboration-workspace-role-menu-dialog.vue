@@ -68,6 +68,7 @@
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import type { AppRouteRecord } from '@/types/router'
   import {
     fetchGetMyCollaborationWorkspaceBoundaryRoleMenus,
     fetchGetMyCollaborationWorkspaceBoundaryRolePackages,
@@ -87,10 +88,22 @@
     (e: 'success'): void
   }>()
 
+  type MenuTreeItem = Pick<AppRouteRecord, 'id' | 'children' | 'name' | 'path' | 'meta'> & {
+    label?: string
+    children?: MenuTreeItem[]
+  }
+  type DerivedSourceItem = {
+    menu_id: string
+    package_ids: string[]
+  }
+  type TreeNodeState = { expanded?: boolean }
+  type TreeStore = { nodesMap?: Record<string, TreeNodeState> }
+  type CheckedState = { checkedKeys?: Array<string | number> }
+
   const treeRef = ref()
   const expandAll = ref(true)
   const saving = ref(false)
-  const menuList = ref<any[]>([])
+  const menuList = ref<MenuTreeItem[]>([])
   const menuSourceList = ref<Array<{ id: string; label: string }>>([])
   const availableMenuIds = ref<string[]>([])
   const selectedMenuIds = ref<string[]>([])
@@ -130,7 +143,13 @@
 
   const defaultProps = {
     children: 'children',
-    label: (data: any) => formatMenuTitle(data.meta?.title) || data.label || data.name || ''
+    label: (data: Record<string, unknown>) =>
+      String(
+        formatMenuTitle((data.meta as { title?: string } | undefined)?.title || '') ||
+          data.label ||
+          data.name ||
+          ''
+      )
   }
 
   watch(
@@ -157,7 +176,10 @@
         availableMenuIds.value = assigned?.available_menu_ids || []
         featurePackages.value = packagesRes?.packages || []
         derivedSourceMap.value = Object.fromEntries(
-          (assigned?.derived_sources || []).map((item: any) => [item.menu_id, item.package_ids])
+          ((assigned?.derived_sources || []) as DerivedSourceItem[]).map((item) => [
+            item.menu_id,
+            item.package_ids
+          ])
         )
         selectedDerivedPackageId.value = ''
         inherited.value = Boolean(packagesRes?.inherited)
@@ -179,9 +201,11 @@
   )
 
   function toggleExpand() {
-    const tree = treeRef.value
+    const tree = treeRef.value as
+      | { store?: TreeStore; setCheckedKeys?: (keys: string[]) => void }
+      | undefined
     if (!tree?.store?.nodesMap) return
-    Object.values(tree.store.nodesMap).forEach((node: any) => {
+    Object.values(tree.store.nodesMap).forEach((node) => {
       node.expanded = !expandAll.value
     })
     expandAll.value = !expandAll.value
@@ -194,7 +218,7 @@
     treeRef.value?.setCheckedKeys([])
   }
 
-  function handleCheck(_: any, checkedState: any) {
+  function handleCheck(_: unknown, checkedState: CheckedState) {
     selectedMenuIds.value = (checkedState?.checkedKeys || []).map((key: string | number) =>
       String(key)
     )
@@ -234,28 +258,37 @@
     }
   }
 
-  function filterMenuTreeByAllowedIds(source: any[], allowed: Set<string>): any[] {
+  function filterMenuTreeByAllowedIds(
+    source: MenuTreeItem[],
+    allowed: Set<string>
+  ): MenuTreeItem[] {
     if (!allowed.size) return []
-    return source
-      .map((item: any) => {
-        const children: any[] = filterMenuTreeByAllowedIds(item.children || [], allowed)
-        if (!allowed.has(item.id) && children.length === 0) return null
-        return {
-          ...item,
-          children
-        }
+    const result: MenuTreeItem[] = []
+    source.forEach((item) => {
+      const children = filterMenuTreeByAllowedIds(item.children || [], allowed)
+      const itemID = String(item.id || '')
+      if (!itemID) return
+      if (!allowed.has(itemID) && children.length === 0) return
+      result.push({
+        ...item,
+        id: itemID,
+        children
       })
-      .filter(Boolean) as any[]
+    })
+    return result
   }
 
-  function buildMenuSourceList(source: any[], allowedIDs: string[]) {
+  function buildMenuSourceList(source: MenuTreeItem[], allowedIDs: string[]) {
     const indexMap: Record<string, { id: string; label: string }> = {}
-    const walk = (items: any[]) => {
+    const walk = (items: MenuTreeItem[]) => {
       items.forEach((item) => {
-        indexMap[item.id] = {
-          id: item.id,
-          label:
-            formatMenuTitle(item.meta?.title) || item.label || item.name || item.path || item.id
+        const itemID = String(item.id || '')
+        if (!itemID) return
+        indexMap[itemID] = {
+          id: itemID,
+          label: String(
+            formatMenuTitle(item.meta?.title) || item.label || item.name || item.path || itemID
+          )
         }
         if (Array.isArray(item.children) && item.children.length) {
           walk(item.children)

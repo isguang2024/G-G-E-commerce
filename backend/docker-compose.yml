@@ -42,6 +42,7 @@ services:
 
   # Elasticsearch 搜索引擎（可选）
   elasticsearch:
+    profiles: ["optional"]
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
     container_name: gg-elasticsearch
     environment:
@@ -64,10 +65,13 @@ services:
 
   # MinIO 对象存储（可选）
   minio:
+    profiles: ["optional"]
     image: minio/minio:latest
     container_name: gg-minio
     environment:
+      # 仅开发默认值；生产环境请改成强密码并配套独立凭证管理。
       MINIO_ROOT_USER: minioadmin
+      # 仅开发默认值；生产环境请改成强密码并配套独立凭证管理。
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
       - "9000:9000"

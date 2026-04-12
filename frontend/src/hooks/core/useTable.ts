@@ -165,7 +165,7 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   const logger = {
     log: (message: string, ...args: unknown[]) => {
       if (enableLog) {
-        console.log(`[useTable] ${message}`, ...args)
+        console.debug(`[useTable] ${message}`, ...args)
       }
     },
     warn: (message: string, ...args: unknown[]) => {

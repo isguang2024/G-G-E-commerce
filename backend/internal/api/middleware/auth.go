@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/pkg/jwt"
 )
@@ -20,17 +20,13 @@ func JWTAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "未授权，请先登录")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Unauthorized(c, "未授权，请先登录")
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			status, resp := errcode.Response(errcode.ErrTokenBadFormat)
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.TokenBadFormat(c, "")
 			return
 		}
 
@@ -38,13 +34,10 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		claims, err := jwt.ParseToken(token, secret)
 		if err != nil {
 			if err == jwt.ErrExpiredToken {
-				status, resp := errcode.Response(errcode.ErrTokenExpired)
-				c.JSON(status, resp)
+				legacyresp.TokenExpired(c, "")
 			} else {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "无效的 Token")
-				c.JSON(status, resp)
+				legacyresp.Unauthorized(c, "无效的 Token")
 			}
-			c.Abort()
 			return
 		}
 
@@ -59,17 +52,13 @@ func JWTAuth(secret string) gin.HandlerFunc {
 func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if db == nil {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "API Key 认证未初始化")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Internal(c, "API Key 认证未初始化")
 			return
 		}
 
 		apiKey := strings.TrimSpace(c.GetHeader("X-API-Key"))
 		if apiKey == "" {
-			status, resp := errcode.Response(errcode.ErrAPIKeyMissing)
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.APIKeyMissing(c, "")
 			return
 		}
 
@@ -77,40 +66,28 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 		candidates := []string{hashAPIKey(apiKey), apiKey}
 		if err := db.Where("key_hash IN ?", candidates).First(&record).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "API Key 校验失败")
-				c.JSON(status, resp)
-				c.Abort()
+				legacyresp.Internal(c, "API Key 校验失败")
 				return
 			}
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "无效的 API Key")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Unauthorized(c, "无效的 API Key")
 			return
 		}
 
 		if record.ExpiresAt != nil && record.ExpiresAt.Before(time.Now()) {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 已过期")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Unauthorized(c, "API Key 已过期")
 			return
 		}
 		var collaborationWorkspace models.CollaborationWorkspace
 		if err := db.Select("id", "status").Where("id = ?", record.CollaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属协作空间不存在")
-				c.JSON(status, resp)
-				c.Abort()
+				legacyresp.Unauthorized(c, "API Key 所属协作空间不存在")
 				return
 			}
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "API Key 协作空间校验失败")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Internal(c, "API Key 协作空间校验失败")
 			return
 		}
 		if strings.TrimSpace(collaborationWorkspace.Status) != "" && collaborationWorkspace.Status != "active" {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属协作空间不可用")
-			c.JSON(status, resp)
-			c.Abort()
+			legacyresp.Unauthorized(c, "API Key 所属协作空间不可用")
 			return
 		}
 

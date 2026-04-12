@@ -731,7 +731,8 @@
   const appEnvProfilesText = ref('{}')
   const appFeatureFlagsText = ref('{}')
   const appSensitiveConfigText = ref('{}')
-  const appMetaBase = ref<Record<string, any>>({})
+  const appMetaBase = ref<Record<string, unknown>>({})
+  type MatchType = Api.SystemManage.AppHostBindingSaveParams['match_type']
 
   const entryForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
     id: '',
@@ -908,11 +909,7 @@
         key: 'health',
         title: '运行探针',
         level:
-          probeStatus === 'healthy'
-            ? 'success'
-            : probeStatus === 'missing'
-              ? 'info'
-              : 'warning',
+          probeStatus === 'healthy' ? 'success' : probeStatus === 'missing' ? 'info' : 'warning',
         text:
           probeStatus === 'healthy'
             ? `探针最近一次探测成功：${record.probeTarget || record.healthCheckUrl || '已探测'}，${record.probeMessage || '运行正常'}。`
@@ -1125,7 +1122,7 @@
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
       throw new Error('运行能力声明必须是 JSON 对象')
     }
-    return parsed as Record<string, any>
+    return parsed as Record<string, unknown>
   }
 
   function parseMetaSectionText(rawText: string, label: string) {
@@ -1137,7 +1134,19 @@
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
       throw new Error(`${label}必须是 JSON 对象`)
     }
-    return parsed as Record<string, any>
+    return parsed as Record<string, unknown>
+  }
+
+  function normalizeMatchType(value?: string): MatchType {
+    switch (value) {
+      case 'host_exact':
+      case 'host_suffix':
+      case 'path_prefix':
+      case 'host_and_path':
+        return value
+      default:
+        return 'host_exact'
+    }
   }
 
   async function loadSelectedAppContext(appKey: string) {
@@ -1150,12 +1159,14 @@
     const [hostRes, spaceRes, entryRes, preflightRes] = await Promise.all([
       fetchGetAppHostBindings(normalizedAppKey),
       fetchGetMenuSpaces(normalizedAppKey),
-      fetchGetMenuSpaceEntryBindings(normalizedAppKey).catch(() => ({ records: [] as any[] })),
+      fetchGetMenuSpaceEntryBindings(normalizedAppKey).catch(() => ({
+        records: [] as Api.SystemManage.MenuSpaceEntryBindingItem[]
+      })),
       fetchGetAppPreflight(normalizedAppKey).catch(() => undefined)
     ])
     hostBindings.value = hostRes.records || []
     spaces.value = spaceRes.records || []
-    spaceEntryBindings.value = (entryRes.records || []) as any
+    spaceEntryBindings.value = entryRes.records || []
     appPreflight.value = preflightRes
   }
 
@@ -1195,13 +1206,13 @@
     appForm.description = ''
     appForm.space_mode = 'single'
     appForm.default_space_key = ''
-      appForm.auth_mode = 'inherit_host'
-      appForm.frontend_entry_url = ''
-      appForm.backend_entry_url = ''
-      appForm.health_check_url = ''
-      appForm.manifest_url = ''
-      appForm.runtime_version = ''
-      appForm.capabilities = {}
+    appForm.auth_mode = 'inherit_host'
+    appForm.frontend_entry_url = ''
+    appForm.backend_entry_url = ''
+    appForm.health_check_url = ''
+    appForm.manifest_url = ''
+    appForm.runtime_version = ''
+    appForm.capabilities = {}
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
@@ -1282,7 +1293,7 @@
       editingEntryId.value = item.id || ''
       entryForm.id = item.id || ''
       entryForm.app_key = item.appKey || selectedAppKey.value
-      entryForm.match_type = (item.matchType as any) || 'host_exact'
+      entryForm.match_type = normalizeMatchType(item.matchType)
       entryForm.host = item.host || ''
       entryForm.path_pattern = item.pathPattern || ''
       entryForm.priority = item.priority || 0
@@ -1305,7 +1316,7 @@
       spaceEntryForm.id = item.id || ''
       spaceEntryForm.app_key = item.appKey || selectedAppKey.value
       spaceEntryForm.space_key = item.spaceKey || ''
-      spaceEntryForm.match_type = (item.matchType as any) || 'host_exact'
+      spaceEntryForm.match_type = normalizeMatchType(item.matchType)
       spaceEntryForm.host = item.host || ''
       spaceEntryForm.path_pattern = item.pathPattern || ''
       spaceEntryForm.priority = item.priority || 0

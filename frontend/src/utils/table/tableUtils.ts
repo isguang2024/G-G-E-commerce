@@ -54,6 +54,14 @@ export interface TableError {
   details?: unknown
 }
 
+type AsyncFn = (...args: any[]) => Promise<any>
+type SmartDebounced<T extends AsyncFn> = ((
+  ...args: Parameters<T>
+) => Promise<Awaited<ReturnType<T>>>) & {
+  cancel: () => void
+  flush: () => Promise<Awaited<ReturnType<T>> | void>
+}
+
 // 辅助函数：从对象中提取记录数组
 function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] {
   for (const field of fields) {
@@ -199,16 +207,13 @@ export const updatePaginationFromResponse = <T>(
 /**
  * 创建智能防抖函数 - 支持取消和立即执行
  */
-export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  delay: number
-): T & { cancel: () => void; flush: () => Promise<any> } => {
+export const createSmartDebounce = <T extends AsyncFn>(fn: T, delay: number): SmartDebounced<T> => {
   let timeoutId: NodeJS.Timeout | null = null
   let lastArgs: Parameters<T> | null = null
   let lastResolve: ((value: any) => void) | null = null
   let lastReject: ((reason: any) => void) | null = null
 
-  const debouncedFn = (...args: Parameters<T>): Promise<any> => {
+  const debouncedFn = (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     return new Promise((resolve, reject) => {
       if (timeoutId) clearTimeout(timeoutId)
       lastArgs = args
@@ -260,7 +265,7 @@ export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
     return Promise.resolve()
   }
 
-  return debouncedFn as any
+  return debouncedFn as SmartDebounced<T>
 }
 
 /**

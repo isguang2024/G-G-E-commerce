@@ -36,6 +36,17 @@
 - 缓存 key、日志、trace、审计事件必须携带 `tenant_id`。
 - 大改动收尾时同步更新 `docs/V5_REFACTOR_TASKS.md` 中的阶段进度；API 改动必须同步更新 OpenAPI 与前端生成 client。
 
+## 新增能力固定闭环
+
+- 项目统一按这条顺序推进新增能力或新增接口：
+  `model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → gin bridge/router → handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
+- 这条顺序的含义是：
+  - 先定领域模型、表结构和默认数据策略，再谈 API
+  - OpenAPI 是后端与前端共享的唯一契约真相源
+  - `gin bridge/router` 属于仓库内 API 网关配置的一部分，负责把 OpenAPI 生成的 server 接到认证、权限、endpoint-status 等中间件分组
+  - 前端不是只拿到 `schema.d.ts` 就结束，仍需补业务 API 封装与 UI 联调
+  - 未完成生成、桥接、权限种子、联编和浏览器验证前，不视为闭环完成
+
 ## 当前非目标
 
 - 不开放跨 tenant 能力、不暴露 tenant 管理界面、不做 schema 分片。

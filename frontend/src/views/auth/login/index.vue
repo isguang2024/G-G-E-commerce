@@ -10,6 +10,14 @@
         <div class="form">
           <h3 class="title">{{ $t('login.title') }}</h3>
           <p class="sub-title">{{ $t('login.subTitle') }}</p>
+          <ElAlert
+            v-if="submitError"
+            :title="submitError"
+            type="error"
+            :closable="false"
+            show-icon
+            style="margin-top: 16px"
+          />
           <ElForm
             ref="formRef"
             :model="formData"
@@ -104,6 +112,7 @@
 
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
+  const submitError = ref('')
   const LOGIN_REMEMBER_KEY = 'gg-login-remember'
 
   // 登录表单默认值（不再预置系统账号密码）
@@ -250,6 +259,7 @@
       if (!valid) return
 
       loading.value = true
+      submitError.value = ''
 
       const { username, password } = formData
       const response = await fetchLogin({
@@ -312,8 +322,14 @@
       const landingPath = normalizeRedirect(route.query.redirect as string)
       await gotoAfterLogin(landingPath)
     } catch (error) {
-      if (error instanceof HttpError) {
-        // handle silently
+      const message =
+        error instanceof HttpError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : ''
+      if (message) {
+        submitError.value = message
       } else {
         console.error('[Login] Unexpected error:', error)
       }

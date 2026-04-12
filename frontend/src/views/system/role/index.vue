@@ -374,7 +374,7 @@
       })
       .catch((error) => {
         if (error !== 'cancel') {
-          ElMessage.error((error as any)?.message || '删除失败')
+          ElMessage.error(error instanceof Error ? error.message : '删除失败')
         }
       })
   }

@@ -83,6 +83,16 @@
     name: string
   }
 
+  interface AdminCandidate {
+    id?: string
+    user_id?: string
+    name?: string
+    nickName?: string
+    userName?: string
+    userEmail?: string
+    email?: string
+  }
+
   interface Props {
     visible: boolean
     type: 'add' | 'edit'
@@ -113,6 +123,17 @@
   const inputValue = ref('')
   const adminList = ref<AdminUser[]>([])
 
+  const resolveAdminUsers = (
+    payload?: Partial<Api.SystemManage.CollaborationWorkspaceListItem>
+  ): AdminCandidate[] => {
+    if (!payload) return []
+    const normalized = payload as Partial<Api.SystemManage.CollaborationWorkspaceListItem> & {
+      adminUsers?: AdminCandidate[]
+      admin_users?: AdminCandidate[]
+    }
+    return normalized.adminUsers || normalized.admin_users || []
+  }
+
   const formData = reactive({
     name: '',
     remark: '',
@@ -132,9 +153,8 @@
     adminList.value = []
     for (const id of ids) {
       try {
-        const res = await fetchGetUser(id)
-        const user = (res as any).data || res
-        const name = user.nickName || user.userName || user.userEmail || user.email || '未知用户'
+        const user = await fetchGetUser(id)
+        const name = user.nickName || user.userName || user.userEmail || '未知用户'
         adminList.value.push({ id, name })
       } catch {
         adminList.value.push({ id, name: '用户不存在' })
@@ -172,8 +192,8 @@
 
     // 验证用户是否存在
     try {
-      const user: any = await fetchGetUser(value)
-      const name = user.nickName || user.userName || user.userEmail || user.email || '未知用户'
+      const user = await fetchGetUser(value)
+      const name = user.nickName || user.userName || user.userEmail || '未知用户'
       adminList.value.push({ id: value, name })
       formData.admin_user_ids = adminList.value.map((a) => a.id)
       ElMessage.success(`已成功添加用户 [${name}] 为协作空间管理员`)
@@ -195,11 +215,8 @@
       if (props.type === 'edit' && collaborationWorkspaceData) {
         formData.name = collaborationWorkspaceData.name ?? ''
         formData.remark = collaborationWorkspaceData.remark ?? ''
-        const adminUsers =
-          (collaborationWorkspaceData as any).adminUsers ||
-          (collaborationWorkspaceData as any).admin_users ||
-          []
-        formData.admin_user_ids = adminUsers.map((admin: any) => admin.user_id || admin.id || '')
+        const adminUsers = resolveAdminUsers(collaborationWorkspaceData)
+        formData.admin_user_ids = adminUsers.map((admin) => admin.user_id || admin.id || '')
         formData.logo_url = collaborationWorkspaceData.logoUrl ?? ''
         formData.plan = collaborationWorkspaceData.plan ?? 'free'
         formData.max_members = collaborationWorkspaceData.maxMembers ?? 10

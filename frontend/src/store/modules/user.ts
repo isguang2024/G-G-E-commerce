@@ -65,6 +65,7 @@ export const useUserStore = defineStore(
     const lockPassword = ref('')
     // 用户信息
     const info = ref<Partial<Api.Auth.UserInfo>>({})
+    const emptyUserInfo: Partial<Api.Auth.UserInfo> = { actions: [], roles: [] }
     // 搜索历史记录
     const searchHistory = ref<AppRouteRecord[]>([])
     // 访问令牌
@@ -198,7 +199,9 @@ export const useUserStore = defineStore(
      * 清空所有用户相关状态并跳转到登录页
      * 如果是同一账号重新登录，保留工作台标签页
      */
-    const clearSessionState = (options: { preserveLastUserId?: boolean; broadcast?: boolean } = {}) => {
+    const clearSessionState = (
+      options: { preserveLastUserId?: boolean; broadcast?: boolean } = {}
+    ) => {
       if (options.preserveLastUserId) {
         const currentUserId = info.value.userId
         if (currentUserId) {
@@ -206,7 +209,7 @@ export const useUserStore = defineStore(
         }
       }
       // 清空用户信息（显式清空 actions/roles，避免 useAuth 命中旧权限缓存）
-      info.value = { actions: [], roles: [] } as any
+      info.value = { ...emptyUserInfo }
       isLogin.value = false
       isLock.value = false
       lockPassword.value = ''

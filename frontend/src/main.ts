@@ -24,7 +24,8 @@ setupErrorHandle(app)
 app.use(language)
 
 // 若用户偏好非默认语言，先按需加载语言包再 mount，避免首屏闪烁兜底文案
-const initialLocale = (language.global as any).locale?.value || (language.global as any).locale
+const localeConfig = language.global.locale
+const initialLocale = typeof localeConfig === 'string' ? localeConfig : localeConfig.value
 if (initialLocale && initialLocale !== 'zh') {
   loadLocaleMessages(initialLocale).finally(() => app.mount('#app'))
 } else {
