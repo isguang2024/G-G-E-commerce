@@ -10,6 +10,7 @@ import (
 	"errors"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
@@ -401,6 +402,79 @@ func uuidFromMapValue(value interface{}) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("invalid uuid value")
 	}
 	return uuid.Parse(strings.TrimSpace(raw))
+}
+
+func (h *APIHandler) SilentSSOCallback(ctx context.Context, req *gen.SilentSSORequest) (gen.SilentSSOCallbackRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return nil, &apperr.UnauthError{Msg: "未认证"}
+	}
+
+	// 检查 max_age: 若请求指定了 max_age，则验证 auth_time 是否满足要求
+	if req.MaxAge.Set {
+		maxAge := int64(req.MaxAge.Value)
+		authTime, _ := ctx.Value(CtxAuthTime).(int64)
+		if authTime == 0 {
+			// 旧 token 无 auth_time，视为需要重认证
+			return &gen.Error{
+				Code:    apperr.CodeLoginRequired,
+				Message: "login_required",
+			}, nil
+		}
+		now := time.Now().Unix()
+		if now-authTime > maxAge {
+			return &gen.Error{
+				Code:    apperr.CodeLoginRequired,
+				Message: "login_required",
+			}, nil
+		}
+	}
+
+	// 验证用户状态
+	u, err := h.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, &apperr.UnauthError{Msg: "用户不存在或已禁用"}
+	}
+	if u.Status == "disabled" {
+		return nil, &apperr.UnauthError{Msg: "账号已被禁用"}
+	}
+
+	// 签发 callback code
+	if h.centralizedAuthSvc == nil {
+		return nil, errors.New("centralized auth service not configured")
+	}
+	callback, err := h.centralizedAuthSvc.CreateCallback(ctx, auth.CreateAuthCallbackInput{
+		UserID:             userID,
+		TargetAppKey:       req.TargetAppKey,
+		RedirectURI:        req.RedirectURI,
+		TargetPath:         optString(req.TargetPath),
+		NavigationSpaceKey: optString(req.NavigationSpaceKey),
+		State:              req.State,
+		Nonce:              req.Nonce,
+		RequestHost:        requestHostFromCtx(ctx),
+	})
+	if err != nil {
+		h.logger.Warn("silent sso callback creation failed", zap.Error(err))
+		return &gen.Error{
+			Code:    apperr.CodeLoginRequired,
+			Message: err.Error(),
+		}, nil
+	}
+
+	out := &gen.LoginResponse{
+		Callback: gen.OptAuthCallbackPayload{Value: gen.AuthCallbackPayload{
+			Mode:                gen.AuthCallbackPayloadModeTokenExchange,
+			Code:                callback.Code,
+			State:               callback.State,
+			TargetAppKey:        callback.TargetAppKey,
+			RedirectURI:         callback.RedirectURI,
+			RedirectTo:          callback.RedirectTo,
+			TargetPath:          gen.NewOptString(callback.TargetPath),
+			NavigationSpaceKey:  gen.NewOptString(callback.NavigationSpaceKey),
+			AuthProtocolVersion: gen.NewOptString(callback.AuthProtocolVersion),
+		}, Set: true},
+	}
+	return out, nil
 }
 
 var _ = uuid.Nil // reserved for future auth handler additions

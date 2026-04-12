@@ -106,6 +106,12 @@ components:
           type: string
         auth_protocol_version:
           type: string
+        prompt:
+          type: string
+          description: "OIDC-like prompt 参数: none=静默 SSO 尝试, login=强制重新认证"
+        max_age:
+          type: integer
+          description: "最大认证年龄(秒): 0=必须重新认证, 900=超过15分钟需重认证"
     LoginResponse:
       type: object
       required: []

@@ -17,6 +17,7 @@ type Claims struct {
 	UserID                   string `json:"user_id"`
 	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
 	Email                    string `json:"email"`
+	AuthTime                 int64  `json:"auth_time,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -24,10 +25,11 @@ type Claims struct {
 func GenerateToken(secret string, userID, collaborationWorkspaceID, email string, expiresInMinutes int) (string, error) {
 	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
 
-		claims := &Claims{
+	claims := &Claims{
 		UserID:                   userID,
 		CollaborationWorkspaceID: collaborationWorkspaceID,
 		Email:                    email,
+		AuthTime:                 time.Now().Unix(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -63,13 +65,26 @@ func ParseToken(tokenString, secret string) (*Claims, error) {
 	return nil, ErrInvalidToken
 }
 
-// RefreshToken 刷新 Token
+// RefreshToken 刷新 Token（保留原始 auth_time，区分"上次认证时间"与"token 签发时间"）
 func RefreshToken(tokenString, secret string, expiresInMinutes int) (string, error) {
 	claims, err := ParseToken(tokenString, secret)
 	if err != nil {
 		return "", err
 	}
 
-	// 生成新的 Token
-	return GenerateToken(secret, claims.UserID, claims.CollaborationWorkspaceID, claims.Email, expiresInMinutes)
+	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
+	newClaims := &Claims{
+		UserID:                   claims.UserID,
+		CollaborationWorkspaceID: claims.CollaborationWorkspaceID,
+		Email:                    claims.Email,
+		AuthTime:                 claims.AuthTime,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
+	return token.SignedString([]byte(secret))
 }

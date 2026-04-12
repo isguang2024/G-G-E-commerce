@@ -74,6 +74,12 @@ type Handler interface {
 	//
 	// POST /collaboration-workspaces/current/roles
 	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
+	// CreateDictType implements createDictType operation.
+	//
+	// 创建字典类型.
+	//
+	// POST /dictionaries
+	CreateDictType(ctx context.Context, req *DictTypeSaveRequest) (CreateDictTypeRes, error)
 	// CreateFeaturePackage implements createFeaturePackage operation.
 	//
 	// 创建功能包.
@@ -164,6 +170,12 @@ type Handler interface {
 	//
 	// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
 	DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	// DeleteDictType implements deleteDictType operation.
+	//
+	// 删除字典类型.
+	//
+	// DELETE /dictionaries/{id}
+	DeleteDictType(ctx context.Context, params DeleteDictTypeParams) (DeleteDictTypeRes, error)
 	// DeleteFeaturePackage implements deleteFeaturePackage operation.
 	//
 	// 删除功能包.
@@ -380,6 +392,18 @@ type Handler interface {
 	//
 	// GET /workspaces/current
 	GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error)
+	// GetDictType implements getDictType operation.
+	//
+	// 获取字典类型详情.
+	//
+	// GET /dictionaries/{id}
+	GetDictType(ctx context.Context, params GetDictTypeParams) (GetDictTypeRes, error)
+	// GetDictsByCodes implements getDictsByCodes operation.
+	//
+	// 按编码批量查询字典项.
+	//
+	// GET /dictionaries/by-codes
+	GetDictsByCodes(ctx context.Context, params GetDictsByCodesParams) (GetDictsByCodesRes, error)
 	// GetFastEnterConfig implements getFastEnterConfig operation.
 	//
 	// 获取快捷入口配置.
@@ -668,6 +692,18 @@ type Handler interface {
 	//
 	// GET /collaboration-workspaces/current/roles
 	ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error)
+	// ListDictItems implements listDictItems operation.
+	//
+	// 获取字典项列表.
+	//
+	// GET /dictionaries/{id}/items
+	ListDictItems(ctx context.Context, params ListDictItemsParams) (ListDictItemsRes, error)
+	// ListDictTypes implements listDictTypes operation.
+	//
+	// 获取字典类型列表.
+	//
+	// GET /dictionaries
+	ListDictTypes(ctx context.Context, params ListDictTypesParams) (ListDictTypesRes, error)
 	// ListFeaturePackageOptions implements listFeaturePackageOptions operation.
 	//
 	// 获取功能包候选.
@@ -962,6 +998,12 @@ type Handler interface {
 	//
 	// POST /system/app-host-bindings
 	SaveAppHostBinding(ctx context.Context, req *SystemAppHostBindingSaveRequest) (*SystemAppHostBindingItem, error)
+	// SaveDictItems implements saveDictItems operation.
+	//
+	// 批量保存字典项.
+	//
+	// PUT /dictionaries/{id}/items
+	SaveDictItems(ctx context.Context, req *DictItemsBatchSaveRequest, params SaveDictItemsParams) (SaveDictItemsRes, error)
 	// SaveMenuSpace implements saveMenuSpace operation.
 	//
 	// 保存菜单空间.
@@ -1094,6 +1136,12 @@ type Handler interface {
 	//
 	// PUT /users/{id}/packages
 	SetUserPackages(ctx context.Context, req *UUIDListRequest, params SetUserPackagesParams) (*MutationResult, error)
+	// SilentSSOCallback implements silentSSOCallback operation.
+	//
+	// 静默 SSO — 中心会话有效时自动签发 callback code.
+	//
+	// POST /auth/callback/silent
+	SilentSSOCallback(ctx context.Context, req *SilentSSORequest) (SilentSSOCallbackRes, error)
 	// SwitchWorkspace implements switchWorkspace operation.
 	//
 	// 切换当前授权工作空间.
@@ -1154,6 +1202,12 @@ type Handler interface {
 	//
 	// PUT /collaboration-workspaces/current/members/{userId}/role
 	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	// UpdateDictType implements updateDictType operation.
+	//
+	// 更新字典类型.
+	//
+	// PUT /dictionaries/{id}
+	UpdateDictType(ctx context.Context, req *DictTypeSaveRequest, params UpdateDictTypeParams) (UpdateDictTypeRes, error)
 	// UpdateFastEnterConfig implements updateFastEnterConfig operation.
 	//
 	// 更新快捷入口配置.

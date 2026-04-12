@@ -122,6 +122,16 @@
       "access_mode": "public"
     },
     {
+      "operation_id": "silentSSOCallback",
+      "method": "post",
+      "path": "/auth/callback/silent",
+      "permission_key": "",
+      "summary": "静默 SSO — 中心会话有效时自动签发 callback code",
+      "tags": "auth",
+      "api_category": "auth",
+      "access_mode": "authenticated"
+    },
+    {
       "operation_id": "login",
       "method": "post",
       "path": "/auth/login",
@@ -599,6 +609,86 @@
       "summary": "获取协作空间可分配角色",
       "tags": "collaboration_workspace",
       "api_category": "collaboration_workspace",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listDictTypes",
+      "method": "get",
+      "path": "/dictionaries",
+      "permission_key": "system.dictionary.view",
+      "summary": "获取字典类型列表",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createDictType",
+      "method": "post",
+      "path": "/dictionaries",
+      "permission_key": "system.dictionary.manage",
+      "summary": "创建字典类型",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getDictsByCodes",
+      "method": "get",
+      "path": "/dictionaries/by-codes",
+      "permission_key": "",
+      "summary": "按编码批量查询字典项",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "deleteDictType",
+      "method": "delete",
+      "path": "/dictionaries/{id}",
+      "permission_key": "system.dictionary.manage",
+      "summary": "删除字典类型",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getDictType",
+      "method": "get",
+      "path": "/dictionaries/{id}",
+      "permission_key": "system.dictionary.view",
+      "summary": "获取字典类型详情",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateDictType",
+      "method": "put",
+      "path": "/dictionaries/{id}",
+      "permission_key": "system.dictionary.manage",
+      "summary": "更新字典类型",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listDictItems",
+      "method": "get",
+      "path": "/dictionaries/{id}/items",
+      "permission_key": "system.dictionary.view",
+      "summary": "获取字典项列表",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveDictItems",
+      "method": "put",
+      "path": "/dictionaries/{id}/items",
+      "permission_key": "system.dictionary.manage",
+      "summary": "批量保存字典项",
+      "tags": "dictionary",
+      "api_category": "dictionary",
       "access_mode": "permission"
     },
     {

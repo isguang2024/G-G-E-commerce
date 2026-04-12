@@ -28,6 +28,8 @@ export const ErrorCodes = {
   InvalidCredentials: 2006,
   /** 账号已被禁用 */
   UserInactive: 2007,
+  /** 需要重新认证 (silent SSO 失败) */
+  LoginRequired: 2008,
   /** 资源不存在（通用） */
   NotFound: 3001,
   /** 用户不存在 */

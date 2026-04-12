@@ -11,7 +11,8 @@ import {
   getHttpRefreshToken,
   isHttpAppFeatureEnabled,
   logoutHttpSession,
-  resolveHttpAppAuthMode
+  resolveHttpAppAuthMode,
+  resolveHttpAppSsoMode
 } from './request-context'
 
 export const SKIP_WORKSPACE_CONTEXT_HEADER = 'X-Skip-Workspace-Context'
@@ -24,7 +25,8 @@ const AUTH_FLOW_ENDPOINTS = [
   '/auth/refresh',
   '/auth/register',
   '/auth/register-context',
-  '/auth/callback/exchange'
+  '/auth/callback/exchange',
+  '/auth/callback/silent'
 ]
 
 let unauthorizedHandling: Promise<void> | null = null
@@ -55,6 +57,10 @@ export function isUnauthorizedBusinessCode(code?: number): boolean {
 
 export function shouldUseSharedSessionMode(): boolean {
   const appKey = getEffectiveManagedAppKey() || getCurrentRuntimeAppKey()
+  // isolated 模式的 APP 不参与共享会话刷新
+  if (resolveHttpAppSsoMode(appKey) === 'isolated') {
+    return false
+  }
   const authMode = resolveHttpAppAuthMode(appKey)
   if (authMode === 'shared_cookie') {
     return true

@@ -831,3 +831,40 @@ type PermissionBatchTemplate struct {
 func (PermissionBatchTemplate) TableName() string {
 	return "permission_batch_templates"
 }
+
+type DictType struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID    string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
+	Code        string         `gorm:"type:varchar(100);not null" json:"code"`
+	Name        string         `gorm:"type:varchar(200);not null" json:"name"`
+	Description string         `gorm:"type:varchar(500);not null;default:''" json:"description"`
+	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
+	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder   int            `gorm:"not null;default:0" json:"sort_order"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (DictType) TableName() string {
+	return "dict_types"
+}
+
+type DictItem struct {
+	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID   string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
+	DictTypeID uuid.UUID      `gorm:"type:uuid;not null;index" json:"dict_type_id"`
+	Label      string         `gorm:"type:varchar(200);not null" json:"label"`
+	Value      string         `gorm:"type:varchar(200);not null" json:"value"`
+	Extra      MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"extra"`
+	IsDefault  bool           `gorm:"not null;default:false" json:"is_default"`
+	Status     string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder  int            `gorm:"not null;default:0" json:"sort_order"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (DictItem) TableName() string {
+	return "dict_items"
+}

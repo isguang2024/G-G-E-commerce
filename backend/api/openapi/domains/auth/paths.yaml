@@ -170,6 +170,34 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/callback/silent:
+    post:
+      operationId: silentSSOCallback
+      summary: 静默 SSO — 中心会话有效时自动签发 callback code
+      tags:
+      - auth
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/auth/schemas.yaml#/components/schemas/SilentSSORequest'
+      responses:
+        '200':
+          description: SSO 成功，已签发 callback
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/LoginResponse'
+        '401':
+          description: 中心会话无效或不满足 max_age 要求
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /auth/me:
     get:
       operationId: getAuthMe

@@ -53,6 +53,35 @@ components:
           type: string
         auth_protocol_version:
           type: string
+    SilentSSORequest:
+      type: object
+      required:
+        - target_app_key
+        - redirect_uri
+        - state
+        - nonce
+      properties:
+        target_app_key:
+          type: string
+          description: 目标业务 APP key
+        redirect_uri:
+          type: string
+          description: callback 回跳绝对地址
+        state:
+          type: string
+          description: CSRF state token
+        nonce:
+          type: string
+          description: 防重放 nonce
+        max_age:
+          type: integer
+          description: "最大认证年龄(秒): 0=必须重新认证"
+        target_path:
+          type: string
+          description: 登录成功后最终业务页路径
+        navigation_space_key:
+          type: string
+          description: 期望进入的菜单空间
     RegisterContext:
       type: object
       required:

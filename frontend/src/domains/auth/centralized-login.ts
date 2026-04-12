@@ -59,6 +59,8 @@ export function buildCentralizedLoginURL(input: {
   navigationSpaceKey?: string
   state: string
   nonce: string
+  prompt?: string
+  maxAge?: number
 }): string {
   const url = new URL('/account/auth/login', window.location.origin)
   const loginHost = `${input.loginHost || ''}`.trim()
@@ -74,6 +76,12 @@ export function buildCentralizedLoginURL(input: {
   url.searchParams.set('auth_protocol_version', AUTH_PROTOCOL_VERSION)
   if (`${input.navigationSpaceKey || ''}`.trim()) {
     url.searchParams.set('navigation_space_key', `${input.navigationSpaceKey || ''}`.trim())
+  }
+  if (`${input.prompt || ''}`.trim()) {
+    url.searchParams.set('prompt', `${input.prompt || ''}`.trim())
+  }
+  if (input.maxAge != null) {
+    url.searchParams.set('max_age', `${input.maxAge}`)
   }
   return url.toString()
 }

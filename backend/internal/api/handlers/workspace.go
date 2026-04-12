@@ -18,6 +18,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	"github.com/gg-ecommerce/backend/internal/modules/system/collaborationworkspace"
 	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
 	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
@@ -48,6 +49,7 @@ const (
 	CtxAuthWorkspaceID          ctxKey = "auth_workspace_id"
 	CtxAuthWorkspaceType        ctxKey = "auth_workspace_type"
 	CtxCollaborationWorkspaceID ctxKey = "collaboration_workspace_id"
+	CtxAuthTime                 ctxKey = "auth_time"
 )
 
 // APIHandler implements gen.Handler. It deliberately embeds
@@ -90,6 +92,8 @@ type APIHandler struct {
 	// 注册体系
 	registerResolver *register.Resolver
 	registerSvc      *register.Service
+	// 数据字典
+	dictSvc *dictionary.Service
 }
 
 func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator, apiEndpointSvc apiendpoint.Service) *APIHandler {
@@ -234,6 +238,7 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		h.service,
 		logger,
 	)
+	h.dictSvc = dictionary.NewService(db, logger)
 	return h
 }
 

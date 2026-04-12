@@ -108,20 +108,10 @@ export function shouldUseFullMenuSpaceNavigation(
   ) {
     return true
   }
-  const normalizedRoutePrefix = normalizeMenuSpaceRoutePrefix(binding.routePrefix)
-  if (!normalizedRoutePrefix) {
-    return false
-  }
-  const normalizedCurrentPathname =
-    normalizeMenuSpaceRoutePrefix(currentPathname) ||
-    (typeof window !== 'undefined' ? normalizeMenuSpaceRoutePrefix(window.location.pathname) : '')
-  if (!normalizedCurrentPathname) {
-    return true
-  }
-  return !(
-    normalizedCurrentPathname === normalizedRoutePrefix ||
-    normalizedCurrentPathname.startsWith(`${normalizedRoutePrefix}/`)
-  )
+  void currentPathname
+  // 同 host + 同协议下，routePrefix 差异不再强制整页刷新。
+  // 当前运行时已通过 router + space_key 恢复菜单空间，继续用 SPA 跳转可以避免 A→B 切换时整页重载。
+  return false
 }
 
 export function createFallbackMenuSpaceConfig(): MenuSpaceConfig {

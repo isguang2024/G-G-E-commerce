@@ -154,6 +154,20 @@ func encodeCreateCurrentCollaborationWorkspaceRoleRequest(
 	return nil
 }
 
+func encodeCreateDictTypeRequest(
+	req *DictTypeSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateFeaturePackageRequest(
 	req *FeaturePackageSaveRequest,
 	r *http.Request,
@@ -436,6 +450,20 @@ func encodeSaveAppRequest(
 
 func encodeSaveAppHostBindingRequest(
 	req *SystemAppHostBindingSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSaveDictItemsRequest(
+	req *DictItemsBatchSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -756,6 +784,20 @@ func encodeSetUserPackagesRequest(
 	return nil
 }
 
+func encodeSilentSSOCallbackRequest(
+	req *SilentSSORequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSwitchWorkspaceRequest(
 	req *WorkspaceSwitchRequest,
 	r *http.Request,
@@ -856,6 +898,20 @@ func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 
 func encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(
 	req *CollaborationWorkspaceMemberRoleRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateDictTypeRequest(
+	req *DictTypeSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -44,6 +44,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		c.Set("user_id", claims.UserID)
 		c.Set("collaboration_workspace_id", claims.CollaborationWorkspaceID)
 		c.Set("email", claims.Email)
+		c.Set("auth_time", claims.AuthTime)
 		c.Next()
 	}
 }

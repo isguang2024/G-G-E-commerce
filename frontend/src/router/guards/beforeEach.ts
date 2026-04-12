@@ -47,6 +47,7 @@ import {
   createCentralizedAuthAttempt,
   persistCentralizedAuthAttempt
 } from '@/domains/auth/centralized-login'
+import { attemptSilentSSO } from '@/domains/auth/silent-sso'
 import { useUserStore } from '@/domains/auth/store'
 import { useSettingStore } from '@/store/modules/setting'
 import { setWorktab } from '@/domains/navigation/utils/worktab'
@@ -274,20 +275,53 @@ async function resolveLoginRedirectPolicy(
   const targetAppKey = await resolveTargetAppKey(to, appContextStore)
   const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
   const binding = menuSpaceStore.resolveHostBinding(preferredSpaceKey)
+  const ssoMode = appContextStore.resolveAppSsoMode(targetAppKey)
   const shouldUseCentralizedLogin = await resolveCentralizedLoginPolicy(
     targetAppKey,
     appContextStore
   )
 
+  // isolated 模式：不走认证中心，直接本地登录页
+  if (ssoMode === 'isolated') {
+    userStore.clearSessionState({ broadcast: false })
+    next({ path: RoutesAlias.Login, query: { redirect: to.fullPath } })
+    return false
+  }
+
+  // local_ui 模式：APP 自有登录页，不走认证中心
+  const loginUiMode = appContextStore.resolveAppLoginUiMode(targetAppKey)
+  if (loginUiMode === 'local_ui') {
+    userStore.clearSessionState({ broadcast: false })
+    next({ path: RoutesAlias.Login, query: { redirect: to.fullPath } })
+    return false
+  }
+
   if (shouldUseCentralizedLogin && targetAppKey && typeof window !== 'undefined') {
-    userStore.clearSessionState()
     const redirectUri = new URL(RoutesAlias.AuthCallback, window.location.origin).toString()
-    const attempt = createCentralizedAuthAttempt(
-      targetAppKey,
-      to.fullPath,
-      redirectUri,
-      preferredSpaceKey || binding?.spaceKey || ''
-    )
+    const spaceKey = preferredSpaceKey || binding?.spaceKey || ''
+
+    // participate 模式：先尝试 silent SSO（利用已有的中心 token 静默签发 callback）
+    if (ssoMode === 'participate') {
+      const attempt = createCentralizedAuthAttempt(targetAppKey, to.fullPath, redirectUri, spaceKey)
+      persistCentralizedAuthAttempt(attempt)
+      const silentResult = await attemptSilentSSO({
+        targetAppKey,
+        redirectUri,
+        state: attempt.state,
+        nonce: attempt.nonce,
+        targetPath: to.fullPath,
+        navigationSpaceKey: spaceKey
+      })
+      if (silentResult?.callback?.redirect_to) {
+        window.location.assign(silentResult.callback.redirect_to)
+        next(false)
+        return false
+      }
+      // silent SSO 失败，落入下方正常跳转登录页逻辑
+    }
+
+    userStore.clearSessionState({ broadcast: false })
+    const attempt = createCentralizedAuthAttempt(targetAppKey, to.fullPath, redirectUri, spaceKey)
     persistCentralizedAuthAttempt(attempt)
     window.location.assign(
       buildCentralizedLoginURL({
@@ -295,16 +329,18 @@ async function resolveLoginRedirectPolicy(
         targetAppKey,
         targetPath: to.fullPath,
         redirectUri,
-        navigationSpaceKey: preferredSpaceKey || binding?.spaceKey || '',
+        navigationSpaceKey: spaceKey,
         state: attempt.state,
-        nonce: attempt.nonce
+        nonce: attempt.nonce,
+        // reauth 模式：带 prompt=login 强制重新认证
+        prompt: ssoMode === 'reauth' ? 'login' : undefined
       })
     )
     next(false)
     return false
   }
 
-  userStore.clearSessionState()
+  userStore.clearSessionState({ broadcast: false })
   next({
     path: RoutesAlias.Login,
     query: { redirect: to.fullPath }

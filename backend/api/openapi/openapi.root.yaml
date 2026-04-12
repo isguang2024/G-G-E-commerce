@@ -35,6 +35,7 @@ tags:
 - name: api_endpoint
 - name: media
 - name: system-register
+- name: dictionary
 paths:
   /system/register-entries:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
@@ -58,6 +59,8 @@ paths:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1logout
   /auth/callback/exchange:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1exchange
+  /auth/callback/silent:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1silent
   /auth/me:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1me
   /workspaces/my:
@@ -320,6 +323,14 @@ paths:
     $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1{id}~1context-scope
   /api-endpoints/categories/{id}:
     $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1categories~1{id}
+  /dictionaries:
+    $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries
+  /dictionaries/by-codes:
+    $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1by-codes
+  /dictionaries/{id}:
+    $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}
+  /dictionaries/{id}/items:
+    $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}~1items
   /media/upload:
     $ref: ./domains/media/paths.yaml#/paths/~1media~1upload
   /media:

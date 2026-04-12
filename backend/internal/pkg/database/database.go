@@ -179,6 +179,9 @@ func AutoMigrate() error {
 		&models.RegisterPolicy{},
 		&models.RegisterPolicyFeaturePackage{},
 		&models.RegisterPolicyRole{},
+		// 数据字典
+		&models.DictType{},
+		&models.DictItem{},
 	)
 
 	if err != nil {
@@ -715,6 +718,22 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageVersionTimeIndex).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE INDEX " + featurePackageVersionTimeIndex + " ON feature_package_versions (package_id, created_at DESC)").Error; err != nil {
+			return err
+		}
+	}
+
+	dictTypeCodeIndex := "idx_dict_types_tenant_code_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", dictTypeCodeIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + dictTypeCodeIndex + " ON dict_types (tenant_id, code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	dictItemValueIndex := "idx_dict_items_tenant_type_value_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", dictItemValueIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + dictItemValueIndex + " ON dict_items (tenant_id, dict_type_id, value) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}

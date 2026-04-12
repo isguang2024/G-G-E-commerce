@@ -429,8 +429,8 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceRolesAndPermissions", "SystemNavigation", "AppManage", "PageManagement", "FastEnterManage", "MenuSpaceManage", "SystemIntegration", "MessageManage", "RegisterEntry", "RegisterPolicy", "RegisterLog"},
-			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_policy.read", "system.register_policy.write", "system.register_log.read"},
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceRolesAndPermissions", "SystemNavigation", "AppManage", "PageManagement", "FastEnterManage", "MenuSpaceManage", "SystemIntegration", "Dictionary", "MessageManage", "RegisterEntry", "RegisterPolicy", "RegisterLog"},
+			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_policy.read", "system.register_policy.write", "system.register_log.read", "system.dictionary.view", "system.dictionary.manage"},
 		},
 		{
 			PackageKey:     "platform_admin.menu_manage",
@@ -524,6 +524,7 @@ func DefaultMenus() []MenuSeed {
 		{Name: "ActionPermission", ParentName: "SystemAccess", Path: "/system/action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "ApiEndpoint", ParentName: "SystemIntegration", Path: "/system/api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "Dictionary", ParentName: "SystemIntegration", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterEntry", ParentName: "SystemIntegration", Path: "/system/register-entry", Component: "/system/register-entry", Title: "注册入口", SortOrder: 10, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterPolicy", ParentName: "SystemIntegration", Path: "/system/register-policy", Component: "/system/register-policy", Title: "注册策略", SortOrder: 11, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterLog", ParentName: "SystemIntegration", Path: "/system/register-log", Component: "/system/register-log", Title: "注册记录", SortOrder: 12, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},

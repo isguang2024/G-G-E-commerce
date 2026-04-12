@@ -28,6 +28,7 @@ const (
 	CodeTokenBadFormat     = 2005 // token 格式错误
 	CodeInvalidCredentials = 2006 // 邮箱或密码错误
 	CodeUserInactive       = 2007 // 账号已被禁用
+	CodeLoginRequired      = 2008 // 需要重新认证 (silent SSO 失败)
 
 	// ── 3xxxx 业务 / 资源 ──────────────────────────────────────────────────
 	CodeNotFound                    = 3001 // 资源不存在（通用）

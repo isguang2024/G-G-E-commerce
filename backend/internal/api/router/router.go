@@ -98,6 +98,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
 			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
+			if authTime, exists := c.Get("auth_time"); exists {
+				ctx = context.WithValue(ctx, handlers.CtxAuthTime, authTime)
+			}
 		}
 		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
 		requestHost := strings.TrimSpace(c.GetString("request_host"))
@@ -355,6 +358,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.PUT("/api-endpoints/categories/:id", ogenBridge)
 			authenticated.PUT("/api-endpoints/:id", ogenBridge)
 			authenticated.PUT("/api-endpoints/:id/context-scope", ogenBridge)
+
+			// ── dictionary ────────────────────────────────────────────────
+			authenticated.GET("/dictionaries", ogenBridge)
+			authenticated.POST("/dictionaries", ogenBridge)
+			authenticated.GET("/dictionaries/by-codes", ogenBridge)
+			authenticated.GET("/dictionaries/:id", ogenBridge)
+			authenticated.PUT("/dictionaries/:id", ogenBridge)
+			authenticated.DELETE("/dictionaries/:id", ogenBridge)
+			authenticated.GET("/dictionaries/:id/items", ogenBridge)
+			authenticated.PUT("/dictionaries/:id/items", ogenBridge)
 
 			// ── media ─────────────────────────────────────────────────────
 			authenticated.POST("/media/upload", ogenBridge)

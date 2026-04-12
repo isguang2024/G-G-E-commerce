@@ -12,6 +12,8 @@ import { registerHttpAppContext } from '@/utils/http/request-context'
 type AppCapabilities = Record<string, any>
 type AppMeta = Record<string, any>
 
+const APP_CONTEXT_STORE_SUFFIX = '-appContextStore'
+
 function normalizePlainObject(value?: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, any>)
@@ -25,6 +27,77 @@ function readStringCandidate(record: Record<string, any>, ...keys: string[]): st
   }
   return ''
 }
+
+function isLoopbackHost(hostname: string): boolean {
+  const normalized = `${hostname || ''}`.toLowerCase()
+  return normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1'
+}
+
+function sanitizeRuntimeEntryURL(value?: string | null): string {
+  const raw = `${value || ''}`.trim()
+  if (!raw) return ''
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const target = new URL(raw)
+      if (typeof window !== 'undefined') {
+        const currentHost = `${window.location.hostname || ''}`.toLowerCase()
+        // 防止历史缓存把线上请求重写到本机 localhost，导致登录后接口全部失效。
+        if (isLoopbackHost(target.hostname) && !isLoopbackHost(currentHost)) {
+          return ''
+        }
+      }
+      return raw
+    } catch {
+      return ''
+    }
+  }
+
+  if (raw.startsWith('/')) {
+    return raw
+  }
+
+  return ''
+}
+
+function prunePersistedRuntimeEntryURLs(): void {
+  if (typeof window === 'undefined') return
+
+  for (const key of Object.keys(window.localStorage)) {
+    if (!key.endsWith(APP_CONTEXT_STORE_SUFFIX)) {
+      continue
+    }
+
+    const raw = window.localStorage.getItem(key)
+    if (!raw) {
+      continue
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      let changed = false
+
+      for (const field of [
+        'runtimeFrontendEntryURL',
+        'runtimeBackendEntryURL',
+        'runtimeHealthCheckURL'
+      ]) {
+        if (field in parsed) {
+          delete parsed[field]
+          changed = true
+        }
+      }
+
+      if (changed) {
+        window.localStorage.setItem(key, JSON.stringify(parsed))
+      }
+    } catch {
+      // ignore malformed persisted payload
+    }
+  }
+}
+
+prunePersistedRuntimeEntryURLs()
 
 export const useAppContextStore = defineStore(
   'appContextStore',
@@ -76,8 +149,8 @@ export const useAppContextStore = defineStore(
         effectiveManagedAppKey.value || currentRuntimeAppKey.value
       )
       return (
-        `${runtimeFrontendEntryURL.value || ''}`.trim() ||
-        readStringCandidate(profile, 'frontend_entry_url', 'frontendEntryUrl')
+        sanitizeRuntimeEntryURL(runtimeFrontendEntryURL.value) ||
+        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'frontend_entry_url', 'frontendEntryUrl'))
       )
     })
     const currentRuntimeBackendEntryURL = computed(() => {
@@ -85,8 +158,8 @@ export const useAppContextStore = defineStore(
         effectiveManagedAppKey.value || currentRuntimeAppKey.value
       )
       return (
-        `${runtimeBackendEntryURL.value || ''}`.trim() ||
-        readStringCandidate(profile, 'backend_entry_url', 'backendEntryUrl')
+        sanitizeRuntimeEntryURL(runtimeBackendEntryURL.value) ||
+        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'backend_entry_url', 'backendEntryUrl'))
       )
     })
     const currentRuntimeHealthCheckURL = computed(() => {
@@ -94,8 +167,8 @@ export const useAppContextStore = defineStore(
         effectiveManagedAppKey.value || currentRuntimeAppKey.value
       )
       return (
-        `${runtimeHealthCheckURL.value || ''}`.trim() ||
-        readStringCandidate(profile, 'health_check_url', 'healthCheckUrl')
+        sanitizeRuntimeEntryURL(runtimeHealthCheckURL.value) ||
+        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'health_check_url', 'healthCheckUrl'))
       )
     })
 
@@ -171,9 +244,9 @@ export const useAppContextStore = defineStore(
       const normalizedAppKey = normalizeManagedAppKey(payload?.appKey)
       if (!normalizedAppKey) return
       runtimeAppKey.value = normalizedAppKey
-      runtimeFrontendEntryURL.value = `${payload?.frontendEntryUrl || ''}`.trim()
-      runtimeBackendEntryURL.value = `${payload?.backendEntryUrl || ''}`.trim()
-      runtimeHealthCheckURL.value = `${payload?.healthCheckUrl || ''}`.trim()
+      runtimeFrontendEntryURL.value = sanitizeRuntimeEntryURL(payload?.frontendEntryUrl)
+      runtimeBackendEntryURL.value = sanitizeRuntimeEntryURL(payload?.backendEntryUrl)
+      runtimeHealthCheckURL.value = sanitizeRuntimeEntryURL(payload?.healthCheckUrl)
       setAppProfile({
         appKey: normalizedAppKey,
         authMode: payload?.authMode,
@@ -188,6 +261,7 @@ export const useAppContextStore = defineStore(
       getEffectiveManagedAppKey: () => effectiveManagedAppKey.value,
       getCurrentRuntimeAppKey: () => currentRuntimeAppKey.value,
       resolveAppAuthMode: (appKey) => resolveAppAuthMode(appKey),
+      resolveAppSsoMode: (appKey) => resolveAppSsoMode(appKey),
       isFeatureEnabledForApp: (appKey, flagKey) => isFeatureEnabledForApp(appKey, flagKey)
     })
 
@@ -259,6 +333,36 @@ export const useAppContextStore = defineStore(
         return false
       }
       return supportsCapabilityForApp(appKey, 'runtime', 'supports_dynamic_routes', true)
+    }
+
+    const resolveAppSsoMode = (
+      appKey?: string | null
+    ): 'participate' | 'reauth' | 'isolated' => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) return 'participate'
+      const capabilities = resolveAppCapabilities(normalizedAppKey)
+      const authConfig =
+        capabilities && typeof capabilities.auth === 'object' && !Array.isArray(capabilities.auth)
+          ? capabilities.auth
+          : {}
+      const mode = `${authConfig?.sso_mode || authConfig?.ssoMode || ''}`.trim()
+      if (mode === 'participate' || mode === 'reauth' || mode === 'isolated') return mode
+      return 'participate'
+    }
+
+    const resolveAppLoginUiMode = (
+      appKey?: string | null
+    ): 'auth_center_ui' | 'local_ui' => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) return 'auth_center_ui'
+      const capabilities = resolveAppCapabilities(normalizedAppKey)
+      const authConfig =
+        capabilities && typeof capabilities.auth === 'object' && !Array.isArray(capabilities.auth)
+          ? capabilities.auth
+          : {}
+      const mode = `${authConfig?.login_ui_mode || authConfig?.loginUiMode || ''}`.trim()
+      if (mode === 'local_ui') return 'local_ui'
+      return 'auth_center_ui'
     }
 
     const shouldUseCentralizedLoginForApp = (appKey?: string | null) => {
@@ -351,6 +455,8 @@ export const useAppContextStore = defineStore(
       isFeatureEnabledForApp,
       supportsAppSwitchForApp,
       supportsDynamicRoutesForApp,
+      resolveAppSsoMode,
+      resolveAppLoginUiMode,
       shouldUseCentralizedLoginForApp,
       ensureManagedAppKey,
       clearAppContext
@@ -363,9 +469,6 @@ export const useAppContextStore = defineStore(
       pick: [
         'runtimeAppKey',
         'managedAppKey',
-        'runtimeFrontendEntryURL',
-        'runtimeBackendEntryURL',
-        'runtimeHealthCheckURL',
         'appAuthModeMap',
         'appCapabilitiesMap',
         'appMetaMap'

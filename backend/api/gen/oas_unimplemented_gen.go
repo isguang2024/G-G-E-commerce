@@ -112,6 +112,15 @@ func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.
 	return r, ht.ErrNotImplemented
 }
 
+// CreateDictType implements createDictType operation.
+//
+// 创建字典类型.
+//
+// POST /dictionaries
+func (UnimplementedHandler) CreateDictType(ctx context.Context, req *DictTypeSaveRequest) (r CreateDictTypeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateFeaturePackage implements createFeaturePackage operation.
 //
 // 创建功能包.
@@ -244,6 +253,15 @@ func (UnimplementedHandler) DeleteCollaborationWorkspace(ctx context.Context, pa
 //
 // DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
 func (UnimplementedHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteDictType implements deleteDictType operation.
+//
+// 删除字典类型.
+//
+// DELETE /dictionaries/{id}
+func (UnimplementedHandler) DeleteDictType(ctx context.Context, params DeleteDictTypeParams) (r DeleteDictTypeRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -568,6 +586,24 @@ func (UnimplementedHandler) GetCurrentMenuSpace(ctx context.Context, params GetC
 //
 // GET /workspaces/current
 func (UnimplementedHandler) GetCurrentWorkspace(ctx context.Context) (r GetCurrentWorkspaceRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetDictType implements getDictType operation.
+//
+// 获取字典类型详情.
+//
+// GET /dictionaries/{id}
+func (UnimplementedHandler) GetDictType(ctx context.Context, params GetDictTypeParams) (r GetDictTypeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetDictsByCodes implements getDictsByCodes operation.
+//
+// 按编码批量查询字典项.
+//
+// GET /dictionaries/by-codes
+func (UnimplementedHandler) GetDictsByCodes(ctx context.Context, params GetDictsByCodesParams) (r GetDictsByCodesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1000,6 +1036,24 @@ func (UnimplementedHandler) ListCurrentCollaborationWorkspaceMembers(ctx context
 //
 // GET /collaboration-workspaces/current/roles
 func (UnimplementedHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (r *CollaborationWorkspaceRoleList, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListDictItems implements listDictItems operation.
+//
+// 获取字典项列表.
+//
+// GET /dictionaries/{id}/items
+func (UnimplementedHandler) ListDictItems(ctx context.Context, params ListDictItemsParams) (r ListDictItemsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListDictTypes implements listDictTypes operation.
+//
+// 获取字典类型列表.
+//
+// GET /dictionaries
+func (UnimplementedHandler) ListDictTypes(ctx context.Context, params ListDictTypesParams) (r ListDictTypesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1444,6 +1498,15 @@ func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req *SystemA
 	return r, ht.ErrNotImplemented
 }
 
+// SaveDictItems implements saveDictItems operation.
+//
+// 批量保存字典项.
+//
+// PUT /dictionaries/{id}/items
+func (UnimplementedHandler) SaveDictItems(ctx context.Context, req *DictItemsBatchSaveRequest, params SaveDictItemsParams) (r SaveDictItemsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SaveMenuSpace implements saveMenuSpace operation.
 //
 // 保存菜单空间.
@@ -1642,6 +1705,15 @@ func (UnimplementedHandler) SetUserPackages(ctx context.Context, req *UUIDListRe
 	return r, ht.ErrNotImplemented
 }
 
+// SilentSSOCallback implements silentSSOCallback operation.
+//
+// 静默 SSO — 中心会话有效时自动签发 callback code.
+//
+// POST /auth/callback/silent
+func (UnimplementedHandler) SilentSSOCallback(ctx context.Context, req *SilentSSORequest) (r SilentSSOCallbackRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SwitchWorkspace implements switchWorkspace operation.
 //
 // 切换当前授权工作空间.
@@ -1729,6 +1801,15 @@ func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx 
 //
 // PUT /collaboration-workspaces/current/members/{userId}/role
 func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateDictType implements updateDictType operation.
+//
+// 更新字典类型.
+//
+// PUT /dictionaries/{id}
+func (UnimplementedHandler) UpdateDictType(ctx context.Context, req *DictTypeSaveRequest, params UpdateDictTypeParams) (r UpdateDictTypeRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

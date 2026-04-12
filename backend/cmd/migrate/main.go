@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
@@ -154,6 +156,14 @@ func main() {
 		logger.Warn("Failed to initialize register system seeds", zap.Error(err))
 	} else {
 		logger.Info("Register system seeds initialized successfully")
+	}
+
+	// 初始化内置字典
+	dictSvc := dictionary.NewService(database.DB, logger)
+	if err := dictSvc.EnsureBuiltinDicts(context.Background()); err != nil {
+		logger.Warn("Failed to initialize builtin dictionaries", zap.Error(err))
+	} else {
+		logger.Info("Builtin dictionaries initialized successfully")
 	}
 
 	if err := initDefaultAPIEndpointCategories(logger); err != nil {

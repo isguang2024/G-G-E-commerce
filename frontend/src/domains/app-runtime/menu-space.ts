@@ -14,6 +14,7 @@ import {
   createFallbackMenuSpaceConfig,
   normalizeMenuHost,
   normalizeMenuSpaceKey,
+  SHARED_MENU_SPACE_KEY,
   resolveMenuSpaceHostBinding,
   resolveMenuSpaceDefinition,
   resolveMenuSpaceKeyByHost,
@@ -74,6 +75,22 @@ function buildRuntimeMenuSpaceConfig(
     defaultSpaceKey: normalizeMenuSpaceKey(defaultSpace?.spaceKey) || DEFAULT_MENU_SPACE_KEY,
     spaces: normalizedSpaces,
     hostBindings: normalizedHostBindings
+  }
+}
+
+function appendSpaceKeyToTargetPath(targetPath: string, spaceKey: string): string {
+  const normalizedPath = `${targetPath || ''}`.trim() || '/'
+  const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey)
+  if (!normalizedSpaceKey || normalizedSpaceKey === SHARED_MENU_SPACE_KEY) {
+    return normalizedPath
+  }
+
+  try {
+    const url = new URL(normalizedPath, 'http://gge.local')
+    url.searchParams.set('space_key', normalizedSpaceKey)
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch {
+    return normalizedPath
   }
 }
 
@@ -368,11 +385,21 @@ export const useMenuSpaceStore = defineStore(
 
     const resolveSpaceNavigationTarget = (targetPath: string, spaceKey?: string) => {
       const normalizedPath = `${targetPath || ''}`.trim() || '/'
+      const normalizedTargetSpaceKey = normalizeMenuSpaceKey(spaceKey) || currentSpaceKey.value
+      const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(
+        typeof window !== 'undefined' ? window.location.host : runtimeHost.value,
+        currentMenuSpaceConfig.value,
+        defaultSpaceKey.value
+      )
+      const routerTarget =
+        normalizedTargetSpaceKey && normalizedTargetSpaceKey !== hostResolvedSpaceKey
+          ? appendSpaceKeyToTargetPath(normalizedPath, normalizedTargetSpaceKey)
+          : normalizedPath
       const binding = resolveHostBinding(spaceKey)
       if (!binding?.host) {
         return {
           mode: 'router' as const,
-          target: normalizedPath
+          target: routerTarget
         }
       }
       const currentHost = window.location.host
@@ -392,7 +419,7 @@ export const useMenuSpaceStore = defineStore(
       if (!shouldUseLocationNavigation) {
         return {
           mode: 'router' as const,
-          target: normalizedPath
+          target: routerTarget
         }
       }
       warnDev('[menu-space] 使用整页导航切换菜单空间', {

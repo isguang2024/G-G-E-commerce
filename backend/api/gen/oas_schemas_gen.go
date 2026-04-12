@@ -2047,6 +2047,18 @@ func (s *DataScopeOption) SetLabel(val string) {
 	s.Label = val
 }
 
+type DeleteDictTypeBadRequest Error
+
+func (*DeleteDictTypeBadRequest) deleteDictTypeRes() {}
+
+type DeleteDictTypeNotFound Error
+
+func (*DeleteDictTypeNotFound) deleteDictTypeRes() {}
+
+type DeleteDictTypeOK Error
+
+func (*DeleteDictTypeOK) deleteDictTypeRes() {}
+
 type DeleteMediaInternalServerError Error
 
 func (*DeleteMediaInternalServerError) deleteMediaRes() {}
@@ -2076,6 +2088,625 @@ func (*DeleteUserNotFound) deleteUserRes() {}
 type DeleteUserUnauthorized Error
 
 func (*DeleteUserUnauthorized) deleteUserRes() {}
+
+// Ref: #/components/schemas/DictItemSaveRequest
+type DictItemSaveRequest struct {
+	Label     string                       `json:"label"`
+	Value     string                       `json:"value"`
+	Extra     *DictItemSaveRequestExtra    `json:"extra"`
+	IsDefault OptBool                      `json:"is_default"`
+	Status    OptDictItemSaveRequestStatus `json:"status"`
+	SortOrder OptInt                       `json:"sort_order"`
+}
+
+// GetLabel returns the value of Label.
+func (s *DictItemSaveRequest) GetLabel() string {
+	return s.Label
+}
+
+// GetValue returns the value of Value.
+func (s *DictItemSaveRequest) GetValue() string {
+	return s.Value
+}
+
+// GetExtra returns the value of Extra.
+func (s *DictItemSaveRequest) GetExtra() *DictItemSaveRequestExtra {
+	return s.Extra
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *DictItemSaveRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *DictItemSaveRequest) GetStatus() OptDictItemSaveRequestStatus {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *DictItemSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// SetLabel sets the value of Label.
+func (s *DictItemSaveRequest) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetValue sets the value of Value.
+func (s *DictItemSaveRequest) SetValue(val string) {
+	s.Value = val
+}
+
+// SetExtra sets the value of Extra.
+func (s *DictItemSaveRequest) SetExtra(val *DictItemSaveRequestExtra) {
+	s.Extra = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *DictItemSaveRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DictItemSaveRequest) SetStatus(val OptDictItemSaveRequestStatus) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *DictItemSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+type DictItemSaveRequestExtra struct{}
+
+type DictItemSaveRequestStatus string
+
+const (
+	DictItemSaveRequestStatusNormal    DictItemSaveRequestStatus = "normal"
+	DictItemSaveRequestStatusSuspended DictItemSaveRequestStatus = "suspended"
+)
+
+// AllValues returns all DictItemSaveRequestStatus values.
+func (DictItemSaveRequestStatus) AllValues() []DictItemSaveRequestStatus {
+	return []DictItemSaveRequestStatus{
+		DictItemSaveRequestStatusNormal,
+		DictItemSaveRequestStatusSuspended,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DictItemSaveRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case DictItemSaveRequestStatusNormal:
+		return []byte(s), nil
+	case DictItemSaveRequestStatusSuspended:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DictItemSaveRequestStatus) UnmarshalText(data []byte) error {
+	switch DictItemSaveRequestStatus(data) {
+	case DictItemSaveRequestStatusNormal:
+		*s = DictItemSaveRequestStatusNormal
+		return nil
+	case DictItemSaveRequestStatusSuspended:
+		*s = DictItemSaveRequestStatusSuspended
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/DictItemSummary
+type DictItemSummary struct {
+	ID        uuid.UUID             `json:"id"`
+	Label     string                `json:"label"`
+	Value     string                `json:"value"`
+	Extra     *DictItemSummaryExtra `json:"extra"`
+	IsDefault OptBool               `json:"is_default"`
+	Status    string                `json:"status"`
+	SortOrder OptInt                `json:"sort_order"`
+}
+
+// GetID returns the value of ID.
+func (s *DictItemSummary) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetLabel returns the value of Label.
+func (s *DictItemSummary) GetLabel() string {
+	return s.Label
+}
+
+// GetValue returns the value of Value.
+func (s *DictItemSummary) GetValue() string {
+	return s.Value
+}
+
+// GetExtra returns the value of Extra.
+func (s *DictItemSummary) GetExtra() *DictItemSummaryExtra {
+	return s.Extra
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *DictItemSummary) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetStatus returns the value of Status.
+func (s *DictItemSummary) GetStatus() string {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *DictItemSummary) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// SetID sets the value of ID.
+func (s *DictItemSummary) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetLabel sets the value of Label.
+func (s *DictItemSummary) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetValue sets the value of Value.
+func (s *DictItemSummary) SetValue(val string) {
+	s.Value = val
+}
+
+// SetExtra sets the value of Extra.
+func (s *DictItemSummary) SetExtra(val *DictItemSummaryExtra) {
+	s.Extra = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *DictItemSummary) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DictItemSummary) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *DictItemSummary) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+type DictItemSummaryExtra struct{}
+
+// Ref: #/components/schemas/DictItemsBatchSaveRequest
+type DictItemsBatchSaveRequest struct {
+	Items []DictItemSaveRequest `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *DictItemsBatchSaveRequest) GetItems() []DictItemSaveRequest {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *DictItemsBatchSaveRequest) SetItems(val []DictItemSaveRequest) {
+	s.Items = val
+}
+
+// Ref: #/components/schemas/DictTypeDetail
+type DictTypeDetail struct {
+	ID          uuid.UUID         `json:"id"`
+	Code        string            `json:"code"`
+	Name        string            `json:"name"`
+	Description OptString         `json:"description"`
+	Status      string            `json:"status"`
+	IsBuiltin   bool              `json:"is_builtin"`
+	ItemCount   int               `json:"item_count"`
+	SortOrder   OptInt            `json:"sort_order"`
+	CreatedAt   OptDateTime       `json:"created_at"`
+	UpdatedAt   OptDateTime       `json:"updated_at"`
+	Items       []DictItemSummary `json:"items"`
+}
+
+// GetID returns the value of ID.
+func (s *DictTypeDetail) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *DictTypeDetail) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *DictTypeDetail) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DictTypeDetail) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *DictTypeDetail) GetStatus() string {
+	return s.Status
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *DictTypeDetail) GetIsBuiltin() bool {
+	return s.IsBuiltin
+}
+
+// GetItemCount returns the value of ItemCount.
+func (s *DictTypeDetail) GetItemCount() int {
+	return s.ItemCount
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *DictTypeDetail) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *DictTypeDetail) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *DictTypeDetail) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// GetItems returns the value of Items.
+func (s *DictTypeDetail) GetItems() []DictItemSummary {
+	return s.Items
+}
+
+// SetID sets the value of ID.
+func (s *DictTypeDetail) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *DictTypeDetail) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *DictTypeDetail) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DictTypeDetail) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DictTypeDetail) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *DictTypeDetail) SetIsBuiltin(val bool) {
+	s.IsBuiltin = val
+}
+
+// SetItemCount sets the value of ItemCount.
+func (s *DictTypeDetail) SetItemCount(val int) {
+	s.ItemCount = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *DictTypeDetail) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *DictTypeDetail) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *DictTypeDetail) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+// SetItems sets the value of Items.
+func (s *DictTypeDetail) SetItems(val []DictItemSummary) {
+	s.Items = val
+}
+
+func (*DictTypeDetail) getDictTypeRes() {}
+
+// Ref: #/components/schemas/DictTypeListResponse
+type DictTypeListResponse struct {
+	Records []DictTypeSummary `json:"records"`
+	Total   int               `json:"total"`
+	Current int               `json:"current"`
+	Size    int               `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *DictTypeListResponse) GetRecords() []DictTypeSummary {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *DictTypeListResponse) GetTotal() int {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *DictTypeListResponse) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *DictTypeListResponse) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *DictTypeListResponse) SetRecords(val []DictTypeSummary) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *DictTypeListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *DictTypeListResponse) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *DictTypeListResponse) SetSize(val int) {
+	s.Size = val
+}
+
+func (*DictTypeListResponse) listDictTypesRes() {}
+
+// Ref: #/components/schemas/DictTypeSaveRequest
+type DictTypeSaveRequest struct {
+	Code        string                       `json:"code"`
+	Name        string                       `json:"name"`
+	Description OptString                    `json:"description"`
+	Status      OptDictTypeSaveRequestStatus `json:"status"`
+	SortOrder   OptInt                       `json:"sort_order"`
+}
+
+// GetCode returns the value of Code.
+func (s *DictTypeSaveRequest) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *DictTypeSaveRequest) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DictTypeSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *DictTypeSaveRequest) GetStatus() OptDictTypeSaveRequestStatus {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *DictTypeSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// SetCode sets the value of Code.
+func (s *DictTypeSaveRequest) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *DictTypeSaveRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DictTypeSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DictTypeSaveRequest) SetStatus(val OptDictTypeSaveRequestStatus) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *DictTypeSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+type DictTypeSaveRequestStatus string
+
+const (
+	DictTypeSaveRequestStatusNormal    DictTypeSaveRequestStatus = "normal"
+	DictTypeSaveRequestStatusSuspended DictTypeSaveRequestStatus = "suspended"
+)
+
+// AllValues returns all DictTypeSaveRequestStatus values.
+func (DictTypeSaveRequestStatus) AllValues() []DictTypeSaveRequestStatus {
+	return []DictTypeSaveRequestStatus{
+		DictTypeSaveRequestStatusNormal,
+		DictTypeSaveRequestStatusSuspended,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DictTypeSaveRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case DictTypeSaveRequestStatusNormal:
+		return []byte(s), nil
+	case DictTypeSaveRequestStatusSuspended:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DictTypeSaveRequestStatus) UnmarshalText(data []byte) error {
+	switch DictTypeSaveRequestStatus(data) {
+	case DictTypeSaveRequestStatusNormal:
+		*s = DictTypeSaveRequestStatusNormal
+		return nil
+	case DictTypeSaveRequestStatusSuspended:
+		*s = DictTypeSaveRequestStatusSuspended
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/DictTypeSummary
+type DictTypeSummary struct {
+	ID          uuid.UUID   `json:"id"`
+	Code        string      `json:"code"`
+	Name        string      `json:"name"`
+	Description OptString   `json:"description"`
+	Status      string      `json:"status"`
+	IsBuiltin   bool        `json:"is_builtin"`
+	ItemCount   int         `json:"item_count"`
+	SortOrder   OptInt      `json:"sort_order"`
+	CreatedAt   OptDateTime `json:"created_at"`
+	UpdatedAt   OptDateTime `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *DictTypeSummary) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *DictTypeSummary) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *DictTypeSummary) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *DictTypeSummary) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *DictTypeSummary) GetStatus() string {
+	return s.Status
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *DictTypeSummary) GetIsBuiltin() bool {
+	return s.IsBuiltin
+}
+
+// GetItemCount returns the value of ItemCount.
+func (s *DictTypeSummary) GetItemCount() int {
+	return s.ItemCount
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *DictTypeSummary) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *DictTypeSummary) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *DictTypeSummary) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *DictTypeSummary) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *DictTypeSummary) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *DictTypeSummary) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DictTypeSummary) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *DictTypeSummary) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *DictTypeSummary) SetIsBuiltin(val bool) {
+	s.IsBuiltin = val
+}
+
+// SetItemCount sets the value of ItemCount.
+func (s *DictTypeSummary) SetItemCount(val int) {
+	s.ItemCount = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *DictTypeSummary) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *DictTypeSummary) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *DictTypeSummary) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+func (*DictTypeSummary) createDictTypeRes() {}
+func (*DictTypeSummary) updateDictTypeRes() {}
+
+// Ref: #/components/schemas/DictsByCodesResponse
+type DictsByCodesResponse map[string][]DictItemSummary
+
+func (s *DictsByCodesResponse) init() DictsByCodesResponse {
+	m := *s
+	if m == nil {
+		m = map[string][]DictItemSummary{}
+		*s = m
+	}
+	return m
+}
+
+func (*DictsByCodesResponse) getDictsByCodesRes() {}
 
 // Ref: #/components/schemas/DispatchAudienceOption
 type DispatchAudienceOption struct {
@@ -3043,6 +3674,7 @@ func (s *Error) SetDetails(val OptNilErrorDetails) {
 	s.Details = val
 }
 
+func (*Error) createDictTypeRes()       {}
 func (*Error) createRegisterEntryRes()  {}
 func (*Error) createRegisterPolicyRes() {}
 func (*Error) deleteRegisterEntryRes()  {}
@@ -3050,8 +3682,12 @@ func (*Error) deleteRegisterPolicyRes() {}
 func (*Error) explainPermissionsRes()   {}
 func (*Error) getAuthMeRes()            {}
 func (*Error) getCurrentWorkspaceRes()  {}
+func (*Error) getDictTypeRes()          {}
+func (*Error) getDictsByCodesRes()      {}
 func (*Error) getRegisterContextRes()   {}
 func (*Error) getRoleRes()              {}
+func (*Error) listDictItemsRes()        {}
+func (*Error) listDictTypesRes()        {}
 func (*Error) listMyWorkspacesRes()     {}
 func (*Error) listRegisterEntriesRes()  {}
 func (*Error) listRegisterLogsRes()     {}
@@ -3059,6 +3695,7 @@ func (*Error) listRegisterPoliciesRes() {}
 func (*Error) logoutRes()               {}
 func (*Error) refreshTokenRes()         {}
 func (*Error) registerRes()             {}
+func (*Error) silentSSOCallbackRes()    {}
 func (*Error) updateRegisterEntryRes()  {}
 func (*Error) updateRegisterPolicyRes() {}
 
@@ -4773,6 +5410,10 @@ type ListApiEndpointsUnauthorized Error
 
 func (*ListApiEndpointsUnauthorized) listApiEndpointsRes() {}
 
+type ListDictItemsOKApplicationJSON []DictItemSummary
+
+func (*ListDictItemsOKApplicationJSON) listDictItemsRes() {}
+
 type ListMediaInternalServerError Error
 
 func (*ListMediaInternalServerError) listMediaRes() {}
@@ -4824,6 +5465,10 @@ type LoginRequest struct {
 	State               OptString `json:"state"`
 	Nonce               OptString `json:"nonce"`
 	AuthProtocolVersion OptString `json:"auth_protocol_version"`
+	// OIDC-like prompt 参数: none=静默 SSO 尝试, login=强制重新认证.
+	Prompt OptString `json:"prompt"`
+	// 最大认证年龄(秒): 0=必须重新认证, 900=超过15分钟需重认证.
+	MaxAge OptInt `json:"max_age"`
 }
 
 // GetUsername returns the value of Username.
@@ -4871,6 +5516,16 @@ func (s *LoginRequest) GetAuthProtocolVersion() OptString {
 	return s.AuthProtocolVersion
 }
 
+// GetPrompt returns the value of Prompt.
+func (s *LoginRequest) GetPrompt() OptString {
+	return s.Prompt
+}
+
+// GetMaxAge returns the value of MaxAge.
+func (s *LoginRequest) GetMaxAge() OptInt {
+	return s.MaxAge
+}
+
 // SetUsername sets the value of Username.
 func (s *LoginRequest) SetUsername(val string) {
 	s.Username = val
@@ -4914,6 +5569,16 @@ func (s *LoginRequest) SetNonce(val OptString) {
 // SetAuthProtocolVersion sets the value of AuthProtocolVersion.
 func (s *LoginRequest) SetAuthProtocolVersion(val OptString) {
 	s.AuthProtocolVersion = val
+}
+
+// SetPrompt sets the value of Prompt.
+func (s *LoginRequest) SetPrompt(val OptString) {
+	s.Prompt = val
+}
+
+// SetMaxAge sets the value of MaxAge.
+func (s *LoginRequest) SetMaxAge(val OptInt) {
+	s.MaxAge = val
 }
 
 // Ref: #/components/schemas/LoginResponse
@@ -5001,6 +5666,7 @@ func (s *LoginResponse) SetCallback(val OptAuthCallbackPayload) {
 func (*LoginResponse) exchangeAuthCallbackRes() {}
 func (*LoginResponse) loginRes()                {}
 func (*LoginResponse) registerRes()             {}
+func (*LoginResponse) silentSSOCallbackRes()    {}
 
 type LoginResponseLanding struct {
 	AppKey             OptString `json:"app_key"`
@@ -7899,6 +8565,98 @@ func (o OptDateTime) Get() (v time.Time, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptDateTime) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDictItemSaveRequestStatus returns new OptDictItemSaveRequestStatus with value set to v.
+func NewOptDictItemSaveRequestStatus(v DictItemSaveRequestStatus) OptDictItemSaveRequestStatus {
+	return OptDictItemSaveRequestStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDictItemSaveRequestStatus is optional DictItemSaveRequestStatus.
+type OptDictItemSaveRequestStatus struct {
+	Value DictItemSaveRequestStatus
+	Set   bool
+}
+
+// IsSet returns true if OptDictItemSaveRequestStatus was set.
+func (o OptDictItemSaveRequestStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDictItemSaveRequestStatus) Reset() {
+	var v DictItemSaveRequestStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDictItemSaveRequestStatus) SetTo(v DictItemSaveRequestStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDictItemSaveRequestStatus) Get() (v DictItemSaveRequestStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDictItemSaveRequestStatus) Or(d DictItemSaveRequestStatus) DictItemSaveRequestStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDictTypeSaveRequestStatus returns new OptDictTypeSaveRequestStatus with value set to v.
+func NewOptDictTypeSaveRequestStatus(v DictTypeSaveRequestStatus) OptDictTypeSaveRequestStatus {
+	return OptDictTypeSaveRequestStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDictTypeSaveRequestStatus is optional DictTypeSaveRequestStatus.
+type OptDictTypeSaveRequestStatus struct {
+	Value DictTypeSaveRequestStatus
+	Set   bool
+}
+
+// IsSet returns true if OptDictTypeSaveRequestStatus was set.
+func (o OptDictTypeSaveRequestStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDictTypeSaveRequestStatus) Reset() {
+	var v DictTypeSaveRequestStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDictTypeSaveRequestStatus) SetTo(v DictTypeSaveRequestStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDictTypeSaveRequestStatus) Get() (v DictTypeSaveRequestStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDictTypeSaveRequestStatus) Or(d DictTypeSaveRequestStatus) DictTypeSaveRequestStatus {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -16018,6 +16776,106 @@ func (s *RollbackRequest) SetVersionID(val uuid.UUID) {
 	s.VersionID = val
 }
 
+type SaveDictItemsBadRequest Error
+
+func (*SaveDictItemsBadRequest) saveDictItemsRes() {}
+
+type SaveDictItemsNotFound Error
+
+func (*SaveDictItemsNotFound) saveDictItemsRes() {}
+
+type SaveDictItemsOKApplicationJSON []DictItemSummary
+
+func (*SaveDictItemsOKApplicationJSON) saveDictItemsRes() {}
+
+// Ref: #/components/schemas/SilentSSORequest
+type SilentSSORequest struct {
+	// 目标业务 APP key.
+	TargetAppKey string `json:"target_app_key"`
+	// Callback 回跳绝对地址.
+	RedirectURI string `json:"redirect_uri"`
+	// CSRF state token.
+	State string `json:"state"`
+	// 防重放 nonce.
+	Nonce string `json:"nonce"`
+	// 最大认证年龄(秒): 0=必须重新认证.
+	MaxAge OptInt `json:"max_age"`
+	// 登录成功后最终业务页路径.
+	TargetPath OptString `json:"target_path"`
+	// 期望进入的菜单空间.
+	NavigationSpaceKey OptString `json:"navigation_space_key"`
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *SilentSSORequest) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetRedirectURI returns the value of RedirectURI.
+func (s *SilentSSORequest) GetRedirectURI() string {
+	return s.RedirectURI
+}
+
+// GetState returns the value of State.
+func (s *SilentSSORequest) GetState() string {
+	return s.State
+}
+
+// GetNonce returns the value of Nonce.
+func (s *SilentSSORequest) GetNonce() string {
+	return s.Nonce
+}
+
+// GetMaxAge returns the value of MaxAge.
+func (s *SilentSSORequest) GetMaxAge() OptInt {
+	return s.MaxAge
+}
+
+// GetTargetPath returns the value of TargetPath.
+func (s *SilentSSORequest) GetTargetPath() OptString {
+	return s.TargetPath
+}
+
+// GetNavigationSpaceKey returns the value of NavigationSpaceKey.
+func (s *SilentSSORequest) GetNavigationSpaceKey() OptString {
+	return s.NavigationSpaceKey
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *SilentSSORequest) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetRedirectURI sets the value of RedirectURI.
+func (s *SilentSSORequest) SetRedirectURI(val string) {
+	s.RedirectURI = val
+}
+
+// SetState sets the value of State.
+func (s *SilentSSORequest) SetState(val string) {
+	s.State = val
+}
+
+// SetNonce sets the value of Nonce.
+func (s *SilentSSORequest) SetNonce(val string) {
+	s.Nonce = val
+}
+
+// SetMaxAge sets the value of MaxAge.
+func (s *SilentSSORequest) SetMaxAge(val OptInt) {
+	s.MaxAge = val
+}
+
+// SetTargetPath sets the value of TargetPath.
+func (s *SilentSSORequest) SetTargetPath(val OptString) {
+	s.TargetPath = val
+}
+
+// SetNavigationSpaceKey sets the value of NavigationSpaceKey.
+func (s *SilentSSORequest) SetNavigationSpaceKey(val OptString) {
+	s.NavigationSpaceKey = val
+}
+
 // Ref: #/components/schemas/StaleApiEndpointList
 type StaleApiEndpointList struct {
 	Records []ApiEndpointItem `json:"records"`
@@ -18815,6 +19673,14 @@ func (*UpdateApiEndpointInternalServerError) updateApiEndpointRes() {}
 type UpdateApiEndpointUnauthorized Error
 
 func (*UpdateApiEndpointUnauthorized) updateApiEndpointRes() {}
+
+type UpdateDictTypeBadRequest Error
+
+func (*UpdateDictTypeBadRequest) updateDictTypeRes() {}
+
+type UpdateDictTypeNotFound Error
+
+func (*UpdateDictTypeNotFound) updateDictTypeRes() {}
 
 type UpdateUserBadRequest Error
 

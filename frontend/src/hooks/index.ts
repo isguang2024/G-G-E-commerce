@@ -30,3 +30,11 @@ export { useChart, useChartComponent, useChartOps } from './core/useChart'
 
 // 布局高度
 export { useLayoutHeight, useAutoLayoutHeight } from './core/useLayoutHeight'
+
+// 数据字典
+export {
+  useDictionary,
+  useDictionaries,
+  invalidateDict,
+  invalidateAllDicts
+} from './business/useDictionary'

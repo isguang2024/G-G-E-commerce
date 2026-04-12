@@ -13,6 +13,10 @@ type CreateApiEndpointCategoryRes interface {
 	createApiEndpointCategoryRes()
 }
 
+type CreateDictTypeRes interface {
+	createDictTypeRes()
+}
+
 type CreateRegisterEntryRes interface {
 	createRegisterEntryRes()
 }
@@ -23,6 +27,10 @@ type CreateRegisterPolicyRes interface {
 
 type CreateUserRes interface {
 	createUserRes()
+}
+
+type DeleteDictTypeRes interface {
+	deleteDictTypeRes()
 }
 
 type DeleteMediaRes interface {
@@ -61,6 +69,14 @@ type GetCurrentWorkspaceRes interface {
 	getCurrentWorkspaceRes()
 }
 
+type GetDictTypeRes interface {
+	getDictTypeRes()
+}
+
+type GetDictsByCodesRes interface {
+	getDictsByCodesRes()
+}
+
 type GetRegisterContextRes interface {
 	getRegisterContextRes()
 }
@@ -83,6 +99,14 @@ type ListApiEndpointCategoriesRes interface {
 
 type ListApiEndpointsRes interface {
 	listApiEndpointsRes()
+}
+
+type ListDictItemsRes interface {
+	listDictItemsRes()
+}
+
+type ListDictTypesRes interface {
+	listDictTypesRes()
 }
 
 type ListMediaRes interface {
@@ -133,6 +157,14 @@ type RegisterRes interface {
 	registerRes()
 }
 
+type SaveDictItemsRes interface {
+	saveDictItemsRes()
+}
+
+type SilentSSOCallbackRes interface {
+	silentSSOCallbackRes()
+}
+
 type SwitchWorkspaceRes interface {
 	switchWorkspaceRes()
 }
@@ -151,6 +183,10 @@ type UpdateApiEndpointContextScopeRes interface {
 
 type UpdateApiEndpointRes interface {
 	updateApiEndpointRes()
+}
+
+type UpdateDictTypeRes interface {
+	updateDictTypeRes()
 }
 
 type UpdateRegisterEntryRes interface {

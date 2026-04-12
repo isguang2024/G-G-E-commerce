@@ -1,10 +1,16 @@
 import { ElNotification } from 'element-plus'
+import { useAppContextStore } from '@/domains/app-runtime/context'
+import { useMenuStore } from '@/domains/navigation/menu'
+import { useWorktabStore } from '@/domains/navigation/worktab'
 import AppConfig from '@/config'
 import { useUserStore } from '@/domains/auth/store'
 import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 import { resetRouterState } from '@/domains/navigation/runtime/reset-handlers'
 import { RoutesAlias } from '@/router/routesAlias'
 import { refreshUserMenus as refreshRuntimeUserMenus } from '@/domains/navigation/runtime/navigation'
+import { ACTIVE_APP_SCOPE_STORAGE_KEY } from '@/domains/app-runtime/app-scope'
+import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+import { useWorkspaceStore } from '@/store/modules/workspace'
 
 export const LOGIN_REMEMBER_KEY = 'gg-login-remember'
 
@@ -12,6 +18,69 @@ export interface LoginFormState {
   username: string
   password: string
   rememberPassword: boolean
+}
+
+const RUNTIME_STORE_IDS = [
+  'userStore',
+  'appContextStore',
+  'menuSpaceStore',
+  'workspaceStore',
+  'collaborationWorkspaceStore',
+  'menuStore',
+  'worktabStore'
+]
+
+function shouldRemoveRuntimeStorageKey(key: string): boolean {
+  const normalizedKey = `${key || ''}`.trim()
+  if (!normalizedKey) return false
+  if (
+    normalizedKey === ACTIVE_APP_SCOPE_STORAGE_KEY ||
+    normalizedKey === 'gge:session-sync' ||
+    normalizedKey === 'user' ||
+    normalizedKey === 'appContextStore'
+  ) {
+    return true
+  }
+
+  return RUNTIME_STORE_IDS.some(
+    (storeId) =>
+      normalizedKey === storeId ||
+      normalizedKey.endsWith(`-${storeId}`) ||
+      normalizedKey.endsWith(`:${storeId}`)
+  )
+}
+
+function resetPersistedRuntimeState(): void {
+  if (typeof window === 'undefined') return
+
+  for (const key of Object.keys(window.localStorage)) {
+    if (shouldRemoveRuntimeStorageKey(key)) {
+      window.localStorage.removeItem(key)
+    }
+  }
+
+  for (const key of Object.keys(window.sessionStorage)) {
+    if (shouldRemoveRuntimeStorageKey(key) || key === 'iframeRoutes') {
+      window.sessionStorage.removeItem(key)
+    }
+  }
+}
+
+function resetInMemoryRuntimeState(): void {
+  useMenuStore().setMenuList([])
+  useMenuStore().setHomePath('')
+  useWorktabStore().clearAll()
+  useWorkspaceStore().clearWorkspaceContext()
+  useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
+  useMenuSpaceStore().clearActiveSpaceKey()
+  useAppContextStore().clearAppContext()
+}
+
+function rebuildClientRuntimeStateForLogin(): void {
+  const userStore = useUserStore()
+  userStore.clearSessionState({ broadcast: false })
+  resetPersistedRuntimeState()
+  resetInMemoryRuntimeState()
 }
 
 export function loadRememberedCredentials(target: LoginFormState): void {
@@ -133,6 +202,7 @@ export async function finalizeAuthenticatedSession(
     throw new Error('登录失败，未收到访问令牌')
   }
 
+  rebuildClientRuntimeStateForLogin()
   resetRouterState(0)
   userStore.applySession({
     accessToken: response.access_token,
