@@ -14,6 +14,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@/domains/auth": ["src/domains/auth/index.ts"],
+      "@/domains/auth/*": ["src/domains/auth/*"],
+      "@/domains/app-runtime": ["src/domains/app-runtime/index.ts"],
+      "@/domains/app-runtime/*": ["src/domains/app-runtime/*"],
+      "@/domains/governance": ["src/domains/governance/index.ts"],
+      "@/domains/governance/*": ["src/domains/governance/*"],
       "@views/*": ["src/views/*"],
       "@imgs/*": ["src/assets/images/*"],
       "@icons/*": ["src/assets/icons/*"],

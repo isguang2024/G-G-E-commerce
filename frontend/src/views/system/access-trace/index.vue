@@ -451,7 +451,7 @@
   import { ElMessage, type ElTree as ElTreeType } from 'element-plus'
   import { ArrowRight, Search } from '@element-plus/icons-vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import {
     fetchGetCollaborationWorkspaceMembers,
     fetchGetCollaborationWorkspaceRoles
@@ -464,7 +464,7 @@
     fetchGetRoleOptions,
     fetchGetCollaborationWorkspaceOptions,
     fetchGetUserList
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   defineOptions({ name: 'SystemAccessTrace' })
 

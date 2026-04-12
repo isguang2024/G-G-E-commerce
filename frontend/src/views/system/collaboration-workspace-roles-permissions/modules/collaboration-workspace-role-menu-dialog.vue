@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`协作空间角色菜单裁剪 - ${roleTitle}`"
@@ -67,7 +67,7 @@
   import { ElButton, ElMessage } from 'element-plus'
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
-  import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import { fetchGetMenuTreeAll } from '@/domains/governance/api'
   import type { AppRouteRecord } from '@/types/router'
   import {
     fetchGetMyCollaborationWorkspaceBoundaryRoleMenus,

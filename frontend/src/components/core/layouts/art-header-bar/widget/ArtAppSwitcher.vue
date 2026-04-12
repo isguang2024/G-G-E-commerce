@@ -27,16 +27,9 @@
 <script setup lang="ts">
   import { ElMessage } from 'element-plus'
   import { computed } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { fetchGetApps } from '@/api/system-manage'
-  import { refreshUserMenus } from '@/router'
-  import { IframeRouteManager } from '@/router/core'
-  import { useAppContextStore } from '@/store/modules/app-context'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { useMenuStore } from '@/store/modules/menu'
-  import { useUserStore } from '@/store/modules/user'
-  import { useWorktabStore } from '@/store/modules/worktab'
-  import { findRegisteredRouteByPath } from '@/utils/router'
+  import { fetchGetApps } from '@/domains/governance/api'
+  import { useAppContextStore } from '@/domains/app-runtime/context'
+  import { useUserStore } from '@/domains/auth/store'
 
   defineOptions({ name: 'ArtAppSwitcher' })
   withDefaults(defineProps<{ compact?: boolean }>(), {
@@ -45,12 +38,8 @@
 
   const APP_SWITCHER_LAST_VISITED_KEY = 'gg:app-switcher:last-visited'
 
-  const router = useRouter()
   const appContextStore = useAppContextStore()
-  const menuStore = useMenuStore()
-  const menuSpaceStore = useMenuSpaceStore()
   const userStore = useUserStore()
-  const worktabStore = useWorktabStore()
   const { isLogin } = storeToRefs(userStore)
 
   const loading = ref(false)
@@ -80,8 +69,8 @@
     window.localStorage.setItem(APP_SWITCHER_LAST_VISITED_KEY, JSON.stringify(nextMap))
   }
 
-  const selectedValue = computed(
-    () => `${appContextStore.effectiveManagedAppKey || appContextStore.currentRuntimeAppKey || ''}`.trim()
+  const selectedValue = computed(() =>
+    `${appContextStore.effectiveManagedAppKey || appContextStore.currentRuntimeAppKey || ''}`.trim()
   )
 
   const sortedApps = computed(() => {
@@ -114,51 +103,6 @@
     const entry = `${item.frontendEntryUrl || ''}`.trim()
     const suffix = entry ? ` · ${entry}` : ''
     return `${name}${appKey ? ` · ${appKey}` : ''}${suffix}`
-  }
-
-  const normalizeInternalPath = (value?: string) => {
-    const raw = `${value || ''}`.trim()
-    if (!raw || /^https?:\/\//i.test(raw)) {
-      return raw
-    }
-    return raw.startsWith('/') ? raw : `/${raw}`
-  }
-
-  const resolveAppEntryTarget = (targetApp: Api.SystemManage.AppItem) => {
-    const candidates = [
-      menuStore.getHomePath(),
-      menuSpaceStore.resolveSpaceLandingPath(),
-      targetApp.frontendEntryUrl,
-      '/'
-    ]
-      .map((item) => normalizeInternalPath(item))
-      .filter(Boolean)
-
-    for (const candidate of candidates) {
-      if (/^https?:\/\//i.test(candidate)) {
-        return {
-          entryTarget: candidate,
-          targetPath: candidate,
-          spaceKey: undefined
-        }
-      }
-
-      const resolvedRoute = findRegisteredRouteByPath(router, candidate)
-      if (resolvedRoute) {
-        return {
-          entryTarget: candidate,
-          targetPath: candidate,
-          spaceKey: `${resolvedRoute.meta?.spaceKey || ''}`.trim() || undefined
-        }
-      }
-    }
-
-    const fallbackPath = normalizeInternalPath(menuStore.getHomePath() || menuSpaceStore.resolveSpaceLandingPath() || '/')
-    return {
-      entryTarget: fallbackPath,
-      targetPath: fallbackPath,
-      spaceKey: undefined
-    }
   }
 
   const loadApps = async (force = false) => {
@@ -206,45 +150,7 @@
     try {
       loading.value = true
       writeLastVisited(nextAppKey)
-      appContextStore.setRuntimeAppContext({
-        appKey: nextAppKey,
-        frontendEntryUrl: targetApp.frontendEntryUrl || '',
-        backendEntryUrl: targetApp.backendEntryUrl || '',
-        healthCheckUrl: targetApp.healthCheckUrl || '',
-        authMode: targetApp.authMode || '',
-        capabilities: targetApp.capabilities || {},
-        meta: targetApp.meta || {}
-      })
-      appContextStore.setManagedAppKey(nextAppKey)
-      worktabStore.clearAll()
-      IframeRouteManager.getInstance().clear()
-      menuStore.removeAllDynamicRoutes()
-      menuStore.setMenuList([])
-      menuSpaceStore.clearActiveSpaceKey()
-
-      await menuSpaceStore.refreshRuntimeConfig(true)
-      const preferredSpaceKey = `${targetApp.defaultSpaceKey || ''}`.trim()
-      if (preferredSpaceKey) {
-        menuSpaceStore.setActiveSpaceKey(preferredSpaceKey)
-      }
-      await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-      await refreshUserMenus()
-
-      const { entryTarget, targetPath, spaceKey } = resolveAppEntryTarget(targetApp)
-      if (/^https?:\/\//i.test(entryTarget)) {
-        window.location.assign(entryTarget)
-        return
-      }
-      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        targetPath,
-        spaceKey
-      )
-      if (nextTarget.mode === 'router') {
-        await router.replace(nextTarget.target)
-      } else {
-        window.location.assign(nextTarget.target)
-        return
-      }
+      await appContextStore.switchApp(targetApp)
       ElMessage.success(`已切换到 ${targetApp.name || targetApp.appKey}`)
     } catch (error) {
       console.error('[AppSwitcher] 切换应用失败:', error)

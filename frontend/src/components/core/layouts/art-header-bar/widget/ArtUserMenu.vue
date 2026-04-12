@@ -1,4 +1,4 @@
-﻿<!-- 用户菜单 -->
+<!-- 用户菜单 -->
 <template>
   <ElPopover
     ref="userMenuPopover"
@@ -80,16 +80,13 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { useUserStore } from '@/store/modules/user'
+  import { useUserStore } from '@/domains/auth/store'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
-  import { useMenuStore } from '@/store/modules/menu'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import {
-    refreshCurrentUserInfoContext,
-    refreshUserMenus,
-    refreshUserAccessAndMenus
-  } from '@/router'
+  import { useMenuStore } from '@/domains/navigation/menu'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
+  import { refreshSessionContext } from '@/domains/auth/runtime/session'
+  import { refreshUserMenus } from '@/domains/navigation/runtime/navigation'
   import ArtCollaborationWorkspaceSwitcher from './ArtCollaborationWorkspaceSwitcher.vue'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
@@ -207,7 +204,7 @@
     closeUserMenu()
     if (!personalWorkspace.value?.id) return
     await workspaceStore.switchWorkspace(personalWorkspace.value.id)
-    await refreshCurrentUserInfoContext()
+    await refreshSessionContext({ forceRefresh: true })
     await refreshUserMenus()
     const nextTarget = resolveLandingTarget()
     if (nextTarget.mode === 'router') {
@@ -220,7 +217,8 @@
   const refreshPermissionsAndMenus = async (): Promise<void> => {
     closeUserMenu()
     try {
-      await refreshUserAccessAndMenus()
+      await refreshSessionContext({ forceRefresh: true })
+      await refreshUserMenus()
       await router.replace({
         path: router.currentRoute.value.path,
         query: router.currentRoute.value.query,

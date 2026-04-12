@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import AppConfig from '@/config'
-import { fetchGetFastEnterConfig, fetchUpdateFastEnterConfig } from '@/api/system-manage'
+import { fetchGetFastEnterConfig, fetchUpdateFastEnterConfig } from '@/domains/governance/api'
 import type { FastEnterApplication, FastEnterConfig, FastEnterQuickLink } from '@/types/config'
 import { useUserStore } from './user'
 

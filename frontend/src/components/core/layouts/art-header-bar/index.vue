@@ -1,4 +1,4 @@
-﻿<!-- 顶部栏 -->
+<!-- 顶部栏 -->
 <template>
   <div
     class="w-full bg-[var(--default-bg-color)]"
@@ -159,8 +159,8 @@
   import { useResponsive } from '@/hooks/core/useResponsive'
   import { LanguageEnum, MenuTypeEnum } from '@/enums/appEnum'
   import { useSettingStore } from '@/store/modules/setting'
-  import { useUserStore } from '@/store/modules/user'
-  import { useMenuStore } from '@/store/modules/menu'
+  import { useUserStore } from '@/domains/auth/store'
+  import { useMenuStore } from '@/domains/navigation/menu'
   import { useMessageStore } from '@/store/modules/message'
   import AppConfig from '@/config'
   import { languageOptions } from '@/locales'

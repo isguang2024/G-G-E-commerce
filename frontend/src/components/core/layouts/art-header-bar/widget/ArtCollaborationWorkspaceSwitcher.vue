@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     v-if="shouldShowSwitcher"
     class="collaboration-workspace-switcher"
@@ -36,11 +36,12 @@
   import { ElMessage } from 'element-plus'
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import { useMenuStore } from '@/store/modules/menu'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useMenuStore } from '@/domains/navigation/menu'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
-  import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
+  import { refreshSessionContext } from '@/domains/auth/runtime/session'
+  import { refreshUserMenus } from '@/domains/navigation/runtime/navigation'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
   defineOptions({ name: 'ArtCollaborationWorkspaceSwitcher' })
@@ -93,7 +94,7 @@
 
     try {
       await workspaceStore.switchWorkspace(workspaceId)
-      await refreshCurrentUserInfoContext()
+      await refreshSessionContext({ forceRefresh: true })
       await refreshUserMenus()
 
       const landingPath = menuStore.getHomePath() || '/'

@@ -164,7 +164,7 @@
     fetchGetPermissionActionConsumers,
     fetchGetPermissionActionList,
     fetchGetPermissionGroupList
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
   import ActionPermissionEndpointsDialog from './modules/action-permission-endpoints-dialog.vue'
   import ActionPermissionSearch from './modules/action-permission-search.vue'

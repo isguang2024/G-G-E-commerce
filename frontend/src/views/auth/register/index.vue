@@ -23,7 +23,8 @@
               <div>
                 <div class="context-title">当前入口配置</div>
                 <div class="context-desc">
-                  命中入口 {{ ctx.entry_name || ctx.entry_code }}，以下字段和去向都来自当前注册策略。
+                  命中入口
+                  {{ ctx.entry_name || ctx.entry_code }}，以下字段和去向都来自当前注册策略。
                 </div>
               </div>
               <ElTag :type="ctx.allow_public_register ? 'success' : 'warning'">
@@ -51,7 +52,9 @@
             <div class="context-section">
               <span class="context-label">本页会要求你填写</span>
               <div class="context-tags">
-                <ElTag v-for="item in requiredFieldTags" :key="item" effect="plain">{{ item }}</ElTag>
+                <ElTag v-for="item in requiredFieldTags" :key="item" effect="plain">{{
+                  item
+                }}</ElTag>
               </div>
             </div>
             <ElAlert
@@ -163,7 +166,7 @@
               <ElButton
                 class="w-full custom-height"
                 type="primary"
-                @click="register"
+                @click="handleRegister"
                 :loading="loading"
                 :disabled="isPublicRegisterDisabled"
                 v-ripple
@@ -188,49 +191,21 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { ElMessage } from 'element-plus'
-  import { fetchRegister, fetchRegisterContext } from '@/api/auth'
   import { RoutesAlias } from '@/router/routesAlias'
-  import { useUserStore } from '@/store/modules/user'
+  import { useRegisterFlow, type RegisterFormState } from '@/domains/auth/flows/useRegisterFlow'
 
   defineOptions({ name: 'Register' })
-
-  const userStore = useUserStore()
-
-  const ctx = ref<Awaited<ReturnType<typeof fetchRegisterContext>> | null>(null)
-  const contextError = ref('')
-
-  onMounted(async () => {
-    try {
-      ctx.value = await fetchRegisterContext(window.location.host, window.location.pathname)
-    } catch (e) {
-      contextError.value = '未读取到当前 URL 对应的注册入口，请先检查注册入口、策略和 account-portal 页面是否已完成配置。'
-      console.warn('fetch register context failed', e)
-    }
-  })
-
-  interface RegisterForm {
-    username: string
-    password: string
-    confirmPassword: string
-    email: string
-    invitationCode: string
-    captchaToken: string
-    agreement: boolean
-  }
 
   const USERNAME_MIN_LENGTH = 3
   const USERNAME_MAX_LENGTH = 20
   const PASSWORD_MIN_LENGTH = 6
-  const REDIRECT_DELAY = 1000
 
   const { t, locale } = useI18n()
-  const router = useRouter()
   const formRef = ref<FormInstance>()
+  const { ctx, contextError, loading, isPublicRegisterDisabled, loadContext, register } =
+    useRegisterFlow()
 
-  const loading = ref(false)
   const formKey = ref(0)
-  const isPublicRegisterDisabled = computed(() => ctx.value?.allow_public_register === false)
   const registerSourceLabel = computed(() => {
     const source = `${ctx.value?.register_source || 'self'}`.trim()
     if (source === 'invite') return '邀请码注册'
@@ -249,7 +224,9 @@
     if (ctx.value?.require_email_verify) tags.push('邮箱')
     if (ctx.value?.require_invite) tags.push('邀请码')
     if (ctx.value?.require_captcha) {
-      tags.push(ctx.value.captcha_provider && ctx.value.captcha_provider !== 'none' ? '人机验证' : '验证码')
+      tags.push(
+        ctx.value.captcha_provider && ctx.value.captcha_provider !== 'none' ? '人机验证' : '验证码'
+      )
     }
     return tags
   })
@@ -274,7 +251,7 @@
     formKey.value++
   })
 
-  const formData = reactive<RegisterForm>({
+  const formData = reactive<RegisterFormState>({
     username: '',
     password: '',
     confirmPassword: '',
@@ -335,7 +312,7 @@
     callback()
   }
 
-  const rules = computed<FormRules<RegisterForm>>(() => ({
+  const rules = computed<FormRules<RegisterFormState>>(() => ({
     username: [
       { required: true, message: t('register.placeholder.username'), trigger: 'blur' },
       {
@@ -351,7 +328,11 @@
     ],
     confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
     ...(ctx.value?.require_email_verify
-      ? { email: [{ required: true, type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }] }
+      ? {
+          email: [
+            { required: true, type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+          ]
+        }
       : {}),
     ...(ctx.value?.require_invite
       ? { invitationCode: [{ required: true, message: '请输入邀请码', trigger: 'blur' }] }
@@ -367,61 +348,20 @@
    * 注册用户
    * 验证表单后提交注册请求
    */
-  const register = async () => {
+  const handleRegister = async () => {
     if (!formRef.value) return
 
     try {
       await formRef.value.validate()
-      loading.value = true
-
-      if (isPublicRegisterDisabled.value) {
-        ElMessage.error('当前未开启公开注册')
-        loading.value = false
-        return
-      }
-      const res = await fetchRegister({
-        username: formData.username,
-        password: formData.password,
-        confirm_password: formData.confirmPassword,
-        ...(formData.email ? { email: formData.email } : {}),
-        ...(formData.invitationCode ? { invitation_code: formData.invitationCode } : {}),
-        ...(formData.captchaToken ? { captcha_token: formData.captchaToken } : {}),
-        agreement_version: 'v1'
-      })
-      loading.value = false
-      ElMessage.success('注册成功')
-
-      // auto_login: 持久化 token，直接跳转 landing
-      if (res.access_token) {
-        userStore.setToken(res.access_token, res.refresh_token ?? undefined)
-        userStore.setLoginStatus(true)
-        const homePath = res.landing?.home_path ?? '/dashboard/console'
-        setTimeout(() => router.push(homePath), REDIRECT_DELAY)
-      } else if (res.pending) {
-        // auto_login=false：注册成功但未自动登录，引导去登录页
-        setTimeout(
-          () => router.push({ path: RoutesAlias.Login, query: { registered: '1' } }),
-          REDIRECT_DELAY
-        )
-      } else if (res.landing?.home_path) {
-        setTimeout(() => router.push(res.landing!.home_path!), REDIRECT_DELAY)
-      } else {
-        toLogin()
-      }
+      await register(formData)
     } catch (error) {
-      console.error('表单验证失败:', error)
-      loading.value = false
+      console.error('[Register] 表单验证失败:', error)
     }
   }
 
-  /**
-   * 跳转到登录页面
-   */
-  const toLogin = () => {
-    setTimeout(() => {
-      router.push({ path: RoutesAlias.Login })
-    }, REDIRECT_DELAY)
-  }
+  onMounted(() => {
+    void loadContext()
+  })
 </script>
 
 <style scoped>

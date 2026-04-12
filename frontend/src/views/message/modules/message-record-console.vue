@@ -257,8 +257,8 @@
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchGetDispatchRecordDetail, fetchGetDispatchRecordList } from '@/api/message'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
+  import { handleRichTextLinkNavigation } from '@/domains/navigation/utils/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
   defineOptions({ name: 'MessageRecordConsole' })

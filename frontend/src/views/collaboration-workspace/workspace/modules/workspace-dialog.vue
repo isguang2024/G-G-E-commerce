@@ -76,7 +76,7 @@
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
-  import { fetchGetUser } from '@/api/system-manage'
+  import { fetchGetUser } from '@/domains/governance/api'
 
   interface AdminUser {
     id: string

@@ -88,7 +88,7 @@
 <script setup lang="ts">
   import { QuestionFilled } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { fetchCreatePermissionAction, fetchUpdatePermissionAction } from '@/api/system-manage'
+  import { fetchCreatePermissionAction, fetchUpdatePermissionAction } from '@/domains/governance/api'
   import { ElIcon, ElMessage, ElTooltip } from 'element-plus'
 
   interface Props {

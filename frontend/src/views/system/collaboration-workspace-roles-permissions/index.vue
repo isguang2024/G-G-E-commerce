@@ -103,8 +103,8 @@
     fetchDeleteMyCollaborationWorkspaceRole,
     fetchGetMyCollaborationWorkspaceBoundaryRoles
   } from '@/api/collaboration-workspace'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import { fetchGetApps } from '@/api/system-manage'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
+  import { fetchGetApps } from '@/domains/governance/api'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import CollaborationWorkspaceRoleDialog from './modules/collaboration-workspace-role-dialog.vue'
   import CollaborationWorkspaceRolePackageDialog from './modules/collaboration-workspace-role-package-dialog.vue'

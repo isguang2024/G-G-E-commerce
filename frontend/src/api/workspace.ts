@@ -1,5 +1,7 @@
 import { v5Client } from '@/api/v5/client'
 
+// @compat-status: transition workspace API 仍把返回值归一到旧 Api.SystemManage.WorkspaceItem。
+
 function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
   return {
     id: item?.id || '',

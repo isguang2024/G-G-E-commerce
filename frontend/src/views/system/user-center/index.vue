@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useUserStore } from '@/store/modules/user'
+  import { useUserStore } from '@/domains/auth/store'
   import type { FormInstance, FormRules } from 'element-plus'
 
   defineOptions({ name: 'UserCenter' })

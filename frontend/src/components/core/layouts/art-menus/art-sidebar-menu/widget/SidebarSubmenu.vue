@@ -60,7 +60,7 @@
   import { computed } from 'vue'
   import type { AppRouteRecord } from '@/types/router'
   import { formatMenuTitle } from '@/utils/router'
-  import { handleMenuJump } from '@/utils/navigation'
+  import { handleMenuJump } from '@/domains/navigation/utils'
   import { useSettingStore } from '@/store/modules/setting'
 
   interface MenuTheme {

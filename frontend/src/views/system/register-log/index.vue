@@ -56,7 +56,7 @@
 <script setup lang="ts">
   import { onMounted, reactive, ref } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { fetchListRegisterLogs } from '@/api/system-manage/register'
+  import { fetchListRegisterLogs } from '@/domains/governance/api/register'
 
   defineOptions({ name: 'SystemRegisterLog' })
 

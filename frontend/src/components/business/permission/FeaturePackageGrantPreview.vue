@@ -122,7 +122,7 @@
     fetchGetFeaturePackageActions,
     fetchGetFeaturePackageChildren,
     fetchGetFeaturePackageMenus
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface PackageDetail {
     package: Api.SystemManage.FeaturePackageItem

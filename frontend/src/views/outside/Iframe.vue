@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-  import { IframeRouteManager } from '@/router/core'
+  import { IframeRouteManager } from '@/domains/navigation/router-core/IframeRouteManager'
 
   defineOptions({ name: 'IframeView' })
 

@@ -42,7 +42,7 @@
     fetchGetFeaturePackageActions,
     fetchGetPermissionActionOptions,
     fetchSetFeaturePackageActions
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface Props {
     modelValue: boolean

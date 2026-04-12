@@ -15,7 +15,7 @@ import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 import { useTable } from '@/hooks/core/useTable'
 import { useAuth } from '@/hooks/core/useAuth'
-import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
 import {
   fetchAddPermissionActionEndpoint,
   fetchCleanupStaleApiEndpoints,
@@ -30,7 +30,7 @@ import {
   fetchSyncApiEndpoints,
   fetchUpdateApiEndpoint,
   fetchUpdateApiEndpointCategory
-} from '@/api/system-manage'
+} from '@/domains/governance/api'
 import {
   formatApiEndpointDisplayPath,
   formatPermissionContext,

@@ -38,7 +38,7 @@
   import type { RouteLocationMatched, RouteRecordRaw } from 'vue-router'
   import type { AppRouteRecord } from '@/types/router'
   import { formatMenuTitle } from '@/utils/router'
-  import { useMenuStore } from '@/store/modules/menu'
+  import { useMenuStore } from '@/domains/navigation/menu'
 
   defineOptions({ name: 'ArtBreadcrumb' })
 

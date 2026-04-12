@@ -15,28 +15,26 @@
  */
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import { useUserStore } from '@/store/modules/user'
+import { useUserStore } from '@/domains/auth/store'
 import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse } from '@/types'
+import {
+  isUnauthorizedBusinessCode,
+  retryAxiosRequestWithRefresh,
+  shouldBypassUnauthorizedLogout,
+  triggerUnauthorizedLogout
+} from './auth-session'
+
+// @compat-status: transition legacy axios 请求入口仍有调用方，待逐步迁移到 v5 client 后再删除。
 
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
-const LOGOUT_DELAY = 500
 const MAX_RETRIES = 0
 const RETRY_DELAY = 1000
-const UNAUTHORIZED_RESET_DELAY = 3000
-
-/**
- * 401 防抖：使用 Promise 哨兵，确保多并发 401 仅触发一次登出/提示。
- * 旧实现使用全局布尔位 + setTimeout，存在以下竞态：
- *   1. 同一 tick 内多个 401 同时进入，可能都看到 false 而都执行登出；
- *   2. setTimeout 复位与下一次 401 之间无 happens-before 关系。
- */
-let unauthorizedHandling: Promise<void> | null = null
 
 /** 扩展 AxiosRequestConfig */
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
@@ -65,15 +63,6 @@ interface CacheEntry {
 }
 const inflightMap = new Map<string, Promise<unknown>>()
 const responseCache = new Map<string, CacheEntry>()
-const AUTH_FLOW_ENDPOINTS = [
-  '/auth/login',
-  '/auth/logout',
-  '/auth/refresh',
-  '/auth/register',
-  '/auth/register-context',
-  '/auth/callback/exchange'
-]
-
 function buildCacheKey(config: ExtendedAxiosRequestConfig): string {
   const method = (config.method || 'GET').toUpperCase()
   const url = config.url || ''
@@ -84,21 +73,6 @@ function buildCacheKey(config: ExtendedAxiosRequestConfig): string {
     params = ''
   }
   return `${method}|${url}|${params}`
-}
-
-function normalizeRequestPath(url?: string): string {
-  const raw = `${url || ''}`.trim()
-  if (!raw) return ''
-  try {
-    return new URL(raw, window.location.origin).pathname
-  } catch {
-    return raw
-  }
-}
-
-function shouldBypassUnauthorizedLogout(url?: string): boolean {
-  const path = normalizeRequestPath(url)
-  return AUTH_FLOW_ENDPOINTS.some((endpoint) => path.endsWith(endpoint))
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -168,28 +142,46 @@ axiosInstance.interceptors.request.use(
 
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse<BaseResponse>) => {
+  async (response: AxiosResponse<BaseResponse>) => {
     const { code, message, msg } = response.data
     // 后端返回 code: 0 表示成功，其他值表示错误
     if (code === 0) return response
     // 401 未授权错误
     const errorMsg = message || msg || $t('httpMsg.requestFailed')
-    if (code === 401 || response.status === ApiStatus.unauthorized) {
+    if (isUnauthorizedBusinessCode(code) || response.status === ApiStatus.unauthorized) {
       if (shouldBypassUnauthorizedLogout(response.config.url)) {
         throw createHttpError(errorMsg, ApiStatus.unauthorized, { data: response.data.data })
       }
-      handleUnauthorizedError(errorMsg)
+      const retried = await retryAxiosRequestWithRefresh(
+        response,
+        response.config as InternalAxiosRequestConfig,
+        (config) => axiosInstance.request<BaseResponse>(config)
+      )
+      if (retried) {
+        return retried
+      }
+      triggerUnauthorizedLogout(createHttpError(errorMsg, code || ApiStatus.unauthorized))
+      throw createHttpError(errorMsg, code || ApiStatus.unauthorized, { data: response.data.data })
     }
     // 传递完整的响应数据，包括data字段（可能包含角色列表等信息）
     throw createHttpError(errorMsg, code, { data: response.data.data })
   },
-  (error) => {
+  async (error) => {
     // HTTP 状态码错误处理
     if (error.response?.status === ApiStatus.unauthorized) {
       if (shouldBypassUnauthorizedLogout(error.config?.url)) {
         return Promise.reject(handleError(error))
       }
-      handleUnauthorizedError()
+      const retried = await retryAxiosRequestWithRefresh(
+        error.response,
+        error.config as InternalAxiosRequestConfig,
+        (config) => axiosInstance.request<BaseResponse>(config)
+      )
+      if (retried) {
+        return retried
+      }
+      triggerUnauthorizedLogout(createHttpError($t('httpMsg.unauthorized'), ApiStatus.unauthorized))
+      return Promise.reject(createHttpError($t('httpMsg.unauthorized'), ApiStatus.unauthorized))
     }
     return Promise.reject(handleError(error))
   }
@@ -198,34 +190,6 @@ axiosInstance.interceptors.response.use(
 /** 统一创建HttpError */
 function createHttpError(message: string, code: number, options?: { data?: unknown }) {
   return new HttpError(message, code, options)
-}
-
-/** 处理401错误（Promise 哨兵，全局只触发一次登出/提示） */
-function handleUnauthorizedError(message?: string): never {
-  const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
-
-  if (!unauthorizedHandling) {
-    unauthorizedHandling = (async () => {
-      try {
-        showError(error, true)
-        logOut()
-      } finally {
-        // 留出窗口期吞掉同一波 401，再放开下一次
-        setTimeout(() => {
-          unauthorizedHandling = null
-        }, UNAUTHORIZED_RESET_DELAY)
-      }
-    })()
-  }
-
-  throw error
-}
-
-/** 退出登录函数 */
-function logOut() {
-  setTimeout(() => {
-    useUserStore().logOut()
-  }, LOGOUT_DELAY)
 }
 
 /** 是否需要重试 */

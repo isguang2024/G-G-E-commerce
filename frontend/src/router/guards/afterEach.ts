@@ -2,16 +2,20 @@ import { nextTick } from 'vue'
 import { useSettingStore } from '@/store/modules/setting'
 import { Router } from 'vue-router'
 import NProgress from 'nprogress'
-import { useCommon } from '@/hooks/core/useCommon'
 import { loadingService } from '@/utils/ui'
-import { getPendingLoading, resetPendingLoading } from './beforeEach'
+import { getPendingLoading, resetPendingLoading } from '@/domains/navigation/runtime/guard-state'
+
+function scrollMainContainerToTop(): void {
+  const scrollContainer = document.getElementById('app-main')
+  if (scrollContainer) {
+    scrollContainer.scrollTop = 0
+  }
+}
 
 /** 路由全局后置守卫 */
 export function setupAfterEachGuard(router: Router) {
-  const { scrollToTop } = useCommon()
-
   router.afterEach(() => {
-    scrollToTop()
+    scrollMainContainerToTop()
 
     // 关闭进度条
     const settingStore = useSettingStore()

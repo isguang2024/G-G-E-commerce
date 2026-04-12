@@ -29,8 +29,8 @@
  * @module utils/storage/storage-key-manager
  * @author Art Design Pro Team
  */
-import { StorageConfig } from '@/utils/storage'
-import { APP_SCOPE_GLOBAL, readActiveAppScopeKey } from '@/utils/app-scope'
+import { StorageConfig } from '@/utils/storage/storage-config'
+import { APP_SCOPE_GLOBAL, readActiveAppScopeKey } from '@/domains/app-runtime/app-scope'
 
 /**
  * 存储键名管理器

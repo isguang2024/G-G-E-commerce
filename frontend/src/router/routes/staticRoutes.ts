@@ -11,6 +11,7 @@ import { AppRouteRecordRaw } from '@/utils/router'
  * 2、静态路由不管是否登录都可以访问
  */
 export const staticRoutes: AppRouteRecordRaw[] = [
+  // @compat-status: transition 旧认证路径仍需重定向到 account-portal 新入口，待外链与回跳全部切换后再移除。
   // 不需要登录就能访问的路由示例
   // {
   //   path: '/welcome',

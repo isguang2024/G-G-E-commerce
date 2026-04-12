@@ -113,7 +113,7 @@
     fetchGetFeaturePackageOptions,
     fetchGetCollaborationWorkspaceFeaturePackages,
     fetchSetCollaborationWorkspaceFeaturePackages
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface Props {
     modelValue: boolean

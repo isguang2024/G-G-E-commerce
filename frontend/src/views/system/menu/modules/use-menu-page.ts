@@ -13,9 +13,9 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { formatMenuTitle } from '@/utils/router'
-import { getMenuActionRequirement } from '@/utils/permission/menu'
+import { getMenuActionRequirement } from '@/domains/governance/utils/menu'
 import { useTableColumns } from '@/hooks/core/useTableColumns'
-import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 import type { AppRouteRecord } from '@/types/router'
 import {
@@ -27,7 +27,7 @@ import {
   fetchGetPageOptions,
   fetchGetMenuSpaces,
   fetchGetApps
-} from '@/api/system-manage'
+} from '@/domains/governance/api'
 import {
   cloneMenuNode,
   getAccessModeLabel,

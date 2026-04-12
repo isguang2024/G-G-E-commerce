@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="dialogTitle"
@@ -305,8 +305,8 @@
     fetchGetPageMenuOptions,
     fetchGetPageOptions,
     fetchUpdatePage
-  } from '@/api/system-manage'
-  import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
+  } from '@/domains/governance/api'
+  import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/domains/navigation/utils/managed-page'
   import { formatMenuTitle } from '@/utils/router'
   import PageFieldLabel from './page-field-label.vue'
 

@@ -14,7 +14,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormItem } from '@/components/core/forms/art-form/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 import { useTableColumns } from '@/hooks/core/useTableColumns'
-import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
 import {
   fetchDeletePage,
   fetchGetApps,
@@ -22,10 +22,10 @@ import {
   fetchGetPageList,
   fetchGetPageMenuOptions,
   fetchUpdatePage
-} from '@/api/system-manage'
+} from '@/domains/governance/api'
 import { router } from '@/router'
-import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
-import { useMenuSpaceStore } from '@/store/modules/menu-space'
+import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/domains/navigation/utils/managed-page'
+import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 import {
   buildCopyPageData,
   buildMenuPathMap,

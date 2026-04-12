@@ -1,15 +1,2 @@
-/**
- * 路由核心模块导出
- *
- * @module router/core
- * @author Art Design Pro Team
- */
-
-export { RouteRegistry } from './RouteRegistry'
-export { ComponentLoader } from './ComponentLoader'
-export { RouteValidator } from './RouteValidator'
-export { RouteTransformer } from './RouteTransformer'
-export { IframeRouteManager } from './IframeRouteManager'
-export { MenuProcessor } from './MenuProcessor'
-export { ManagedPageProcessor } from './ManagedPageProcessor'
-export { RoutePermissionValidator } from './RoutePermissionValidator'
+// @compat-status: transition P3-B 已迁入 domains/navigation，旧路径保留为兼容 re-export。
+export * from '@/domains/navigation/router-core'

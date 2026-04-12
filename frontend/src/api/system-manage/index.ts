@@ -1,7 +1,2 @@
-export * from './user'
-export * from './role'
-export * from './permission'
-export * from './page'
-export * from './api-endpoint'
-export * from './app'
-export * from './menu'
+// @compat-status: transition P3-B 已迁入 domains/governance，旧路径保留为兼容 re-export。
+export * from '@/domains/governance/api'

@@ -190,7 +190,7 @@
     fetchDeleteRegisterPolicy,
     fetchListRegisterPolicies,
     fetchUpdateRegisterPolicy
-  } from '@/api/system-manage/register'
+  } from '@/domains/governance/api/register'
 
   defineOptions({ name: 'SystemRegisterPolicy' })
 

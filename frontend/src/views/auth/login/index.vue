@@ -80,19 +80,10 @@
 </template>
 
 <script setup lang="ts">
-  import AppConfig from '@/config'
-  import { useUserStore } from '@/store/modules/user'
-  import {
-    hasPersonalWorkspaceAccessByUserInfo,
-    useCollaborationWorkspaceStore
-  } from '@/store/modules/collaboration-workspace'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useI18n } from 'vue-i18n'
-  import { HttpError } from '@/utils/http/error'
-  import { fetchLogin } from '@/api/auth'
-  import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
-  import { resetRouterState } from '@/router/guards/beforeEach'
-  import { RoutesAlias } from '@/router/routesAlias'
+  import { type FormInstance, type FormRules } from 'element-plus'
+  import { useLoginFlow } from '@/domains/auth/flows/useLoginFlow'
+  import { type LoginFormState } from '@/domains/auth/flows/shared'
 
   defineOptions({ name: 'Login' })
 
@@ -104,151 +95,20 @@
     formKey.value++
   })
 
-  const userStore = useUserStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
-  const menuSpaceStore = useMenuSpaceStore()
-  const router = useRouter()
-  const route = useRoute()
-
-  const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
-  const submitError = ref('')
-  const LOGIN_REMEMBER_KEY = 'gg-login-remember'
+  const { loading, submitError, loadRememberedCredentials, submit } = useLoginFlow()
 
   // 登录表单默认值（不再预置系统账号密码）
-  const formData = reactive({
+  const formData = reactive<LoginFormState>({
     username: '',
     password: '',
     rememberPassword: false
   })
 
-  const loadRememberedCredentials = () => {
-    try {
-      const raw = localStorage.getItem(LOGIN_REMEMBER_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as {
-        username?: string
-        password?: string
-        rememberPassword?: boolean
-      }
-      formData.username = parsed.username || ''
-      formData.password = parsed.password || ''
-      formData.rememberPassword = !!parsed.rememberPassword
-    } catch (error) {
-      console.warn('[Login] 读取记住密码失败，已忽略:', error)
-      localStorage.removeItem(LOGIN_REMEMBER_KEY)
-    }
-  }
-
-  const persistRememberedCredentials = () => {
-    if (formData.rememberPassword) {
-      localStorage.setItem(
-        LOGIN_REMEMBER_KEY,
-        JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          rememberPassword: true
-        })
-      )
-    } else {
-      localStorage.removeItem(LOGIN_REMEMBER_KEY)
-    }
-  }
-
   const rules = computed<FormRules>(() => ({
     username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
     password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }]
   }))
-
-  const loading = ref(false)
-
-  const normalizeRedirect = (raw?: string) => {
-    const cleanPath = `${raw || ''}`.trim()
-    if (!cleanPath) return '/'
-
-    let current = cleanPath
-    const decodeOnce = (value: string) => {
-      try {
-        return decodeURIComponent(value)
-      } catch {
-        return value
-      }
-    }
-
-    let safeIterations = 0
-    while (current.includes('redirect=') && safeIterations < 5) {
-      const redirectIndex = current.indexOf('redirect=')
-      current = decodeOnce(current.slice(redirectIndex + 'redirect='.length))
-      safeIterations += 1
-    }
-
-    const normalized = decodeOnce(current).trim()
-    if (normalized.startsWith('#/')) {
-      return normalized.slice(1)
-    }
-    if (normalized.startsWith('/#/')) {
-      return normalized.slice(2)
-    }
-    if (!normalized || !normalized.startsWith('/')) return '/'
-    if (normalized.startsWith('/auth/login') || normalized.startsWith('/account/auth/login')) {
-      return '/'
-    }
-
-    return normalized
-  }
-
-  const gotoAfterLogin = async (landingPath: string) => {
-    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(landingPath)
-    if (nextTarget.mode === 'location') {
-      window.location.assign(nextTarget.target)
-      return
-    }
-
-    const fallbackUrl = () => {
-      return new URL(router.resolve(landingPath).href, window.location.origin).toString()
-    }
-    const fallbackFallbackUrl = fallbackUrl()
-
-    const hasJumpedOut = () => {
-      const currentPath = router.currentRoute.value.path
-      return currentPath !== RoutesAlias.Login
-    }
-
-    try {
-      await router.replace(landingPath)
-      await nextTick()
-      if (!hasJumpedOut()) {
-        setTimeout(() => {
-          if (!hasJumpedOut()) {
-            window.location.assign(fallbackFallbackUrl)
-          }
-        }, 900)
-      }
-    } catch (error) {
-      console.warn('[Login] 登录导航失败，尝试兜底跳转:', error)
-      window.location.assign(fallbackFallbackUrl)
-    }
-  }
-
-  const safeInitLoginContext = async (
-    preferredCollaborationWorkspaceId: string,
-    preferredLegacyCollaborationWorkspaceId: string
-  ) => {
-    try {
-      await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-        preferredCollaborationWorkspaceId,
-        preferredLegacyCollaborationWorkspaceId,
-        preferredWorkspaceId: `${userStore.getUserInfo.current_auth_workspace_id || ''}`,
-        preferredWorkspaceType: `${userStore.getUserInfo.current_auth_workspace_type || ''}`,
-        preferPersonalWorkspace: collaborationWorkspaceStore.hasPersonalWorkspaceAccess
-      })
-      menuSpaceStore.syncRuntimeHost()
-      await menuSpaceStore.refreshRuntimeConfig(true)
-      await menuSpaceStore.syncResolvedCurrentSpace()
-    } catch (error) {
-      console.warn('[Login] 登录初始化上下文失败，仍允许进入应用:', error)
-    }
-  }
 
   // 登录
   const handleSubmit = async () => {
@@ -257,102 +117,14 @@
     try {
       const valid = await formRef.value.validate()
       if (!valid) return
-
-      loading.value = true
-      submitError.value = ''
-
-      const { username, password } = formData
-      const response = await fetchLogin({
-        username,
-        password,
-        target_app_key: `${route.query.target_app_key || ''}`.trim() || undefined,
-        redirect_uri: `${route.query.redirect_uri || ''}`.trim() || undefined,
-        target_path: `${route.query.target_path || ''}`.trim() || undefined,
-        navigation_space_key: `${route.query.navigation_space_key || ''}`.trim() || undefined,
-        state: `${route.query.state || ''}`.trim() || undefined,
-        nonce: `${route.query.nonce || ''}`.trim() || undefined,
-        auth_protocol_version: `${route.query.auth_protocol_version || ''}`.trim() || undefined
-      })
-
-      if (response.callback?.redirect_to) {
-        persistRememberedCredentials()
-        window.location.assign(response.callback.redirect_to)
-        return
-      }
-
-      if (!response.access_token) {
-        throw new Error('Login failed - no token received')
-      }
-
-      resetRouterState(0)
-      userStore.applySession({
-        accessToken: response.access_token,
-        refreshToken: response.refresh_token,
-        isLogin: true
-      })
-
-      if (response.user) {
-        userStore.syncLoginUserIdentity(response.user.id)
-        const userInfo: Api.Auth.UserInfo = {
-          ...response.user,
-          userId: response.user.id,
-          userName: response.user.username || response.user.email,
-          avatar: response.user.avatar_url,
-          roles: response.user.is_super_admin ? ['R_SUPER'] : ['R_USER'],
-          buttons: [],
-          actions: response.user.actions || []
-        }
-        userStore.setUserInfo(userInfo)
-        collaborationWorkspaceStore.setPersonalWorkspaceAccess(
-          hasPersonalWorkspaceAccessByUserInfo(userInfo)
-        )
-      }
-
-      persistRememberedCredentials()
-      const displayName =
-        response.user?.nickname || response.user?.username || response.user?.email || systemName
-      showLoginSuccessNotice(displayName)
-
-      await safeInitLoginContext(
-        response.user?.current_collaboration_workspace_id || '',
-        response.user?.collaboration_workspace_id ||
-          response.user?.current_collaboration_workspace_id ||
-          ''
-      )
-      const landingPath = normalizeRedirect(route.query.redirect as string)
-      await gotoAfterLogin(landingPath)
+      await submit(formData)
     } catch (error) {
-      const message =
-        error instanceof HttpError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : ''
-      if (message) {
-        submitError.value = message
-      } else {
-        console.error('[Login] Unexpected error:', error)
-      }
-    } finally {
-      loading.value = false
+      console.error('[Login] 表单校验失败:', error)
     }
   }
 
-  // 登录成功提示
-  const showLoginSuccessNotice = (displayName: string) => {
-    setTimeout(() => {
-      ElNotification({
-        title: t('login.success.title'),
-        type: 'success',
-        duration: 2500,
-        zIndex: 10000,
-        message: `${t('login.success.message')}, ${displayName}!`
-      })
-    }, 1000)
-  }
-
   onMounted(() => {
-    loadRememberedCredentials()
+    loadRememberedCredentials(formData)
   })
 </script>
 

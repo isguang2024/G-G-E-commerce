@@ -113,7 +113,7 @@
     fetchGetFeaturePackageOptions,
     fetchGetUserPackages,
     fetchSetUserPackages
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface Props {
     modelValue: boolean

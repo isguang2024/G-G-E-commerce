@@ -40,12 +40,12 @@
  * @author Art Design Pro Team
  */
 
-import { useTimeoutFn, useIntervalFn, useDateFormat } from '@vueuse/core'
+import { useTimeoutFn, useIntervalFn } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useSettingStore } from '@/store/modules/setting'
-import { mittBus } from '@/utils/sys'
-import { festivalConfigList } from '@/config/modules/festival'
+import mittBus from '@/utils/sys/mittBus'
+import { getCurrentDateString, resolveCurrentFestivalData } from '@/hooks/core/ceremony-shared'
 
 /**
  * 节日庆祝配置常量
@@ -72,35 +72,10 @@ export function useCeremony() {
   let fireworksInterval: { pause: () => void } | null = null
 
   /**
-   * 检查日期是否在节日范围内
-   * @param currentDate 当前日期
-   * @param festivalDate 节日开始日期
-   * @param festivalEndDate 节日结束日期（可选）
-   */
-  const isDateInRange = (
-    currentDate: string,
-    festivalDate: string,
-    festivalEndDate?: string
-  ): boolean => {
-    if (!festivalEndDate) {
-      // 单日节日
-      return currentDate === festivalDate
-    }
-
-    // 跨日期节日
-    const current = new Date(currentDate)
-    const start = new Date(festivalDate)
-    const end = new Date(festivalEndDate)
-
-    return current >= start && current <= end
-  }
-
-  /**
    * 获取当前日期对应的节日数据
    */
   const currentFestivalData = computed(() => {
-    const currentDate = useDateFormat(new Date(), 'YYYY-MM-DD').value
-    return festivalConfigList.find((item) => isDateInRange(currentDate, item.date, item.endDate))
+    return resolveCurrentFestivalData(getCurrentDateString())
   })
 
   /**

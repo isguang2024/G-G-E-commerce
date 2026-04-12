@@ -112,7 +112,7 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import CryptoJS from 'crypto-js'
-  import { useUserStore } from '@/store/modules/user'
+  import { useUserStore } from '@/domains/auth/store'
   import { mittBus } from '@/utils/sys'
 
   // 国际化

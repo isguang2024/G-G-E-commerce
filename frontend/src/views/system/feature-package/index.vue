@@ -232,7 +232,7 @@
     fetchGetFeaturePackageImpactPreview,
     fetchGetFeaturePackageList,
     fetchGetFeaturePackageRelationTree
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'

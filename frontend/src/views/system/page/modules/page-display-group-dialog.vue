@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="dialogTitle"
@@ -130,7 +130,7 @@
 <script setup lang="ts">
   import { computed, nextTick, reactive, ref, watch } from 'vue'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import { fetchCreatePage, fetchUpdatePage } from '@/api/system-manage'
+  import { fetchCreatePage, fetchUpdatePage } from '@/domains/governance/api'
   import PageFieldLabel from './page-field-label.vue'
 
   type PageItem = Api.SystemManage.PageItem

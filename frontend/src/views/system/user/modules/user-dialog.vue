@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="dialogVisible"
     :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-  import { fetchGetRoleListSimple } from '@/api/system-manage'
+  import { fetchGetRoleListSimple } from '@/domains/governance/api'
   import type { FormInstance, FormRules } from 'element-plus'
 
   interface Props {

@@ -89,8 +89,8 @@
   import { useI18n } from 'vue-i18n'
   import { storeToRefs } from 'pinia'
 
-  import { useWorktabStore } from '@/store/modules/worktab'
-  import { useUserStore } from '@/store/modules/user'
+  import { useWorktabStore } from '@/domains/navigation/worktab'
+  import { useUserStore } from '@/domains/auth/store'
   import { formatMenuTitle } from '@/utils/router'
   import { useSettingStore } from '@/store/modules/setting'
   import { MenuItemType } from '../../others/art-menu-right/index.vue'

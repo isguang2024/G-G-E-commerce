@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`开通协作空间 - ${packageName}`"
@@ -72,7 +72,7 @@
     fetchGetFeaturePackageCollaborationWorkspaces,
     fetchGetCollaborationWorkspaceOptions,
     fetchSetFeaturePackageCollaborationWorkspaces
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface Props {
     modelValue: boolean

@@ -58,8 +58,8 @@
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
-  import { fetchGetPermissionActionOptions } from '@/api/system-manage'
-  import { buildScopedActionKey, resolveActionKey } from '@/utils/permission/action'
+  import { fetchGetPermissionActionOptions } from '@/domains/governance/api'
+  import { buildScopedActionKey, resolveActionKey } from '@/domains/governance/utils/action'
 
   let cachedPermissionActions: Api.SystemManage.PermissionActionItem[] | null = null
   let permissionActionsPromise: Promise<Api.SystemManage.PermissionActionItem[]> | null = null

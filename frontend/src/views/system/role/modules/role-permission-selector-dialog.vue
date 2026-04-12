@@ -253,7 +253,7 @@
     fetchSetRoleActions,
     fetchSetRoleDataPermissions,
     fetchSetRoleMenus
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface RoleMenuNode {
     id: string

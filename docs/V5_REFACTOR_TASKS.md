@@ -206,6 +206,51 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 如确认 `.claude/worktrees/` 下 9 个历史 worktree 无需保留，再执行物理删除并收口清理任务最后一个阻塞节点。
 - 若继续做类型治理，可把剩余 `any` 注解与隐式组件内部类型访问继续替换为公开 schema / 组件类型。
 
+### 2026-04-12 P3-B 首步：领域化目录方案定稿（Phase Cleanup）
+
+**本次改动**
+- 新增 `docs/frontend-cleanup-p3b-notes.md`，把前端目录归并的目标结构正式定稿为 `domains/auth`、`domains/app-runtime`、`domains/navigation`、`domains/governance` 四个领域。
+- 文档明确了当前 `api/composables/router/store/utils` 的真实聚合点，给出 `before/after` 对照、文件归属建议与不动的公共层（`components/views/locales/api/v5/utils/http`）。
+- 同步定下迁移顺序：`auth -> app-runtime -> navigation -> governance -> compat cleanup`，供 `P3B-2 ~ P3B-6` 直接执行。
+
+**下次方向**
+- 进入 `P3B-2`，先落 `domains/auth` 骨架，把 `auth-flow`、`session runtime`、`api/auth` 收到单一领域目录。
+- 迁移过程中保留 `store/modules/*` 与 `router/runtime/*` 的兼容 re-export，等 `P3-B` 尾声统一清理旧 import。
+
+### 2026-04-12 P3-B 第二步：auth 领域首批归并（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/src/domains/auth/`，首批落地 `api.ts`、`store.ts`、`centralized-login.ts`、`runtime/session.ts` 和 `flows/*`，把认证主链的 API、session runtime、登录注册回调流程、用户会话 store 收到同一领域目录。
+- 旧路径 `api/auth.ts`、`store/modules/user.ts`、`utils/auth/centralized-login.ts`、`router/runtime/session.ts`、`composables/auth-flow/*` 已退化为兼容 re-export，不再承载真实实现。
+- 全仓消费方 import 已切到 `@/domains/auth/*`，并在 `frontend/tsconfig.json` 补了 `@/domains/auth` 路径映射；`pnpm exec vue-tsc --noEmit` 已通过。
+
+**下次方向**
+- 进入 `P3B-3`，继续落 `domains/app-runtime`，优先搬 `app-context`、`menu-space`、`managed-app-scope` 与对应 runtime 入口。
+- `domains/auth/store.ts` 目前仍直接依赖 `store/modules/{app-context,menu-space,...}` 的旧路径；等 `app-runtime` 迁完后，再把这些依赖切到新域路径，逐步压缩 `store/modules/*` 的兼容层。 
+
+### 2026-04-12 P3-B 第三步：app-runtime 领域首批归并（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/src/domains/app-runtime/`，首批落地 `context.ts`、`menu-space.ts`、`managed-app-scope.ts`、`useManagedAppScope.ts`、`app-scope.ts`、`runtime/app-context.ts` 与 `index.ts`，把 app context、menu-space、scope 读写、runtime app 切换入口收口到同一领域。
+- 旧路径 `store/modules/app-context.ts`、`store/modules/menu-space.ts`、`hooks/business/{managed-app-scope,useManagedAppScope}.ts`、`utils/app-scope.ts`、`router/runtime/app-context.ts` 已退化为兼容 re-export；全仓消费方 import 已切到 `@/domains/app-runtime/*`。
+- `domains/auth/*` 里对 `app-context/menu-space` 的依赖也已同步切到新域路径；`pnpm exec vue-tsc --noEmit` 再次通过。
+
+**下次方向**
+- 进入 `P3B-4`，继续迁 `router/core/*`、`router/runtime/navigation.ts`、`store/modules/menu.ts`、`store/modules/worktab.ts`、`utils/navigation/*` 到 `domains/navigation`。
+- `domains/app-runtime/runtime/app-context.ts` 目前仍直接依赖 `router/core`、`router/runtime/navigation`、`store/modules/menu`、`store/modules/worktab` 的旧路径；等 `navigation` 领域迁完后，需要回头把这些依赖切到新域实现。 
+
+### 2026-04-12 P3-B 收口：navigation/governance 归并 + 全量验证（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/src/domains/navigation/` 承接 `router/core/*`、`router/runtime/navigation.ts`、`store/modules/{menu,worktab}.ts`、`utils/navigation/*`；旧路径已退化为兼容 re-export，并修正了 `ComponentLoader` 在新目录下的 `views` 相对路径，恢复首页与 Demo 页真实加载。
+- 新增 `frontend/src/domains/governance/` 承接 `api/system-manage/*` 与 `utils/permission/*`；`frontend/src` 内真实消费方 import 已切到 `@/domains/governance/api*`、`@/domains/governance/utils/*` 与 `@/domains/navigation/*`，旧路径仅保留兼容壳。
+- `frontend/playwright.config.ts` 已补 `loadEnv('test')` 到 `process.env` 的透传，真实回归和临时 webServer 统一走 `E2E_BASE_URL`；`pnpm exec vue-tsc --noEmit`、`pnpm build`、`pnpm exec playwright test` 全部通过，当前 `10 passed`。
+- 针对迁移后的旧路径做了全仓搜索，`@/api/system-manage*`、`@/utils/permission*`、`@/store/modules/{menu,worktab}`、`@/router/runtime/navigation`、`@/utils/navigation*`、`@/router/core` 的真实消费方命中已清零。
+
+**下次方向**
+- 若继续清历史结构债，可把 `madge` 当前报出的 44 条循环链单独开新节点，优先处理 `auth/http/storage/router` 与 `app-runtime -> governance/_shared -> http` 两条总链。
+- repo 级 eslint 仍有历史 `any`、`vue/no-unused-vars` 与生成文件格式噪音；如继续做治理，建议单开 lint 基线收口，不与 P3 目录迁移混在同一轮。
+
 ### 2026-04-08 Phase 4 全量推进：role/navigation/featurepackage/permission/menu/page/cw 迁移到 ogen（Phase 4）
 
 **本次改动**
@@ -773,3 +818,158 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 如果后续要把这套流程进一步做成团队模板，建议再补一版“最小执行清单”，按“新增 API / 改契约 / 改权限 / 改默认数据”四类场景拆成 checklist，而不是只保留通用大链路。
 - 当前这轮只做流程文档化，不涉及代码或契约变更；后续若再调整 OpenAPI 生成链，应同步回写这三份文档，保持基础约束与执行文档一致。 
+
+### 2026-04-12 前端收口 Phase P2-A 第一段：运行时主链设计与入口归并（Phase Cleanup）
+
+**本次改动**
+- 先完成 P1 验证闭环：补做 `vue-tsc`、`build`、目标文件 `eslint` 与认证页本地路由 smoke，P1-A / P1-B 当前实现已收口，真实后端与集中登录的浏览器级断言映射到后续 P3 最小回归集。
+- 新增 `docs/frontend-cleanup-p2a-notes.md` 的目标主链设计章节，明确 `session / app-context / menu-space / runtime-navigation / route guard` 五层职责、四个触发场景的目标调用顺序，以及与现状实现的 6 条 diff 清单。
+- 新增 `frontend/src/router/runtime/session.ts`，并在 `userStore` 中暴露 `restoreSession()`；`beforeEach.ts` 与 `auth-flow/shared.ts` 已统一改走该入口，guard 内联的 session 恢复逻辑被删成薄包装。
+- 新增 `frontend/src/router/runtime/app-context.ts`，并在 `appContextStore` 中暴露 `ensureRuntimeAppKey()` / `switchApp()`；`menu-space.ts` 不再自己兜底 `/system/current-app`，`ArtAppSwitcher.vue` 已改成只调用 `appContextStore.switchApp(targetApp)`。
+- 回归通过：`pnpm exec vue-tsc --noEmit`、针对修改文件的 `eslint`、`pnpm build` 均通过；仅剩仓库历史 `any` warning，未新增错误。
+
+**下次方向**
+- 继续做 P2A-5，把 `beforeEach.ts` 进一步瘦成分发层，收掉剩余的编排职责和兼容导出，让 `navigation-runtime` 成为唯一动态路由主链入口。
+- 当前 `appContextStore.switchApp()` 内部仍通过 `refreshUserMenus()` 复用旧导航层；下一步可把 manifest 拉取、route register、homePath/worktab 收口进独立 `navigation-runtime`，彻底消除 guard/组件对细节的感知。
+- P1 浏览器级真实回归仍未在当前线程跑通，因为内置浏览器会话被占用且没有真实后端/集中登录状态；待 P3 E2E 基础设施就绪后，应把登录成功、register auto_login/pending、callback exchange、401/403/业务码展示补成自动化断言。
+
+### 2026-04-12 前端收口 Phase P2-B：兼容层盘点、打标与第一批清理（Phase Cleanup）
+
+**本次改动**
+- 新增 `docs/frontend-cleanup-p2b-notes.md`，把兼容层拆成 `legacy HTTP / v5->旧类型桥接 / 旧路径兼容 / 运行时 façade / worktab-app-scope 残留` 五类，并补齐代表文件、关键行号、用途判断与建议状态。
+- 在 `frontend/src/utils/http/index.ts`、`frontend/src/api/system-manage/_shared.ts`、`frontend/src/api/auth.ts`、`frontend/src/api/workspace.ts`、`frontend/src/router/routes/staticRoutes.ts`、`frontend/src/store/modules/user.ts`、`frontend/src/store/modules/worktab.ts`、`frontend/src/utils/app-scope.ts` 与 account-portal 认证壳层中补充 `@compat-status: keep|transition` 标记。
+- 删除第一批已可安全移除的 façade：`frontend/src/router/guards/beforeEach.ts` 中旧的 `refreshUserAccessAndMenus / refreshUserMenus / refreshCurrentUserInfoContext` 以及 `frontend/src/router/index.ts` 中对应 re-export；调用方已改为直接依赖 `router/runtime/session` 与 `router/runtime/navigation`。
+- 已同步补完迁移时间表：明确 `api/workspace.ts` 与 account-portal 薄壳适合本轮继续收口，`api/auth.ts` 与旧路径重定向适合下轮随业务迁移，`_shared.ts` 与 legacy axios 链需要专项任务拆解。
+
+**下次方向**
+- 优先处理 `frontend/src/api/workspace.ts` 这类调用面窄的桥接文件，尝试在不扩散风险的前提下再拿下一批 `transition` 项。
+- `_shared.ts` 与 `utils/http/index.ts` 已经确认是大范围兼容枢纽，后续应单开“去桥接化”子任务，按菜单、页面、权限、用户、消息等领域逐块替换，避免一次性爆破。
+- 旧认证路径重定向与 account-portal 壳层是否可删，取决于中心化登录回跳、历史链接和外部文档是否全部切换；这部分应在 P3 浏览器回归矩阵里一并验证后再动。 
+
+### 2026-04-12 前端收口 Phase P3-A 第一段：Playwright E2E 基线落地（Phase Cleanup）
+
+**本次改动**
+- 在 `frontend` 新增 Playwright 测试基线：安装 `@playwright/test`，补充 `package.json` 的 `test:e2e / test:e2e:headed / test:e2e:ui` 脚本，并下载 Chromium 浏览器。
+- 新增 `frontend/playwright.config.ts`，约定 `e2e/` 为测试目录，使用 `webServer` 自动拉起 `vite --mode test`，并建立 `setup -> chromium` 两阶段项目结构。
+- 新增 `frontend/e2e/setup/auth.setup.ts`、`frontend/e2e/tests/smoke.spec.ts`、`frontend/.env.test.example`；其中 setup 先保证共享 `storageState` 文件存在，smoke 用例验证公开登录页能正常打开。
+- `.gitignore` 已补 `playwright-report/`、`test-results/`、`e2e/.auth/`，避免本地产物污染仓库；本地已生成但不入库的 `frontend/.env.test` 用于测试模式运行。
+
+**下次方向**
+- 直接进入 `P3A-2`，把“未登录访问后台页 -> 重定向到登录页”补成真实断言，顺带把 centralized login URL 的 `target_app_key / redirect_uri / target_path / state / nonce` 一起验掉。
+- 当前 `auth.setup.ts` 只做空 `storageState` 初始化，后续在需要登录态复用时再接入 `.env.test` 的测试账号与真实登录流程。
+- Playwright 目前仍运行在本地前端 + 本地代理模式；若后续要稳定覆盖 callback / refresh / 401 等场景，需要补专门的测试账号和可控后端环境。 
+
+### 2026-04-12 前端收口 Phase P3-A 第二段：未登录重定向与登录失败提示回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/auth-redirect.spec.ts`，覆盖“未登录访问 `/system/page` 时应回到 `/account/auth/login`”主链，并兼容当前 centralized login 参数模式，校验 `target_path=/system/page` 与 `target_app_key=platform-admin`。
+- 新增 `frontend/e2e/tests/login-error.spec.ts`，通过拦截 `/api/v1/auth/login` 返回 401 业务错误，验证错误凭据登录后会停留在登录页并显示“用户名或密码错误”提示，且表单仍可重新输入。
+- 已执行全量 `pnpm exec playwright test`，当前 `setup + smoke + auth-redirect + login-error` 共 4 条用例全部通过。
+
+**下次方向**
+- 继续推进 `P3A-4`，把“登录成功 -> 进入系统主页”补成断言；这一步优先评估是否使用 `.env.test` 真实账号，还是继续用接口拦截方式先稳定前端链路。
+- 当前未登录重定向测试已经观察到前端会走 centralized login 参数链；后续应把 `redirect_uri / state / nonce / auth_protocol_version` 也加进显式断言，而不是只验 `target_path` 和 `target_app_key`。
+- 若后续要覆盖 callback / refresh / 401 自动恢复，需要在 `auth.setup.ts` 基础上引入真实登录态生成和更完整的 API mock/测试后端。 
+
+### 2026-04-12 前端收口 Phase P3-A 第三段：登录成功主页态回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/login-success.spec.ts`，用 API mock 方式覆盖“正确凭据登录 -> 进入 `/dashboard/console` -> 菜单渲染 -> 会话持久化 -> 用户菜单展示”的完整主页态链路。
+- 用例中补齐了登录后真实会触发的运行时请求 mock，包括 `/system/apps`、`/messages/inbox/summary`、`/runtime/navigation`、`/auth/me`、`/workspaces/my` 等，避免页头应用切换器和消息中心把测试拖回真实后端。
+- 持久化断言已按当前 Pinia 版本化存储实现收口，不再错误假设 key 固定为 `user`，而是验证 `sys-v{version}-user` 条目中包含 token 和用户邮箱。
+- 已执行 `frontend` 下 `pnpm exec playwright test e2e/tests/login-success.spec.ts` 与全量 `pnpm exec playwright test`，当前 5 条用例全部通过。
+
+**下次方向**
+- 直接进入 `P3A-5`，补“已登录状态下切换 App -> 菜单树与 app-context 同步刷新”的 E2E；若当前测试壳只有单 app，则按任务说明改成 conditional mock。
+- 当前登录成功用例仍是前端 API mock 链路，后续若补真实测试账号，可在现有结构上再加一条真实登录版本，不需要推翻当前稳定用例。
+- 头部组件还会拉取更多已登录态接口；后续继续补 logout、demo 公开页与管理页 CRUD 时，应沿用“按真实页面依赖把最小接口集一次 mock 完整”的策略，避免被无关 500 干扰断言。 
+
+### 2026-04-12 前端收口 Phase P3-A 第四段：App 切换菜单与上下文回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/app-switch.spec.ts`，覆盖“已登录 -> 切换到另一 app -> 菜单树刷新 -> 路由跳转 -> app-context 持久化更新”的主链。
+- 用例通过双 app mock 方式模拟 `platform-admin` 与 `demo-app`，并让 `/system/apps`、`/system/menu-spaces`、`/system/menu-spaces/current`、`/runtime/navigation` 按 `app_key` 返回两套运行时数据，真实驱动 `appContextStore.switchApp()` 的切换流程。
+- 切换后断言已覆盖：URL 跳到 `/demo/lab`、侧边栏出现 `Demo 应用 / Demo 实验室` 新菜单、页面渲染 `Demo App 验证页`、版本化 `appContextStore` 持久化条目中包含 `demo-app`。
+- 已执行 `frontend` 下 `pnpm exec playwright test e2e/tests/app-switch.spec.ts` 与全量 `pnpm exec playwright test`，当前 6 条用例全部通过。
+
+**下次方向**
+- 继续推进 `P3A-6`，补退出登录后本地状态清理与回到登录页的 E2E，优先复用现有登录成功 mock 链路，不重复搭环境。
+- 目前 app 切换测试验证的是“同域 shared_cookie + 双 app runtime 菜单切换”，尚未覆盖跨 host / centralized login 切换；如果后续需要，再单列场景扩展。
+- 头部壳层已确认至少依赖 app 列表、消息摘要、workspace 和 runtime navigation；后续新增 E2E 时应继续按页面真实依赖补齐 mock，避免出现伪失败。 
+
+### 2026-04-12 前端收口 Phase P3-A 第五段：Logout 清理与多标签拦截回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/logout.spec.ts`，覆盖“已登录 -> 执行登出 -> 会话清理 -> 再访后台被拦回登录页”的链路，并在同一浏览器 context 下额外打开第二个 tab 验证跨标签页同步。
+- 用例继续复用登录成功主链 mock，同时通过 `context.route()` 统一覆盖全部页面请求，并显式校验 `/api/v1/auth/logout` 已被调用，避免只测到前端假清理。
+- 断言内容已覆盖：版本化 user 持久化条目不再包含 `mock-access-token`、当前页重新访问 `/dashboard/console` 会回到 `/account/auth/login`、第二个 tab 再访后台也同样被拦截。
+- 已执行 `frontend` 下 `pnpm exec playwright test e2e/tests/logout.spec.ts` 与全量 `pnpm exec playwright test`，当前 7 条用例全部通过。
+
+**下次方向**
+- 继续推进 `P3A-7`，补 `demo-app` 公开页在未登录态下可直接访问的 E2E，并与受保护后台路由形成一正一反的访问控制对照。
+- 当前 logout 用例为了稳定验证核心逻辑，直接调用了页面里的 `userStore.logOut()`，没有继续卡在 Element Plus 确认框 UI 壳层；如果后续要补完整交互，可再追加一条纯 UI 版本。
+- 到这一段为止，P3-A 已经覆盖登录成功、登录失败、App 切换和 Logout；剩余重点将转向公开页与管理页 CRUD 的真实页面能力验证。 
+
+### 2026-04-12 前端收口 Phase P3-A 第六段：Demo 公开页访问控制回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/demo-public.spec.ts`，覆盖未登录访问 `demo-app` 公开页 `/demo/lab` 的链路，验证 `ensurePublicRuntimeRoutes()` 能在登录校验前正确注册公开运行时页面。
+- 用例只对 `/api/v1/pages/runtime/public` 做最小 mock，下发一条 `access_mode=public`、`component=demo/lab/index` 的公开页面记录，避免把后台菜单/runtime navigation 依赖带进公开页测试。
+- 断言内容已覆盖：访问 `/demo/lab` 后 URL 仍停留在 `/demo/lab`、页面成功渲染 `Demo App 验证页` 与 `当前 APP：demo-app`、全程不发生登录页重定向。
+- 已执行 `frontend` 下 `pnpm exec playwright test e2e/tests/demo-public.spec.ts` 与全量 `pnpm exec playwright test`，当前 8 条用例全部通过，P3-A“关键链路最小回归集”已形成闭环。
+
+**下次方向**
+- 下一步进入 `P3A-8`，开始补 `App 管理页 + 页面管理页` 的基本 CRUD 操作回归，这会从“路由/登录/上下文”转到“真实业务页面交互”。
+- 当前公开页用例验证的是最小 public route 注册链；如果后续要覆盖更多 `demo-app` 公开路由，可在同一测试文件内按页面类型继续追加，不需要改现有基线。
+- P3-A 现在已具备 smoke、未登录重定向、登录失败、登录成功、App 切换、Logout、公开页这 8 条稳定回归，后续新增用例建议继续保持“单文件单主链”的结构，便于定位失败面。 
+
+### 2026-04-12 前端收口 Phase P3-A 第七段：管理页真实后端加载回归（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/e2e/tests/management-pages.real.spec.ts`，使用真实重启后的前后端服务验证 `应用管理` 与 `受管页面` 两页可正常加载，而不是继续走 API mock。
+- 用例使用管理员账号 `admin / admin123456` 登录真实后端，依次访问 `/system/app` 与 `/system/page`，显式等待并断言关键 API `system/apps`、`system/apps/current`、`pages`、`pages/menu-options` 返回 `200`，同时确认页面标题与主体内容可见、内联错误提示未出现。
+- 本轮同时重启了前后端开发服务：前端运行在 `http://127.0.0.1:5174`，后端运行在 `http://127.0.0.1:8080`；首轮真实页面访问触发了一次 Vite `Outdated Optimize Dep` 预构建抖动，二次执行后已稳定消失。
+- 已执行 `frontend` 下带真实环境变量的 `pnpm exec playwright test e2e/tests/management-pages.real.spec.ts` 与全量 `pnpm exec playwright test`，当前 9 条用例全部通过，P3-A 已完成 8 条最小回归 + 1 条真实管理页加载回归。
+
+**下次方向**
+- 下一步可切到 `P3-B`，开始“前端目录归并 — 按领域重组”，此时回归网已经足够支撑结构移动后的快速验证。
+- `management-pages.real.spec.ts` 目前覆盖的是“页面可渲染 + 关键 API 200”，还没有继续做保存/删除类真实写操作；如果后续需要更深联调，可在这个文件上按页面拆小场景继续加。
+- 真实前端开发服首次命中新依赖时仍可能出现一次性 Vite 预构建 reload；这属于开发环境噪音，不影响当前业务页最终稳定加载，但如果要进一步降低噪音，可以考虑补预热或优化 `optimizeDeps`。 
+
+### 2026-04-12 前端收口 Phase P4：历史循环依赖收口（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/src/domains/navigation/constants.ts`、`runtime/router-instance.ts`、`runtime/guard-state.ts`、`runtime/reset-handlers.ts`，把首页默认值、router 实例、guard 状态和运行时重置接口从 `router/index.ts` / `router/guards/beforeEach.ts` 中抽离成 navigation 域运行时边界。
+- `menu.ts`、`worktab.ts`、`utils/jump.ts`、`utils/route.ts`、`utils/worktab.ts`、`auth/store.ts`、`auth/flows/shared.ts`、`app-runtime/runtime/app-context.ts` 已改走这些新边界，不再直接静态依赖 `@/router` 或 `beforeEach`；`afterEach.ts` 也不再通过 `useCommon()` 反向串回菜单 store。
+- 验证通过：`frontend` 下 `pnpm exec vue-tsc --noEmit`、`pnpm build` 均通过；`pnpm dlx madge --circular --extensions ts --ts-config ./tsconfig.json src/domains src/router src/store src/api src/utils src/hooks src/directives` 的循环链数从 42 条降到 20 条。
+- 当前剩余循环已从原来的 `navigation -> router/index -> beforeEach` 大簇收缩为两类历史主链：`app-runtime/context <-> runtime/app-context/menu-space` 以及 `governance/_shared -> http/auth-session -> auth/store`，定位范围已明显变小。
+
+**下次方向**
+- 如果继续清理，优先处理 `app-runtime/context` 与 `runtime/app-context` 的双向引用，尝试把运行时切换逻辑继续下沉为纯函数或 handler 注册，进一步压缩剩余主链。
+- `utils/storage/index`、`store/modules/setting -> hooks/core/useCeremony` 这类历史 barrel/工具链仍保留少量循环，适合另开小节点逐条收口，不建议和主运行时链再混改。
+- 这轮只做依赖方向整理，没有追加新的 E2E；若后续继续解环，建议继续沿用现有 `Playwright + vue-tsc + build + madge` 四件套做回归闸门。 
+
+### 2026-04-12 前端收口 Phase P4-4：剩余循环链清零（Phase Cleanup）
+
+**本次改动**
+- 新增 `frontend/src/utils/http/request-context.ts`、`frontend/src/domains/app-runtime/runtime/context-handlers.ts`、`frontend/src/domains/auth/runtime/session-handlers.ts`，把 HTTP 层对 auth/workspace/app-context store 的直接读取改成注册式 request-context，把 `app-context` 与 `auth/session` 的运行时能力改成 handler 注入，拆掉剩余 `auth/api-store-session` 与 `app-runtime/context` 主链。
+- `frontend/src/api/v5/client.ts`、`frontend/src/utils/http/auth-session.ts`、`frontend/src/domains/auth/api.ts`、`frontend/src/domains/auth/store.ts`、`frontend/src/domains/app-runtime/context.ts`、`frontend/src/domains/app-runtime/runtime/app-context.ts`、`frontend/src/store/modules/workspace.ts`、`frontend/src/store/modules/collaboration-workspace.ts` 已全部切到新的 request-context / runtime-handler 边界，不再在 HTTP 与运行时主链中反向拉 store。
+- 新增 `frontend/src/hooks/core/ceremony-shared.ts`，并将 `setting.ts` 改为直接使用纯节日计算函数；`useCeremony.ts` 改为直连 `mittBus.ts`，`setElementThemeColor()` 改为显式接收 `isDark`，顺手剪掉 `setting -> useCeremony` 与 `setting -> utils/ui/index -> colors` 两条历史循环。
+- 验证通过：`frontend` 下 `pnpm exec vue-tsc --noEmit`、`pnpm build` 均通过；`pnpm dlx madge --circular --extensions ts --ts-config ./tsconfig.json src/domains src/router src/store src/api src/utils src/hooks src/directives` 结果已从上一轮 `20 circular dependencies` 降到 `0`。
+
+**下次方向**
+- 当前循环依赖已经清零，后续更有价值的方向应回到用户可见问题，优先处理已在任务树里的“菜单切换刷新感与缓存失效”链路，而不是继续做无收益的结构性扫尾。
+- `vite build` 仍保留几条动态/静态混引 warning（`locales/index.ts`、`domains/auth/api.ts`、认证页动态组件），它们不再形成循环依赖，但如果要继续收口包体边界，可以单开“chunk 与动态导入一致性”小节点处理。
+- 若下一轮继续动导航与缓存链，建议直接复用本轮留下的 `request-context` / `runtime-handler` 边界，不要再把 store 反向引回 HTTP、router 或通用工具层。 
+
+### 2026-04-12 前端收口 Phase P2A-1：现状流图补齐（Phase Cleanup）
+
+**本次改动**
+- 重写 `docs/frontend-cleanup-p2a-notes.md`，把早期计划态流图更新为当前真实实现态，覆盖“页面刷新 / 登录完成 / App 切换 / URL 带 space_key 与缺路由补救”四条主链。
+- 文档中补齐了当前 `session-runtime`、`app-context-runtime`、`navigation-runtime`、`beforeEach` 的职责归属，并显式标出 4 处仍存在的职责交叉点，避免后续继续沿用已经过时的 P2A 认知。
+- 额外单列了 `beforeEach.ts` 中仍应继续下沉的业务逻辑，包括 centralized login 策略预热、session 预取、space_key 切换、缺路由补救与跨域 app 跳转目标构造。
+
+**下次方向**
+- 当前这条文档节点已补齐，若继续做项目清洁，下一步建议从 `vite build` 里剩余的动态/静态混引 warning 下手，单开一轮 chunk 边界与动态导入一致性收口。
+- 运行时主链虽然已基本稳定，但 `session -> menu-space`、`navigation -> app-context/menu-space`、`app-context -> navigation clear/refresh` 三条跨层编排仍可继续压缩，适合在后续“运行时纯化”节点里做小步重构。
+- 菜单刷新感问题已按用户反馈收口，后续若再出现同类现象，建议直接新开独立节点，不再复用当前 cleanup 任务里的历史记录。 

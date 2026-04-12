@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-center-page art-full-height">
     <AdminWorkspaceHero
       :title="`消息中心 · ${workspaceName}`"
@@ -190,11 +190,11 @@
   import { useRoute, useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { fetchGetInboxList, fetchGetInboxDetail } from '@/api/message'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { useMessageStore } from '@/store/modules/message'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
-  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
+  import { handleRichTextLinkNavigation } from '@/domains/navigation/utils/rich-text'
 
   defineOptions({ name: 'WorkspaceInbox' })
 

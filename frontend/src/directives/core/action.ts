@@ -1,7 +1,7 @@
 import { watchEffect } from 'vue'
-import { useUserStore } from '@/store/modules/user'
+import { useUserStore } from '@/domains/auth/store'
 import { App, Directive, DirectiveBinding } from 'vue'
-import { hasScopedActionPermission } from '@/utils/permission/action'
+import { hasScopedActionPermission } from '@/domains/governance/utils/action'
 
 interface ActionBinding extends DirectiveBinding {
   value: string

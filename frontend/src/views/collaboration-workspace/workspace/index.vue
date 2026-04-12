@@ -117,8 +117,8 @@
     fetchCreateCollaborationWorkspace,
     fetchUpdateCollaborationWorkspace
   } from '@/api/collaboration-workspace'
-  import { fetchGetApps } from '@/api/system-manage'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+  import { fetchGetApps } from '@/domains/governance/api'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import CollaborationWorkspaceSearch from './modules/workspace-search.vue'

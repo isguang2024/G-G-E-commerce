@@ -18,7 +18,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFastEnterStore } from '@/store/modules/fast-enter'
-import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { findRegisteredRouteByPath, hasRegisteredRoutePath } from '@/utils/router'
 

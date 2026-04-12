@@ -128,7 +128,7 @@
     fetchGetMenuTreeAll,
     fetchGetFeaturePackageMenus,
     fetchSetFeaturePackageMenus
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {

@@ -103,7 +103,7 @@
   import { useRouter } from 'vue-router'
   import { storeToRefs } from 'pinia'
   import { useMessageStore } from '@/store/modules/message'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
 

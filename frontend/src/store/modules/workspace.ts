@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { fetchGetMyWorkspaces, fetchSwitchWorkspace } from '@/api/workspace'
+import { registerHttpWorkspaceContext } from '@/utils/http/request-context'
 import { HttpError } from '@/utils/http/error'
 
 export type AuthWorkspaceType = 'personal' | 'collaboration'
@@ -16,6 +17,10 @@ export const useWorkspaceStore = defineStore(
     const currentAuthWorkspaceId = ref('')
     const currentAuthWorkspaceType = ref<AuthWorkspaceType>('personal')
     const loading = ref(false)
+
+    registerHttpWorkspaceContext({
+      getCurrentAuthWorkspaceId: () => currentAuthWorkspaceId.value
+    })
 
     const personalWorkspace = computed(
       () =>

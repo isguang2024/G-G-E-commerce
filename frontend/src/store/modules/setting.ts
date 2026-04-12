@@ -32,12 +32,12 @@
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { getCurrentDateString, resolveCurrentFestivalData } from '@/hooks/core/ceremony-shared'
 import { MenuThemeType } from '@/types/store'
 import AppConfig from '@/config'
 import { SystemThemeEnum, MenuThemeEnum, MenuTypeEnum, ContainerWidthEnum } from '@/enums/appEnum'
-import { setElementThemeColor } from '@/utils/ui'
-import { useCeremony } from '@/hooks/core/useCeremony'
-import { StorageConfig } from '@/utils'
+import { setElementThemeColor } from '@/utils/ui/colors'
+import { StorageConfig } from '@/utils/storage/storage-config'
 import { SETTING_DEFAULT_CONFIG } from '@/config/setting'
 
 /**
@@ -156,7 +156,9 @@ export const useSettingStore = defineStore(
      * 根据当前日期和节日日期判断是否显示烟花效果
      */
     const isShowFireworks = computed((): boolean => {
-      return festivalDate.value === useCeremony().currentFestivalData.value?.date ? false : true
+      return festivalDate.value === resolveCurrentFestivalData(getCurrentDateString())?.date
+        ? false
+        : true
     })
 
     /**
@@ -200,7 +202,7 @@ export const useSettingStore = defineStore(
      */
     const setElementTheme = (theme: string) => {
       systemThemeColor.value = theme
-      setElementThemeColor(theme)
+      setElementThemeColor(theme, isDark.value)
     }
 
     /**

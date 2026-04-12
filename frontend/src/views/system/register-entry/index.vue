@@ -154,7 +154,7 @@
     fetchDeleteRegisterEntry,
     fetchListRegisterEntries,
     fetchUpdateRegisterEntry
-  } from '@/api/system-manage/register'
+  } from '@/domains/governance/api/register'
 
   defineOptions({ name: 'SystemRegisterEntry' })
 

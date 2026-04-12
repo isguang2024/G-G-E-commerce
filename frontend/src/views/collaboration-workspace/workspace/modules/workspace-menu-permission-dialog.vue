@@ -71,7 +71,7 @@
   import {
     fetchGetMenuTreeAll,
     fetchGetCollaborationWorkspaceFeaturePackages
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import {
     fetchGetCollaborationWorkspaceMenus,
     fetchGetCollaborationWorkspaceMenuOrigins,

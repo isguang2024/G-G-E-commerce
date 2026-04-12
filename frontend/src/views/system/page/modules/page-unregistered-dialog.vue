@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDialog
     v-model="visible"
     title="未注册受管页"
@@ -54,7 +54,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
-  import { fetchGetPageUnregisteredList, fetchSyncPages } from '@/api/system-manage'
+  import { fetchGetPageUnregisteredList, fetchSyncPages } from '@/domains/governance/api'
 
   type PageUnregisteredItem = Api.SystemManage.PageUnregisteredItem
   type PageItem = Api.SystemManage.PageItem

@@ -17,7 +17,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 
   defineOptions({ name: 'AppContextBadge' })
 

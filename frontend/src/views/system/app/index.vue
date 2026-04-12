@@ -670,7 +670,7 @@
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import {
     fetchGetApps,
     fetchGetAppHostBindings,
@@ -683,7 +683,7 @@
     fetchGetMenuSpaceEntryBindings,
     fetchSaveMenuSpaceEntryBinding,
     fetchDeleteMenuSpaceEntryBinding
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   defineOptions({ name: 'AppManage' })
 

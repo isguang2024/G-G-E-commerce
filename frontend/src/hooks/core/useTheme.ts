@@ -149,7 +149,7 @@ export function initializeTheme() {
     }
 
     // 设置主题颜色
-    setElementThemeColor(settingStore.systemThemeColor)
+    setElementThemeColor(settingStore.systemThemeColor, settingStore.isDark)
 
     // 设置圆角
     document.documentElement.style.setProperty('--custom-radius', `${settingStore.customRadius}rem`)

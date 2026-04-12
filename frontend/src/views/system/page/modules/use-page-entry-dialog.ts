@@ -11,13 +11,13 @@ import {
   fetchGetPageMenuOptions,
   fetchGetPageOptions,
   fetchUpdatePage
-} from '@/api/system-manage'
+} from '@/domains/governance/api'
 import {
   isSingleSegmentManagedPagePath,
   joinManagedPagePath,
   normalizeManagedPagePath,
   resolveManagedPageRoutePath
-} from '@/utils/navigation/managed-page'
+} from '@/domains/navigation/utils/managed-page'
 import { normalizeMenuId, toTreeSelectNode } from './helpers'
 
 type PageItem = Api.SystemManage.PageItem

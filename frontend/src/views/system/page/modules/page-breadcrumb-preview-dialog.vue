@@ -32,7 +32,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { fetchGetPageBreadcrumbPreview } from '@/api/system-manage'
+  import { fetchGetPageBreadcrumbPreview } from '@/domains/governance/api'
 
   type PageBreadcrumbPreviewItem = Api.SystemManage.PageBreadcrumbPreviewItem
 

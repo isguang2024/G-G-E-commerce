@@ -1,4 +1,5 @@
 <template>
+  <!-- @compat-status: transition account-portal 路径壳层，当前用于承接新注册入口路由名。 -->
   <AuthRegisterPage />
 </template>
 

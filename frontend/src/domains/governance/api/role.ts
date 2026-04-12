@@ -1,0 +1,178 @@
+// Phase 4 slice 5: migrated to v5Client + openapi-fetch.
+import {
+  v5Client,
+  unwrap,
+  normalizeRole,
+  normalizeFeaturePackage,
+  normalizePermissionAction,
+  type V5Query,
+  type V5RequestBody
+} from './_shared'
+
+// 获取角色列表
+export async function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
+  const query: V5Query<'/roles', 'get'> = params
+  const res = await unwrap(v5Client.GET('/roles', { params: { query } }))
+  return {
+    ...res,
+    records: (res.records || []).map(normalizeRole)
+  } as Api.SystemManage.RoleList
+}
+
+export async function fetchGetRoleOptions() {
+  const res = await unwrap(v5Client.GET('/roles/options'))
+  return {
+    records: (res.records || []).map(normalizeRole),
+    total: Number(res.total || 0)
+  }
+}
+
+// 获取角色列表（简单列表，用于下拉等）
+export function fetchGetRoleListSimple() {
+  return fetchGetRoleOptions().then((res) => ({
+    records: res?.records || [],
+    total: res?.total || 0,
+    current: 1,
+    size: Math.max(res?.total || 0, 20)
+  }))
+}
+
+// 获取角色详情
+export async function fetchGetRole(id: string) {
+  const res = await unwrap(v5Client.GET('/roles/{id}', { params: { path: { id } } }))
+  return normalizeRole(res)
+}
+
+// 创建角色
+export async function fetchCreateRole(data: Api.SystemManage.RoleCreateParams) {
+  const body: V5RequestBody<'/roles', 'post'> = data
+  const res = await unwrap(v5Client.POST('/roles', { body }))
+  return res as { roleId: string }
+}
+
+// 更新角色
+export async function fetchUpdateRole(id: string, data: Api.SystemManage.RoleUpdateParams) {
+  const body: V5RequestBody<'/roles/{id}', 'put'> = data
+  const { error } = await v5Client.PUT('/roles/{id}', {
+    params: { path: { id } },
+    body
+  })
+  if (error) throw error
+}
+
+// 删除角色
+export async function fetchDeleteRole(id: string) {
+  const { error } = await v5Client.DELETE('/roles/{id}', { params: { path: { id } } })
+  if (error) throw error
+}
+
+/** 获取角色已分配的菜单 ID 列表（用于菜单权限配置） */
+export async function fetchGetRoleMenus(roleId: string, appKey?: string) {
+  const query: V5Query<'/roles/{id}/menus', 'get'> = { app_key: appKey || '' }
+  const res = await unwrap(
+    v5Client.GET('/roles/{id}/menus', {
+      params: { path: { id: roleId }, query }
+    })
+  )
+  return {
+    menu_ids: Array.isArray(res.menu_ids) ? res.menu_ids : [],
+    available_menu_ids: Array.isArray(res.available_menu_ids) ? res.available_menu_ids : [],
+    hidden_menu_ids: Array.isArray(res.hidden_menu_ids) ? res.hidden_menu_ids : [],
+    expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
+    derived_sources: Array.isArray(res.derived_sources) ? res.derived_sources : []
+  }
+}
+
+/** 获取角色功能包 */
+export async function fetchGetRolePackages(roleId: string, appKey?: string) {
+  const query: V5Query<'/roles/{id}/packages', 'get'> = { app_key: appKey || '' }
+  const res = await unwrap(
+    v5Client.GET('/roles/{id}/packages', {
+      params: { path: { id: roleId }, query }
+    })
+  )
+  return {
+    package_ids: res.package_ids || [],
+    packages: (res.packages || []).map(normalizeFeaturePackage)
+  }
+}
+
+/** 设置角色功能包 */
+export async function fetchSetRolePackages(roleId: string, packageIds: string[], appKey?: string) {
+  const query: V5Query<'/roles/{id}/packages', 'put'> = { app_key: appKey || '' }
+  const body: V5RequestBody<'/roles/{id}/packages', 'put'> = { ids: packageIds }
+  const { error } = await v5Client.PUT('/roles/{id}/packages', {
+    params: { path: { id: roleId }, query },
+    body
+  })
+  if (error) throw error
+}
+
+/** 设置角色菜单权限 */
+export async function fetchSetRoleMenus(roleId: string, menuIds: string[], appKey?: string) {
+  const query: V5Query<'/roles/{id}/menus', 'put'> = { app_key: appKey || '' }
+  const body: V5RequestBody<'/roles/{id}/menus', 'put'> = { ids: menuIds }
+  const { error } = await v5Client.PUT('/roles/{id}/menus', {
+    params: { path: { id: roleId }, query },
+    body
+  })
+  if (error) throw error
+}
+
+/** 获取角色功能权限 */
+export async function fetchGetRoleActions(roleId: string, appKey?: string) {
+  const query: V5Query<'/roles/{id}/actions', 'get'> = { app_key: appKey || '' }
+  const res = await unwrap(
+    v5Client.GET('/roles/{id}/actions', {
+      params: { path: { id: roleId }, query }
+    })
+  )
+  return {
+    action_ids: Array.isArray(res.action_ids) ? res.action_ids : [],
+    available_action_ids: Array.isArray(res.available_action_ids) ? res.available_action_ids : [],
+    disabled_action_ids: Array.isArray(res.disabled_action_ids) ? res.disabled_action_ids : [],
+    actions: (Array.isArray(res.actions) ? res.actions : []).map(normalizePermissionAction),
+    expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
+    derived_sources: Array.isArray(res.derived_sources) ? res.derived_sources : []
+  }
+}
+
+/** 设置角色功能权限 */
+export async function fetchSetRoleActions(roleId: string, actionIds: string[], appKey?: string) {
+  const query: V5Query<'/roles/{id}/actions', 'put'> = { app_key: appKey || '' }
+  const body: V5RequestBody<'/roles/{id}/actions', 'put'> = { ids: actionIds }
+  const { error } = await v5Client.PUT('/roles/{id}/actions', {
+    params: { path: { id: roleId }, query },
+    body
+  })
+  if (error) throw error
+}
+
+/** 获取角色数据权限 */
+export async function fetchGetRoleDataPermissions(roleId: string) {
+  const res = await unwrap(
+    v5Client.GET('/roles/{id}/data-permissions', { params: { path: { id: roleId } } })
+  )
+  return {
+    permissions: res.permissions || [],
+    resources: res.resources || [],
+    available_data_scopes: res.data_scopes || []
+  } as {
+    permissions: Array<{ resource_code: string; data_scope: string }>
+    resources: Array<{ resource_code: string; resource_name: string }>
+    available_data_scopes: Array<{ data_scope: string; label: string }>
+  }
+}
+
+/** 设置角色数据权限 */
+export async function fetchSetRoleDataPermissions(
+  roleId: string,
+  permissions: Array<{ resource_code: string; data_scope: string }>
+) {
+  const body: V5RequestBody<'/roles/{id}/data-permissions', 'put'> = { permissions }
+  const { error } = await v5Client.PUT('/roles/{id}/data-permissions', {
+    params: { path: { id: roleId } },
+    body
+  })
+  if (error) throw error
+}

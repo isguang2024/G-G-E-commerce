@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-manage-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-manage-hero__actions">
@@ -335,8 +335,8 @@
   import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchDispatchMessage, fetchGetMessageDispatchOptions } from '@/api/message'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
+  import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
+  import { handleRichTextLinkNavigation } from '@/domains/navigation/utils/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
   defineOptions({ name: 'MessageDispatchConsole' })

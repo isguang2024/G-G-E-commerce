@@ -13,7 +13,7 @@ import {
   fetchGetUserPermissionMenus,
   fetchGetUserCollaborationWorkspaces,
   fetchRefreshUserPermissionSnapshot
-} from '@/api/system-manage'
+} from '@/domains/governance/api'
 import {
   countVisibleMenuLeaves,
   ensureExpandedMenus,

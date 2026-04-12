@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useUserStore } from '@/store/modules/user'
-import { resolveActionKey } from '@/utils/permission/action'
+import { useUserStore } from '@/domains/auth/store'
+import { resolveActionKey } from '@/domains/governance/utils/action'
 
 const userStore = useUserStore()
 

@@ -57,7 +57,7 @@
   import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
   import { useThrottleFn } from '@vueuse/core'
   import { formatMenuTitle } from '@/utils/router'
-  import { handleMenuJump } from '@/utils/navigation'
+  import { handleMenuJump } from '@/domains/navigation/utils'
   import type { AppRouteRecord } from '@/types/router'
 
   defineOptions({ name: 'ArtMixedMenu' })

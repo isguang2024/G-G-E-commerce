@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import { fetchCreateFeaturePackage, fetchGetApps, fetchUpdateFeaturePackage } from '@/api/system-manage'
+  import { fetchCreateFeaturePackage, fetchGetApps, fetchUpdateFeaturePackage } from '@/domains/governance/api'
 
   type PackageItem = Api.SystemManage.FeaturePackageItem
 

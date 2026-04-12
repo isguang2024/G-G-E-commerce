@@ -21,9 +21,10 @@
           <ArtAppErrorBoundary
             :app-key="activeAppKey"
             :is-public-app="isPublicApp"
+            :key="route.path"
             v-if="route.meta.keepAlive"
           >
-            <component class="art-page-view" :is="Component" :key="route.path" />
+            <component class="art-page-view" :is="Component" />
           </ArtAppErrorBoundary>
         </KeepAlive>
       </Transition>
@@ -54,8 +55,8 @@
   import { useRoute } from 'vue-router'
   import { useAutoLayoutHeight } from '@/hooks/core/useLayoutHeight'
   import { useSettingStore } from '@/store/modules/setting'
-  import { useWorktabStore } from '@/store/modules/worktab'
-  import { useAppContextStore } from '@/store/modules/app-context'
+  import { useWorktabStore } from '@/domains/navigation/worktab'
+  import { useAppContextStore } from '@/domains/app-runtime/context'
   import ArtAppErrorBoundary from '@/components/core/runtime/ArtAppErrorBoundary.vue'
 
   defineOptions({ name: 'ArtPageContent' })

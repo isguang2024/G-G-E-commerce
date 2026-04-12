@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { fetchGetMyCollaborationWorkspaces } from '@/api/collaboration-workspace'
+import { registerHttpCollaborationContext } from '@/utils/http/request-context'
 import { HttpError } from '@/utils/http/error'
 import { useWorkspaceStore } from './workspace'
 
@@ -62,6 +63,11 @@ export const useCollaborationWorkspaceStore = defineStore(
     const hasCollaborationWorkspaces = computed(() => collaborationWorkspaceList.value.length > 0)
     const isPersonalWorkspaceContext = computed(() => currentContextMode.value === 'personal')
     const shouldShowSwitcher = computed(() => collaborationWorkspaceList.value.length > 1)
+
+    registerHttpCollaborationContext({
+      getCurrentCollaborationWorkspaceId: () => currentCollaborationWorkspaceId.value,
+      getCurrentContextMode: () => currentContextMode.value
+    })
 
     const setCurrentCollaborationWorkspaceId = (collaborationWorkspaceId: string) => {
       if (!collaborationWorkspaceId) {

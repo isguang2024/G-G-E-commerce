@@ -36,317 +36,56 @@
  * @author Art Design Pro Team
  */
 import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
-import type { AppRouteRecord } from '@/types/router'
 import { nextTick } from 'vue'
 import NProgress from 'nprogress'
-import { useSettingStore } from '@/store/modules/setting'
-import { useUserStore } from '@/store/modules/user'
-import { useMenuStore } from '@/store/modules/menu'
-import { setWorktab } from '@/utils/navigation'
-import { hasRegisteredRoutePath, setPageTitle } from '@/utils/router'
-import { RoutesAlias } from '../routesAlias'
-import { staticRoutes } from '../routes/staticRoutes'
-import { loadingService } from '@/utils/ui'
-import { useCommon } from '@/hooks/core/useCommon'
-import { useWorktabStore } from '@/store/modules/worktab'
-import {
-  hasPersonalWorkspaceAccessByUserInfo,
-  useCollaborationWorkspaceStore
-} from '@/store/modules/collaboration-workspace'
-import { useWorkspaceStore } from '@/store/modules/workspace'
-import { useMenuSpaceStore } from '@/store/modules/menu-space'
-import { useAppContextStore } from '@/store/modules/app-context'
-import { fetchGetUserInfo } from '@/api/auth'
-import {
-  fetchGetCurrentApp,
-  fetchGetRuntimeNavigation,
-  fetchGetRuntimePublicPageList
-} from '@/api/system-manage'
-import { ApiStatus } from '@/utils/http/status'
-import { isHttpError } from '@/utils/http/error'
-import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
-import { DEFAULT_MENU_SPACE_KEY, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+import { useAppContextStore } from '@/domains/app-runtime/context'
+import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
+import { useMenuStore } from '@/domains/navigation/menu'
+import { fetchGetUserInfo } from '@/domains/auth/api'
 import {
   buildCentralizedLoginURL,
   createCentralizedAuthAttempt,
   persistCentralizedAuthAttempt
-} from '@/utils/auth/centralized-login'
-
-/**
- * 运行时 manifest 校验失败错误
- */
-export class RuntimeManifestInvalidError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'RuntimeManifestInvalidError'
-  }
-}
-
-// 路由注册器实例
-let routeRegistry: RouteRegistry | null = null
-let routeRegistrationMode: 'none' | 'public' | 'authenticated' = 'none'
-
-// 菜单处理器实例
-const menuProcessor = new MenuProcessor()
-const managedPageProcessor = new ManagedPageProcessor()
-
-// 跟踪是否需要关闭 loading
-let pendingLoading = false
-
-// 路由初始化失败标记，防止死循环
-// 一旦设置为 true，只有刷新页面或重新登录才能重置
-let routeInitFailed = false
-
-// 路由初始化进行中哨兵：正在进行的初始化 Promise；null 表示无进行中初始化
-let routeInitInProgress: Promise<void> | null = null
-const routeRefreshAttempted = new Set<string>()
-
-async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promise<{
-  menuList: AppRouteRecord[]
-  registeredRoutes: AppRouteRecord[]
-  manifest: Api.SystemManage.RuntimeNavigationManifest
-}> {
-  const menuSpaceStore = useMenuSpaceStore()
-  const appContextStore = useAppContextStore()
-  const userStore = useUserStore()
-  const requestedSpaceKey = normalizeMenuSpaceKey(
-    preferredSpaceKey || menuSpaceStore.currentSpaceKey
-  )
-  let requestedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
-  if (!requestedAppKey) {
-    try {
-      await menuSpaceStore.refreshRuntimeConfig(false)
-      requestedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
-    } catch (error) {
-      console.warn('[RouteGuard] 预热运行时 app 上下文失败，继续按现有上下文请求导航', error)
-    }
-  }
-  const fallbackSpaceKey = normalizeMenuSpaceKey(menuSpaceStore.defaultSpaceKey)
-  const candidateSpaceKeys = Array.from(
-    new Set(
-      [requestedSpaceKey, fallbackSpaceKey, '']
-        .map((item) => normalizeMenuSpaceKey(item))
-        .filter((item, index, source) => index === source.indexOf(item))
-    )
-  )
-  let manifest: Api.SystemManage.RuntimeNavigationManifest | null = null
-  let menuTree: any[] = []
-  let managedPages: any[] = []
-  let usedSpaceKey = requestedSpaceKey
-
-  for (const candidate of candidateSpaceKeys) {
-    const current = await fetchGetRuntimeNavigation(candidate || undefined, requestedAppKey || undefined)
-    const currentMenuTree = Array.isArray(current?.menuTree) ? current.menuTree : []
-    const currentManagedPages = Array.isArray(current?.managedPages) ? current.managedPages : []
-    if (current && (currentMenuTree.length > 0 || currentManagedPages.length > 0)) {
-      manifest = current
-      menuTree = currentMenuTree
-      managedPages = currentManagedPages
-      usedSpaceKey = candidate
-      break
-    }
-  }
-
-  if (!manifest || (menuTree.length === 0 && managedPages.length === 0)) {
-    throw new RuntimeManifestInvalidError(
-      `[RouteGuard] runtime navigation manifest 缺失或无可注册路由 (space=${requestedSpaceKey || 'default'})`
-    )
-  }
-  const resolvedAppKey =
-    `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
-  if (resolvedAppKey) {
-    appContextStore.setRuntimeAppContext({
-      appKey: resolvedAppKey,
-      frontendEntryUrl: manifest.currentApp?.app?.frontendEntryUrl || '',
-      backendEntryUrl: manifest.currentApp?.app?.backendEntryUrl || '',
-      healthCheckUrl: manifest.currentApp?.app?.healthCheckUrl || '',
-      authMode: manifest.currentApp?.app?.authMode || '',
-      capabilities: manifest.currentApp?.app?.capabilities,
-      meta: manifest.currentApp?.app?.meta || {}
-    })
-  }
-  const resolvedSpaceKey = normalizeMenuSpaceKey(
-    manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || usedSpaceKey
-  )
-
-  if (
-    resolvedSpaceKey &&
-    resolvedSpaceKey !== normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey)
-  ) {
-    menuSpaceStore.setActiveSpaceKey(resolvedSpaceKey)
-  }
-
-  const menuList = menuProcessor.normalizeMenuList(menuTree)
-  const currentUser = userStore.getUserInfo as Api.Auth.UserInfo
-  const manifestVersion = `${
-    (manifest as { version?: string | number }).version ||
-    (manifest.context as { version?: string | number } | undefined)?.version ||
-    'v0'
-  }`
-  const cacheKey = `${resolvedSpaceKey || usedSpaceKey || DEFAULT_MENU_SPACE_KEY}:${currentUser?.id || currentUser?.userId || 'anon'}:${manifestVersion}`
-  const runtimeRoutes = managedPageProcessor.buildRoutes(
-    menuList,
-    managedPages,
-    currentUser,
-    { trustBackend: true, cacheKey }
-  )
-
-  return {
-    menuList,
-    registeredRoutes: [...menuList, ...runtimeRoutes],
-    manifest
-  }
-}
-
-/**
- * 获取 pendingLoading 状态
- */
-export function getPendingLoading(): boolean {
-  return pendingLoading
-}
-
-/**
- * 重置 pendingLoading 状态
- */
-export function resetPendingLoading(): void {
-  pendingLoading = false
-}
-
-/**
- * 获取路由初始化失败状态
- */
-export function getRouteInitFailed(): boolean {
-  return routeInitFailed
-}
-
-/**
- * 重置路由初始化状态（用于重新登录场景）
- */
-export function resetRouteInitState(): void {
-  routeInitFailed = false
-  routeInitInProgress = null
-  routeRegistrationMode = 'none'
-  routeRefreshAttempted.clear()
-}
-
-/**
- * 重新拉取当前用户菜单并更新侧栏与动态路由（角色菜单权限保存后调用，使新勾选的菜单立即生效）
- */
-export async function refreshUserMenus(): Promise<void> {
-  if (!routeRegistry) return
-  const menuStore = useMenuStore()
-  try {
-    managedPageProcessor.invalidateCache()
-    const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest()
-    routeRegistry.unregister()
-    routeRegistry.register(registeredRoutes)
-    routeRegistrationMode = 'authenticated'
-    syncHomePathWithRegisteredRoutes(menuList, registeredRoutes)
-    menuStore.clearRemoveRouteFns()
-    menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
-    IframeRouteManager.getInstance().save()
-    routeRefreshAttempted.clear()
-  } catch (e) {
-    console.error('[RouteGuard] refreshUserMenus failed', e)
-  }
-}
-
-function syncHomePathWithRegisteredRoutes(
-  menuList: AppRouteRecord[],
-  registeredRoutes: AppRouteRecord[]
-): void {
-  const menuStore = useMenuStore()
-  const menuSpaceStore = useMenuSpaceStore()
-  menuStore.setMenuList(menuList)
-
-  const availablePaths = collectRegisteredEntryPaths(registeredRoutes)
-  const preferredHomePath = menuSpaceStore.resolveSpaceLandingPath(availablePaths)
-  if (preferredHomePath) {
-    menuStore.setHomePath(preferredHomePath)
-  }
-}
-
-function collectRegisteredEntryPaths(list: AppRouteRecord[]): string[] {
-  const visiblePaths: string[] = []
-  const fallbackPaths: string[] = []
-  const walk = (items: AppRouteRecord[]) => {
-    ;(items || []).forEach((item) => {
-      const path = `${item.path || ''}`.trim()
-      if (path && !item.children?.length) {
-        if (item.meta?.isHide) {
-          fallbackPaths.push(path)
-        } else {
-          visiblePaths.push(path)
-        }
-      }
-      if (item.children?.length) {
-        walk(item.children)
-      }
-    })
-  }
-  walk(list)
-  return visiblePaths.length ? [...visiblePaths, ...fallbackPaths] : fallbackPaths
-}
-
-export async function refreshUserAccessAndMenus(): Promise<void> {
-  await refreshCurrentUserInfoContext()
-  await refreshUserMenus()
-}
-
-function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
-  const roles = mapBackendRolesToFrontend(data)
-  return {
-    ...data,
-    userId: data.id,
-    userName: data.username || data.email,
-    avatar: data.avatar_url,
-    roles,
-    buttons: data.buttons || [],
-    actions: data.actions || []
-  }
-}
-
-export async function refreshCurrentUserInfoContext(
-  options: { prefetchedUser?: Api.Auth.UserInfo } = {}
-): Promise<void> {
-  const userStore = useUserStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
-  const workspaceStore = useWorkspaceStore()
-  const menuSpaceStore = useMenuSpaceStore()
-  const data = options.prefetchedUser ?? (await fetchGetUserInfo())
-  const mergedInfo: Api.Auth.UserInfo = {
-    ...(userStore.getUserInfo as Api.Auth.UserInfo),
-    ...buildFrontendUserInfo(data)
-  }
-  userStore.setUserInfo(mergedInfo)
-  collaborationWorkspaceStore.setPersonalWorkspaceAccess(
-    hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
-  )
-  menuSpaceStore.syncRuntimeHost()
-  await Promise.all([
-    (async () => {
-      await menuSpaceStore.refreshRuntimeConfig(true)
-      await menuSpaceStore.syncResolvedCurrentSpace()
-    })(),
-    collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-      preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-      preferredLegacyCollaborationWorkspaceId:
-        data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
-      preferredWorkspaceId:
-        workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
-      preferredWorkspaceType:
-        workspaceStore.currentAuthWorkspaceType || data.current_auth_workspace_type || '',
-      preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
-    })
-  ])
-}
+} from '@/domains/auth/centralized-login'
+import { useUserStore } from '@/domains/auth/store'
+import { useSettingStore } from '@/store/modules/setting'
+import { setWorktab } from '@/domains/navigation/utils/worktab'
+import { setPageTitle } from '@/utils/router'
+import { RoutesAlias } from '../routesAlias'
+import { staticRoutes } from '../routes/staticRoutes'
+import { loadingService } from '@/utils/ui'
+import { fetchGetCurrentApp, fetchGetRuntimeNavigation } from '@/domains/governance/api'
+import { ApiStatus } from '@/utils/http/status'
+import { isHttpError } from '@/utils/http/error'
+import { normalizeMenuSpaceKey } from '@/domains/navigation/utils/menu-space'
+import {
+  ensureAuthenticatedRoutes,
+  ensurePublicRuntimeRoutes,
+  getRouteRegistrationMode,
+  hasDynamicRoute,
+  initNavigationRuntime,
+  isPublicRuntimeRoute,
+  refreshUserMenus
+} from '@/domains/navigation/runtime/navigation'
+import {
+  addRouteRefreshAttempted,
+  clearRouteRefreshAttempted,
+  getPendingLoading,
+  getRouteInitFailed,
+  getRouteInitInProgress,
+  hasRouteRefreshAttempted,
+  resetPendingLoading,
+  resetRouteInitState,
+  setPendingLoading,
+  setRouteInitFailed,
+  setRouteInitInProgress
+} from '@/domains/navigation/runtime/guard-state'
 
 /**
  * 设置路由全局前置守卫
  */
 export function setupBeforeEachGuard(router: Router): void {
-  // 初始化路由注册器
-  routeRegistry = new RouteRegistry(router)
+  initNavigationRuntime(router)
 
   router.beforeEach(
     async (
@@ -369,10 +108,10 @@ export function setupBeforeEachGuard(router: Router): void {
  * 关闭 loading 效果
  */
 async function closeLoading(): Promise<void> {
-  if (pendingLoading) {
+  if (getPendingLoading()) {
     await nextTick()
     loadingService.hideLoading()
-    pendingLoading = false
+    resetPendingLoading()
   }
 }
 
@@ -415,7 +154,7 @@ async function handleRouteGuard(
   }
 
   // 2. 检查路由初始化是否已失败（防止死循环）
-  if (routeInitFailed) {
+  if (getRouteInitFailed()) {
     // 已经失败过，直接放行到错误页面，不再重试
     if (to.matched.length > 0) {
       next()
@@ -427,19 +166,20 @@ async function handleRouteGuard(
   }
 
   // 3. 处理动态路由注册
-  if (userStore.isLogin && routeRegistrationMode !== 'authenticated') {
+  if (userStore.isLogin && getRouteRegistrationMode() !== 'authenticated') {
     // 若已有进行中的初始化，等待其完成后再决定（避免 next(false) 造成死锁）
+    const routeInitInProgress = getRouteInitInProgress()
     if (routeInitInProgress) {
       try {
         await routeInitInProgress
       } catch {
         // 忽略 — 下面重新判断状态
       }
-      if (routeInitFailed) {
+      if (getRouteInitFailed()) {
         next({ name: 'Exception500', replace: true })
         return
       }
-      if ((routeRegistrationMode as string) === 'authenticated') {
+      if ((getRouteRegistrationMode() as string) === 'authenticated') {
         // 已由并发的初始化完成注册，重新解析当前目标路径
         next({
           path: to.path,
@@ -461,7 +201,7 @@ async function handleRouteGuard(
     if (normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey) !== preferredSpaceKey) {
       menuSpaceStore.setActiveSpaceKey(preferredSpaceKey)
       await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-      if (routeRegistrationMode === 'authenticated') {
+      if (getRouteRegistrationMode() === 'authenticated') {
         await refreshUserMenus()
       }
       next({
@@ -481,7 +221,7 @@ async function handleRouteGuard(
 
   // 5. 处理已匹配的路由
   if (to.matched.length > 0) {
-    routeRefreshAttempted.delete(to.fullPath)
+      clearRouteRefreshAttempted(to.fullPath)
     setWorktab(to)
     setPageTitle(to)
     next()
@@ -570,60 +310,6 @@ async function resolveLoginRedirectPolicy(
     query: { redirect: to.fullPath }
   })
   return false
-}
-
-async function ensurePublicRuntimeRoutes(
-  to: RouteLocationNormalized,
-  router: Router
-): Promise<boolean> {
-  if (!routeRegistry) {
-    return false
-  }
-  if (routeRegistrationMode === 'authenticated') {
-    return isPublicRuntimeRoute(to)
-  }
-  if (routeRegistrationMode === 'public' && isPublicRuntimeRoute(to)) {
-    return true
-  }
-  if (routeRegistrationMode === 'public') {
-    routeRegistry.unregister()
-    routeRegistrationMode = 'none'
-  }
-  try {
-    const menuSpaceStore = useMenuSpaceStore()
-    const appContextStore = useAppContextStore()
-    const inferredPublicAppKey = inferPublicRuntimeAppKey(
-      to.path,
-      appContextStore.currentRuntimeAppKey
-    )
-    const runtimeRes = await fetchGetRuntimePublicPageList(
-      menuSpaceStore.currentSpaceKey,
-      `${appContextStore.effectiveManagedAppKey || inferredPublicAppKey || ''}`.trim() || undefined
-    )
-    const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null, {
-      trustBackend: true
-    })
-    routeRegistry.register(publicRoutes)
-    routeRegistrationMode = 'public'
-    const resolved = router.resolve({
-      path: to.path,
-      query: to.query,
-      hash: to.hash
-    })
-    return resolved.matched.some(
-      (record) =>
-        Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
-    )
-  } catch (error) {
-    console.error('[RouteGuard] 注册公开运行时页面失败:', error)
-    routeRegistry?.unregister()
-    routeRegistrationMode = 'none'
-    return false
-  }
-}
-
-function inferPublicRuntimeAppKey(path: string, runtimeAppKey?: string): string {
-  return inferRuntimeAppKeyByPath(path, runtimeAppKey)
 }
 
 function resolveRouteMetaAppKey(to: RouteLocationNormalized): string {
@@ -732,13 +418,6 @@ function inferRuntimeAppKeyByPath(path: string, runtimeAppKey?: string): string 
   return `${runtimeAppKey || ''}`.trim()
 }
 
-function isPublicRuntimeRoute(to: RouteLocationNormalized): boolean {
-  return to.matched.some(
-    (record) =>
-      Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
-  )
-}
-
 /**
  * 检查路由是否为静态路由
  */
@@ -772,14 +451,10 @@ async function handleDynamicRoutes(
   next: NavigationGuardNext,
   router: Router
 ): Promise<void> {
-  const appContextStore = useAppContextStore()
-  const inferredAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
-  if (inferredAppKey && inferredAppKey !== appContextStore.effectiveManagedAppKey) {
-    appContextStore.setManagedAppKey(inferredAppKey)
-  }
+  const userStore = useUserStore()
 
   // 显示 loading
-  pendingLoading = true
+  setPendingLoading(true)
   loadingService.showLoading()
 
   const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
@@ -792,40 +467,34 @@ async function handleDynamicRoutes(
       fetchGetRuntimeNavigation(normalizeMenuSpaceKey(preferredSpaceKey)).catch(() => null)
     ])
 
-    // 用预取到的 user data 填充 store，并跳过嵌套刷新避免重复拉取
-    await fetchUserInfo(preferredSpaceKey, {
-      skipNestedRefresh: true,
+    await userStore.restoreSession({
+      preferredSpaceKey,
       prefetchedUser: userData
     })
 
     // 构建注册路由（内部会再次调用 fetchGetRuntimeNavigation，应命中缓存）
-    const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest(
-      preferredSpaceKey
+    return await ensureAuthenticatedRoutes(
+      to,
+      preferredSpaceKey,
+      async () => {
+        const [userData] = await Promise.all([
+          fetchGetUserInfo(),
+          fetchGetRuntimeNavigation(normalizeMenuSpaceKey(preferredSpaceKey)).catch(() => null)
+        ])
+
+        await userStore.restoreSession({
+          preferredSpaceKey,
+          prefetchedUser: userData
+        })
+      },
+      router
     )
-
-    if (!routeRegistry) {
-      throw new Error('[RouteGuard] routeRegistry 未初始化')
-    }
-
-    // register 现为幂等：若已注册会先 unregister
-    routeRegistry.register(registeredRoutes)
-    routeRegistrationMode = 'authenticated'
-
-    const menuStore = useMenuStore()
-    syncHomePathWithRegisteredRoutes(menuList, registeredRoutes)
-    menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
-
-    IframeRouteManager.getInstance().save()
-    useWorktabStore().validateWorktabs(router)
   })()
 
-  routeInitInProgress = initWork
+  setRouteInitInProgress(initWork)
 
   try {
-    await initWork
-
-    const menuStore = useMenuStore()
-    const landingPath = menuStore.getHomePath() || '/'
+    const landingPath = await initWork
 
     if (isStaticRoute(to.path)) {
       next({
@@ -861,7 +530,7 @@ async function handleDynamicRoutes(
       return
     }
 
-    routeInitFailed = true
+    setRouteInitFailed(true)
 
     if (isHttpError(error)) {
       console.error(`[RouteGuard] 错误码: ${error.code}, 消息: ${error.message}`)
@@ -869,85 +538,8 @@ async function handleDynamicRoutes(
 
     next({ name: 'Exception500', replace: true })
   } finally {
-    routeInitInProgress = null
+    setRouteInitInProgress(null)
   }
-}
-
-/**
- * 将后端角色 code 映射为前端菜单权限标识
- */
-function mapBackendRolesToFrontend(data: {
-  roles?: Array<{ code?: string }> | string[]
-  is_super_admin?: boolean
-}): string[] {
-  if (data.is_super_admin) return ['R_SUPER']
-  return ['R_USER']
-}
-
-/**
- * 获取用户信息
- */
-async function fetchUserInfo(
-  preferredSpaceKey = '',
-  options: { skipNestedRefresh?: boolean; prefetchedUser?: Api.Auth.UserInfo } = {}
-): Promise<Api.Auth.UserInfo> {
-  const userStore = useUserStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
-  const workspaceStore = useWorkspaceStore()
-  const menuSpaceStore = useMenuSpaceStore()
-  const data = options.prefetchedUser ?? (await fetchGetUserInfo())
-  const frontendUserInfo = buildFrontendUserInfo(data)
-  userStore.syncLoginUserIdentity(`${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim())
-  userStore.setUserInfo(frontendUserInfo)
-  userStore.checkAndClearWorktabs()
-  collaborationWorkspaceStore.setPersonalWorkspaceAccess(
-    hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
-  )
-  menuSpaceStore.syncRuntimeHost()
-  // refreshRuntimeConfig -> syncResolvedCurrentSpace 存在先后依赖，先串行；
-  // 同时与 loadMyCollaborationWorkspaces 并行以减少首屏等待时间。
-  await Promise.all([
-    (async () => {
-      await menuSpaceStore.refreshRuntimeConfig(true)
-      await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-    })(),
-    collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-      preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-      preferredLegacyCollaborationWorkspaceId:
-        data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
-      preferredWorkspaceId: data.current_auth_workspace_id || '',
-      preferredWorkspaceType: data.current_auth_workspace_type || '',
-      preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
-    })
-  ])
-  if (
-    !options.skipNestedRefresh &&
-    (workspaceStore.currentAuthWorkspaceType !==
-      (data.current_auth_workspace_type || 'personal') ||
-      workspaceStore.currentAuthWorkspaceId !== (data.current_auth_workspace_id || ''))
-  ) {
-    // 复用刚拉到的 user 数据，避免嵌套重复拉取
-    await refreshCurrentUserInfoContext({ prefetchedUser: data })
-  }
-  return data
-}
-
-/**
- * 重置路由相关状态
- */
-export function resetRouterState(delay: number): void {
-  setTimeout(() => {
-    routeRegistry?.unregister()
-    managedPageProcessor.invalidateCache()
-    IframeRouteManager.getInstance().clear()
-
-    const menuStore = useMenuStore()
-    menuStore.removeAllDynamicRoutes()
-    menuStore.setMenuList([])
-
-    // 重置路由初始化状态，允许重新登录后再次初始化
-    resetRouteInitState()
-  }, delay)
 }
 
 /**
@@ -959,9 +551,9 @@ function handleRootPathRedirect(to: RouteLocationNormalized, next: NavigationGua
     return false
   }
 
-  const { homePath } = useCommon()
-  if (homePath.value && homePath.value !== '/') {
-    next({ path: homePath.value, replace: true })
+  const homePath = useMenuStore().getHomePath()
+  if (homePath && homePath !== '/') {
+    next({ path: homePath, replace: true })
     return true
   }
 
@@ -992,12 +584,12 @@ async function tryRefreshMissingDynamicRoute(
   if (!userStore.isLogin || isStaticRoute(to.path) || isPublicRuntimeRoute(to)) {
     return false
   }
-  if (routeRefreshAttempted.has(to.fullPath)) {
-    routeRefreshAttempted.delete(to.fullPath)
+  if (hasRouteRefreshAttempted(to.fullPath)) {
+    clearRouteRefreshAttempted(to.fullPath)
     return false
   }
 
-  routeRefreshAttempted.add(to.fullPath)
+  addRouteRefreshAttempted(to.fullPath)
   try {
     const inferredAppKey = inferRuntimeAppKeyByPath(to.path, appContextStore.currentRuntimeAppKey)
     if (inferredAppKey && inferredAppKey !== appContextStore.effectiveManagedAppKey) {
@@ -1008,8 +600,8 @@ async function tryRefreshMissingDynamicRoute(
     // 刷新访问图后若目标路由仍不存在，说明它已经不在当前运行时导航清单里，
     // 常见于菜单被禁用、空间切换后失效或权限被收回，此时直接落到 404，
     // 避免再次强跳原路径造成一串 "No match found" 警告。
-    if (!hasRegisteredRoutePath(router, to.path)) {
-      routeRefreshAttempted.delete(to.fullPath)
+    if (!hasDynamicRoute(router, to.path)) {
+      clearRouteRefreshAttempted(to.fullPath)
       next({ name: 'Exception404', replace: true })
       return true
     }
@@ -1022,7 +614,7 @@ async function tryRefreshMissingDynamicRoute(
     return true
   } catch (error) {
     console.error('[RouteGuard] 动态路由缺失自动刷新失败:', error)
-    routeRefreshAttempted.delete(to.fullPath)
+    clearRouteRefreshAttempted(to.fullPath)
     return false
   }
 }

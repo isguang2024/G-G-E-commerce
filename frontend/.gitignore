@@ -20,6 +20,9 @@ src/types/import/components.d.ts
 *.log
 tmp/
 .codex-tmp/
+playwright-report/
+test-results/
+e2e/.auth/
 
 # Editor
 .vscode/

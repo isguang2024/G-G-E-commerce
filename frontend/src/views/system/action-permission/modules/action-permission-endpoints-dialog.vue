@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`关联接口 - ${permissionName}`"
@@ -71,7 +71,7 @@
     fetchGetApiEndpointCategories,
     fetchGetApiEndpointList,
     fetchGetPermissionActionEndpoints
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
 
   interface Props {
     modelValue: boolean

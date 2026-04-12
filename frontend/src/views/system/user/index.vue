@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="user-page art-full-height">
     <div class="page-top-stack">
       <UserSearch
@@ -90,15 +90,15 @@
     fetchDeleteUser,
     fetchCreateUser,
     fetchUpdateUser
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
   import UserPackageDialog from './modules/user-package-dialog.vue'
   import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
   import UserPermissionTestDrawer from './modules/user-permission-test-drawer.vue'
   import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import { useUserStore } from '@/store/modules/user'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
+  import { useUserStore } from '@/domains/auth/store'
 
   defineOptions({ name: 'User' })
 

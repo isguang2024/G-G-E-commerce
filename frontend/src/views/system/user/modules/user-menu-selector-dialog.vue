@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`用户菜单裁剪 - ${userTitle}`"
@@ -83,7 +83,7 @@
     fetchGetUserMenus,
     fetchGetUserPackages,
     fetchSetUserMenus
-  } from '@/api/system-manage'
+  } from '@/domains/governance/api'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 
   interface Props {

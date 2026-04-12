@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="fast-enter-page art-full-height">
     <AdminWorkspaceHero
       title="快捷应用管理"
@@ -271,8 +271,8 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { fetchGetApps, fetchGetMenuTreeAll } from '@/api/system-manage'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+  import { fetchGetApps, fetchGetMenuTreeAll } from '@/domains/governance/api'
+  import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { getDefaultFastEnterConfig, useFastEnterStore } from '@/store/modules/fast-enter'
   import type { AppRouteRecord } from '@/types/router'
   import type { FastEnterApplication, FastEnterConfig, FastEnterQuickLink } from '@/types/config'

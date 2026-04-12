@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-  import { fetchGetRoleOptions } from '@/api/system-manage'
+  import { fetchGetRoleOptions } from '@/domains/governance/api'
 
   interface Props {
     modelValue: Record<string, any>

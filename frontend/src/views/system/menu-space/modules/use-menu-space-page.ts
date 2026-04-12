@@ -18,9 +18,9 @@ import {
   fetchSaveMenuSpace,
   fetchSaveMenuSpaceHostBinding,
   fetchUpdateMenuSpaceMode
-} from '@/api/system-manage'
-import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+} from '@/domains/governance/api'
+import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
+import { normalizeMenuSpaceKey } from '@/domains/navigation/utils/menu-space'
 import {
   collectMenuPaths,
   getAccessModeLabel,

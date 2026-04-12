@@ -3,6 +3,8 @@ import { createApp } from 'vue'
 import { initStore } from './store'                 // Store
 import { initRouter } from './router'               // Router
 import language, { loadLocaleMessages } from './locales' // 国际化
+import '@/domains/auth/runtime/session'
+import '@/domains/app-runtime/runtime/app-context'
 import '@styles/core/tailwind.css'                  // tailwind
 import '@styles/index.scss'                         // 样式
 import '@utils/sys/console.ts'                      // 控制台输出内容

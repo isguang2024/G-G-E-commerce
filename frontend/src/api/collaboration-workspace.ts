@@ -4,7 +4,7 @@ import {
   toV5Body,
   type V5Query,
   type V5RequestBody
-} from '@/api/system-manage/_shared'
+} from '@/domains/governance/api/_shared'
 
 type V5PermissionGroupLike = {
   id?: string
