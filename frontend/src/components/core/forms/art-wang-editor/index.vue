@@ -23,7 +23,6 @@
   import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
   import { ElMessage } from 'element-plus'
   import { useUserStore } from '@/domains/auth/store'
-  import EmojiText from '@/utils/ui/emojo'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
 
   defineOptions({ name: 'ArtWangEditor' })
@@ -62,6 +61,12 @@
     if (import.meta.env.DEV) {
       console.warn(...args)
     }
+  }
+  const emojiText: Record<string, string> = {
+    '0': 'O_O',
+    '200': '^_^',
+    '400': 'T_T',
+    '500': 'X_X'
   }
 
   // 编辑器实例
@@ -124,11 +129,11 @@
           Authorization: userStore.accessToken
         },
         onSuccess() {
-          ElMessage.success(`图片上传成功 ${EmojiText[200]}`)
+          ElMessage.success(`图片上传成功 ${emojiText[200]}`)
         },
         onError(file: File, err: any, res: any) {
           console.error('图片上传失败:', err, res)
-          ElMessage.error(`图片上传失败 ${EmojiText[500]}`)
+          ElMessage.error(`图片上传失败 ${emojiText[500]}`)
         }
       }
     }

@@ -973,3 +973,46 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 当前这条文档节点已补齐，若继续做项目清洁，下一步建议从 `vite build` 里剩余的动态/静态混引 warning 下手，单开一轮 chunk 边界与动态导入一致性收口。
 - 运行时主链虽然已基本稳定，但 `session -> menu-space`、`navigation -> app-context/menu-space`、`app-context -> navigation clear/refresh` 三条跨层编排仍可继续压缩，适合在后续“运行时纯化”节点里做小步重构。
 - 菜单刷新感问题已按用户反馈收口，后续若再出现同类现象，建议直接新开独立节点，不再复用当前 cleanup 任务里的历史记录。 
+
+### 2026-04-12 Task Tree V2 AI 工作流优化（Phase Infra）
+
+**本次改动**
+- 实现 5 项 AI 调用优化，减少 MCP 往返：`complete` 支持内联 Memory + 自动返回 next_node（3→1）、`batch_create_nodes` 批量创建节点（N→1）、`claim_and_start_run` 合并领取+开始运行（2→1）、resume 默认 events/runs 从 15/10 裁剪至 5/5、新增 `slim` view_mode 极简节点响应（5 字段）
+- 所有改动已同步 MCP 工具定义、HTTP 路由、SKILL.md 文档三处口径，`go build` + `go test` 全部通过
+- 涉及文件：`store_nodes.go`（batchCreateNodes/claimAndStartRun/buildNodeSlim）、`mcp.go`（3 个新工具注册+handler）、`routes.go`（2 条新路由）、`service_resume.go`（默认数量裁剪）、`types.go`（claimStartBody）、`SKILL.md`（工作流+速查+API 全面更新）
+
+**下次方向**
+- 前端 TaskDetail.vue 可考虑适配 `slim` view_mode 和 `batch_create_nodes`，减少前端批量操作时的请求数
+- 可进一步优化 `resume` 响应体积：当 next_node 已包含完整上下文时，考虑省略 tree 中的重复节点
+- AI 实际使用中验证各合并工具的调用效果，根据真实场景微调参数默认值
+
+### 2026-04-12 Task Tree V2 MCP 工具精简与合并（Phase Infra）
+
+**本次改动**
+- 完成 7 项 MCP 工具精简：A) `complete` 自动 finish 所有活跃 run（含 dangling run 清理）；B) `progress` 新增 `log_content` 参数内联日志（省去 append_run_log）；C) `list_nodes_summary` 标记废弃，改用 `list_nodes(view_mode:'summary')`；D) `search` 内部转发到 `smart_search`；E) `get_node` 新增 `include_context` 参数一步获取完整上下文；F) `create_task` 支持 `stages` 字段一步创建任务+阶段+节点；G) `block_node` 标记废弃，统一进 `transition_node(action:'block')`
+- 所有改动向后兼容，前端无需改动；废弃工具保留 MCP 注册但在描述中标注 `[已废弃]`
+- `go build` + `go test` 通过，SKILL.md 三处同步完成
+
+**下次方向**
+- 实际 AI 使用中验证合并后的典型工作流调用次数是否降至预期（创建+执行+完成 ≤ 5 次 MCP 调用）
+- 考虑 `resume` 响应结构进一步精简：task 部分只返回核心字段，减少上下文占用
+- 废弃工具在确认无调用后可从 MCP 注册中移除
+
+### 2026-04-13 V5 文件夹优化阶段 7：验证与收尾（Phase Closure）
+
+**本次改动**
+- 完成 `7.1` 构建验证：`frontend` 执行 `pnpm run build` 通过；`backend` 执行 `go build ./cmd/server` 与 `go test ./internal/api/handlers -count=1` 通过；`go test ./...` 暴露既有失败（`navigation` 测试编译、`permission` 测试断言）。
+- 完成 `7.2` 导入与依赖验证：`pnpm exec vue-tsc --noEmit`、`pnpm ls --depth 0`、`go list ./...` 通过；`go mod verify` 受本机 `GOMODCACHE` 污染影响未通过（环境态风险）。
+- 完成 `7.3` 文档导航检查：`README.md`、`docs/INDEX.md`、`docs/README.md`、`backend/CLAUDE.md` 的相对链接检查通过，关键目录 README 覆盖齐全。
+- 完成 `7.4` 项目结构报告：新增 `PROJECT_STRUCTURE.md`，沉淀顶层结构、核心子目录、文件规模指标及收口结论。
+- 完成 `7.5` 变更日志整理：更新 `CHANGELOG.md` 并产出阶段提交建议清单（未自动提交，避免混入无关改动）。
+- 完成 `7.6` 对比总结：输出优化前后变化、收益、遗留风险与后续建议。
+
+**当前状态**
+- 任务 `tsk_01KP0QG12FJ8VGX9FV8129` 阶段 7 已实做收口，所有 7.x 节点均已回填 `execution_log` 与 evidence。
+- 现存风险不在本次“结构与文档收口”范围内：后端全量测试历史失败、Go 本机模块缓存污染。
+
+**下次方向**
+- 单开后端稳定性节点，修复 `navigation`/`permission` 失败用例，恢复 `go test ./...` 全绿。
+- 清理本机 Go 模块缓存后重跑 `go mod verify`，将依赖完整性纳入常规门禁。
+- 对当前混合工作区改动做分批提交策略，先提交 V5 文件夹优化主线，再处理其他并行开发改动。

@@ -9,6 +9,7 @@
   - `AGENTS.md`
   - `PROJECT_FRAMEWORK.md`
   - `FRONTEND_GUIDELINE.md`
+  - `backend/CLAUDE.md`
   - `docs/V5_REFACTOR_TASKS.md`
 
 ## 实施原则
@@ -49,12 +50,11 @@
 
 ## 协作技能位置（Claude Code 与 Codex 共用）
 
-- 项目相关技能统一放在 `<repo>/.claude/skills/`，作为单一真相源，跟随 git。
-- Claude Code 自动加载该目录。
-- Codex 通过用户目录下的 junction `~/.codex/skills/gge` → `<repo>/.claude/skills/` 复用同一份；本仓库内运行的 codex 任务必须从 `gge/<skill-name>` 加载技能。
-- 当仓库内技能与 codex 全局技能同名（典型：`change-wrapup`），**一律以仓库版 `gge/<skill-name>` 为准**，禁止使用全局同名技能。
-- 跨项目通用技能（如 fluent-react-v9 等）才允许放 `~/.claude/` 或 `~/.codex/` 用户目录；项目相关技能不在用户目录维护副本，避免双份漂移。
-- 仓库内技能的修改一律在 `<repo>/.claude/skills/` 直接改，不在用户目录改后再回灌。
+- 技能统一按用户目录全局技能读取（`~/.claude/skills/`、`~/.codex/skills/`）。
+- 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `gge/<skill-name>` 加载。
+- 当仓库内技能与全局技能同名时，以全局技能为准。
+- 若需调整技能规则，优先修改全局技能，不要求回灌仓库副本。
+
 
 ## 风险动作纪律
 

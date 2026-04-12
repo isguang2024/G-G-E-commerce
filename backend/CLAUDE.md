@@ -1,18 +1,32 @@
 # backend/CLAUDE.md
 
-Backend-specific guidance for the GGE 5.0 Go service. Read root `CLAUDE.md`
-and `docs/V5_REFACTOR_TASKS.md` first for the overall architecture.
+Backend-specific guidance for the GGE 5.0 Go service. Read `AGENTS.md`,
+`PROJECT_FRAMEWORK.md`, `FRONTEND_GUIDELINE.md`, and
+`docs/V5_REFACTOR_TASKS.md` first for the shared V5 rules.
+If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
+
+## Documentation Navigation
+
+- Progress and stage tracking lives in `docs/V5_REFACTOR_TASKS.md` and `docs/reports/`.
+- Execution-oriented feature/flow documents are under `.claude/Instructions/`.
+- Backend API contract truth source remains `backend/api/openapi/README.md`.
 
 ## How to add a v5 endpoint
 
 The OpenAPI spec is the single source of truth. Adding an endpoint is a
-mechanical 7-step process. Do **not** shortcut it by editing legacy gin
-modules.
+mechanical process. Do **not** shortcut it by editing generated code or
+legacy gin modules.
 
 ### 1. Declare the operation in the spec
 
-Edit `api/openapi/openapi.yaml`. Every operation MUST carry the four
-`x-` extensions:
+Edit the source files under `api/openapi/`:
+
+- `api/openapi/openapi.root.yaml`
+- `api/openapi/components/*.yaml`
+- `api/openapi/domains/{tag}/paths.yaml`
+- `api/openapi/domains/{tag}/schemas.yaml`
+
+Every operation MUST carry the four `x-` extensions:
 
 ```yaml
 /widgets/{id}:
@@ -29,37 +43,20 @@ Edit `api/openapi/openapi.yaml`. Every operation MUST carry the four
 
 ### 2. Regenerate everything
 
-```
-make api          # bundle → lint → ogen → permission seed → frontend types
-```
+Preferred refresh commands:
 
-Or step by step:
-```
-make api-bundle   # merges openapi.root.yaml + domains/* → dist/openapi.yaml
-make api-lint     # redocly lint (must pass before gen)
-make api-gen      # ogen: dist/openapi.yaml → api/gen/
-make api-perms    # permission seed + frontend error-codes.ts
-```
+- `make api` for the backend chain: bundle → lint → ogen → permission seed
+- `make api-front` or `cd ../frontend && pnpm run gen:api` for the frontend
+  schema
+- `update-openapi.bat` for the Windows wrapper around the backend chain
 
-Commit the regenerated `api/gen/` and `internal/pkg/permissionseed/openapi_seed.json` files.
-
-**Spec source layout** (edit here, not in `dist/`):
-```
-api/openapi/
-├── openapi.root.yaml          ← entry point (info/servers/security/tags + $ref)
-├── components/
-│   ├── errors.yaml            ← Error schema + shared responses
-│   ├── common.yaml            ← all shared schemas
-│   └── security.yaml          ← securitySchemes
-└── domains/{tag}/
-    ├── paths.yaml             ← paths for this domain
-    └── schemas.yaml           ← domain-specific schemas (move from common.yaml incrementally)
-```
+Commit the regenerated `api/gen/` and
+`internal/pkg/permissionseed/openapi_seed.json` files when they change.
 
 Operational rule:
 
-- If you changed `api/openapi/openapi.yaml`, rerun `update-openapi.bat`
-  so the embedded OpenAPI seed stays in sync.
+- If you changed any file under `api/openapi/`, rerun the backend OpenAPI
+  chain so the generated spec stays in sync.
 - If the DB already has the latest schema and default rows, a seed refresh
   is usually enough; you do not need to rerun migrations just because the
   OpenAPI spec changed.
@@ -67,7 +64,7 @@ Operational rule:
   other schema/default-data change, rerun `cmd/migrate` as well.
 - For a brand-new database, run `cmd/migrate` first, then `update-openapi.bat`.
 
-### 4. Implement the operation method
+### 3. Implement the operation method
 
 Add a method on `APIHandler` in `internal/api/handlers/{domain}.go` that
 matches the generated `gen.Handler` signature. Reach into the existing
@@ -78,7 +75,7 @@ Do NOT re-introduce a legacy Gin module shell
 the ogen bridge in `internal/api/router/router.go` already covers every
 operation declared in the spec.
 
-### 5. Ensure the permission key exists in the DB
+### 4. Ensure the permission key exists in the DB
 
 If you introduced a new `x-permission-key`, the runtime upsert in
 `internal/pkg/permissionseed.EnsureOpenAPIPermissionKeys` will materialise
@@ -86,7 +83,7 @@ it on next `cmd/migrate` run. For frequently-shipped, well-known baseline
 keys you may also add them to the goose migration
 `internal/pkg/database/migrations/00001_permission_seed_baseline.sql`.
 
-### 6. Add a smoke test
+### 5. Add a smoke test
 
 Append a test to `internal/api/handlers/integration_test.go`
 (`//go:build integration`). Reuse `integDo`, `integToken`, and the existing
@@ -96,7 +93,7 @@ fixtures. Run with:
 go test -tags integration ./internal/api/handlers/...
 ```
 
-### 7. Update the frontend client
+### 6. Update the frontend client
 
 Frontend consumes the generated TS client under `frontend/src/api/v5/`.
 Re-run the generator there and replace any hand-written axios calls.

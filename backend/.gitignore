@@ -37,6 +37,7 @@ logs/
 
 # Temp / build cache
 tmp/
+/.codex-tmp/
 
 # Build
 /build/
