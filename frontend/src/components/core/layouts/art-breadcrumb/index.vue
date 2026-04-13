@@ -146,13 +146,6 @@
   const isClickable = (item: BreadcrumbItem, index: number): boolean =>
     Boolean(item.path) && item.path !== '/outside' && !isLastItem(index)
 
-  // 辅助函数：查找路由的第一个有效子路由
-  const findFirstValidChild = (route: RouteRecordRaw) =>
-    route.children?.find((child) => !child.redirect && !child.meta?.isHide)
-
-  // 辅助函数：构建完整路径
-  const buildFullPath = (childPath: string): string => `/${childPath}`.replace('//', '/')
-
   // 统一路径比较格式（保留根路径 "/"）
   const normalizePath = (path: string): string => {
     if (!`${path || ''}`.trim()) {
@@ -227,6 +220,50 @@
     return []
   }
 
+  const resolveFirstNavigableMenuPath = (
+    menus: AppRouteRecord[],
+    targetPath: string,
+    parentPath = ''
+  ): string => {
+    for (const menu of menus) {
+      const currentPath = normalizeMenuResolvedPath(String(menu.path || ''), parentPath)
+      if (currentPath === targetPath) {
+        return resolveFirstLeafMenuPath(menu, currentPath)
+      }
+      if (menu.children?.length) {
+        const found = resolveFirstNavigableMenuPath(menu.children, targetPath, currentPath)
+        if (found) {
+          return found
+        }
+      }
+    }
+    return ''
+  }
+
+  const resolveFirstLeafMenuPath = (menu: AppRouteRecord, currentPath: string): string => {
+    if (!menu.children?.length) {
+      return currentPath
+    }
+
+    for (const child of menu.children) {
+      if (child.redirect || child.meta?.isHide) {
+        continue
+      }
+
+      const childPath = normalizeMenuResolvedPath(String(child.path || ''), currentPath)
+      if (!child.children?.length) {
+        return childPath || currentPath
+      }
+
+      const descendantPath = resolveFirstLeafMenuPath(child, childPath)
+      if (descendantPath) {
+        return descendantPath
+      }
+    }
+
+    return currentPath
+  }
+
   // 处理面包屑点击事件
   async function handleBreadcrumbClick(item: BreadcrumbItem, index: number): Promise<void> {
     // 如果是最后一项或外部链接，不处理
@@ -235,21 +272,9 @@
     }
 
     try {
-      // 缓存路由表查找结果
-      const routes = router.getRoutes()
-      const targetRoute = routes.find((route) => route.path === item.path)
-
-      if (!targetRoute?.children?.length) {
-        await router.push(item.path)
-        return
-      }
-
-      const firstValidChild = findFirstValidChild(targetRoute)
-      if (firstValidChild) {
-        await router.push(buildFullPath(firstValidChild.path))
-      } else {
-        await router.push(item.path)
-      }
+      const targetPath = normalizePath(item.path)
+      const firstNavigablePath = resolveFirstNavigableMenuPath(menuStore.menuList, targetPath)
+      await router.push(firstNavigablePath || targetPath)
     } catch (error) {
       console.error('导航失败:', error)
     }

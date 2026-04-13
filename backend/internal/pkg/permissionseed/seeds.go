@@ -507,9 +507,9 @@ func DefaultMenus() []MenuSeed {
 	metaCollaborationWorkspaceAccessOnly := usermodel.MetaJSON{"keepAlive": true}
 	metaJWT := usermodel.MetaJSON{"accessMode": "jwt"}
 	items := []MenuSeed{
-		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaJWT},
-		{Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "CollaborationWorkspaceRoot", Path: "/collaboration-workspace", Component: "/index/index", Title: "协作空间", Icon: "ri:group-line", SortOrder: 6, Meta: metaCollaborationWorkspaceAccessOnly},
+		{Name: "Dashboard", Kind: systemmodels.MenuKindDirectory, Path: "/dashboard", Component: "", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaJWT},
+		{Name: "System", Kind: systemmodels.MenuKindDirectory, Path: "/system", Component: "", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
+		{Name: "CollaborationWorkspaceRoot", Kind: systemmodels.MenuKindDirectory, Path: "/collaboration-workspace", Component: "", Title: "协作空间", Icon: "ri:group-line", SortOrder: 6, Meta: metaCollaborationWorkspaceAccessOnly},
 		{Name: "Console", ParentName: "Dashboard", Path: "console", Component: "/dashboard/console", Title: "menus.dashboard.console", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": false, "fixedTab": true}},
 		{Name: "WorkspaceInbox", ParentName: "Dashboard", Path: "/workspace/inbox", Component: "/workspace/inbox", Title: "消息中心", SortOrder: 3, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "accessMode": "jwt"}},
 		{Name: "SystemAccess", ParentName: "System", Path: "access", Component: "", Title: "身份与权限", Icon: "ri:shield-user-line", SortOrder: 1, Meta: metaSuperAdminAndAdmin},
@@ -559,7 +559,7 @@ func deriveMenuSeedKind(item MenuSeed) string {
 	switch {
 	case link != "":
 		return systemmodels.MenuKindExternal
-	case strings.TrimSpace(item.Component) != "" && strings.TrimSpace(item.Component) != "/index/index":
+	case strings.TrimSpace(item.Component) != "":
 		return systemmodels.MenuKindEntry
 	default:
 		return systemmodels.MenuKindDirectory

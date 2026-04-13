@@ -1231,7 +1231,7 @@ func ensureNavigationModelFoundation(logger *zap.Logger) error {
 		`UPDATE menus
 			SET kind = CASE
 				WHEN COALESCE(NULLIF(TRIM(COALESCE(meta->>'link', '')), ''), '') <> '' THEN 'external'
-				WHEN COALESCE(NULLIF(TRIM(component), ''), '') <> '' AND component <> '/index/index' THEN 'entry'
+				WHEN COALESCE(NULLIF(TRIM(component), ''), '') <> '' THEN 'entry'
 				ELSE 'directory'
 			END`,
 		`INSERT INTO page_space_bindings (page_id, space_key, created_at, updated_at)
@@ -1277,7 +1277,7 @@ func deriveMenuKind(item usermodel.Menu) string {
 	switch {
 	case link != "":
 		return systemmodels.MenuKindExternal
-	case strings.TrimSpace(item.Component) != "" && strings.TrimSpace(item.Component) != "/index/index":
+	case strings.TrimSpace(item.Component) != "":
 		return systemmodels.MenuKindEntry
 	default:
 		return systemmodels.MenuKindDirectory
@@ -1897,7 +1897,7 @@ func deriveMenuSeedKindFromSpec(spec permissionseed.MenuSeed) string {
 	switch {
 	case link != "":
 		return systemmodels.MenuKindExternal
-	case strings.TrimSpace(spec.Component) != "" && strings.TrimSpace(spec.Component) != "/index/index":
+	case strings.TrimSpace(spec.Component) != "":
 		return systemmodels.MenuKindEntry
 	default:
 		return systemmodels.MenuKindDirectory

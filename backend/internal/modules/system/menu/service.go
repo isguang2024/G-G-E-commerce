@@ -700,7 +700,7 @@ func normalizeMenuKind(kind string, component string, meta map[string]interface{
 			return models.MenuKindExternal
 		}
 	}
-	if strings.TrimSpace(component) != "" && strings.TrimSpace(component) != "/index/index" {
+	if strings.TrimSpace(component) != "" {
 		return models.MenuKindEntry
 	}
 	return models.MenuKindDirectory

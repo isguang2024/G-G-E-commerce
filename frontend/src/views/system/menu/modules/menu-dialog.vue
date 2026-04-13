@@ -506,7 +506,7 @@
     if (`${row?.meta?.link || ''}`.trim()) {
       return 'external'
     }
-    if (`${row?.component || ''}`.trim() && `${row?.component || ''}`.trim() !== '/index/index') {
+    if (`${row?.component || ''}`.trim()) {
       return 'entry'
     }
     return 'directory'

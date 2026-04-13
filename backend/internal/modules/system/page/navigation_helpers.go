@@ -207,7 +207,7 @@ func resolveMenuKind(item models.Menu) string {
 			return models.MenuKindExternal
 		}
 	}
-	if strings.TrimSpace(item.Component) != "" && strings.TrimSpace(item.Component) != "/index/index" {
+	if strings.TrimSpace(item.Component) != "" {
 		return models.MenuKindEntry
 	}
 	return models.MenuKindDirectory
