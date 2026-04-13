@@ -111,13 +111,8 @@ func TestNormalizeGovernanceMetaPreservesUnknownKeys(t *testing.T) {
 	if meta["note"] != "keep" {
 		t.Fatalf("meta[note] = %#v, want keep", meta["note"])
 	}
-	envProfiles, ok := meta["env_profiles"].(models.MetaJSON)
-	if !ok {
-		t.Fatalf("meta[env_profiles] type = %T, want models.MetaJSON", meta["env_profiles"])
-	}
-	devProfile, ok := envProfiles["dev"].(models.MetaJSON)
-	if !ok || devProfile["frontend_base"] != "http://127.0.0.1:5174" {
-		t.Fatalf("env_profiles.dev = %#v", envProfiles["dev"])
+	if _, exists := meta["env_profiles"]; exists {
+		t.Fatalf("meta[env_profiles] = %#v, want dropped", meta["env_profiles"])
 	}
 	if _, exists := meta["sensitive_config"]; exists {
 		t.Fatalf("meta[sensitive_config] = %#v, want dropped", meta["sensitive_config"])

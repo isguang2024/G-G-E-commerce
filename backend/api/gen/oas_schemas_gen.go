@@ -5521,7 +5521,8 @@ type LoginPageContext struct {
 	RegisterAppKey string    `json:"register_app_key"`
 	// 登录页模板显示名称.
 	TemplateName OptString `json:"template_name"`
-	// 模板配置(theme/features/texts 三大块).
+	// 模板配置(theme/features/pages/social 四大块，其中 pages 支持页面级 theme/texts
+	// 覆盖).
 	TemplateConfig OptLoginPageContextTemplateConfig `json:"template_config"`
 }
 
@@ -5657,7 +5658,8 @@ func (s *LoginPageContext) SetTemplateConfig(val OptLoginPageContextTemplateConf
 
 func (*LoginPageContext) getLoginPageContextRes() {}
 
-// 模板配置(theme/features/texts 三大块).
+// 模板配置(theme/features/pages/social 四大块，其中 pages 支持页面级 theme/texts
+// 覆盖).
 type LoginPageContextTemplateConfig map[string]jx.Raw
 
 func (s *LoginPageContextTemplateConfig) init() LoginPageContextTemplateConfig {

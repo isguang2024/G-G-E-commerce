@@ -20,14 +20,6 @@ function normalizePlainObject(value?: unknown): Record<string, any> {
     : {}
 }
 
-function readStringCandidate(record: Record<string, any>, ...keys: string[]): string {
-  for (const key of keys) {
-    const value = `${record?.[key] ?? ''}`.trim()
-    if (value) return value
-  }
-  return ''
-}
-
 function isLoopbackHost(hostname: string): boolean {
   const normalized = `${hostname || ''}`.toLowerCase()
   return normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1'
@@ -111,65 +103,19 @@ export const useAppContextStore = defineStore(
     const appCapabilitiesMap = ref<Record<string, AppCapabilities>>({})
     const appMetaMap = ref<Record<string, AppMeta>>({})
 
-    const resolveRuntimeEnvProfile = () => {
-      if (typeof window === 'undefined') {
-        return `${import.meta.env.MODE || ''}`.trim() || 'default'
-      }
-      const host = `${window.location.hostname || ''}`.toLowerCase()
-      const mode = `${import.meta.env.MODE || ''}`.trim()
-      if (mode) return mode
-      if (host === '127.0.0.1' || host === 'localhost') return 'local'
-      if (host.includes('test')) return 'test'
-      if (host.includes('staging') || host.includes('pre')) return 'staging'
-      return 'default'
-    }
-
-    const resolveProfileObject = (appKey?: string | null): Record<string, any> => {
-      const meta = resolveAppMeta(appKey)
-      const envProfiles = normalizePlainObject(meta.env_profiles)
-      if (!Object.keys(envProfiles).length) return {}
-      const profileKey = resolveRuntimeEnvProfile()
-      const defaultProfile = normalizePlainObject(envProfiles.default)
-      const namedProfile = normalizePlainObject(
-        envProfiles[profileKey] || envProfiles[profileKey.toLowerCase()]
-      )
-      return {
-        ...defaultProfile,
-        ...namedProfile
-      }
-    }
-
     const currentRuntimeAppKey = computed(() => normalizeManagedAppKey(runtimeAppKey.value))
     const currentManagedAppKey = computed(() => normalizeManagedAppKey(managedAppKey.value))
     const effectiveManagedAppKey = computed(
       () => currentManagedAppKey.value || currentRuntimeAppKey.value
     )
     const currentRuntimeFrontendEntryURL = computed(() => {
-      const profile = resolveProfileObject(
-        effectiveManagedAppKey.value || currentRuntimeAppKey.value
-      )
-      return (
-        sanitizeRuntimeEntryURL(runtimeFrontendEntryURL.value) ||
-        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'frontend_entry_url', 'frontendEntryUrl'))
-      )
+      return sanitizeRuntimeEntryURL(runtimeFrontendEntryURL.value)
     })
     const currentRuntimeBackendEntryURL = computed(() => {
-      const profile = resolveProfileObject(
-        effectiveManagedAppKey.value || currentRuntimeAppKey.value
-      )
-      return (
-        sanitizeRuntimeEntryURL(runtimeBackendEntryURL.value) ||
-        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'backend_entry_url', 'backendEntryUrl'))
-      )
+      return sanitizeRuntimeEntryURL(runtimeBackendEntryURL.value)
     })
     const currentRuntimeHealthCheckURL = computed(() => {
-      const profile = resolveProfileObject(
-        effectiveManagedAppKey.value || currentRuntimeAppKey.value
-      )
-      return (
-        sanitizeRuntimeEntryURL(runtimeHealthCheckURL.value) ||
-        sanitizeRuntimeEntryURL(readStringCandidate(profile, 'health_check_url', 'healthCheckUrl'))
-      )
+      return sanitizeRuntimeEntryURL(runtimeHealthCheckURL.value)
     })
 
     const setRuntimeAppKey = (value?: string | null) => {

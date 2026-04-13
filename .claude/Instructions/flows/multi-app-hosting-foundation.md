@@ -628,7 +628,7 @@ Phase C 的灰度必须按 `app_key + version + host binding` 三个维度表达
 建议保留两种拓扑，并通过配置组合表达：
 
 - 统一网关：`edge gateway -> app router -> backend services`，适合统一证书、统一审计、统一限流。
-- 独立入口：APP 自带网关或 ingress，统一平台只保留注册中心与策略下发能力。
+- 独立入口：APP 自带网关或 ingress，统一平台只保留认证中心与策略下发能力。
 
 路由分发规则：
 
@@ -769,7 +769,7 @@ Phase C 的灰度必须按 `app_key + version + host binding` 三个维度表达
 #### 10.3.2 跨部署数据同步与 migration 一致性
 
 - 迁移版本必须全局单调，采用“平台核心迁移 + APP 扩展迁移”双通道版本治理。
-- APP 独立部署时仍要上报当前 migration version 到平台注册中心，用于一致性巡检。
+- APP 独立部署时仍要上报当前 migration version 到平台认证中心，用于一致性巡检。
 - 禁止“仅在某环境手工补 SQL 不入迁移链”。
 
 #### 10.3.3 CDN 分发与缓存失效
@@ -943,7 +943,7 @@ sequenceDiagram
 | M1 同域多 APP 可切换 | path_prefix 模式下 APP 切换、runtime navigation、worktab、store 隔离稳定 | Phase A |
 | M2 独立域名治理可运行 | host binding、动态安全头、健康检查、APP 级入口治理完成 | Phase B |
 | M3 独立认证主链打通 | centralized login、callback exchange、回跳、workspace/navigation 初始化完成 | Phase C |
-| M4 治理后台可交接 | 注册中心字段分区、校验、dry-run、敏感配置治理、帮助文案齐备 | Phase 9/治理收尾 |
+| M4 治理后台可交接 | 认证中心字段分区、校验、dry-run、敏感配置治理、帮助文案齐备 | Phase 9/治理收尾 |
 | M5 试点可灰度发布 | 指标、回退门槛、CI 门禁、决策矩阵与值班手册落定 | Phase 9/验收收尾 |
 
 ### 13.2 验收指标与观测口径

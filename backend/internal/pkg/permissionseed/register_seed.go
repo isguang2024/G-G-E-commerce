@@ -648,7 +648,6 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 				},
 				"features": systemmodels.MetaJSON{
 					"socialLogin":    false,
-					"captcha":        false,
 					"rememberMe":     true,
 					"forgetPassword": true,
 					"register":       true,
@@ -663,24 +662,19 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 						},
 					},
 				},
-				"texts": systemmodels.MetaJSON{
-					"title":    "欢迎回来",
-					"subTitle": "继续完成登录或注册流程",
-					"btnText":  "登 录",
-				},
 				"pages": systemmodels.MetaJSON{
 					"login": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "欢迎回来",
-							"subTitle": "继续完成登录或注册流程",
-							"btnText":  "登 录",
+							"title":      "欢迎回来",
+							"subTitle":   "继续完成登录或注册流程",
+							"buttonText": "登录",
 						},
 					},
 					"register": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "创建账号",
-							"subTitle": "填写基础信息完成注册",
-							"btnText":  "注 册",
+							"title":      "创建账号",
+							"subTitle":   "继续完成注册流程",
+							"buttonText": "注册",
 						},
 						"features": systemmodels.MetaJSON{
 							"register": true,
@@ -688,9 +682,10 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 					},
 					"forget_password": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "找回密码",
-							"subTitle": "输入账号后继续下一步重置流程",
-							"btnText":  "下一步",
+							"title":               "找回密码",
+							"subTitle":            "请输入账号后继续下一步重置流程",
+							"buttonText":          "继续",
+							"secondaryButtonText": "返回登录",
 						},
 						"features": systemmodels.MetaJSON{
 							"forgetPassword": true,
@@ -718,7 +713,6 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 				},
 				"features": systemmodels.MetaJSON{
 					"socialLogin":    false,
-					"captcha":        false,
 					"rememberMe":     true,
 					"forgetPassword": true,
 					"register":       true,
@@ -733,31 +727,27 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 						},
 					},
 				},
-				"texts": systemmodels.MetaJSON{
-					"title":    "继续验证身份",
-					"subTitle": "输入账号凭据以继续当前 APP 的认证流程",
-					"btnText":  "继 续",
-				},
 				"pages": systemmodels.MetaJSON{
 					"login": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "继续验证身份",
-							"subTitle": "输入账号凭据以继续当前 APP 的认证流程",
-							"btnText":  "继 续",
+							"title":      "欢迎回来",
+							"subTitle":   "继续完成登录或注册流程",
+							"buttonText": "登录",
 						},
 					},
 					"register": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "创建 Aurora 账号",
-							"subTitle": "完成注册后自动回到业务应用",
-							"btnText":  "立即注册",
+							"title":      "创建账号",
+							"subTitle":   "继续完成注册流程",
+							"buttonText": "注册",
 						},
 					},
 					"forget_password": systemmodels.MetaJSON{
 						"texts": systemmodels.MetaJSON{
-							"title":    "重置密码",
-							"subTitle": "验证账号后设置新的登录密码",
-							"btnText":  "重置密码",
+							"title":               "找回密码",
+							"subTitle":            "请输入账号后继续下一步重置流程",
+							"buttonText":          "继续",
+							"secondaryButtonText": "返回登录",
 						},
 					},
 				},

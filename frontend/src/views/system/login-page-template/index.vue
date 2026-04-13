@@ -1,10 +1,11 @@
 ﻿<template>
   <div class="p-4 login-page-template-page">
-    <div class="page-hero">
+    <div class="page-card">
+      <div class="page-hero">
       <div>
         <h3 class="text-lg font-semibold">认证页模板管理</h3>
         <p class="hero-desc">
-          统一管理登录/注册/找回密码三页模板。支持全局配置（theme/features/texts）以及按页面覆盖（pages.login/register/forget_password）。
+          统一管理登录/注册/找回密码三页模板。支持全局配置（theme/features/social），以及按页面覆盖主题和文案（pages.login/register/forget_password）。
         </p>
       </div>
       <div class="hero-actions">
@@ -12,15 +13,8 @@
       </div>
     </div>
 
-    <ElAlert
-      class="mb-4"
-      type="info"
-      :closable="false"
-      title="配置说明"
-      description="先配置全局 theme/features/texts，再按页面做覆盖。运行时会按 page_scene 自动合并全局与 pages.* 配置。"
-    />
-
-    <ElTable :data="list" border stripe>
+      <div class="table-shell">
+        <ElTable :data="list" border stripe>
       <ElTableColumn prop="template_key" label="模板 Key" width="180" />
       <ElTableColumn prop="name" label="名称" width="180" />
       <ElTableColumn prop="scene" label="场景" width="120" />
@@ -39,9 +33,6 @@
             <ElTag v-if="hasConfigKey(row, 'features')" size="small" effect="plain" type="success"
               >features</ElTag
             >
-            <ElTag v-if="hasConfigKey(row, 'texts')" size="small" effect="plain" type="warning"
-              >texts</ElTag
-            >
             <ElTag v-if="hasConfigKey(row, 'pages')" size="small" effect="plain" type="info"
               >pages</ElTag
             >
@@ -52,7 +43,7 @@
           </div>
         </template>
       </ElTableColumn>
-      <ElTableColumn label="操作" width="240" fixed="right">
+          <ElTableColumn label="操作" width="240" fixed="right">
         <template #default="{ row }">
           <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
           <ElButton link type="info" @click="openPreviewOnly(row)">预览</ElButton>
@@ -62,198 +53,250 @@
             </template>
           </ElPopconfirm>
         </template>
-      </ElTableColumn>
-    </ElTable>
+          </ElTableColumn>
+        </ElTable>
+      </div>
+    </div>
 
-    <ElDialog
+    <ElDrawer
       v-model="dialogVisible"
       :title="editing ? '编辑模板' : '新建模板'"
-      width="1160px"
-      top="5vh"
+      size="100%"
+      direction="rtl"
+      class="template-editor-drawer"
     >
-      <div class="dialog-layout">
-        <ElForm :model="form" label-width="120px" class="dialog-form">
-          <ElFormItem label="模板 Key" required>
-            <ElInput
-              v-model="form.template_key"
-              :disabled="!!editing"
-              placeholder="如 default / aurora"
-            />
-          </ElFormItem>
-          <ElFormItem label="名称" required>
-            <ElInput v-model="form.name" placeholder="给运营可读的模板名称" />
-          </ElFormItem>
-          <ElFormItem label="场景">
-            <ElSelect v-model="form.scene">
-              <ElOption label="auth_family" value="auth_family" />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem label="作用域">
-            <ElSelect v-model="form.app_scope">
-              <ElOption label="shared (共享)" value="shared" />
-              <ElOption label="app (APP 专属)" value="app" />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem label="状态">
-            <ElSelect v-model="form.status">
-              <ElOption label="normal" value="normal" />
-              <ElOption label="disabled" value="disabled" />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem label="默认模板">
-            <ElSwitch v-model="form.is_default" />
-            <span class="field-tip ml-2">同场景下仅一个默认模板</span>
-          </ElFormItem>
+      <div class="drawer-shell">
+        <div class="dialog-layout">
+          <ElForm :model="form" label-width="120px" class="dialog-form">
+            <ElCollapse v-model="editorPanels" class="template-editor-collapse">
+              <ElCollapseItem name="basic" title="基础信息">
+                <div class="panel-content">
+                  <ElFormItem label="模板 Key" required>
+                    <ElInput
+                      v-model="form.template_key"
+                      :disabled="!!editing"
+                      placeholder="如 default / aurora"
+                    />
+                  </ElFormItem>
+                  <ElFormItem label="名称" required>
+                    <ElInput v-model="form.name" placeholder="给运营可读的模板名称" />
+                  </ElFormItem>
+                  <ElFormItem label="场景">
+                    <ElSelect v-model="form.scene">
+                      <ElOption label="auth_family" value="auth_family" />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="作用域">
+                    <ElSelect v-model="form.app_scope">
+                      <ElOption label="shared (共享)" value="shared" />
+                      <ElOption label="app (APP 专属)" value="app" />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="状态">
+                    <ElSelect v-model="form.status">
+                      <ElOption label="normal" value="normal" />
+                      <ElOption label="disabled" value="disabled" />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="默认模板">
+                    <ElSwitch v-model="form.is_default" />
+                    <span class="field-tip ml-2">同场景下仅一个默认模板</span>
+                  </ElFormItem>
+                </div>
+              </ElCollapseItem>
 
-          <ElDivider content-position="left">全局 theme (主题配置)</ElDivider>
-          <ElFormItem label="品牌色">
-            <ElInput v-model="configTheme.primaryColor" placeholder="#409EFF" />
-          </ElFormItem>
-          <ElFormItem label="Logo URL">
-            <ElInput v-model="configTheme.logoUrl" placeholder="https://..." />
-          </ElFormItem>
-          <ElFormItem label="背景图">
-            <ElInput v-model="configTheme.backgroundImage" placeholder="url(...)" />
-          </ElFormItem>
-          <ElFormItem label="圆角">
-            <ElInput v-model="configTheme.borderRadius" placeholder="8px" />
-          </ElFormItem>
+              <ElCollapseItem name="theme" title="全局 theme">
+                <div class="panel-content">
+                  <div class="field-tip panel-tip">
+                    右侧实时预览支持：品牌色、圆角
+                  </div>
+                  <ElFormItem label="品牌色">
+                    <ElInput v-model="configTheme.primaryColor" placeholder="#409EFF" />
+                  </ElFormItem>
+                  <ElFormItem label="圆角">
+                    <ElInput v-model="configTheme.borderRadius" placeholder="8px" />
+                  </ElFormItem>
+                </div>
+              </ElCollapseItem>
 
-          <ElDivider content-position="left">全局 features (功能开关)</ElDivider>
-          <ElFormItem label="社交登录">
-            <ElSwitch v-model="configFeatures.socialLogin" />
-          </ElFormItem>
-          <ElFormItem label="验证码">
-            <ElSwitch v-model="configFeatures.captcha" />
-          </ElFormItem>
-          <ElFormItem label="记住密码">
-            <ElSwitch v-model="configFeatures.rememberMe" />
-          </ElFormItem>
-          <ElFormItem label="忘记密码">
-            <ElSwitch v-model="configFeatures.forgetPassword" />
-          </ElFormItem>
-          <ElFormItem label="注册入口">
-            <ElSwitch v-model="configFeatures.register" />
-          </ElFormItem>
-          <ElFormItem label="社交入口配置">
-            <div class="social-config-wrap">
-              <div class="social-config-header">
-                <ElButton size="small" @click="addSocialItem">新增入口</ElButton>
-              </div>
-              <div v-if="socialItems.length === 0" class="field-tip">未配置社交入口</div>
-              <div
-                v-for="(item, idx) in socialItems"
-                :key="`social-${idx}`"
-                class="social-config-row"
-              >
-                <ElInput v-model="item.key" placeholder="key（如 wechat）" />
-                <ElInput v-model="item.name" placeholder="显示名（如 微信）" />
-                <ElInput v-model="item.icon" placeholder="图标（emoji / URL）" />
-                <ElSelect
-                  v-model="item.preset"
-                  placeholder="预设"
-                  @change="(val) => applySocialPreset(item, val)"
-                >
-                  <ElOption label="无" value="" />
-                  <ElOption label="微信" value="wechat" />
-                  <ElOption label="GitHub" value="github" />
-                  <ElOption label="Google" value="google" />
+              <ElCollapseItem name="features" title="全局 features">
+                <div class="panel-content">
+                  <div class="field-tip panel-tip">
+                    右侧实时预览支持：社交登录、记住密码、忘记密码、注册入口、社交入口配置
+                  </div>
+                  <ElFormItem label="社交登录">
+                    <ElSwitch v-model="configFeatures.socialLogin" />
+                  </ElFormItem>
+                  <ElFormItem label="记住密码">
+                    <ElSwitch v-model="configFeatures.rememberMe" />
+                  </ElFormItem>
+                  <ElFormItem label="忘记密码">
+                    <ElSwitch v-model="configFeatures.forgetPassword" />
+                  </ElFormItem>
+                  <ElFormItem label="注册入口">
+                    <ElSwitch v-model="configFeatures.register" />
+                  </ElFormItem>
+                  <ElFormItem label="社交入口配置">
+                    <div class="social-config-wrap">
+                      <div class="social-config-header">
+                        <ElButton size="small" @click="addSocialItem">新增入口</ElButton>
+                      </div>
+                      <div v-if="socialItems.length === 0" class="field-tip">未配置社交入口</div>
+                      <div
+                        v-for="(item, idx) in socialItems"
+                        :key="`social-${idx}`"
+                        class="social-config-row"
+                      >
+                        <ElInput v-model="item.key" placeholder="key（如 wechat）" />
+                        <ElInput v-model="item.name" placeholder="显示名（如 微信）" />
+                        <ElInput v-model="item.icon" placeholder="图标（emoji / URL）" />
+                        <ElSelect
+                          v-model="item.preset"
+                          placeholder="预设"
+                          @change="(val) => applySocialPreset(item, val)"
+                        >
+                          <ElOption label="无" value="" />
+                          <ElOption label="微信" value="wechat" />
+                          <ElOption label="GitHub" value="github" />
+                          <ElOption label="Google" value="google" />
+                        </ElSelect>
+                        <ElInput v-model="item.url" placeholder="跳转 URL（/auth/oauth/wechat）" />
+                        <ElButton
+                          link
+                          type="primary"
+                          :disabled="!isValidSocialUrl(item.url)"
+                          @click="previewSocialUrl(item.url)"
+                        >
+                          预览
+                        </ElButton>
+                        <ElButton link type="danger" @click="removeSocialItem(idx)">删除</ElButton>
+                      </div>
+                      <ElInput
+                        v-model="socialCustomHtml"
+                        type="textarea"
+                        :rows="3"
+                        placeholder="可选：自定义 HTML（仅 HTML，脚本会被过滤）"
+                      />
+                    </div>
+                  </ElFormItem>
+                </div>
+              </ElCollapseItem>
+
+              <ElCollapseItem name="pages" title="pages">
+                <div class="panel-content">
+                  <div class="field-tip panel-tip">
+                    右侧实时预览支持：标题、副标题、按钮文案、品牌色、圆角
+                  </div>
+                  <ElTabs v-model="sceneEditorTab" class="scene-tabs">
+                    <ElTabPane
+                      v-for="scene in SCENES"
+                      :key="scene"
+                      :label="sceneLabel(scene)"
+                      :name="scene"
+                    >
+                      <ElFormItem :label="`${sceneLabel(scene)}标题`">
+                        <ElInput
+                          v-model="pageOverrides[scene].title"
+                          placeholder="可选，留空则使用页面默认文案"
+                        />
+                      </ElFormItem>
+                      <ElFormItem :label="`${sceneLabel(scene)}副标题`">
+                        <ElInput
+                          v-model="pageOverrides[scene].subTitle"
+                          placeholder="可选，留空则使用页面默认文案"
+                        />
+                      </ElFormItem>
+                      <ElFormItem :label="`${sceneLabel(scene)}主按钮文案`">
+                        <ElInput
+                          v-model="pageOverrides[scene].buttonText"
+                          placeholder="可选，留空则使用页面默认文案"
+                        />
+                      </ElFormItem>
+                      <ElFormItem
+                        v-if="scene === 'forget_password'"
+                        :label="`${sceneLabel(scene)}次按钮文案`"
+                      >
+                        <ElInput
+                          v-model="pageOverrides[scene].secondaryButtonText"
+                          placeholder="可选，留空则使用页面默认文案"
+                        />
+                      </ElFormItem>
+                      <ElFormItem :label="`${sceneLabel(scene)}品牌色`">
+                        <ElInput
+                          v-model="pageOverrides[scene].primaryColor"
+                          placeholder="可选，留空则继承全局"
+                        />
+                      </ElFormItem>
+                      <ElFormItem :label="`${sceneLabel(scene)}圆角`">
+                        <ElInput
+                          v-model="pageOverrides[scene].borderRadius"
+                          placeholder="可选，留空则继承全局"
+                        />
+                      </ElFormItem>
+                    </ElTabPane>
+                  </ElTabs>
+                </div>
+              </ElCollapseItem>
+
+              <ElCollapseItem name="advanced" title="高级">
+                <div class="panel-content">
+                  <ElFormItem label="元数据">
+                    <ElInput v-model="rawMetaText" type="textarea" :rows="3" />
+                  </ElFormItem>
+                </div>
+              </ElCollapseItem>
+            </ElCollapse>
+          </ElForm>
+
+          <div class="dialog-preview">
+            <div class="preview-header">
+              <span class="preview-title">实时预览</span>
+              <div class="preview-header-actions">
+                <div class="preview-slider-wrap">
+                  <span class="preview-slider-label">视口</span>
+                  <ElSlider
+                    v-model="previewViewportHeight"
+                    class="preview-size-slider"
+                    :min="720"
+                    :max="1440"
+                    :step="40"
+                    size="small"
+                  />
+                </div>
+                <ElSelect v-model="previewScene" size="small" style="width: 130px">
+                  <ElOption label="登录页" value="login" />
+                  <ElOption label="注册页" value="register" />
+                  <ElOption label="找回密码" value="forget_password" />
                 </ElSelect>
-                <ElInput v-model="item.url" placeholder="跳转 URL（/auth/oauth/wechat）" />
-                <ElButton
-                  link
-                  type="primary"
-                  :disabled="!isValidSocialUrl(item.url)"
-                  @click="previewSocialUrl(item.url)"
-                >
-                  预览
-                </ElButton>
-                <ElButton link type="danger" @click="removeSocialItem(idx)">删除</ElButton>
+                <ElButton size="small" @click="refreshPreview">刷新</ElButton>
               </div>
-              <ElInput
-                v-model="socialCustomHtml"
-                type="textarea"
-                :rows="3"
-                placeholder="可选：自定义 HTML（仅 HTML，脚本会被过滤）"
-              />
             </div>
-          </ElFormItem>
-
-          <ElDivider content-position="left">全局 texts (自定义文案)</ElDivider>
-          <ElFormItem label="标题">
-            <ElInput v-model="configTexts.title" placeholder="欢迎登录" />
-          </ElFormItem>
-          <ElFormItem label="副标题">
-            <ElInput v-model="configTexts.subTitle" placeholder="请输入账号密码" />
-          </ElFormItem>
-          <ElFormItem label="按钮文案">
-            <ElInput v-model="configTexts.btnText" placeholder="登 录" />
-          </ElFormItem>
-
-          <ElDivider content-position="left">pages (按页面覆盖)</ElDivider>
-          <ElTabs v-model="sceneEditorTab" class="scene-tabs">
-            <ElTabPane v-for="scene in SCENES" :key="scene" :label="sceneLabel(scene)" :name="scene">
-              <ElFormItem :label="`${sceneLabel(scene)}标题`">
-                <ElInput v-model="pageOverrides[scene].title" placeholder="可选，留空则继承全局" />
-              </ElFormItem>
-              <ElFormItem :label="`${sceneLabel(scene)}副标题`">
-                <ElInput v-model="pageOverrides[scene].subTitle" placeholder="可选，留空则继承全局" />
-              </ElFormItem>
-              <ElFormItem :label="`${sceneLabel(scene)}按钮文案`">
-                <ElInput v-model="pageOverrides[scene].btnText" placeholder="可选，留空则继承全局" />
-              </ElFormItem>
-              <ElFormItem :label="`${sceneLabel(scene)}品牌色`">
-                <ElInput v-model="pageOverrides[scene].primaryColor" placeholder="可选，留空则继承全局" />
-              </ElFormItem>
-              <ElFormItem :label="`${sceneLabel(scene)}圆角`">
-                <ElInput v-model="pageOverrides[scene].borderRadius" placeholder="可选，留空则继承全局" />
-              </ElFormItem>
-            </ElTabPane>
-          </ElTabs>
-
-          <ElDivider content-position="left">高级</ElDivider>
-          <ElFormItem label="原始 Config">
-            <ElInput v-model="rawConfigText" type="textarea" :rows="4" />
-            <div class="field-tip">
-              直接编辑 JSON（保存时与上方表单合并，表单字段优先级高于此处）
-            </div>
-          </ElFormItem>
-          <ElFormItem label="元数据">
-            <ElInput v-model="rawMetaText" type="textarea" :rows="3" />
-          </ElFormItem>
-        </ElForm>
-
-        <div class="dialog-preview">
-          <div class="preview-header">
-            <span class="preview-title">实时预览</span>
-            <div class="preview-header-actions">
-              <ElSelect v-model="previewScene" size="small" style="width: 130px">
-                <ElOption label="登录页" value="login" />
-                <ElOption label="注册页" value="register" />
-                <ElOption label="找回密码" value="forget_password" />
-              </ElSelect>
-              <ElButton size="small" @click="refreshPreview">刷新</ElButton>
-            </div>
+            <ElScrollbar class="preview-viewport-scrollbar" always>
+              <div class="preview-iframe-wrap">
+                <iframe
+                  v-if="previewUrl"
+                  :key="previewKey"
+                  :src="previewUrl"
+                  class="preview-iframe"
+                  :style="previewFrameStyle"
+                  sandbox="allow-same-origin allow-scripts"
+                />
+                <div v-else class="preview-placeholder">
+                  <span>保存模板后可预览</span>
+                </div>
+              </div>
+            </ElScrollbar>
           </div>
-          <div class="preview-iframe-wrap">
-            <iframe
-              v-if="previewUrl"
-              :key="previewKey"
-              :src="previewUrl"
-              class="preview-iframe"
-              sandbox="allow-same-origin allow-scripts"
-            />
-            <div v-else class="preview-placeholder">
-              <span>保存模板后可预览</span>
-            </div>
+        </div>
+        <div class="drawer-footer">
+          <div class="drawer-footer-tip">抽屉已改为全屏，适合长配置和实时预览并排编辑。</div>
+          <div class="drawer-footer-actions">
+            <ElButton @click="dialogVisible = false">取消</ElButton>
+            <ElButton type="primary" @click="submit">保存</ElButton>
           </div>
         </div>
       </div>
-      <template #footer>
-        <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="submit">保存</ElButton>
-      </template>
-    </ElDialog>
+    </ElDrawer>
 
     <ElDialog v-model="previewDialogVisible" title="模板预览" width="520px" top="5vh">
       <div class="standalone-preview-toolbar">
@@ -276,7 +319,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import {
     fetchCreateLoginPageTemplate,
@@ -317,6 +360,11 @@
   const sceneEditorTab = ref<SceneKey>('login')
   const previewScene = ref<SceneKey>('login')
   const previewKey = ref(0)
+  const previewViewportWidth = ref(1440)
+  const previewViewportHeight = ref(960)
+  const editorPanels = ref<string[]>(['basic'])
+  const previewDraftID = ref('')
+  let previewDraftSyncTimer: number | null = null
 
   const form = reactive<any>({
     template_key: '',
@@ -329,14 +377,11 @@
 
   const configTheme = reactive<any>({
     primaryColor: '',
-    logoUrl: '',
-    backgroundImage: '',
     borderRadius: ''
   })
 
   const configFeatures = reactive<any>({
     socialLogin: false,
-    captcha: false,
     rememberMe: true,
     forgetPassword: true,
     register: true
@@ -344,19 +389,33 @@
   const socialItems = ref<SocialConfigItem[]>([])
   const socialCustomHtml = ref('')
 
-  const configTexts = reactive<any>({
-    title: '',
-    subTitle: '',
-    btnText: ''
-  })
-
   const pageOverrides = reactive<Record<SceneKey, any>>({
-    login: { title: '', subTitle: '', btnText: '', primaryColor: '', borderRadius: '' },
-    register: { title: '', subTitle: '', btnText: '', primaryColor: '', borderRadius: '' },
-    forget_password: { title: '', subTitle: '', btnText: '', primaryColor: '', borderRadius: '' }
+    login: {
+      title: '',
+      subTitle: '',
+      buttonText: '',
+      secondaryButtonText: '',
+      primaryColor: '',
+      borderRadius: ''
+    },
+    register: {
+      title: '',
+      subTitle: '',
+      buttonText: '',
+      secondaryButtonText: '',
+      primaryColor: '',
+      borderRadius: ''
+    },
+    forget_password: {
+      title: '',
+      subTitle: '',
+      buttonText: '',
+      secondaryButtonText: '',
+      primaryColor: '',
+      borderRadius: ''
+    }
   })
 
-  const rawConfigText = ref('{}')
   const rawMetaText = ref('{}')
 
   function createEmptySocialItem(): SocialConfigItem {
@@ -413,11 +472,79 @@
     return '/account/auth/forget-password'
   }
 
+  function createPreviewDraftId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    return `auth-preview-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  }
+
+  function previewDraftStorageKey(id: string): string {
+    return `auth-template-preview:${id}`
+  }
+
+  function buildPreviewDraftPayload(): Record<string, unknown> {
+    return {
+      template_key: `${form.template_key || ''}`.trim(),
+      name: `${form.name || ''}`.trim(),
+      scene: form.scene || 'auth_family',
+      app_scope: form.app_scope || 'shared',
+      status: form.status || 'normal',
+      is_default: Boolean(form.is_default),
+      config: buildConfigPayload()
+    }
+  }
+
+  function syncPreviewDraftNow(): void {
+    const id = `${previewDraftID.value || ''}`.trim()
+    if (!dialogVisible.value || !id || typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(
+        previewDraftStorageKey(id),
+        JSON.stringify(buildPreviewDraftPayload())
+      )
+    } catch {
+      /* ignore preview draft sync errors */
+    }
+  }
+
+  function schedulePreviewDraftSync(): void {
+    if (previewDraftSyncTimer !== null) {
+      window.clearTimeout(previewDraftSyncTimer)
+    }
+    previewDraftSyncTimer = window.setTimeout(() => {
+      syncPreviewDraftNow()
+      previewDraftSyncTimer = null
+    }, 120)
+  }
+
+  function clearPreviewDraft(): void {
+    const id = `${previewDraftID.value || ''}`.trim()
+    if (previewDraftSyncTimer !== null) {
+      window.clearTimeout(previewDraftSyncTimer)
+      previewDraftSyncTimer = null
+    }
+    if (!id || typeof window === 'undefined') return
+    try {
+      window.localStorage.removeItem(previewDraftStorageKey(id))
+    } catch {
+      /* ignore preview draft cleanup errors */
+    }
+  }
+
   const previewUrl = computed(() => {
+    const draftId = `${previewDraftID.value || ''}`.trim()
+    if (!draftId) return ''
     const key = `${form.template_key || ''}`.trim()
-    if (!key) return ''
     const path = scenePath(previewScene.value)
-    return `${path}?login_page_key=${encodeURIComponent(key)}&preview=1`
+    const search = new URLSearchParams({
+      preview: '1',
+      preview_draft_id: draftId
+    })
+    if (key) {
+      search.set('login_page_key', key)
+    }
+    return `${path}?${search.toString()}`
   })
 
   const standalonePreviewUrl = computed(() => {
@@ -426,6 +553,11 @@
     const path = scenePath(standalonePreviewScene.value)
     return `${path}?login_page_key=${encodeURIComponent(key)}&preview=1`
   })
+
+  const previewFrameStyle = computed(() => ({
+    width: `${previewViewportWidth.value}px`,
+    height: `${previewViewportHeight.value}px`
+  }))
 
   function hasConfigKey(row: any, key: string): boolean {
     const config = row?.config
@@ -440,7 +572,6 @@
     return (
       hasConfigKey(row, 'theme') ||
       hasConfigKey(row, 'features') ||
-      hasConfigKey(row, 'texts') ||
       hasConfigKey(row, 'pages') ||
       hasConfigKey(row, 'social')
     )
@@ -471,18 +602,19 @@
     const pages: Record<string, unknown> = {}
     for (const scene of SCENES) {
       const sceneData = pageOverrides[scene]
-      const texts = cleanObject({
-        title: sceneData.title,
-        subTitle: sceneData.subTitle,
-        btnText: sceneData.btnText
-      })
       const theme = cleanObject({
         primaryColor: sceneData.primaryColor,
         borderRadius: sceneData.borderRadius
       })
+      const texts = cleanObject({
+        title: sceneData.title,
+        subTitle: sceneData.subTitle,
+        buttonText: sceneData.buttonText,
+        secondaryButtonText: sceneData.secondaryButtonText
+      })
       const block: Record<string, unknown> = {}
-      if (Object.keys(texts).length > 0) block.texts = texts
       if (Object.keys(theme).length > 0) block.theme = theme
+      if (Object.keys(texts).length > 0) block.texts = texts
       if (Object.keys(block).length > 0) {
         pages[scene] = block
       }
@@ -491,15 +623,8 @@
   }
 
   function buildConfigPayload(): Record<string, unknown> {
-    let base: Record<string, unknown> = {}
-    try {
-      base = JSON.parse(`${rawConfigText.value || '{}'}`) || {}
-    } catch {
-      /* ignore */
-    }
     const theme = cleanObject({ ...configTheme })
     const features = cleanObject({ ...configFeatures })
-    const texts = cleanObject({ ...configTexts })
     const pages = buildPageOverrides()
     const items = buildSocialItems()
     const customHtml = `${socialCustomHtml.value || ''}`.trim()
@@ -507,9 +632,9 @@
       items: items.length > 0 ? items : undefined,
       customHtml: customHtml || undefined
     })
+    const base: Record<string, unknown> = {}
     if (Object.keys(theme).length > 0) base.theme = theme
     if (Object.keys(features).length > 0) base.features = features
-    if (Object.keys(texts).length > 0) base.texts = texts
     if (Object.keys(pages).length > 0) base.pages = pages
     if (Object.keys(social).length > 0) base.social = social
     return base
@@ -519,12 +644,13 @@
     const pages = config?.pages || {}
     for (const scene of SCENES) {
       const sceneData = pages?.[scene] || (scene === 'forget_password' ? pages?.forgetPassword : {}) || {}
-      const texts = sceneData?.texts || {}
       const theme = sceneData?.theme || {}
+      const texts = sceneData?.texts || {}
       Object.assign(pageOverrides[scene], {
         title: texts.title || '',
         subTitle: texts.subTitle || '',
-        btnText: texts.btnText || '',
+        buttonText: texts.buttonText || '',
+        secondaryButtonText: texts.secondaryButtonText || '',
         primaryColor: theme.primaryColor || '',
         borderRadius: theme.borderRadius || ''
       })
@@ -535,23 +661,14 @@
     const theme = config?.theme || {}
     Object.assign(configTheme, {
       primaryColor: theme.primaryColor || '',
-      logoUrl: theme.logoUrl || '',
-      backgroundImage: theme.backgroundImage || '',
       borderRadius: theme.borderRadius || ''
     })
     const features = config?.features || {}
     Object.assign(configFeatures, {
       socialLogin: Boolean(features.socialLogin),
-      captcha: Boolean(features.captcha),
       rememberMe: features.rememberMe !== false,
       forgetPassword: features.forgetPassword !== false,
       register: features.register !== false
-    })
-    const texts = config?.texts || {}
-    Object.assign(configTexts, {
-      title: texts.title || '',
-      subTitle: texts.subTitle || '',
-      btnText: texts.btnText || ''
     })
     resetPageOverrides(config)
     const social = config?.social || {}
@@ -578,6 +695,8 @@
   }
 
   const openCreate = () => {
+    clearPreviewDraft()
+    previewDraftID.value = createPreviewDraftId()
     editing.value = null
     Object.assign(form, {
       template_key: '',
@@ -588,14 +707,16 @@
       is_default: false
     })
     resetConfigForm({})
-    rawConfigText.value = '{}'
     rawMetaText.value = '{}'
     sceneEditorTab.value = 'login'
     previewScene.value = 'login'
     dialogVisible.value = true
+    syncPreviewDraftNow()
   }
 
   const openEdit = (row: any) => {
+    clearPreviewDraft()
+    previewDraftID.value = createPreviewDraftId()
     editing.value = row
     Object.assign(form, {
       template_key: row.template_key || '',
@@ -607,11 +728,11 @@
     })
     const config = row.config || {}
     resetConfigForm(config)
-    rawConfigText.value = JSON.stringify(config, null, 2)
     rawMetaText.value = JSON.stringify(row.meta || {}, null, 2)
     sceneEditorTab.value = 'login'
     previewScene.value = 'login'
     dialogVisible.value = true
+    syncPreviewDraftNow()
   }
 
   const openPreviewOnly = (row: any) => {
@@ -623,6 +744,7 @@
   }
 
   const refreshPreview = () => {
+    syncPreviewDraftNow()
     previewKey.value++
   }
 
@@ -683,9 +805,71 @@
   }
 
   onMounted(load)
+
+  const previewDraftFingerprint = computed(() =>
+    JSON.stringify({
+      template_key: `${form.template_key || ''}`.trim(),
+      name: `${form.name || ''}`.trim(),
+      scene: form.scene || 'auth_family',
+      app_scope: form.app_scope || 'shared',
+      status: form.status || 'normal',
+      is_default: Boolean(form.is_default),
+      theme: { ...configTheme },
+      features: { ...configFeatures },
+      pages: SCENES.map((scene) => ({ scene, ...pageOverrides[scene] })),
+      socialItems: socialItems.value.map((item) => ({ ...item })),
+      socialCustomHtml: socialCustomHtml.value
+    })
+  )
+
+  watch(
+    () => dialogVisible.value,
+    (visible) => {
+      if (visible) {
+        syncPreviewDraftNow()
+        return
+      }
+      clearPreviewDraft()
+      previewDraftID.value = ''
+    }
+  )
+
+  watch(previewDraftFingerprint, () => {
+    if (!dialogVisible.value) return
+    schedulePreviewDraftSync()
+  })
+
+  onBeforeUnmount(() => {
+    clearPreviewDraft()
+  })
 </script>
 
 <style scoped>
+  :deep(.template-editor-drawer) {
+    --el-drawer-padding-primary: 20px;
+  }
+
+  .page-card {
+    padding: 24px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow:
+      0 12px 30px rgb(15 23 42 / 5%),
+      0 2px 8px rgb(15 23 42 / 4%);
+  }
+
+  :deep(.template-editor-drawer .el-drawer__header) {
+    margin-bottom: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--el-border-color-light);
+  }
+
+  :deep(.template-editor-drawer .el-drawer__body) {
+    padding: 0;
+    overflow: hidden;
+  }
+
   .page-hero {
     display: flex;
     align-items: flex-start;
@@ -712,16 +896,70 @@
     flex-wrap: wrap;
   }
 
+  .table-shell {
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .drawer-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 73px);
+    background: var(--el-bg-color);
+  }
+
   .dialog-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
     gap: 20px;
-    max-height: 72vh;
-    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+    overflow: hidden;
+    padding: 20px;
   }
 
   .dialog-form {
     min-width: 0;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  .template-editor-collapse {
+    border: none;
+    background: transparent;
+  }
+
+  :deep(.template-editor-collapse .el-collapse-item) {
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 12px;
+    background: var(--el-fill-color-blank);
+  }
+
+  :deep(.template-editor-collapse .el-collapse-item__header) {
+    padding: 0 16px;
+    font-weight: 600;
+    border-bottom: 1px solid transparent;
+    background: var(--el-bg-color);
+  }
+
+  :deep(.template-editor-collapse .el-collapse-item__wrap) {
+    border-bottom: none;
+  }
+
+  :deep(.template-editor-collapse .el-collapse-item__content) {
+    padding-bottom: 0;
+  }
+
+  .panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
   }
 
   .scene-tabs {
@@ -733,9 +971,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    position: sticky;
-    top: 0;
-    align-self: start;
+    height: 100%;
+    min-height: 0;
   }
 
   .preview-header {
@@ -748,6 +985,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .preview-title {
@@ -755,18 +993,55 @@
     color: var(--el-text-color-primary);
   }
 
+  .preview-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 220px;
+  }
+
+  .preview-slider-label {
+    flex: none;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .preview-size-slider {
+    flex: 1;
+  }
+
   .preview-iframe-wrap {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: flex-start;
     border: 1px solid var(--el-border-color-light);
     border-radius: 12px;
     overflow: hidden;
-    height: 520px;
+    flex: none;
+    height: 100%;
+    min-height: 0;
     background: #f5f7fa;
   }
 
   .preview-iframe {
+    display: block;
     width: 100%;
-    height: 100%;
     border: none;
+  }
+
+  .preview-viewport-scrollbar {
+    flex: 1;
+    min-height: 0;
+  }
+
+  :deep(.preview-viewport-scrollbar .el-scrollbar__wrap) {
+    overflow: auto;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  :deep(.preview-viewport-scrollbar .el-scrollbar__view) {
+    min-width: 100%;
+    min-height: 100%;
   }
 
   .preview-placeholder {
@@ -803,6 +1078,32 @@
     color: var(--el-text-color-secondary);
   }
 
+  .panel-tip {
+    margin-bottom: 4px;
+  }
+
+  .drawer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--el-border-color-light);
+    background: rgb(255 255 255 / 96%);
+    backdrop-filter: blur(10px);
+  }
+
+  .drawer-footer-tip {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .drawer-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .social-config-wrap {
     width: 100%;
     display: flex;
@@ -820,5 +1121,45 @@
     grid-template-columns: 100px 110px minmax(110px, 1fr) 90px minmax(180px, 1fr) auto auto;
     gap: 8px;
     align-items: center;
+  }
+
+  @media (max-width: 1280px) {
+    .dialog-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dialog-preview {
+      position: static;
+      height: auto;
+    }
+
+    .preview-iframe-wrap {
+      height: 100%;
+      min-height: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .drawer-shell {
+      height: calc(100vh - 61px);
+    }
+
+    .dialog-layout {
+      padding: 16px;
+      gap: 16px;
+    }
+
+    .social-config-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .drawer-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .drawer-footer-actions {
+      justify-content: flex-end;
+    }
   }
 </style>

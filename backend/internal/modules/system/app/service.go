@@ -1479,42 +1479,10 @@ func normalizeGovernanceMeta(value map[string]interface{}) (models.MetaJSON, err
 
 	out := models.MetaJSON{}
 	for key, raw := range normalized {
-		if key == "sensitive_config" || key == "feature_flags" {
+		if key == "sensitive_config" || key == "feature_flags" || key == "env_profiles" {
 			continue
 		}
 		out[key] = raw
-	}
-
-	if raw, ok := normalized["env_profiles"]; ok {
-		section, err := normalizeEnvProfiles(raw)
-		if err != nil {
-			return nil, err
-		}
-		out["env_profiles"] = section
-	}
-	return out, nil
-}
-
-func normalizeEnvProfiles(raw interface{}) (models.MetaJSON, error) {
-	items, ok := toMetaObject(raw)
-	if !ok {
-		return nil, errors.New("meta.env_profiles 必须是对象，且每个环境节点都必须是对象")
-	}
-	out := models.MetaJSON{}
-	for key, value := range items {
-		name := strings.TrimSpace(key)
-		if name == "" {
-			return nil, errors.New("meta.env_profiles 环境名不能为空")
-		}
-		profile, ok := toMetaObject(value)
-		if !ok {
-			return nil, fmt.Errorf("meta.env_profiles.%s 必须是对象", name)
-		}
-		normalizedValue, err := normalizeJSONObject(profile)
-		if err != nil {
-			return nil, fmt.Errorf("meta.env_profiles.%s %w", name, err)
-		}
-		out[name] = normalizedValue
 	}
 	return out, nil
 }

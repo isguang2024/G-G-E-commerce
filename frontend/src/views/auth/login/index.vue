@@ -15,8 +15,8 @@
 
       <div class="auth-right-wrap">
         <div class="form">
-          <h3 class="title">{{ texts.title || $t('login.title') }}</h3>
-          <p class="sub-title">{{ texts.subTitle || $t('login.subTitle') }}</p>
+          <h3 class="title">{{ pageTitle }}</h3>
+          <p class="sub-title">{{ pageSubTitle }}</p>
           <ElTag v-if="loginPageKey" size="small" effect="plain" class="mt-3">
             模板：{{ templateName || loginPageKey }}
           </ElTag>
@@ -69,11 +69,11 @@
                 class="w-full custom-height"
                 type="primary"
                 @click="handleSubmit"
-                :loading="loading"
-                :disabled="isPreview"
-                v-ripple
-              >
-                {{ texts.btnText || $t('login.btnText') }}
+              :loading="loading"
+              :disabled="isPreview"
+              v-ripple
+            >
+                {{ pageButtonText }}
               </ElButton>
             </div>
 
@@ -117,8 +117,11 @@
 
   const formRef = ref<FormInstance>()
   const { loading, submitError, loadRememberedCredentials, submit, consumeSocialToken } = useLoginFlow()
-  const { themeClass, loginPageKey, templateName, registerLink, theme, features, texts, social, isPreview } =
+  const { themeClass, loginPageKey, templateName, registerLink, theme, features, social, texts, isPreview } =
     useAuthPageTemplate('login')
+  const pageTitle = computed(() => `${texts.value.title || t('login.title')}`)
+  const pageSubTitle = computed(() => `${texts.value.subTitle || t('login.subTitle')}`)
+  const pageButtonText = computed(() => `${texts.value.buttonText || t('login.btnText')}`)
 
   // 登录表单默认值（不再预置系统账号密码）
   const formData = reactive<LoginFormState>({

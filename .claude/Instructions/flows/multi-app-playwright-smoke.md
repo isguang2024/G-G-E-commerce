@@ -81,7 +81,7 @@
   - `http://127.0.0.1:5174/system/app`
   - `http://127.0.0.1:5174/system/page`
 - 期望：
-  - `App 管理` 正常展示注册中心、预检查、环境配置、Feature Flag、敏感配置治理区
+  - `App 管理` 正常展示认证中心、预检查、环境配置、Feature Flag、敏感配置治理区
   - `页面管理` 正常展示本地配置 / 扫描同步 / 远端页来源统计
   - 控制台不再出现 `menu-space-entry-bindings` 404
 - 失败定位：
@@ -105,7 +105,7 @@
   - 来源：`menu-space` 解析结果、运行时 navigation manifest、菜单空间入口绑定
   - 用途：区分是 APP 入口解析问题，还是 APP 内部的 Level 2 空间入口落错
 - `auth_mode`
-  - 来源：`App 管理` 注册中心、preflight `诊断标签`
+  - 来源：`App 管理` 认证中心、preflight `诊断标签`
   - 用途：判断应该查 centralized login、shared cookie，还是本地登录链
 - `request_host`
   - 来源：当前应用解析响应、preflight request host

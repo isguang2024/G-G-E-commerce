@@ -93,6 +93,18 @@
 ### 下次方向
 - 若继续做减法，下一步应评估 `meta.env_profiles` 是否仍值得由基座维护；这块还关联运行时入口覆盖，不能像 `feature_flags` 一样直接整体删除。
 
+## 2026-04-14 env_profiles 下线
+
+### 本次改动
+- 审计确认 `meta.env_profiles` 在当前仓库只剩运行时入口 URL 的一层兜底读取，数据库中也已没有任何真实配置值，因此将运行时入口统一收回到顶层 `frontend_entry_url`、`backend_entry_url`、`health_check_url`。
+- 删除 [context.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/app-runtime/context.ts) 中基于 `env_profiles` 的运行环境推断与入口回退逻辑，避免基座继续承担 App 多环境配置中心职责。
+- 更新 [service.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/app/service.go) 的治理元数据规范化逻辑，保存应用时显式丢弃 `meta.env_profiles`；对应测试改为验证 `env_profiles` 会被忽略。
+- 新增一次性历史修正迁移 [00022_drop_env_profiles_from_app_meta.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00022_drop_env_profiles_from_app_meta.sql)，从 `apps.meta` 中整体删除 `env_profiles`。
+- 已在本地执行迁移，数据库版本推进到 `22`，当前 3 个 App 的 `meta` 仍全部为空对象。
+
+### 下次方向
+- 如果继续做减法，下一步应评估是否还需要在运行时保留 `appMetaMap` 这层容器；目前它已不再承载环境配置和 Feature Flag。
+
 ## 2026-04-14 登录后菜单空白修复
 
 ### 本次改动
@@ -104,3 +116,15 @@
 ### 下次方向
 - 再补一轮“切换账号 / 退出后立即重登 / 多标签页回流”的真实浏览器回归，确认没有其他会话广播或延迟任务继续影响菜单初始化。
 - 若后续还出现偶发导航空白，优先补登录链路的运行时埋点，记录 `clearSessionState`、`resetRouterState`、菜单加载完成的先后顺序，避免再次靠人工快照定位。
+
+## 2026-04-14 认证模板页面级文案恢复
+
+### 本次改动
+- 修正模板语义误判：继续删除全局 `texts`，但恢复 `pages.<scene>.texts` 作为登录页、注册页、找回密码页各自的唯一可编辑文案来源。
+- 更新 [index.vue](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/system/login-page-template/index.vue) 的 `pages` 面板，补回每页标题、副标题、主按钮文案，以及找回密码页的次按钮文案编辑项。
+- 更新 [useAuthPageTemplate.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/auth/useAuthPageTemplate.ts) 和三张认证页，使运行时只读取当前页面自己的 `texts`，不再依赖全局文案继承。
+- 调整 [register_seed.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionseed/register_seed.go) 默认模板 seed，重新写入页面级默认文案；同时移除错误清理 `pages.*.texts` 的临时迁移 `00023_cleanup_login_page_template_texts.sql`。
+
+### 下次方向
+- 用真实浏览器再做一轮模板编辑联调，确认 `pages` 面板改文案后，右侧登录页 / 注册页 / 找回密码页预览都能即时反映。
+- 如果后续还要扩展页面级文案，优先明确字段白名单，再决定是否补占位文案、链接文案等细项，避免重新膨胀成“全局 texts + 页面覆盖”双层模型。

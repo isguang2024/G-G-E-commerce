@@ -14,8 +14,8 @@
 
       <div class="auth-right-wrap">
         <div class="form">
-          <h3 class="title">{{ texts.title || $t('forgetPassword.title') }}</h3>
-          <p class="sub-title">{{ texts.subTitle || $t('forgetPassword.subTitle') }}</p>
+          <h3 class="title">{{ pageTitle }}</h3>
+          <p class="sub-title">{{ pageSubTitle }}</p>
           <ElTag v-if="loginPageKey" size="small" effect="plain" class="mt-3">
             模板：{{ templateName || loginPageKey }}
           </ElTag>
@@ -34,16 +34,16 @@
                 type="primary"
                 @click="register"
                 :loading="loading"
-                :disabled="isPreview"
-                v-ripple
-              >
-                {{ texts.btnText || $t('forgetPassword.submitBtnText') }}
+              :disabled="isPreview"
+              v-ripple
+            >
+                {{ pageButtonText }}
               </ElButton>
             </div>
 
           <div style="margin-top: 15px">
             <ElButton class="w-full custom-height" plain @click="toLogin">
-              {{ $t('forgetPassword.backBtnText') }}
+              {{ pageSecondaryButtonText }}
             </ElButton>
           </div>
         </div>
@@ -65,6 +65,12 @@
   const loading = ref(false)
   const { themeClass, loginPageKey, templateName, theme, texts, isPreview } =
     useAuthPageTemplate('forget_password')
+  const pageTitle = computed(() => `${texts.value.title || '找回密码'}`)
+  const pageSubTitle = computed(() => `${texts.value.subTitle || '请输入账号后继续下一步重置流程'}`)
+  const pageButtonText = computed(() => `${texts.value.buttonText || '继续'}`)
+  const pageSecondaryButtonText = computed(
+    () => `${texts.value.secondaryButtonText || '返回登录'}`
+  )
 
   const register = async () => {
     if (isPreview.value) return

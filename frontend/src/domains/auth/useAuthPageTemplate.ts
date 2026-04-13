@@ -1,4 +1,4 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchLoginPageContext } from '@/domains/auth/api'
 import { useAppContextStore } from '@/domains/app-runtime/context'
@@ -12,12 +12,9 @@ const LOGIN_PAGE_THEME_CLASS_MAP: Record<string, string> = {
   aurora: 'auth-theme-aurora'
 }
 
-/** theme 配置块：品牌色、Logo、背景图 */
+/** theme 配置块：当前仅消费品牌色与圆角 */
 export interface AuthTemplateTheme {
   primaryColor?: string
-  logoUrl?: string
-  backgroundImage?: string
-  backgroundOverlay?: string
   borderRadius?: string
   [key: string]: unknown
 }
@@ -28,7 +25,6 @@ export interface AuthTemplateFeatures {
   socialProviders?: string[]
   socialItems?: AuthTemplateSocialItem[]
   socialCustomHtml?: string
-  captcha?: boolean
   rememberMe?: boolean
   forgetPassword?: boolean
   register?: boolean
@@ -50,21 +46,20 @@ export interface AuthTemplateSocialCapability {
   [key: string]: unknown
 }
 
-/** texts 配置块：自定义文案 */
-export interface AuthTemplateTexts {
-  title?: string
-  subTitle?: string
-  btnText?: string
-  placeholder?: Record<string, string>
-  copyright?: string
-  [key: string]: unknown
-}
-
 /** social 配置块：独立社交入口配置 */
 export interface AuthTemplateSocial {
   items?: AuthTemplateSocialItem[]
   customHtml?: string
   capability?: AuthTemplateSocialCapability
+  [key: string]: unknown
+}
+
+/** pages.<scene>.texts：仅页面级文案，不再支持全局 texts */
+export interface AuthTemplateTexts {
+  title?: string
+  subTitle?: string
+  buttonText?: string
+  secondaryButtonText?: string
   [key: string]: unknown
 }
 
@@ -101,12 +96,36 @@ function mergePlainObject(
   return merged
 }
 
+function authPreviewDraftStorageKey(id: string): string {
+  return `auth-template-preview:${id}`
+}
+
+function readAuthPreviewDraft(id: string): Record<string, unknown> {
+  if (!id || typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(authPreviewDraftStorageKey(id))
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return normalizePlainObject(parsed)
+  } catch {
+    return {}
+  }
+}
+
 export function useAuthPageTemplate(scene: AuthPageScene) {
   const route = useRoute()
   const appContextStore = useAppContextStore()
   const context = ref<LoginPageContext | null>(null)
   const loading = ref(false)
   const errorMessage = ref('')
+  const previewDraft = ref<Record<string, unknown>>({})
+
+  const previewDraftID = computed(() => `${route.query.preview_draft_id || ''}`.trim())
+  const handleStorage = (event: StorageEvent) => {
+    if (!previewDraftID.value) return
+    if (event.key !== authPreviewDraftStorageKey(previewDraftID.value)) return
+    previewDraft.value = readAuthPreviewDraft(previewDraftID.value)
+  }
 
   const loginPageKey = computed(() => {
     const queryValue = `${route.query.login_page_key || ''}`.trim()
@@ -119,11 +138,17 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
   })
 
   const templateName = computed(() => {
+    const draftName = `${previewDraft.value?.name || ''}`.trim()
+    if (draftName) return draftName
     return `${(context.value as any)?.template_name || ''}`.trim()
   })
 
   // ── 模板配置三大块 ──────────────────────────────────────────
   const rawTemplateConfig = computed(() => {
+    const draftConfig = normalizePlainObject(previewDraft.value.config)
+    if (Object.keys(draftConfig).length > 0) {
+      return draftConfig
+    }
     return normalizePlainObject((context.value as any)?.template_config)
   })
 
@@ -152,14 +177,6 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
     ) as AuthTemplateFeatures
   })
 
-  /** texts: 自定义文案（标题 / 副标题 / 按钮文案） */
-  const texts = computed<AuthTemplateTexts>(() => {
-    return mergePlainObject(
-      normalizePlainObject(rawTemplateConfig.value.texts),
-      normalizePlainObject(sceneTemplateConfig.value.texts)
-    ) as AuthTemplateTexts
-  })
-
   /** social: 社交登录入口（结构化项 + 可选受限 HTML） */
   const social = computed<AuthTemplateSocial>(() => {
     const merged = mergePlainObject(
@@ -175,6 +192,11 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
       merged.customHtml = featureHtml
     }
     return merged
+  })
+
+  /** texts: 仅当前页面自己的文案配置，不做全局继承 */
+  const texts = computed<AuthTemplateTexts>(() => {
+    return normalizePlainObject(sceneTemplateConfig.value.texts) as AuthTemplateTexts
   })
 
   const isPreview = computed(() => {
@@ -224,7 +246,21 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
   }
 
   onMounted(() => {
+    previewDraft.value = readAuthPreviewDraft(previewDraftID.value)
+    window.addEventListener('storage', handleStorage)
     void loadContext()
+  })
+
+  watch(
+    () => route.fullPath,
+    () => {
+      previewDraft.value = readAuthPreviewDraft(previewDraftID.value)
+      void loadContext()
+    }
+  )
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('storage', handleStorage)
   })
 
   return {
@@ -236,8 +272,8 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
     themeClass,
     theme,
     features,
-    texts,
     social,
+    texts,
     isPreview,
     registerPath,
     registerLink,

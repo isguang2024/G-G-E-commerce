@@ -15,8 +15,8 @@
 
       <div class="auth-right-wrap">
         <div class="form">
-          <h3 class="title">{{ texts.title || $t('register.title') }}</h3>
-          <p class="sub-title">{{ texts.subTitle || $t('register.subTitle') }}</p>
+          <h3 class="title">{{ pageTitle }}</h3>
+          <p class="sub-title">{{ pageSubTitle }}</p>
           <ElTag v-if="loginPageKey" size="small" effect="plain" class="mt-3">
             模板：{{ templateName || loginPageKey }}
           </ElTag>
@@ -193,11 +193,11 @@
                 class="w-full custom-height"
                 type="primary"
                 @click="handleRegister"
-                :loading="loading"
-                :disabled="isPublicRegisterDisabled || isPreview"
-                v-ripple
-              >
-                {{ texts.btnText || $t('register.submitBtnText') }}
+              :loading="loading"
+              :disabled="isPublicRegisterDisabled || isPreview"
+              v-ripple
+            >
+                {{ pageButtonText }}
               </ElButton>
             </div>
 
@@ -239,8 +239,11 @@
   const formRef = ref<FormInstance>()
   const { ctx, contextError, loading, isPublicRegisterDisabled, loadContext, register, socialContext } =
     useRegisterFlow()
-  const { themeClass, loginPageKey, templateName, theme, texts, social, features, isPreview } =
+  const { themeClass, loginPageKey, templateName, theme, social, features, texts, isPreview } =
     useAuthPageTemplate('register')
+  const pageTitle = computed(() => `${texts.value.title || t('register.title')}`)
+  const pageSubTitle = computed(() => `${texts.value.subTitle || t('register.subTitle')}`)
+  const pageButtonText = computed(() => `${texts.value.buttonText || t('register.submitBtnText')}`)
 
   const formKey = ref(0)
   const registerSourceLabel = computed(() => {

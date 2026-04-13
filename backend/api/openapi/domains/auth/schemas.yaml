@@ -150,4 +150,4 @@ components:
         template_config:
           type: object
           additionalProperties: true
-          description: 模板配置(theme/features/texts 三大块)
+          description: 模板配置(theme/features/pages/social 四大块，其中 pages 支持页面级 theme/texts 覆盖)

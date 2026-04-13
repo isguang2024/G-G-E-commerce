@@ -3411,7 +3411,7 @@ export interface components {
             register_app_key: string;
             /** @description 登录页模板显示名称 */
             template_name?: string;
-            /** @description 模板配置(theme/features/texts 三大块) */
+            /** @description 模板配置(theme/features/pages/social 四大块，其中 pages 支持页面级 theme/texts 覆盖) */
             template_config?: {
                 [key: string]: unknown;
             };

@@ -2,7 +2,7 @@
 
 > 版本：v2 · 日期：2026-04-09 · 状态：设计已确认，待进入实施计划
 >
-> 目标：从第一天起就构建独立的 `account-portal` 注册中心 App，与 `platform-admin` 共享同一个后端进程和数据库，但在 `apps` / `AppHostBinding` / `MenuSpace` / 菜单 / 权限层面完全隔离。数据模型与后端判定逻辑按"未来还会有 `user-portal` / `merchant-console`"预留。
+> 目标：从第一天起就构建独立的 `account-portal` 认证中心 App，与 `platform-admin` 共享同一个后端进程和数据库，但在 `apps` / `AppHostBinding` / `MenuSpace` / 菜单 / 权限层面完全隔离。数据模型与后端判定逻辑按"未来还会有 `user-portal` / `merchant-console`"预留。
 >
 > **v2 变更点**：删除"模式 A 单 App"路径，直接按"模式 B 多 App 共享后端"实施。`account-portal` 作为独立 App 从第一期就建好，公开注册入口挂在它下面；`platform-admin` 完全不开放公开注册。
 
@@ -10,7 +10,7 @@
 
 ## 0. TL;DR
 
-- **共享后端 + 多 App 架构**：一个 Go 后端进程、一个数据库，在 `apps` 表里同时存在 `platform-admin`（治理）和 `account-portal`（注册中心）两条记录，通过 `AppHostBinding` + `app_key` 实现路由、菜单、权限的完全隔离。
+- **共享后端 + 多 App 架构**：一个 Go 后端进程、一个数据库，在 `apps` 表里同时存在 `platform-admin`（治理）和 `account-portal`（认证中心）两条记录，通过 `AppHostBinding` + `app_key` 实现路由、菜单、权限的完全隔离。
 - **三层模型**：入口层（`register_entries`，归属 `account-portal`）→ 策略层（`register_policies`，`target_app_key` 解耦）→ 承载层（目标 App + MenuSpace + 功能包 + 角色）。
 - **入口判定由服务端基于 `host + path` 命中 `register_entries`**，前端传来的 `register_source` 仅作辅助、不作真相。
 - **`platform-admin` 完全不开放公开注册**。公开注册入口全部归属 `account-portal`；注册成功后按策略 `target_app_key` 分流到承载 App（第一期承载 App 仍是 `platform-admin`，MenuSpace 进 `self-service`；未来新增 `user-portal` 时只改策略表，不改模型）。
@@ -68,7 +68,7 @@
 | `app_key` | 用途 | 是否开放公开注册 | 代表性 MenuSpace |
 |---|---|---|---|
 | `platform-admin` | 平台治理后台 | ❌ | `default`（现有） + `self-service`（新增，用于承载自注册用户的自助页） |
-| `account-portal` | 注册中心（公开入口） | ✅ | `public`（新增，只含注册/登录/邮箱验证/找回密码/邀请接受） |
+| `account-portal` | 认证中心（公开入口） | ✅ | `public`（新增，只含注册/登录/邮箱验证/找回密码/邀请接受） |
 
 > 第一期**不新建** `user-portal`。自注册用户登录后，承载 App 仍是 `platform-admin`，但 MenuSpace 为 `self-service`——借助 App 内 MenuSpace 隔离，治理用户与自助用户虽共用一个业务 App 但看不到对方的菜单。未来要拆 `user-portal` 时只需新增 App 记录 + 改策略 `target_app_key`，无需迁移用户或权限。
 
@@ -204,7 +204,7 @@ admin.example.com/self/*              → platform-admin / self-service
 
 ```
 app_key = "account-portal"
-name = "注册中心"
+name = "认证中心"
 space_mode = "single"           # 单 MenuSpace 模式
 default_space_key = "public"
 is_default = false
@@ -234,7 +234,7 @@ status = "disabled"
 
 ### 5.1 新增 MenuSpace
 
-**A. `account-portal` / `public`**（注册中心自带的公开页空间）
+**A. `account-portal` / `public`**（认证中心自带的公开页空间）
 
 ```
 app_key = "account-portal"
@@ -292,7 +292,7 @@ default_home_path = "/self/user-center"
 
 ```
 policy_code = "default.self"
-app_key = "account-portal"              # 策略归属注册中心
+app_key = "account-portal"              # 策略归属认证中心
 target_app_key = "platform-admin"       # 承载 App 仍是治理后端，但进 self-service space
 target_navigation_space_key = "self-service"
 target_home_path = "/self/user-center"
@@ -313,7 +313,7 @@ auto_login = true
 
 ```
 entry_code = "default"
-app_key = "account-portal"                    # 入口归属注册中心
+app_key = "account-portal"                    # 入口归属认证中心
 name = "默认公开注册入口"
 host = ""                                      # 通配
 path_prefix = "/account/auth/register"
