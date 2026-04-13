@@ -25,7 +25,6 @@ type AppContextHandlers = {
   resolveAppAuthMode?: (appKey?: string | null) => string
   resolveAppSsoMode?: (appKey?: string | null) => string
   resolveAppLoginPageKey?: (appKey?: string | null) => string
-  isFeatureEnabledForApp?: (appKey: string | null | undefined, flagKey: string) => boolean
 }
 
 let authContextHandlers: AuthContextHandlers = {}
@@ -105,11 +104,4 @@ export function resolveHttpAppSsoMode(appKey?: string | null): string {
 
 export function resolveHttpAppLoginPageKey(appKey?: string | null): string {
   return `${appContextHandlers.resolveAppLoginPageKey?.(appKey) || ''}`.trim()
-}
-
-export function isHttpAppFeatureEnabled(
-  appKey: string | null | undefined,
-  flagKey: string
-): boolean {
-  return Boolean(appContextHandlers.isFeatureEnabledForApp?.(appKey, flagKey))
 }

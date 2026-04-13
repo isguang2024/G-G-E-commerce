@@ -186,7 +186,7 @@ func ensureAccountPortalPublicPages(db *gorm.DB) error {
 func ensureAccountPortalApp(db *gorm.DB) error {
 	desired := systemmodels.App{
 		AppKey:           AccountPortalAppKey,
-		Name:             "注册中心",
+		Name:             "认证中心",
 		Description:      "公开注册 / 登录 / 邮箱验证 / 找回密码 / 邀请接受 入口承载 App",
 		SpaceMode:        "single",
 		DefaultSpaceKey:  AccountPortalDefaultSpaceKey,
@@ -240,11 +240,7 @@ func ensureDemoApp(db *gorm.DB) error {
 			"auth": systemmodels.MetaJSON{
 				"is_auth_center": false,
 				"login_strategy": "shared_cookie",
-				"session_mode":   "shared_cookie",
 			},
-			"managed_pages":      true,
-			"runtime_navigation": true,
-			"app_switchable":     true,
 		},
 		Meta: systemmodels.MetaJSON{},
 	}

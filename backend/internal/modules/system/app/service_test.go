@@ -99,10 +99,7 @@ func TestNormalizeGovernanceMetaPreservesUnknownKeys(t *testing.T) {
 			},
 		},
 		"feature_flags": map[string]interface{}{
-			"shared_cookie": map[string]interface{}{
-				"default": false,
-				"prod":    true,
-			},
+			"app_switcher": true,
 		},
 		"sensitive_config": map[string]interface{}{
 			"secret_refs": []interface{}{" oidc/client-secret ", "gateway/token"},
@@ -122,32 +119,10 @@ func TestNormalizeGovernanceMetaPreservesUnknownKeys(t *testing.T) {
 	if !ok || devProfile["frontend_base"] != "http://127.0.0.1:5174" {
 		t.Fatalf("env_profiles.dev = %#v", envProfiles["dev"])
 	}
-}
-
-func TestNormalizeGovernanceMetaRejectsInvalidFeatureFlags(t *testing.T) {
-	_, err := normalizeGovernanceMeta(map[string]interface{}{
-		"feature_flags": map[string]interface{}{
-			"shared_cookie": "enabled",
-		},
-	})
-	if err == nil {
-		t.Fatalf("normalizeGovernanceMeta() error = nil, want feature flag validation error")
+	if _, exists := meta["sensitive_config"]; exists {
+		t.Fatalf("meta[sensitive_config] = %#v, want dropped", meta["sensitive_config"])
 	}
-	if err.Error() != "meta.feature_flags.shared_cookie 必须是布尔值或环境覆盖对象" {
-		t.Fatalf("normalizeGovernanceMeta() error = %q", err.Error())
-	}
-}
-
-func TestNormalizeGovernanceMetaRejectsInvalidSensitiveConfigArray(t *testing.T) {
-	_, err := normalizeGovernanceMeta(map[string]interface{}{
-		"sensitive_config": map[string]interface{}{
-			"secret_refs": []interface{}{"oidc/client-secret", 1},
-		},
-	})
-	if err == nil {
-		t.Fatalf("normalizeGovernanceMeta() error = nil, want sensitive config validation error")
-	}
-	if err.Error() != "meta.sensitive_config.secret_refs 数组元素必须全部为字符串" {
-		t.Fatalf("normalizeGovernanceMeta() error = %q", err.Error())
+	if _, exists := meta["feature_flags"]; exists {
+		t.Fatalf("meta[feature_flags] = %#v, want dropped", meta["feature_flags"])
 	}
 }

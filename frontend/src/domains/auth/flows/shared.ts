@@ -5,7 +5,7 @@ import { useWorktabStore } from '@/domains/navigation/worktab'
 import AppConfig from '@/config'
 import { useUserStore } from '@/domains/auth/store'
 import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
-import { resetRouterState } from '@/domains/navigation/runtime/reset-handlers'
+import { resetRouterState, resetRouterStateNow } from '@/domains/navigation/runtime/reset-handlers'
 import { RoutesAlias } from '@/router/routesAlias'
 import { refreshUserMenus as refreshRuntimeUserMenus } from '@/domains/navigation/runtime/navigation'
 import { ACTIVE_APP_SCOPE_STORAGE_KEY } from '@/domains/app-runtime/app-scope'
@@ -78,7 +78,7 @@ function resetInMemoryRuntimeState(): void {
 
 function rebuildClientRuntimeStateForLogin(): void {
   const userStore = useUserStore()
-  userStore.clearSessionState({ broadcast: false })
+  userStore.clearSessionState({ broadcast: false, resetRouterDelay: null })
   resetPersistedRuntimeState()
   resetInMemoryRuntimeState()
 }
@@ -203,7 +203,7 @@ export async function finalizeAuthenticatedSession(
   }
 
   rebuildClientRuntimeStateForLogin()
-  resetRouterState(0)
+  resetRouterStateNow()
   userStore.applySession({
     accessToken: response.access_token,
     refreshToken: response.refresh_token || undefined,

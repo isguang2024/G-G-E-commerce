@@ -112,8 +112,10 @@
 
   const safeCustomHtml = computed(() => sanitizeHtml(`${props.social?.customHtml || ''}`))
   const capabilityBlocked = computed(() => props.social?.capability?.allow === false)
+  const capabilityReason = computed(() => `${props.social?.capability?.reason || ''}`.trim())
+  const hideWhenNoEnabledProvider = computed(() => capabilityReason.value === 'no_enabled_provider')
   const capabilityReasonText = computed(() => {
-    const reason = `${props.social?.capability?.reason || ''}`.trim()
+    const reason = capabilityReason.value
     if (reason === 'public_register_disabled') return '当前注册策略未开启公开注册，请联系管理员。'
     if (reason === 'no_enabled_provider') return '系统未启用任何社交登录提供方。'
     if (reason === 'provider_query_failed') return '暂时无法读取社交登录配置，请稍后重试。'
@@ -121,6 +123,7 @@
   })
 
   const visible = computed(() => {
+    if (hideWhenNoEnabledProvider.value) return false
     if (!props.enabled && !capabilityBlocked.value) return false
     return safeItems.value.length > 0 || Boolean(safeCustomHtml.value)
   })

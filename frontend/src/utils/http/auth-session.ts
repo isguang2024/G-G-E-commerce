@@ -9,7 +9,6 @@ import {
   getHttpAccessToken,
   getEffectiveManagedAppKey,
   getHttpRefreshToken,
-  isHttpAppFeatureEnabled,
   logoutHttpSession,
   resolveHttpAppAuthMode,
   resolveHttpAppSsoMode
@@ -66,7 +65,7 @@ export function shouldUseSharedSessionMode(): boolean {
   if (authMode === 'shared_cookie') {
     return true
   }
-  return isHttpAppFeatureEnabled(appKey, 'shared_cookie')
+  return false
 }
 
 export function shouldSkipRefreshAttempt(request: Request): boolean {

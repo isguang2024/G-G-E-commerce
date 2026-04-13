@@ -161,7 +161,7 @@
             :class="{ 'is-active': governanceTab === 'capabilities' }"
             @click="governanceTab = 'capabilities'"
           >
-            能力声明
+            接入声明
             <span v-if="capabilityHighlights.length" class="app-panel-nav__badge">{{ capabilityHighlights.length }}</span>
           </button>
         </div>
@@ -294,27 +294,17 @@
           </div>
         </div>
 
-        <!-- Tab: 能力声明 -->
+        <!-- Tab: 接入声明 -->
         <div v-if="selectedAppRecord && governanceTab === 'capabilities'" class="app-tab-content">
           <div class="app-tab-header">
-            <div class="app-tab-header__title">能力声明</div>
+            <div class="app-tab-header__title">接入声明</div>
             <div class="app-tab-header__desc">
-              App Capabilities JSON 的结构化概览。routing / runtime / auth / navigation 等分组在这里一目了然。
-              敏感配置（密钥、证书、回调域名）只保留引用键名，不录入明文。
+              当前只保留接入相关的最小声明：认证接入方式和安全控制项。业务 App 自身的运行能力、环境配置和内部治理信息不再在这里编辑。
             </div>
           </div>
           <div class="app-capability-pills">
             <span v-for="item in capabilityHighlights" :key="item" class="app-capability-pill">{{ item }}</span>
-            <span v-if="!capabilityHighlights.length" class="app-capability-pill is-soft">暂无显式能力声明，建议在编辑 App 时填写 Capabilities JSON。</span>
-          </div>
-          <div class="app-capability-pills app-capability-pills--meta">
-            <span v-for="item in appMetaSections" :key="item" class="app-capability-pill is-soft">{{ item }}</span>
-          </div>
-          <div class="app-sensitive-list">
-            <div v-for="item in sensitiveConfigHints" :key="item.title" class="app-sensitive-item">
-              <div class="app-sensitive-item__title">{{ item.title }}</div>
-              <div class="app-sensitive-item__text">{{ item.text }}</div>
-            </div>
+            <span v-if="!capabilityHighlights.length" class="app-capability-pill is-soft">当前未登记额外接入安全项。</span>
           </div>
         </div>
       </ElCard>
@@ -478,7 +468,7 @@
           <div class="app-form-card__header">
             <span class="app-form-card__title">运行入口与部署探针</span>
             <span class="app-form-card__desc">
-              可公开的入口地址与健康检查地址。环境差异请放到下方多环境配置，不要散落在这里。
+              可公开的入口地址与健康检查地址。环境差异由各业务 App 自己维护，这里只登记平台接入所需的统一入口。
             </span>
           </div>
           <div class="app-drawer-grid">
@@ -509,76 +499,33 @@
           </ElFormItem>
         </div>
 
-        <!-- ⑤ 运行能力声明 -->
+        <!-- ⑤ 接入安全 -->
         <div class="app-form-card">
           <div class="app-form-card__header">
-            <span class="app-form-card__title">运行能力声明</span>
+            <span class="app-form-card__title">接入安全</span>
             <span class="app-form-card__desc">
-              用结构化 JSON 描述 routing / runtime / navigation / integration 能力，避免靠命名约定猜测。
-              顶层字段（space_mode、auth_mode 等）无需在这里重复填写。
+              当前只保留平台已经真实消费的安全项：CORS 来源白名单与 CSP。其他运行能力、环境配置和治理细节先不在这里维护。
             </span>
           </div>
-          <ElFormItem style="margin-bottom: 0">
-            <ElInput
-              v-model="appCapabilitiesText"
-              type="textarea"
-              :rows="6"
-              placeholder='{"runtime":{"supports_worktab":true}}'
-            />
-          </ElFormItem>
-        </div>
-
-        <!-- ⑥ 多环境与 Feature Flag -->
-        <div class="app-form-card">
-          <div class="app-form-card__header">
-            <span class="app-form-card__title">多环境与 Feature Flag</span>
-            <span class="app-form-card__desc">
-              按 App 维度维护环境 profile 与功能开关，避免 dev / test / prod 规则散落在说明字段。
-            </span>
+          <div class="app-config-entry">
+            <div class="app-config-entry__summary">
+              <ElTag
+                v-for="item in capabilityDialogSummary"
+                :key="item"
+                size="small"
+                effect="plain"
+              >
+                {{ item }}
+              </ElTag>
+              <span v-if="!capabilityDialogSummary.length" class="app-config-entry__empty">
+                尚未登记额外安全项
+              </span>
+            </div>
+            <div class="app-config-entry__actions">
+              <ElButton @click="openCapabilityDialog()">配置接入安全</ElButton>
+            </div>
           </div>
-          <ElFormItem label="环境配置（meta.env_profiles）">
-            <ElInput
-              v-model="appEnvProfilesText"
-              type="textarea"
-              :rows="4"
-              placeholder='{"dev":{"frontend_base":"http://127.0.0.1:5174"},"prod":{"frontend_base":"https://app.example.com"}}'
-            />
-            <div class="app-form-hint">
-              按环境名分组，记录入口、profile、外部系统键名等非敏感配置。
-            </div>
-          </ElFormItem>
-          <ElFormItem label="Feature Flag（meta.feature_flags）" style="margin-bottom: 0">
-            <ElInput
-              v-model="appFeatureFlagsText"
-              type="textarea"
-              :rows="4"
-              placeholder='{"shared_cookie":{"default":false,"prod":true},"remote_manifest":{"default":false}}'
-            />
-            <div class="app-form-hint">
-              按 flag 名存储默认值与环境覆盖，避免只在前端代码里写死开关判断。
-            </div>
-          </ElFormItem>
-        </div>
-
-        <!-- ⑦ 治理补充 -->
-        <div class="app-form-card app-form-card--last">
-          <div class="app-form-card__header">
-            <span class="app-form-card__title">治理补充</span>
-            <span class="app-form-card__desc">
-              只记录敏感配置的引用键名和归属，不录入明文。密钥、证书内容交给环境变量或密钥系统管理。
-            </span>
-          </div>
-          <ElFormItem label="敏感配置引用（meta.sensitive_config）" style="margin-bottom: 0">
-            <ElInput
-              v-model="appSensitiveConfigText"
-              type="textarea"
-              :rows="5"
-              placeholder='{"secret_refs":["oidc/client-secret"],"certificate_refs":["gateway/tls-cert"],"callback_domains":["https://account.example.com/callback"]}'
-            />
-            <div class="app-form-hint">
-              写引用键名、证书别名、回调域名白名单与 issuer 说明，不写真实密钥内容。
-            </div>
-          </ElFormItem>
+          <div v-if="capabilityRawError" class="app-config-entry__error">{{ capabilityRawError }}</div>
         </div>
 
       </ElForm>
@@ -589,6 +536,73 @@
         </div>
       </template>
     </ElDrawer>
+
+    <ElDialog
+      v-model="capabilityDialogVisible"
+      title="接入安全"
+      width="720px"
+      destroy-on-close
+      append-to-body
+    >
+      <div class="app-config-dialog__intro">
+        这里只维护平台已经真实消费的接入安全项。业务 App 自己的运行能力、环境差异和内部治理信息不在这里编辑。
+      </div>
+      <div class="app-config-panel">
+        <div class="app-config-panel__title">CORS 来源白名单</div>
+        <div class="app-config-panel__desc">
+          对应 <code>capabilities.cors_origins</code>，会被动态安全中间件直接消费。
+        </div>
+        <div
+          v-for="(item, index) in capabilityForm.security.corsOrigins"
+          :key="`cors-${index}`"
+          class="app-inline-row"
+        >
+          <ElInput
+            v-model="capabilityForm.security.corsOrigins[index]"
+            placeholder="https://app.example.com"
+          />
+          <ElButton text type="danger" @click="removeCapabilityCorsOrigin(index)">删除</ElButton>
+        </div>
+        <ElButton text @click="addCapabilityCorsOrigin()">+ 新增来源</ElButton>
+        <ElFormItem label="CSP" style="margin-top: 12px; margin-bottom: 0">
+          <ElInput
+            v-model="capabilityForm.security.csp"
+            type="textarea"
+            :rows="4"
+            placeholder="default-src 'self'; frame-ancestors 'self';"
+          />
+        </ElFormItem>
+      </div>
+      <details class="app-config-advanced">
+        <summary>高级 JSON 模式</summary>
+        <div class="app-config-advanced__body">
+          <ElAlert
+            v-if="capabilityRawError"
+            type="warning"
+            :closable="false"
+            show-icon
+            :title="capabilityRawError"
+            class="app-config-advanced__alert"
+          />
+          <ElInput
+            v-model="appCapabilitiesText"
+            type="textarea"
+            :rows="12"
+            placeholder='{"cors_origins":["https://app.example.com"],"csp":"default-src self;"}'
+          />
+          <div class="app-config-advanced__actions">
+            <ElButton @click="syncCapabilityFormFromRaw(true)">从 JSON 覆盖表单</ElButton>
+            <ElButton text @click="syncCapabilityRawFromForm(true)">用表单结果回写 JSON</ElButton>
+          </div>
+        </div>
+      </details>
+      <template #footer>
+        <div class="drawer-footer">
+          <ElButton @click="capabilityDialogVisible = false">取消</ElButton>
+          <ElButton type="primary" @click="saveCapabilityDialog()">确认</ElButton>
+        </div>
+      </template>
+    </ElDialog>
 
     <ElDialog
       v-model="entryDialogVisible"
@@ -753,6 +767,17 @@
     fetchSaveMenuSpaceEntryBinding,
     fetchDeleteMenuSpaceEntryBinding
   } from '@/domains/governance/api'
+  import {
+    createCapabilityFormState,
+    formatJsonObject,
+    omitDeprecatedCapabilityFields,
+    omitEditableCapabilitySections,
+    parseJSONObjectText,
+    pickEditableCapabilitySections,
+    serializeCapabilityFormState,
+    summarizeManagedCapabilities
+  } from './config-editor'
+  import type { CapabilityFormState } from './config-editor'
 
   defineOptions({ name: 'AppManage' })
 
@@ -775,11 +800,11 @@
   const appDrawerVisible = ref(false)
   const entryDialogVisible = ref(false)
   const spaceEntryDialogVisible = ref(false)
+  const capabilityDialogVisible = ref(false)
   const savingSpaceEntry = ref(false)
   const editingAppKey = ref('')
   const editingEntryId = ref('')
   const editingSpaceEntryId = ref('')
-
   const appForm = reactive<Api.SystemManage.AppSaveParams>({
     app_key: '',
     name: '',
@@ -798,15 +823,15 @@
     meta: {}
   })
   const appCapabilitiesText = ref('{}')
+  const appCapabilitiesBase = ref<Record<string, unknown>>({})
   const appAuthSsoMode = ref<'participate' | 'reauth' | 'isolated'>('participate')
   const appAuthLoginUiMode = ref<'auth_center_ui' | 'auth_center_custom' | 'local_ui'>(
     'auth_center_ui'
   )
   const appAuthLoginPageKey = ref('default')
-  const appEnvProfilesText = ref('{}')
-  const appFeatureFlagsText = ref('{}')
-  const appSensitiveConfigText = ref('{}')
   const appMetaBase = ref<Record<string, unknown>>({})
+  const capabilityRawError = ref('')
+  const capabilityForm = reactive<CapabilityFormState>(createCapabilityFormState())
   type MatchType = Api.SystemManage.AppHostBindingSaveParams['match_type']
 
   const entryForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
@@ -935,9 +960,10 @@
     const hasManifest = Boolean(`${record.manifestUrl || ''}`.trim())
     const hasRuntimeVersion = Boolean(`${record.runtimeVersion || ''}`.trim())
     const probeStatus = `${record.probeStatus || ''}`.trim()
-    const hasRuntimeCapabilities = Boolean(
-      record.capabilities && Object.keys(record.capabilities).length > 0
+    const securitySummary = summarizeManagedCapabilities(
+      (record.capabilities || {}) as Record<string, any>
     )
+    const hasSecurityDeclarations = Boolean(securitySummary.length)
     const authMode = `${record.authMode || 'inherit_host'}`.trim()
     return [
       {
@@ -998,16 +1024,16 @@
         level: authMode === 'centralized_login' ? 'warning' : 'success',
         text:
           authMode === 'centralized_login'
-            ? '当前为独立认证中心模式，建议把回调域名白名单和 issuer 说明写入受控配置，而不是公开表单。'
+            ? '当前为独立认证中心模式。如需统一治理回调域名或 issuer，再按平台能力单独收口，不在当前页面展开。'
             : `当前为 ${authModeLabel(authMode)} 模式，登录态可沿用现有主站协同链路。`
       },
       {
         key: 'capabilities',
-        title: '能力声明',
-        level: hasRuntimeCapabilities ? 'success' : 'info',
-        text: hasRuntimeCapabilities
-          ? `已声明 ${Object.keys(record.capabilities || {}).length} 个一级能力分组。`
-          : '尚未声明 runtime / navigation / integration 能力，后续接入和 feature flag 只能靠约定。'
+        title: '接入安全',
+        level: hasSecurityDeclarations ? 'success' : 'info',
+        text: hasSecurityDeclarations
+          ? `已登记 ${securitySummary.join('、')}。`
+          : '当前未登记额外的 CORS 或 CSP 控制项，将沿用平台默认安全策略。'
       }
     ]
   })
@@ -1079,65 +1105,73 @@
     ]
   })
   const capabilityHighlights = computed(() => {
-    const source = selectedAppRecord.value?.capabilities || {}
-    const sections = Object.entries(source)
-    return sections.slice(0, 8).map(([key, value]) => {
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        return `${key} · ${Object.keys(value as Record<string, any>).length} 项`
-      }
-      if (Array.isArray(value)) {
-        return `${key} · ${value.length} 项`
-      }
-      return `${key} · ${String(value)}`
-    })
+    const record = selectedAppRecord.value
+    if (!record) return []
+    const highlights = [`认证 ${authModeLabel(record.authMode)}`]
+    const capabilitySummary = summarizeManagedCapabilities(
+      (record.capabilities || {}) as Record<string, any>
+    )
+    return [...highlights, ...capabilitySummary]
   })
-  const appMetaSections = computed(() => {
-    const meta = (selectedAppRecord.value?.meta || {}) as Record<string, any>
-    const envProfiles = meta.env_profiles
-    const featureFlags = meta.feature_flags
-    const sensitiveConfig = meta.sensitive_config
-    const envCount =
-      envProfiles && typeof envProfiles === 'object' && !Array.isArray(envProfiles)
-        ? Object.keys(envProfiles).length
-        : 0
-    const flagCount =
-      featureFlags && typeof featureFlags === 'object' && !Array.isArray(featureFlags)
-        ? Object.keys(featureFlags).length
-        : 0
-    const sensitiveCount =
-      sensitiveConfig && typeof sensitiveConfig === 'object' && !Array.isArray(sensitiveConfig)
-        ? Object.keys(sensitiveConfig).length
-        : 0
-    return [
-      `环境 ${envCount || 0} 组`,
-      `Flag ${flagCount || 0} 项`,
-      `敏感治理 ${sensitiveCount || 0} 组`
-    ]
+  const capabilityDialogSummary = computed(() => {
+    const parsed = safeParseJSONObject(appCapabilitiesText.value)
+    return summarizeManagedCapabilities(parsed || {})
   })
-  const sensitiveConfigHints = computed(() => {
-    const authMode = `${selectedAppRecord.value?.authMode || 'inherit_host'}`.trim()
-    return [
-      {
-        title: '环境配置 / Feature Flag',
-        text: '建议在 meta 中按 env/profile 分组记录键名或 profile 名称，不在 description 里散写 dev/test/prod 差异。'
-      },
-      {
-        title: '密钥与证书',
-        text: '只保存引用键、用途和轮换归属，真实值交给环境变量、Vault 或部署系统。'
-      },
-      {
-        title: '回调域名与白名单',
-        text:
-          authMode === 'centralized_login'
-            ? '独立认证中心模式必须由受控配置维护 callback / logout 白名单，前端表单只展示治理说明。'
-            : '即使不是独立认证，也建议把第三方回调域名白名单交给部署侧管理。'
-      },
-      {
-        title: '当前治理覆盖度',
-        text: appMetaSections.value.join(' / ')
-      }
-    ]
-  })
+
+  function replaceList<T>(target: T[], values: T[]) {
+    target.splice(0, target.length, ...values)
+  }
+
+  function safeParseJSONObject(rawText: string) {
+    try {
+      return parseJSONObjectText(rawText, '配置')
+    } catch {
+      return undefined
+    }
+  }
+
+  function assignCapabilityForm(next: CapabilityFormState) {
+    replaceList(capabilityForm.security.corsOrigins, [...next.security.corsOrigins])
+    capabilityForm.security.csp = next.security.csp
+  }
+
+  function syncCapabilityFormFromRaw(showMessage = false) {
+    try {
+      const parsed = parseJSONObjectText(appCapabilitiesText.value, '接入安全') as Record<string, any>
+      assignCapabilityForm(createCapabilityFormState(parsed))
+      capabilityRawError.value = ''
+      if (showMessage) ElMessage.success('接入安全 JSON 已同步到结构化表单')
+      return true
+    } catch (error: any) {
+      capabilityRawError.value = error?.message || '接入安全格式错误'
+      if (showMessage) ElMessage.warning(capabilityRawError.value)
+      return false
+    }
+  }
+
+  function syncCapabilityRawFromForm(showMessage = false) {
+    appCapabilitiesText.value = formatJsonObject(serializeCapabilityFormState(capabilityForm))
+    capabilityRawError.value = ''
+    if (showMessage) ElMessage.success('接入安全 JSON 已用表单结果更新')
+  }
+
+  function openCapabilityDialog() {
+    syncCapabilityFormFromRaw()
+    capabilityDialogVisible.value = true
+  }
+
+  function saveCapabilityDialog() {
+    syncCapabilityRawFromForm()
+    capabilityDialogVisible.value = false
+  }
+
+  function addCapabilityCorsOrigin() {
+    capabilityForm.security.corsOrigins.push('')
+  }
+
+  function removeCapabilityCorsOrigin(index: number) {
+    capabilityForm.security.corsOrigins.splice(index, 1)
+  }
 
   function resolveAppKey(...candidates: Array<string | undefined | null>) {
     for (const candidate of candidates) {
@@ -1163,41 +1197,8 @@
     return resolveSpaceKey(...candidates) || '未设置'
   }
 
-  function formatCapabilitiesText(value?: Record<string, any>) {
-    try {
-      return JSON.stringify(value && Object.keys(value).length ? value : {}, null, 2)
-    } catch {
-      return '{}'
-    }
-  }
-
-  function pickMetaObject(value: Record<string, any> | undefined, key: string) {
-    const section = value?.[key]
-    if (!section || Array.isArray(section) || typeof section !== 'object') {
-      return {}
-    }
-    return section as Record<string, any>
-  }
-
-  function omitGovernedMetaSections(value?: Record<string, any>) {
-    const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
-    const next = { ...source }
-    delete next.env_profiles
-    delete next.feature_flags
-    delete next.sensitive_config
-    return next
-  }
-
   function parseCapabilitiesText() {
-    const raw = `${appCapabilitiesText.value || ''}`.trim()
-    if (!raw) {
-      return {}
-    }
-    const parsed = JSON.parse(raw)
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error('运行能力声明必须是 JSON 对象')
-    }
-    return parsed as Record<string, unknown>
+    return parseJSONObjectText(appCapabilitiesText.value, '接入安全') as Record<string, unknown>
   }
 
   function extractAuthCapability(
@@ -1233,18 +1234,6 @@
       }
     }
     return next
-  }
-
-  function parseMetaSectionText(rawText: string, label: string) {
-    const raw = `${rawText || ''}`.trim()
-    if (!raw) {
-      return {}
-    }
-    const parsed = JSON.parse(raw)
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error(`${label}必须是 JSON 对象`)
-    }
-    return parsed as Record<string, unknown>
   }
 
   function normalizeMatchType(value?: string): MatchType {
@@ -1326,14 +1315,14 @@
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
+    appCapabilitiesBase.value = {}
     appCapabilitiesText.value = '{}'
     appAuthSsoMode.value = 'participate'
     appAuthLoginUiMode.value = 'auth_center_ui'
     appAuthLoginPageKey.value = 'default'
-    appEnvProfilesText.value = '{}'
-    appFeatureFlagsText.value = '{}'
-    appSensitiveConfigText.value = '{}'
     appMetaBase.value = {}
+    capabilityRawError.value = ''
+    assignCapabilityForm(createCapabilityFormState())
   }
 
   function resetEntryForm() {
@@ -1385,21 +1374,17 @@
       appForm.is_default = Boolean(item.isDefault)
       appForm.status = item.status || 'normal'
       appForm.meta = item.meta || {}
-      appCapabilitiesText.value = formatCapabilitiesText(item.capabilities)
-      const authCapability = extractAuthCapability(item.capabilities || {})
+      const normalizedCapabilities = omitDeprecatedCapabilityFields(item.capabilities || {})
+      appCapabilitiesBase.value = omitEditableCapabilitySections(normalizedCapabilities)
+      appCapabilitiesText.value = formatJsonObject(
+        pickEditableCapabilitySections(normalizedCapabilities)
+      )
+      const authCapability = extractAuthCapability(normalizedCapabilities)
       appAuthSsoMode.value = authCapability.ssoMode
       appAuthLoginUiMode.value = authCapability.loginUiMode
       appAuthLoginPageKey.value = authCapability.loginPageKey
-      appMetaBase.value = omitGovernedMetaSections(item.meta || {})
-      appEnvProfilesText.value = formatCapabilitiesText(
-        pickMetaObject(item.meta || {}, 'env_profiles')
-      )
-      appFeatureFlagsText.value = formatCapabilitiesText(
-        pickMetaObject(item.meta || {}, 'feature_flags')
-      )
-      appSensitiveConfigText.value = formatCapabilitiesText(
-        pickMetaObject(item.meta || {}, 'sensitive_config')
-      )
+      appMetaBase.value = item.meta || {}
+      syncCapabilityFormFromRaw()
     }
     appDrawerVisible.value = true
   }
@@ -1455,28 +1440,26 @@
       return
     }
     let capabilities: Record<string, any>
-    let envProfiles: Record<string, any>
-    let featureFlags: Record<string, any>
-    let sensitiveConfig: Record<string, any>
     try {
-      capabilities = patchAuthCapability(parseCapabilitiesText(), {
-        ssoMode: appAuthSsoMode.value,
-        loginUiMode: appAuthLoginUiMode.value,
-        loginPageKey: `${appAuthLoginPageKey.value || ''}`.trim() || 'default'
-      })
-      envProfiles = parseMetaSectionText(appEnvProfilesText.value, '环境配置')
-      featureFlags = parseMetaSectionText(appFeatureFlagsText.value, 'Feature Flag')
-      sensitiveConfig = parseMetaSectionText(appSensitiveConfigText.value, '敏感配置引用')
+      capabilities = omitDeprecatedCapabilityFields(
+        patchAuthCapability(
+          {
+            ...appCapabilitiesBase.value,
+            ...parseCapabilitiesText()
+          },
+          {
+            ssoMode: appAuthSsoMode.value,
+            loginUiMode: appAuthLoginUiMode.value,
+            loginPageKey: `${appAuthLoginPageKey.value || ''}`.trim() || 'default'
+          }
+        )
+      )
     } catch (error: any) {
       ElMessage.warning(error?.message || '应用治理配置格式错误')
       return
     }
     savingApp.value = true
     try {
-      const meta: Record<string, any> = { ...appMetaBase.value }
-      if (Object.keys(envProfiles).length) meta.env_profiles = envProfiles
-      if (Object.keys(featureFlags).length) meta.feature_flags = featureFlags
-      if (Object.keys(sensitiveConfig).length) meta.sensitive_config = sensitiveConfig
       const payload: Api.SystemManage.AppSaveParams = {
         ...appForm,
         app_key: appForm.app_key.trim(),
@@ -1490,7 +1473,7 @@
         manifest_url: `${appForm.manifest_url || ''}`.trim(),
         runtime_version: `${appForm.runtime_version || ''}`.trim(),
         capabilities,
-        meta
+        meta: { ...appMetaBase.value }
       }
       const nextDefaultSpaceKey = resolveSpaceKey(appForm.default_space_key)
       if (editingAppKey.value && nextDefaultSpaceKey) {
@@ -2310,6 +2293,152 @@
     gap: 12px;
   }
 
+  .app-config-entry,
+  .app-config-entry__summary,
+  .app-config-entry__actions,
+  .app-config-stack,
+  .app-config-advanced__actions,
+  .app-structured-card__actions {
+    display: flex;
+  }
+
+  .app-config-entry {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--art-border-color) 86%, white);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--art-main-bg-color) 94%, white);
+  }
+
+  .app-config-entry__summary,
+  .app-config-stack {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .app-config-entry__summary {
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .app-config-entry__actions {
+    flex: 0 0 auto;
+    gap: 10px;
+  }
+
+  .app-config-entry__empty,
+  .app-config-panel__desc {
+    color: var(--art-text-gray-500);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .app-config-entry__error {
+    margin-top: 8px;
+    color: var(--el-color-warning-dark-2);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .app-config-dialog__intro {
+    margin-bottom: 12px;
+    color: var(--art-text-gray-600);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .app-config-panel {
+    padding: 4px 2px 0;
+  }
+
+  .app-config-panel__title {
+    color: var(--art-text-gray-900);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .app-inline-row,
+  .app-structured-kv {
+    display: grid;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .app-inline-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .app-structured-card {
+    border: 1px solid color-mix(in srgb, var(--art-border-color) 86%, white);
+    border-radius: 14px;
+    padding: 14px;
+    background: color-mix(in srgb, var(--art-main-bg-color) 96%, white);
+  }
+
+  .app-structured-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .app-structured-card__body,
+  .app-structured-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .app-structured-kv {
+    grid-template-columns: minmax(0, 1.2fr) 120px minmax(0, 1.4fr) auto;
+  }
+
+  .app-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .app-config-advanced {
+    margin-top: 16px;
+    border: 1px dashed color-mix(in srgb, var(--art-border-color) 88%, white);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--art-main-bg-color) 96%, white);
+  }
+
+  .app-config-advanced > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 14px;
+    color: var(--art-text-gray-700);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .app-config-advanced > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .app-config-advanced__body {
+    padding: 0 14px 14px;
+  }
+
+  .app-config-advanced__alert {
+    margin-bottom: 12px;
+  }
+
+  .app-config-advanced__actions {
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
   .drawer-footer {
     display: flex;
     justify-content: flex-end;
@@ -2333,6 +2462,17 @@
   @media (max-width: 768px) {
     .app-drawer-grid {
       grid-template-columns: 1fr;
+    }
+
+    .app-config-grid,
+    .app-structured-kv {
+      grid-template-columns: 1fr;
+    }
+
+    .app-config-entry,
+    .app-inline-row {
+      grid-template-columns: 1fr;
+      flex-direction: column;
     }
 
     .app-manage-item,

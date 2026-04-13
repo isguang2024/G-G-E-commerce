@@ -1,0 +1,106 @@
+## 2026-04-14 App 治理配置结构化编辑
+
+### 本次改动
+- 将应用管理抽屉中的三段原始 JSON textarea 改为摘要卡片 + 配置入口，默认走结构化表单，高级 JSON 模式收敛到弹窗内部。
+- 新增 `frontend/src/views/system/app/config-editor.ts`，统一处理 capabilities、env_profiles、feature_flags、sensitive_config 的 parse、serialize、summary 和历史兼容转换。
+- 完成 CapabilitiesDialog、EnvFlagsDialog、GovernanceDialog，分别覆盖稳定能力字段、环境/Flag 配置、治理引用配置，并复用现有运行时与预检数据链路。
+- 完成 `vue-tsc`、前端构建、后端 handlers/system-app 测试，以及 dev 预览登录页与历史 JSON 样例回放验证。
+
+### 下次方向
+- 补带登录态的真实页面联调，验证“进入应用管理页 -> 打开抽屉 -> 打开弹窗 -> 保存 -> 重新打开”的完整闭环。
+- 单独排查生产预览根路由的压缩态运行时错误，确认是否为本仓库已有问题，并补最小复现。
+- 若后续决定收紧 `SystemAppCapabilities` / `SystemMeta` 契约，再按 OpenAPI-first 主线推进 spec、生成链和前后端同步。
+
+## 2026-04-14 编辑应用页精简为接入管理
+
+### 本次改动
+- 将“运行能力声明”收敛为“接入安全”，只保留 `capabilities.cors_origins` 与 `capabilities.csp` 两个已被平台真实消费的字段。
+- 从编辑抽屉移除“多环境与 Feature Flag”“治理补充”两整块配置入口，避免后台继续承担业务 App 的内部运行配置。
+- 删除接入安全弹窗里的多余 Tab 壳，只保留单屏表单与高级 JSON 兜底；保存时继续保留历史 `meta` 数据，不主动清洗旧字段。
+- 调整治理总览和检查项文案，统一强调当前页面只负责 App 接入登记，不再暗示可在此配置运行能力、环境差异和内部治理细节。
+
+### 下次方向
+- 带登录态走一次真实页面闭环，确认隐藏旧配置后不会影响已有 App 的编辑、保存和回显。
+- 若后续确实需要统一治理某类字段，再按“平台真实消费 -> 明确真相源 -> 再开放配置”的顺序逐项恢复，不再一次性堆入后台表单。
+
+## 2026-04-14 旧能力字段审计与收口
+
+### 本次改动
+- 审计 `capabilities` 与 `meta` 的真实消费链，确认 `env_profiles`、`feature_flags`、`supports_app_switch`、`supports_dynamic_routes`、`login_strategy`、`is_auth_center`、`cors_origins`、`csp` 仍在运行时或安全中间件使用，因此未删除。
+- 新增前端能力清洗逻辑：编辑应用时会自动剥离已判定无消费的旧能力键，如 `routing.entry_mode`、`routing.route_prefix`、`routing.supports_public_runtime`、`runtime.kind`、`runtime.supports_worktab`、`navigation.*`、`integration.supports_broadcast_channel`、`auth.session_mode`。
+- 收缩 `frontend/src/views/system/app/config-editor.ts`，移除已不再使用的环境配置、Feature Flag、治理补充 helper，只保留接入安全与旧能力清洗。
+- 更新后端默认 App 能力模板与示例 seed，停止继续写入已无消费的旧能力字段。
+
+### 下次方向
+- 对现网已有 App 跑一次数据审计，确认数据库里还残留多少旧能力字段，再决定是否补一次性历史清洗。
+- 如果后续要删除 `env_profiles` 或 `feature_flags`，必须先迁走 `frontend/src/domains/app-runtime/context.ts` 的消费链，不能只删管理页入口。
+
+## 2026-04-14 旧能力字段历史清洗
+
+### 本次改动
+- 新增一次性历史修正迁移 [00017_cleanup_deprecated_app_capabilities.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00017_cleanup_deprecated_app_capabilities.sql)，清理 `apps.capabilities` 中已确认无消费的旧键。
+- 已在本地执行 `go run ./cmd/migrate`，数据库迁移版本已推进到 `17`，现有 3 个 App 的 `deprecated_keys` 已全部清零。
+- 清洗后保留的字段仅包括仍在运行时或安全中间件中被真实消费的能力项，例如 `auth.login_strategy`、`auth.is_auth_center`、`runtime.supports_dynamic_routes`、`integration.supports_app_switch`、`cors_origins`、`csp`。
+
+### 下次方向
+- 继续审计 `demo-app` 上的 `managed_pages`、`runtime_navigation`、`app_switchable` 这类旧顶层键，确认是否仍有消费链，避免留下第二批历史包袱。
+- 如果要进一步清理 `meta.env_profiles`、`meta.feature_flags`、`meta.sensitive_config`，先迁出对应运行时读取逻辑，再补历史修正。
+
+## 2026-04-14 Demo App 旧顶层能力键清理
+
+### 本次改动
+- 审计确认 `demo-app` 上的 `managed_pages`、`runtime_navigation`、`app_switchable` 没有真实消费链；命中的 `managed_pages` 仅是导航 Manifest 返回字段，不是 `apps.capabilities` 的读取。
+- 更新 [register_seed.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionseed/register_seed.go) 的 demo app seed，停止继续写入这 3 个旧顶层键。
+- 新增一次性历史修正迁移 [00018_cleanup_legacy_demo_app_capabilities.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00018_cleanup_legacy_demo_app_capabilities.sql)，从现有 `apps.capabilities` 中移除这 3 个顶层旧键。
+- 已在本地执行迁移，数据库版本推进到 `18`，`demo-app` 当前 `capabilities` 只剩 `auth.is_auth_center` 和 `auth.login_strategy`。
+
+### 下次方向
+- 如果后续还要继续做减法，下一个目标应是评估 `meta.env_profiles`、`meta.feature_flags`、`meta.sensitive_config` 的真实收益和运行时耦合，而不是再回头扩张管理页表单。
+
+## 2026-04-14 sensitive_config 收口
+
+### 本次改动
+- 审计确认 `meta.sensitive_config` 没有任何运行时消费链，仓库中只剩 `system/app/service` 的规范化与测试用例。
+- 更新 [service.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/app/service.go) 的治理元数据规范化逻辑，保存应用时显式丢弃 `sensitive_config`，不再接受或保留该字段。
+- 删除对应的后端校验分支与冗余 helper，并把测试改成校验 `sensitive_config` 会被忽略而不是继续入库。
+- 新增一次性历史修正迁移 [00019_drop_sensitive_config_from_app_meta.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00019_drop_sensitive_config_from_app_meta.sql)，从现有 `apps.meta` 中移除 `sensitive_config`。
+- 已在本地执行迁移，数据库版本推进到 `19`，当前 3 个 App 的 `meta` 都不再包含 `sensitive_config`。
+
+### 下次方向
+- 继续审计 `meta.env_profiles` 与 `meta.feature_flags` 的实际运行价值；这两块仍有运行时依赖，不能像 `sensitive_config` 一样直接收口。
+
+## 2026-04-14 shared_cookie Feature Flag 收口
+
+### 本次改动
+- 审计确认当前数据库内没有任何 App 继续配置 `meta.feature_flags.shared_cookie`，而前端仅剩 [auth-session.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/utils/http/auth-session.ts) 的兜底读取。
+- 删除 `shared_cookie` 的 Feature Flag 兜底逻辑，`共享 Cookie` 会话模式现在只由 `auth_mode` / `login_strategy` 表达，不再允许通过通用 Flag 二次覆盖。
+- 更新 [service_test.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/app/service_test.go) 的治理元数据测试样例与错误断言，避免继续把 `shared_cookie` 当作推荐 Flag。
+- 新增一次性历史修正迁移 [00020_drop_shared_cookie_feature_flag.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00020_drop_shared_cookie_feature_flag.sql)，从 `apps.meta.feature_flags` 中移除 `shared_cookie`，并在 `feature_flags` 变空时一并删除该对象。
+- 已在本地执行迁移，数据库版本推进到 `20`；当前 3 个 App 的 `meta` 均已不再包含 `feature_flags`。
+
+### 下次方向
+- 继续区分 `feature_flags` 中“平台临时覆盖开关”和“业务 App 自己的内部 Flag”；若平台确认不再需要临时覆盖 `supports_app_switch` / `supports_dynamic_routes`，再整体下线 `meta.feature_flags`。
+
+## 2026-04-14 feature_flags 整体下线与旧能力兜底复清
+
+### 本次改动
+- 审计确认 `meta.feature_flags` 在运行时只剩 `app_switcher` 和 `disable_dynamic_routes` 两个历史覆盖入口，且当前数据库中没有任何真实配置值，因此将应用切换与动态路由判定统一收回到 `capabilities.integration.supports_app_switch`、`capabilities.runtime.supports_dynamic_routes`。
+- 删除前端运行时上下文中的通用 `isFeatureEnabledForApp` / `isHttpAppFeatureEnabled` 链路，避免继续把 `feature_flags` 当作平台级运行配置入口。[context.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/app-runtime/context.ts) [request-context.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/utils/http/request-context.ts)
+- 更新 [service.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/app/service.go) 的治理元数据规范化逻辑，保存应用时显式丢弃 `meta.feature_flags`，不再接收该字段；对应测试改为验证 `feature_flags` 会被忽略。
+- 新增一次性历史修正迁移 [00021_cleanup_feature_flags_and_stale_app_capabilities.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00021_cleanup_feature_flags_and_stale_app_capabilities.sql)，统一移除 `meta.feature_flags`，并对旧能力字段再做一次兜底清洗，避免 `platform-admin` 等历史 App 残留旧键。
+- 已在本地执行迁移，数据库版本推进到 `21`，当前 3 个 App 的 `meta` 均不再包含 `feature_flags`；`platform-admin` 的 `capabilities` 也已回到精简后的最小集合。
+
+### 下次方向
+- 若继续做减法，下一步应评估 `meta.env_profiles` 是否仍值得由基座维护；这块还关联运行时入口覆盖，不能像 `feature_flags` 一样直接整体删除。
+
+## 2026-04-14 登录后菜单空白修复
+
+### 本次改动
+- 复现并确认问题不在后端导航接口：登录成功后 `runtime/navigation` 已返回完整菜单树，但前端仍会出现“已跳转到工作台、左侧菜单为空白”的状态。
+- 在 [shared.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/auth/flows/shared.ts) 中调整登录完成时序，登录前清理旧会话时不再额外挂起延迟路由重置，登录成功后改为立即同步重置导航运行时。
+- 在 [store.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/auth/store.ts) 中为 `clearSessionState` 增加可选 `resetRouterDelay`，避免登录链路复用登出清理逻辑时把新的菜单状态再次清掉。
+- 在 [reset-handlers.ts](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/domains/navigation/runtime/reset-handlers.ts) 中抽出 `resetRouterStateNow()`，把同步重置和延迟重置分开，减少登录初始化与定时清理互相串扰。
+
+### 下次方向
+- 再补一轮“切换账号 / 退出后立即重登 / 多标签页回流”的真实浏览器回归，确认没有其他会话广播或延迟任务继续影响菜单初始化。
+- 若后续还出现偶发导航空白，优先补登录链路的运行时埋点，记录 `clearSessionState`、`resetRouterState`、菜单加载完成的先后顺序，避免再次靠人工快照定位。

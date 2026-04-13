@@ -544,7 +544,7 @@ func (s *service) GetAppPreflight(appKey, requestHost string) (*AppPreflightResp
 			authHint = "centralized_login 缺少可用于 redirect_uri 校验的 host，回调链路存在拒绝风险。"
 		}
 	} else if authMode == "shared_cookie" {
-		authHint = "shared_cookie 仍需补真实登录/刷新/登出主链，本次只检查注册中心配置完整度。"
+		authHint = "shared_cookie 仍需补真实登录/刷新/登出主链，本次只检查认证中心配置完整度。"
 		authLevel = "info"
 	}
 	checks = append(checks, newPreflightCheck("auth_mode", "认证预检查", authPassed, authLevel, authValue, authHint))
@@ -1479,6 +1479,9 @@ func normalizeGovernanceMeta(value map[string]interface{}) (models.MetaJSON, err
 
 	out := models.MetaJSON{}
 	for key, raw := range normalized {
+		if key == "sensitive_config" || key == "feature_flags" {
+			continue
+		}
 		out[key] = raw
 	}
 
@@ -1489,21 +1492,6 @@ func normalizeGovernanceMeta(value map[string]interface{}) (models.MetaJSON, err
 		}
 		out["env_profiles"] = section
 	}
-	if raw, ok := normalized["feature_flags"]; ok {
-		section, err := normalizeFeatureFlags(raw)
-		if err != nil {
-			return nil, err
-		}
-		out["feature_flags"] = section
-	}
-	if raw, ok := normalized["sensitive_config"]; ok {
-		section, err := normalizeSensitiveConfig(raw)
-		if err != nil {
-			return nil, err
-		}
-		out["sensitive_config"] = section
-	}
-
 	return out, nil
 }
 
@@ -1525,61 +1513,6 @@ func normalizeEnvProfiles(raw interface{}) (models.MetaJSON, error) {
 		normalizedValue, err := normalizeJSONObject(profile)
 		if err != nil {
 			return nil, fmt.Errorf("meta.env_profiles.%s %w", name, err)
-		}
-		out[name] = normalizedValue
-	}
-	return out, nil
-}
-
-func normalizeFeatureFlags(raw interface{}) (models.MetaJSON, error) {
-	items, ok := toMetaObject(raw)
-	if !ok {
-		return nil, errors.New("meta.feature_flags 必须是对象")
-	}
-	out := models.MetaJSON{}
-	for key, value := range items {
-		name := strings.TrimSpace(key)
-		if name == "" {
-			return nil, errors.New("meta.feature_flags flag 名不能为空")
-		}
-		switch typed := value.(type) {
-		case bool:
-			out[name] = typed
-		case map[string]interface{}:
-			override := models.MetaJSON{}
-			for env, envValue := range typed {
-				envKey := strings.TrimSpace(env)
-				if envKey == "" {
-					return nil, fmt.Errorf("meta.feature_flags.%s 覆盖键不能为空", name)
-				}
-				boolValue, ok := envValue.(bool)
-				if !ok {
-					return nil, fmt.Errorf("meta.feature_flags.%s.%s 必须是布尔值", name, envKey)
-				}
-				override[envKey] = boolValue
-			}
-			out[name] = override
-		default:
-			return nil, fmt.Errorf("meta.feature_flags.%s 必须是布尔值或环境覆盖对象", name)
-		}
-	}
-	return out, nil
-}
-
-func normalizeSensitiveConfig(raw interface{}) (models.MetaJSON, error) {
-	items, ok := toMetaObject(raw)
-	if !ok {
-		return nil, errors.New("meta.sensitive_config 必须是对象")
-	}
-	out := models.MetaJSON{}
-	for key, value := range items {
-		name := strings.TrimSpace(key)
-		if name == "" {
-			return nil, errors.New("meta.sensitive_config 键不能为空")
-		}
-		normalizedValue, err := normalizeSensitiveValue(value)
-		if err != nil {
-			return nil, fmt.Errorf("meta.sensitive_config.%s %w", name, err)
 		}
 		out[name] = normalizedValue
 	}
@@ -1624,35 +1557,6 @@ func normalizeLooseJSONValue(value interface{}) (interface{}, error) {
 		return out, nil
 	default:
 		return nil, fmt.Errorf("包含不支持的值类型 %T", value)
-	}
-}
-
-func normalizeSensitiveValue(value interface{}) (interface{}, error) {
-	switch typed := value.(type) {
-	case string:
-		trimmed := strings.TrimSpace(typed)
-		if trimmed == "" {
-			return "", errors.New("字符串不能为空")
-		}
-		return trimmed, nil
-	case []interface{}:
-		out := make([]string, 0, len(typed))
-		for _, item := range typed {
-			raw, ok := item.(string)
-			if !ok {
-				return nil, errors.New("数组元素必须全部为字符串")
-			}
-			trimmed := strings.TrimSpace(raw)
-			if trimmed == "" {
-				return nil, errors.New("数组元素不能为空字符串")
-			}
-			out = append(out, trimmed)
-		}
-		return out, nil
-	case map[string]interface{}:
-		return normalizeJSONObject(typed)
-	default:
-		return nil, fmt.Errorf("必须是字符串、字符串数组或对象，当前为 %T", value)
 	}
 }
 

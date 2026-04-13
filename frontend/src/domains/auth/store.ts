@@ -173,7 +173,11 @@ export const useUserStore = defineStore(
     }
 
     const clearSessionState = (
-      options: { preserveLastUserId?: boolean; broadcast?: boolean } = {}
+      options: {
+        preserveLastUserId?: boolean
+        broadcast?: boolean
+        resetRouterDelay?: number | null
+      } = {}
     ) => {
       if (options.preserveLastUserId) {
         const currentUserId = info.value.userId
@@ -191,7 +195,9 @@ export const useUserStore = defineStore(
       useMenuStore().setHomePath('')
       useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
       useAppContextStore().clearAppContext()
-      resetRouterState(500)
+      if (options.resetRouterDelay !== null) {
+        resetRouterState(options.resetRouterDelay ?? 500)
+      }
       if (options.broadcast !== false) {
         broadcastSessionEvent({ type: 'session:clear' })
       }

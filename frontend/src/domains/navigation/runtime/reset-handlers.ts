@@ -6,9 +6,13 @@ export function registerNavigationRuntimeResetHandler(handler: () => void): void
   resetNavigationRuntimeHandler = handler
 }
 
+export function resetRouterStateNow(): void {
+  resetNavigationRuntimeHandler?.()
+  resetRouteInitState()
+}
+
 export function resetRouterState(delay: number): void {
   setTimeout(() => {
-    resetNavigationRuntimeHandler?.()
-    resetRouteInitState()
+    resetRouterStateNow()
   }, delay)
 }

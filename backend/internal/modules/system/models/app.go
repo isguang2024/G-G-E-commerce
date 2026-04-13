@@ -97,29 +97,15 @@ func DefaultPlatformAdminCapabilities() MetaJSON {
 		"auth": MetaJSON{
 			"is_auth_center": false,
 			"login_strategy": "centralized_login",
-			"session_mode":   "token_exchange",
 			"sso_mode":       "participate",
 			"login_ui_mode":  "auth_center_ui",
 			"login_page_key": "default",
 		},
-		"routing": MetaJSON{
-			"entry_mode":              "inherit_host",
-			"route_prefix":            "/",
-			"supports_public_runtime": false,
-		},
 		"runtime": MetaJSON{
-			"kind":                    "local",
 			"supports_dynamic_routes": true,
-			"supports_worktab":        true,
-		},
-		"navigation": MetaJSON{
-			"supports_multi_space":  true,
-			"default_landing_mode":  "menu_space",
-			"supports_space_badges": true,
 		},
 		"integration": MetaJSON{
-			"supports_app_switch":        true,
-			"supports_broadcast_channel": true,
+			"supports_app_switch": true,
 		},
 	}
 }
@@ -129,28 +115,15 @@ func DefaultAccountPortalCapabilities() MetaJSON {
 		"auth": MetaJSON{
 			"is_auth_center": true,
 			"login_strategy": "local",
-			"session_mode":   "first_party",
 			"sso_mode":       "participate",
 			"login_ui_mode":  "auth_center_ui",
 			"login_page_key": "default",
 		},
-		"routing": MetaJSON{
-			"entry_mode":              "path_prefix",
-			"route_prefix":            "/account",
-			"supports_public_runtime": true,
-		},
 		"runtime": MetaJSON{
-			"kind":                    "local",
 			"supports_dynamic_routes": true,
-			"supports_worktab":        false,
-		},
-		"navigation": MetaJSON{
-			"supports_multi_space": false,
-			"default_landing_mode": "menu_space",
 		},
 		"integration": MetaJSON{
-			"supports_app_switch":        true,
-			"supports_broadcast_channel": false,
+			"supports_app_switch": true,
 		},
 	}
 }

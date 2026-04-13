@@ -262,8 +262,7 @@ export const useAppContextStore = defineStore(
       getCurrentRuntimeAppKey: () => currentRuntimeAppKey.value,
       resolveAppAuthMode: (appKey) => resolveAppAuthMode(appKey),
       resolveAppSsoMode: (appKey) => resolveAppSsoMode(appKey),
-      resolveAppLoginPageKey: (appKey) => resolveAppLoginPageKey(appKey),
-      isFeatureEnabledForApp: (appKey, flagKey) => isFeatureEnabledForApp(appKey, flagKey)
+      resolveAppLoginPageKey: (appKey) => resolveAppLoginPageKey(appKey)
     })
 
     const ensureRuntimeAppKey = async () => ensureRuntimeAppKeyViaHandler()
@@ -288,25 +287,6 @@ export const useAppContextStore = defineStore(
       return appMetaMap.value[normalizedAppKey] || {}
     }
 
-    const isFeatureEnabledForApp = (appKey: string | null | undefined, flagKey: string) => {
-      const normalizedFlagKey = `${flagKey || ''}`.trim()
-      if (!normalizedFlagKey) return false
-      const featureFlags = normalizePlainObject(resolveAppMeta(appKey).feature_flags)
-      const rawValue = featureFlags[normalizedFlagKey]
-      if (typeof rawValue === 'boolean') {
-        return rawValue
-      }
-      const profileOverrides = normalizePlainObject(rawValue)
-      const profileKey = resolveRuntimeEnvProfile()
-      if (typeof profileOverrides[profileKey] === 'boolean') {
-        return profileOverrides[profileKey]
-      }
-      if (typeof profileOverrides.default === 'boolean') {
-        return profileOverrides.default
-      }
-      return false
-    }
-
     const supportsCapabilityForApp = (
       appKey: string | null | undefined,
       groupKey: string,
@@ -323,16 +303,10 @@ export const useAppContextStore = defineStore(
     }
 
     const supportsAppSwitchForApp = (appKey?: string | null) => {
-      if (isFeatureEnabledForApp(appKey, 'app_switcher')) {
-        return true
-      }
       return supportsCapabilityForApp(appKey, 'integration', 'supports_app_switch', true)
     }
 
     const supportsDynamicRoutesForApp = (appKey?: string | null) => {
-      if (isFeatureEnabledForApp(appKey, 'disable_dynamic_routes')) {
-        return false
-      }
       return supportsCapabilityForApp(appKey, 'runtime', 'supports_dynamic_routes', true)
     }
 
@@ -465,7 +439,6 @@ export const useAppContextStore = defineStore(
       resolveAppAuthMode,
       resolveAppCapabilities,
       resolveAppMeta,
-      isFeatureEnabledForApp,
       supportsAppSwitchForApp,
       supportsDynamicRoutesForApp,
       resolveAppSsoMode,
