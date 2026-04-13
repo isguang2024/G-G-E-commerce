@@ -6,6 +6,7 @@ type EffectiveRegisterContext struct {
 	EntryCode                string
 	EntryName                string
 	EntryAppKey              string
+	LoginPageKey             string
 	RegisterSource           string
 	PolicyCode               string
 	TargetAppKey             string
@@ -21,6 +22,30 @@ type EffectiveRegisterContext struct {
 	// 人机验证提供商及公开 site_key（require_captcha=true 时有效）
 	CaptchaProvider string
 	CaptchaSiteKey  string
+}
+
+type LoginPageContext struct {
+	AppKey         string
+	LoginPageKey   string
+	LoginUiMode    string
+	SsoMode        string
+	ResolvedBy     string
+	PageScene      string
+	TargetAppKey   string
+	EntryCode      string
+	EntryName      string
+	RegisterPath   string
+	RegisterAppKey string
+	TemplateName   string
+	TemplateConfig map[string]interface{}
+}
+
+type ResolveLoginPageContextInput struct {
+	Host         string
+	Path         string
+	TargetAppKey string
+	LoginPageKey string
+	PageScene    string
 }
 
 // LandingInfo 注册/登录成功后前端应当跳转的目标。

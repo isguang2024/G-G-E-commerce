@@ -16,6 +16,8 @@ type Repository struct {
 
 func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
 
+const defaultTenantID = "default"
+
 // FindEntryByHostPath 按 host + path_prefix 命中首选入口：
 // 1. 同时匹配 host 与最长 path_prefix
 // 2. host 可留空表示任意 host
@@ -54,6 +56,42 @@ func (r *Repository) FindPolicyByCode(ctx context.Context, code string) (*system
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (r *Repository) FindAppByKey(ctx context.Context, appKey string) (*systemmodels.App, error) {
+	var app systemmodels.App
+	if err := r.db.WithContext(ctx).
+		Where("app_key = ? AND deleted_at IS NULL", appKey).
+		First(&app).Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+func (r *Repository) FindLoginPageTemplateByKey(
+	ctx context.Context,
+	templateKey string,
+) (*systemmodels.LoginPageTemplate, error) {
+	var item systemmodels.LoginPageTemplate
+	if err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND template_key = ? AND status = ? AND deleted_at IS NULL", defaultTenantID, templateKey, "normal").
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *Repository) FindDefaultLoginPageTemplate(
+	ctx context.Context,
+) (*systemmodels.LoginPageTemplate, error) {
+	var item systemmodels.LoginPageTemplate
+	if err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND scene = ? AND status = ? AND is_default = ? AND deleted_at IS NULL", defaultTenantID, "auth_family", "normal", true).
+		Order("updated_at DESC").
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (r *Repository) ListPolicyFeaturePackages(ctx context.Context, policyCode string) ([]systemmodels.RegisterPolicyFeaturePackage, error) {

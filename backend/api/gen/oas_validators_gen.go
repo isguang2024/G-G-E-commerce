@@ -1269,6 +1269,19 @@ func (s *FeaturePackageVersionList) Validate() error {
 	return nil
 }
 
+func (s GetLoginPageContextPageScene) Validate() error {
+	switch s {
+	case "login":
+		return nil
+	case "register":
+		return nil
+	case "forget_password":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *InboxListResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -1296,6 +1309,29 @@ func (s ListDictItemsOKApplicationJSON) Validate() error {
 	alias := ([]DictItemSummary)(s)
 	if alias == nil {
 		return errors.New("nil is invalid value")
+	}
+	return nil
+}
+
+func (s *LoginPageTemplateList) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Records == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "records",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }

@@ -106,6 +106,12 @@ type Invoker interface {
 	//
 	// POST /feature-packages
 	CreateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest) (*IDResult, error)
+	// CreateLoginPageTemplate invokes createLoginPageTemplate operation.
+	//
+	// 创建登录页模板.
+	//
+	// POST /system/login-page-templates
+	CreateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest) (*LoginPageTemplateItem, error)
 	// CreateMenu invokes createMenu operation.
 	//
 	// 创建菜单.
@@ -202,6 +208,12 @@ type Invoker interface {
 	//
 	// DELETE /feature-packages/{id}
 	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// DeleteLoginPageTemplate invokes deleteLoginPageTemplate operation.
+	//
+	// 删除登录页模板.
+	//
+	// DELETE /system/login-page-templates/{templateKey}
+	DeleteLoginPageTemplate(ctx context.Context, params DeleteLoginPageTemplateParams) (DeleteLoginPageTemplateRes, error)
 	// DeleteMedia invokes deleteMedia operation.
 	//
 	// 删除媒体资源.
@@ -484,6 +496,12 @@ type Invoker interface {
 	//
 	// GET /messages/inbox/summary
 	GetInboxSummary(ctx context.Context) (*InboxSummary, error)
+	// GetLoginPageContext invokes getLoginPageContext operation.
+	//
+	// 获取登录页模板上下文（登录/找回密码公共入口）.
+	//
+	// GET /auth/login-page-context
+	GetLoginPageContext(ctx context.Context, params GetLoginPageContextParams) (GetLoginPageContextRes, error)
 	// GetMenuDeletePreview invokes getMenuDeletePreview operation.
 	//
 	// 获取菜单删除预览.
@@ -754,6 +772,12 @@ type Invoker interface {
 	//
 	// GET /messages/inbox
 	ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error)
+	// ListLoginPageTemplates invokes listLoginPageTemplates operation.
+	//
+	// 登录页模板列表.
+	//
+	// GET /system/login-page-templates
+	ListLoginPageTemplates(ctx context.Context) (*LoginPageTemplateList, error)
 	// ListMedia invokes listMedia operation.
 	//
 	// 获取媒体资源列表.
@@ -1240,6 +1264,12 @@ type Invoker interface {
 	//
 	// PUT /feature-packages/{id}
 	UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// UpdateLoginPageTemplate invokes updateLoginPageTemplate operation.
+	//
+	// 更新登录页模板.
+	//
+	// PUT /system/login-page-templates/{templateKey}
+	UpdateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest, params UpdateLoginPageTemplateParams) (*LoginPageTemplateItem, error)
 	// UpdateMenu invokes updateMenu operation.
 	//
 	// 更新菜单.
@@ -2832,6 +2862,116 @@ func (c *Client) sendCreateFeaturePackage(ctx context.Context, request *FeatureP
 
 	stage = "DecodeResponse"
 	result, err := decodeCreateFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateLoginPageTemplate invokes createLoginPageTemplate operation.
+//
+// 创建登录页模板.
+//
+// POST /system/login-page-templates
+func (c *Client) CreateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest) (*LoginPageTemplateItem, error) {
+	res, err := c.sendCreateLoginPageTemplate(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest) (res *LoginPageTemplateItem, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createLoginPageTemplate"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/login-page-templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateLoginPageTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/login-page-templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateLoginPageTemplateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, CreateLoginPageTemplateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateLoginPageTemplateResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -4706,6 +4846,131 @@ func (c *Client) sendDeleteFeaturePackage(ctx context.Context, params DeleteFeat
 
 	stage = "DecodeResponse"
 	result, err := decodeDeleteFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteLoginPageTemplate invokes deleteLoginPageTemplate operation.
+//
+// 删除登录页模板.
+//
+// DELETE /system/login-page-templates/{templateKey}
+func (c *Client) DeleteLoginPageTemplate(ctx context.Context, params DeleteLoginPageTemplateParams) (DeleteLoginPageTemplateRes, error) {
+	res, err := c.sendDeleteLoginPageTemplate(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteLoginPageTemplate(ctx context.Context, params DeleteLoginPageTemplateParams) (res DeleteLoginPageTemplateRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteLoginPageTemplate"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/system/login-page-templates/{templateKey}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteLoginPageTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/system/login-page-templates/"
+	{
+		// Encode "templateKey" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "templateKey",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.TemplateKey))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, DeleteLoginPageTemplateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteLoginPageTemplateResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10541,6 +10806,169 @@ func (c *Client) sendGetInboxSummary(ctx context.Context) (res *InboxSummary, er
 
 	stage = "DecodeResponse"
 	result, err := decodeGetInboxSummaryResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetLoginPageContext invokes getLoginPageContext operation.
+//
+// 获取登录页模板上下文（登录/找回密码公共入口）.
+//
+// GET /auth/login-page-context
+func (c *Client) GetLoginPageContext(ctx context.Context, params GetLoginPageContextParams) (GetLoginPageContextRes, error) {
+	res, err := c.sendGetLoginPageContext(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetLoginPageContext(ctx context.Context, params GetLoginPageContextParams) (res GetLoginPageContextRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getLoginPageContext"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/auth/login-page-context"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetLoginPageContextOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/login-page-context"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "host" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "host",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Host.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "path" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Path.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "target_app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "target_app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.TargetAppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "login_page_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "login_page_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.LoginPageKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "page_scene" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "page_scene",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PageScene.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetLoginPageContextResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -16855,6 +17283,113 @@ func (c *Client) sendListInbox(ctx context.Context, params ListInboxParams) (res
 
 	stage = "DecodeResponse"
 	result, err := decodeListInboxResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListLoginPageTemplates invokes listLoginPageTemplates operation.
+//
+// 登录页模板列表.
+//
+// GET /system/login-page-templates
+func (c *Client) ListLoginPageTemplates(ctx context.Context) (*LoginPageTemplateList, error) {
+	res, err := c.sendListLoginPageTemplates(ctx)
+	return res, err
+}
+
+func (c *Client) sendListLoginPageTemplates(ctx context.Context) (res *LoginPageTemplateList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listLoginPageTemplates"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/login-page-templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListLoginPageTemplatesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/login-page-templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, ListLoginPageTemplatesOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListLoginPageTemplatesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -27449,6 +27984,134 @@ func (c *Client) sendUpdateFeaturePackage(ctx context.Context, request *FeatureP
 
 	stage = "DecodeResponse"
 	result, err := decodeUpdateFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateLoginPageTemplate invokes updateLoginPageTemplate operation.
+//
+// 更新登录页模板.
+//
+// PUT /system/login-page-templates/{templateKey}
+func (c *Client) UpdateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest, params UpdateLoginPageTemplateParams) (*LoginPageTemplateItem, error) {
+	res, err := c.sendUpdateLoginPageTemplate(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateLoginPageTemplate(ctx context.Context, request *LoginPageTemplateUpsertRequest, params UpdateLoginPageTemplateParams) (res *LoginPageTemplateItem, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateLoginPageTemplate"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/system/login-page-templates/{templateKey}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateLoginPageTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/system/login-page-templates/"
+	{
+		// Encode "templateKey" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "templateKey",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.TemplateKey))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateLoginPageTemplateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, UpdateLoginPageTemplateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateLoginPageTemplateResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

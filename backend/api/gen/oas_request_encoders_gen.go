@@ -182,6 +182,20 @@ func encodeCreateFeaturePackageRequest(
 	return nil
 }
 
+func encodeCreateLoginPageTemplateRequest(
+	req *LoginPageTemplateUpsertRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateMenuRequest(
 	req *MenuSaveRequest,
 	r *http.Request,
@@ -940,6 +954,20 @@ func encodeUpdateFastEnterConfigRequest(
 
 func encodeUpdateFeaturePackageRequest(
 	req *FeaturePackageSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateLoginPageTemplateRequest(
+	req *LoginPageTemplateUpsertRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

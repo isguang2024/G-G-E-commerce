@@ -8,6 +8,7 @@ export interface SilentSSOParams {
   maxAge?: number
   targetPath?: string
   navigationSpaceKey?: string
+  loginPageKey?: string
 }
 
 export interface SilentSSOResult {
@@ -38,6 +39,7 @@ export async function attemptSilentSSO(params: SilentSSOParams): Promise<SilentS
     if (params.maxAge != null) body.max_age = params.maxAge
     if (params.targetPath) body.target_path = params.targetPath
     if (params.navigationSpaceKey) body.navigation_space_key = params.navigationSpaceKey
+    if (params.loginPageKey) body.login_page_key = params.loginPageKey
 
     const res = await fetch('/api/v1/auth/callback/silent', {
       method: 'POST',
@@ -49,7 +51,8 @@ export async function attemptSilentSSO(params: SilentSSOParams): Promise<SilentS
     })
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  } catch (err) {
+    console.warn('[SilentSSO] attempt failed:', err)
     return null
   }
 }

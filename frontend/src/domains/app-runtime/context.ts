@@ -262,6 +262,7 @@ export const useAppContextStore = defineStore(
       getCurrentRuntimeAppKey: () => currentRuntimeAppKey.value,
       resolveAppAuthMode: (appKey) => resolveAppAuthMode(appKey),
       resolveAppSsoMode: (appKey) => resolveAppSsoMode(appKey),
+      resolveAppLoginPageKey: (appKey) => resolveAppLoginPageKey(appKey),
       isFeatureEnabledForApp: (appKey, flagKey) => isFeatureEnabledForApp(appKey, flagKey)
     })
 
@@ -352,7 +353,7 @@ export const useAppContextStore = defineStore(
 
     const resolveAppLoginUiMode = (
       appKey?: string | null
-    ): 'auth_center_ui' | 'local_ui' => {
+    ): 'auth_center_ui' | 'auth_center_custom' | 'local_ui' => {
       const normalizedAppKey = normalizeManagedAppKey(appKey)
       if (!normalizedAppKey) return 'auth_center_ui'
       const capabilities = resolveAppCapabilities(normalizedAppKey)
@@ -362,7 +363,19 @@ export const useAppContextStore = defineStore(
           : {}
       const mode = `${authConfig?.login_ui_mode || authConfig?.loginUiMode || ''}`.trim()
       if (mode === 'local_ui') return 'local_ui'
+      if (mode === 'auth_center_custom') return 'auth_center_custom'
       return 'auth_center_ui'
+    }
+
+    const resolveAppLoginPageKey = (appKey?: string | null): string => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) return ''
+      const capabilities = resolveAppCapabilities(normalizedAppKey)
+      const authConfig =
+        capabilities && typeof capabilities.auth === 'object' && !Array.isArray(capabilities.auth)
+          ? capabilities.auth
+          : {}
+      return `${authConfig?.login_page_key || authConfig?.loginPageKey || ''}`.trim()
     }
 
     const shouldUseCentralizedLoginForApp = (appKey?: string | null) => {
@@ -457,6 +470,7 @@ export const useAppContextStore = defineStore(
       supportsDynamicRoutesForApp,
       resolveAppSsoMode,
       resolveAppLoginUiMode,
+      resolveAppLoginPageKey,
       shouldUseCentralizedLoginForApp,
       ensureManagedAppKey,
       clearAppContext

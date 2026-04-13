@@ -45,6 +45,33 @@ export async function fetchRegisterContext(host?: string, path?: string) {
   return data
 }
 
+export async function fetchLoginPageContext(params?: {
+  host?: string
+  path?: string
+  target_app_key?: string
+  login_page_key?: string
+  page_scene?: 'login' | 'register' | 'forget_password'
+}) {
+  const { data, error, response } = await v5Client.GET('/auth/login-page-context', {
+    params: {
+      query: {
+        host: params?.host,
+        path: params?.path,
+        target_app_key: params?.target_app_key,
+        login_page_key: params?.login_page_key,
+        page_scene: params?.page_scene
+      }
+    },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
+  })
+  if (error || !data) {
+    throw error ? createV5HttpError(error, response) : new Error('fetch login page context failed')
+  }
+  return data
+}
+
 export async function fetchRegister(body: {
   username: string
   password: string

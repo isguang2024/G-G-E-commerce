@@ -15938,6 +15938,1233 @@ func (s *LoginBadRequest) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *LoginPageContext) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LoginPageContext) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("app_key")
+		e.Str(s.AppKey)
+	}
+	{
+		e.FieldStart("login_page_key")
+		e.Str(s.LoginPageKey)
+	}
+	{
+		e.FieldStart("login_ui_mode")
+		e.Str(s.LoginUIMode)
+	}
+	{
+		e.FieldStart("sso_mode")
+		e.Str(s.SSOMode)
+	}
+	{
+		e.FieldStart("resolved_by")
+		e.Str(s.ResolvedBy)
+	}
+	{
+		e.FieldStart("page_scene")
+		e.Str(s.PageScene)
+	}
+	{
+		e.FieldStart("target_app_key")
+		e.Str(s.TargetAppKey)
+	}
+	{
+		if s.EntryCode.Set {
+			e.FieldStart("entry_code")
+			s.EntryCode.Encode(e)
+		}
+	}
+	{
+		if s.EntryName.Set {
+			e.FieldStart("entry_name")
+			s.EntryName.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("register_path")
+		e.Str(s.RegisterPath)
+	}
+	{
+		e.FieldStart("register_app_key")
+		e.Str(s.RegisterAppKey)
+	}
+	{
+		if s.TemplateName.Set {
+			e.FieldStart("template_name")
+			s.TemplateName.Encode(e)
+		}
+	}
+	{
+		if s.TemplateConfig.Set {
+			e.FieldStart("template_config")
+			s.TemplateConfig.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfLoginPageContext = [13]string{
+	0:  "app_key",
+	1:  "login_page_key",
+	2:  "login_ui_mode",
+	3:  "sso_mode",
+	4:  "resolved_by",
+	5:  "page_scene",
+	6:  "target_app_key",
+	7:  "entry_code",
+	8:  "entry_name",
+	9:  "register_path",
+	10: "register_app_key",
+	11: "template_name",
+	12: "template_config",
+}
+
+// Decode decodes LoginPageContext from json.
+func (s *LoginPageContext) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageContext to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "app_key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_key\"")
+			}
+		case "login_page_key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.LoginPageKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"login_page_key\"")
+			}
+		case "login_ui_mode":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.LoginUIMode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"login_ui_mode\"")
+			}
+		case "sso_mode":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.SSOMode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sso_mode\"")
+			}
+		case "resolved_by":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.ResolvedBy = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"resolved_by\"")
+			}
+		case "page_scene":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.PageScene = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"page_scene\"")
+			}
+		case "target_app_key":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.TargetAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_app_key\"")
+			}
+		case "entry_code":
+			if err := func() error {
+				s.EntryCode.Reset()
+				if err := s.EntryCode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_code\"")
+			}
+		case "entry_name":
+			if err := func() error {
+				s.EntryName.Reset()
+				if err := s.EntryName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entry_name\"")
+			}
+		case "register_path":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.RegisterPath = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_path\"")
+			}
+		case "register_app_key":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.RegisterAppKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"register_app_key\"")
+			}
+		case "template_name":
+			if err := func() error {
+				s.TemplateName.Reset()
+				if err := s.TemplateName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"template_name\"")
+			}
+		case "template_config":
+			if err := func() error {
+				s.TemplateConfig.Reset()
+				if err := s.TemplateConfig.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"template_config\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageContext")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b01111111,
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfLoginPageContext) {
+					name = jsonFieldsNameOfLoginPageContext[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LoginPageContext) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageContext) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s LoginPageContextTemplateConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s LoginPageContextTemplateConfig) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes LoginPageContextTemplateConfig from json.
+func (s *LoginPageContextTemplateConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageContextTemplateConfig to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageContextTemplateConfig")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LoginPageContextTemplateConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageContextTemplateConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *LoginPageTemplateItem) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LoginPageTemplateItem) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		json.EncodeUUID(e, s.ID)
+	}
+	{
+		e.FieldStart("tenant_id")
+		e.Str(s.TenantID)
+	}
+	{
+		e.FieldStart("template_key")
+		e.Str(s.TemplateKey)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		e.FieldStart("scene")
+		e.Str(s.Scene)
+	}
+	{
+		e.FieldStart("app_scope")
+		e.Str(s.AppScope)
+	}
+	{
+		e.FieldStart("status")
+		e.Str(s.Status)
+	}
+	{
+		e.FieldStart("is_default")
+		e.Bool(s.IsDefault)
+	}
+	{
+		e.FieldStart("config")
+		s.Config.Encode(e)
+	}
+	{
+		e.FieldStart("meta")
+		s.Meta.Encode(e)
+	}
+	{
+		if s.CreatedAt.Set {
+			e.FieldStart("created_at")
+			s.CreatedAt.Encode(e, json.EncodeDateTime)
+		}
+	}
+	{
+		if s.UpdatedAt.Set {
+			e.FieldStart("updated_at")
+			s.UpdatedAt.Encode(e, json.EncodeDateTime)
+		}
+	}
+}
+
+var jsonFieldsNameOfLoginPageTemplateItem = [12]string{
+	0:  "id",
+	1:  "tenant_id",
+	2:  "template_key",
+	3:  "name",
+	4:  "scene",
+	5:  "app_scope",
+	6:  "status",
+	7:  "is_default",
+	8:  "config",
+	9:  "meta",
+	10: "created_at",
+	11: "updated_at",
+}
+
+// Decode decodes LoginPageTemplateItem from json.
+func (s *LoginPageTemplateItem) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateItem to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeUUID(d)
+				s.ID = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "tenant_id":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.TenantID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tenant_id\"")
+			}
+		case "template_key":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.TemplateKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"template_key\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "scene":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.Scene = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scene\"")
+			}
+		case "app_scope":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.AppScope = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_scope\"")
+			}
+		case "status":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.Status = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "is_default":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Bool()
+				s.IsDefault = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_default\"")
+			}
+		case "config":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				if err := s.Config.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"config\"")
+			}
+		case "meta":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				if err := s.Meta.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"meta\"")
+			}
+		case "created_at":
+			if err := func() error {
+				s.CreatedAt.Reset()
+				if err := s.CreatedAt.Decode(d, json.DecodeDateTime); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"created_at\"")
+			}
+		case "updated_at":
+			if err := func() error {
+				s.UpdatedAt.Reset()
+				if err := s.UpdatedAt.Decode(d, json.DecodeDateTime); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"updated_at\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateItem")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b11111111,
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfLoginPageTemplateItem) {
+					name = jsonFieldsNameOfLoginPageTemplateItem[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LoginPageTemplateItem) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateItem) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s LoginPageTemplateItemConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s LoginPageTemplateItemConfig) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes LoginPageTemplateItemConfig from json.
+func (s *LoginPageTemplateItemConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateItemConfig to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateItemConfig")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LoginPageTemplateItemConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateItemConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s LoginPageTemplateItemMeta) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s LoginPageTemplateItemMeta) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes LoginPageTemplateItemMeta from json.
+func (s *LoginPageTemplateItemMeta) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateItemMeta to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateItemMeta")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LoginPageTemplateItemMeta) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateItemMeta) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *LoginPageTemplateList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LoginPageTemplateList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int(s.Total)
+	}
+}
+
+var jsonFieldsNameOfLoginPageTemplateList = [2]string{
+	0: "records",
+	1: "total",
+}
+
+// Decode decodes LoginPageTemplateList from json.
+func (s *LoginPageTemplateList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]LoginPageTemplateItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem LoginPageTemplateItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int()
+				s.Total = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfLoginPageTemplateList) {
+					name = jsonFieldsNameOfLoginPageTemplateList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LoginPageTemplateList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *LoginPageTemplateUpsertRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LoginPageTemplateUpsertRequest) encodeFields(e *jx.Encoder) {
+	{
+		if s.TenantID.Set {
+			e.FieldStart("tenant_id")
+			s.TenantID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("template_key")
+		e.Str(s.TemplateKey)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Scene.Set {
+			e.FieldStart("scene")
+			s.Scene.Encode(e)
+		}
+	}
+	{
+		if s.AppScope.Set {
+			e.FieldStart("app_scope")
+			s.AppScope.Encode(e)
+		}
+	}
+	{
+		if s.Status.Set {
+			e.FieldStart("status")
+			s.Status.Encode(e)
+		}
+	}
+	{
+		if s.IsDefault.Set {
+			e.FieldStart("is_default")
+			s.IsDefault.Encode(e)
+		}
+	}
+	{
+		if s.Config.Set {
+			e.FieldStart("config")
+			s.Config.Encode(e)
+		}
+	}
+	{
+		if s.Meta.Set {
+			e.FieldStart("meta")
+			s.Meta.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfLoginPageTemplateUpsertRequest = [9]string{
+	0: "tenant_id",
+	1: "template_key",
+	2: "name",
+	3: "scene",
+	4: "app_scope",
+	5: "status",
+	6: "is_default",
+	7: "config",
+	8: "meta",
+}
+
+// Decode decodes LoginPageTemplateUpsertRequest from json.
+func (s *LoginPageTemplateUpsertRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateUpsertRequest to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "tenant_id":
+			if err := func() error {
+				s.TenantID.Reset()
+				if err := s.TenantID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tenant_id\"")
+			}
+		case "template_key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.TemplateKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"template_key\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "scene":
+			if err := func() error {
+				s.Scene.Reset()
+				if err := s.Scene.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scene\"")
+			}
+		case "app_scope":
+			if err := func() error {
+				s.AppScope.Reset()
+				if err := s.AppScope.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"app_scope\"")
+			}
+		case "status":
+			if err := func() error {
+				s.Status.Reset()
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "is_default":
+			if err := func() error {
+				s.IsDefault.Reset()
+				if err := s.IsDefault.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_default\"")
+			}
+		case "config":
+			if err := func() error {
+				s.Config.Reset()
+				if err := s.Config.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"config\"")
+			}
+		case "meta":
+			if err := func() error {
+				s.Meta.Reset()
+				if err := s.Meta.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"meta\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateUpsertRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000110,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfLoginPageTemplateUpsertRequest) {
+					name = jsonFieldsNameOfLoginPageTemplateUpsertRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LoginPageTemplateUpsertRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateUpsertRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s LoginPageTemplateUpsertRequestConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s LoginPageTemplateUpsertRequestConfig) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes LoginPageTemplateUpsertRequestConfig from json.
+func (s *LoginPageTemplateUpsertRequestConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateUpsertRequestConfig to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateUpsertRequestConfig")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LoginPageTemplateUpsertRequestConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateUpsertRequestConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s LoginPageTemplateUpsertRequestMeta) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s LoginPageTemplateUpsertRequestMeta) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes LoginPageTemplateUpsertRequestMeta from json.
+func (s *LoginPageTemplateUpsertRequestMeta) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LoginPageTemplateUpsertRequestMeta to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LoginPageTemplateUpsertRequestMeta")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LoginPageTemplateUpsertRequestMeta) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LoginPageTemplateUpsertRequestMeta) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *LoginRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -23449,6 +24676,108 @@ func (s OptInt64) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptInt64) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LoginPageContextTemplateConfig as json.
+func (o OptLoginPageContextTemplateConfig) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes LoginPageContextTemplateConfig from json.
+func (o *OptLoginPageContextTemplateConfig) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptLoginPageContextTemplateConfig to nil")
+	}
+	o.Set = true
+	o.Value = make(LoginPageContextTemplateConfig)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptLoginPageContextTemplateConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptLoginPageContextTemplateConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LoginPageTemplateUpsertRequestConfig as json.
+func (o OptLoginPageTemplateUpsertRequestConfig) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes LoginPageTemplateUpsertRequestConfig from json.
+func (o *OptLoginPageTemplateUpsertRequestConfig) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptLoginPageTemplateUpsertRequestConfig to nil")
+	}
+	o.Set = true
+	o.Value = make(LoginPageTemplateUpsertRequestConfig)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptLoginPageTemplateUpsertRequestConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptLoginPageTemplateUpsertRequestConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LoginPageTemplateUpsertRequestMeta as json.
+func (o OptLoginPageTemplateUpsertRequestMeta) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes LoginPageTemplateUpsertRequestMeta from json.
+func (o *OptLoginPageTemplateUpsertRequestMeta) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptLoginPageTemplateUpsertRequestMeta to nil")
+	}
+	o.Set = true
+	o.Value = make(LoginPageTemplateUpsertRequestMeta)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptLoginPageTemplateUpsertRequestMeta) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptLoginPageTemplateUpsertRequestMeta) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -35251,6 +36580,10 @@ func (s *RegisterContext) encodeFields(e *jx.Encoder) {
 		e.Str(s.EntryAppKey)
 	}
 	{
+		e.FieldStart("login_page_key")
+		e.Str(s.LoginPageKey)
+	}
+	{
 		if s.RegisterSource.Set {
 			e.FieldStart("register_source")
 			s.RegisterSource.Encode(e)
@@ -35318,24 +36651,25 @@ func (s *RegisterContext) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterContext = [17]string{
+var jsonFieldsNameOfRegisterContext = [18]string{
 	0:  "entry_code",
 	1:  "entry_name",
 	2:  "entry_app_key",
-	3:  "register_source",
-	4:  "policy_code",
-	5:  "target_app_key",
-	6:  "target_navigation_space_key",
-	7:  "target_home_path",
-	8:  "default_workspace_type",
-	9:  "allow_public_register",
-	10: "require_invite",
-	11: "require_email_verify",
-	12: "require_captcha",
-	13: "auto_login",
-	14: "agreement_version",
-	15: "captcha_provider",
-	16: "captcha_site_key",
+	3:  "login_page_key",
+	4:  "register_source",
+	5:  "policy_code",
+	6:  "target_app_key",
+	7:  "target_navigation_space_key",
+	8:  "target_home_path",
+	9:  "default_workspace_type",
+	10: "allow_public_register",
+	11: "require_invite",
+	12: "require_email_verify",
+	13: "require_captcha",
+	14: "auto_login",
+	15: "agreement_version",
+	16: "captcha_provider",
+	17: "captcha_site_key",
 }
 
 // Decode decodes RegisterContext from json.
@@ -35381,6 +36715,18 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"entry_app_key\"")
 			}
+		case "login_page_key":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.LoginPageKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"login_page_key\"")
+			}
 		case "register_source":
 			if err := func() error {
 				s.RegisterSource.Reset()
@@ -35392,7 +36738,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"register_source\"")
 			}
 		case "policy_code":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.PolicyCode = string(v)
@@ -35404,7 +36750,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"policy_code\"")
 			}
 		case "target_app_key":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetAppKey = string(v)
@@ -35416,7 +36762,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"target_app_key\"")
 			}
 		case "target_navigation_space_key":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetNavigationSpaceKey = string(v)
@@ -35428,7 +36774,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"target_navigation_space_key\"")
 			}
 		case "target_home_path":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetHomePath = string(v)
@@ -35450,7 +36796,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"default_workspace_type\"")
 			}
 		case "allow_public_register":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				v, err := d.Bool()
 				s.AllowPublicRegister = bool(v)
@@ -35462,7 +36808,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"allow_public_register\"")
 			}
 		case "require_invite":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireInvite = bool(v)
@@ -35474,7 +36820,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_invite\"")
 			}
 		case "require_email_verify":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireEmailVerify = bool(v)
@@ -35486,7 +36832,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_email_verify\"")
 			}
 		case "require_captcha":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireCaptcha = bool(v)
@@ -35498,7 +36844,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_captcha\"")
 			}
 		case "auto_login":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.AutoLogin = bool(v)
@@ -35549,8 +36895,8 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b11110101,
-		0b00111110,
+		0b11101101,
+		0b01111101,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -35645,6 +36991,10 @@ func (s *RegisterEntryItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.PolicyCode)
 	}
 	{
+		e.FieldStart("login_page_key")
+		e.Str(s.LoginPageKey)
+	}
+	{
 		e.FieldStart("status")
 		e.Str(s.Status)
 	}
@@ -35692,7 +37042,7 @@ func (s *RegisterEntryItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterEntryItem = [16]string{
+var jsonFieldsNameOfRegisterEntryItem = [17]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "entry_code",
@@ -35701,14 +37051,15 @@ var jsonFieldsNameOfRegisterEntryItem = [16]string{
 	5:  "path_prefix",
 	6:  "register_source",
 	7:  "policy_code",
-	8:  "status",
-	9:  "allow_public_register",
-	10: "require_invite",
-	11: "require_email_verify",
-	12: "require_captcha",
-	13: "auto_login",
-	14: "sort_order",
-	15: "remark",
+	8:  "login_page_key",
+	9:  "status",
+	10: "allow_public_register",
+	11: "require_invite",
+	12: "require_email_verify",
+	13: "require_captcha",
+	14: "auto_login",
+	15: "sort_order",
+	16: "remark",
 }
 
 // Decode decodes RegisterEntryItem from json.
@@ -35716,7 +37067,7 @@ func (s *RegisterEntryItem) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode RegisterEntryItem to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -35810,8 +37161,20 @@ func (s *RegisterEntryItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"policy_code\"")
 			}
-		case "status":
+		case "login_page_key":
 			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.LoginPageKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"login_page_key\"")
+			}
+		case "status":
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -35901,9 +37264,10 @@ func (s *RegisterEntryItem) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b10001111,
-		0b00000001,
+		0b00000011,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -36116,6 +37480,12 @@ func (s *RegisterEntryUpsertRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.PolicyCode)
 	}
 	{
+		if s.LoginPageKey.Set {
+			e.FieldStart("login_page_key")
+			s.LoginPageKey.Encode(e)
+		}
+	}
+	{
 		if s.Status.Set {
 			e.FieldStart("status")
 			s.Status.Encode(e)
@@ -36165,7 +37535,7 @@ func (s *RegisterEntryUpsertRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterEntryUpsertRequest = [15]string{
+var jsonFieldsNameOfRegisterEntryUpsertRequest = [16]string{
 	0:  "app_key",
 	1:  "entry_code",
 	2:  "name",
@@ -36173,14 +37543,15 @@ var jsonFieldsNameOfRegisterEntryUpsertRequest = [15]string{
 	4:  "path_prefix",
 	5:  "register_source",
 	6:  "policy_code",
-	7:  "status",
-	8:  "allow_public_register",
-	9:  "require_invite",
-	10: "require_email_verify",
-	11: "require_captcha",
-	12: "auto_login",
-	13: "sort_order",
-	14: "remark",
+	7:  "login_page_key",
+	8:  "status",
+	9:  "allow_public_register",
+	10: "require_invite",
+	11: "require_email_verify",
+	12: "require_captcha",
+	13: "auto_login",
+	14: "sort_order",
+	15: "remark",
 }
 
 // Decode decodes RegisterEntryUpsertRequest from json.
@@ -36269,6 +37640,16 @@ func (s *RegisterEntryUpsertRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"policy_code\"")
+			}
+		case "login_page_key":
+			if err := func() error {
+				s.LoginPageKey.Reset()
+				if err := s.LoginPageKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"login_page_key\"")
 			}
 		case "status":
 			if err := func() error {

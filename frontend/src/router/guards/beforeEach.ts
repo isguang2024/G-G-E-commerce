@@ -290,6 +290,8 @@ async function resolveLoginRedirectPolicy(
 
   // local_ui 模式：APP 自有登录页，不走认证中心
   const loginUiMode = appContextStore.resolveAppLoginUiMode(targetAppKey)
+  const loginPageKey =
+    loginUiMode === 'auth_center_custom' ? appContextStore.resolveAppLoginPageKey(targetAppKey) : ''
   if (loginUiMode === 'local_ui') {
     userStore.clearSessionState({ broadcast: false })
     next({ path: RoutesAlias.Login, query: { redirect: to.fullPath } })
@@ -302,7 +304,13 @@ async function resolveLoginRedirectPolicy(
 
     // participate 模式：先尝试 silent SSO（利用已有的中心 token 静默签发 callback）
     if (ssoMode === 'participate') {
-      const attempt = createCentralizedAuthAttempt(targetAppKey, to.fullPath, redirectUri, spaceKey)
+      const attempt = createCentralizedAuthAttempt(
+        targetAppKey,
+        to.fullPath,
+        redirectUri,
+        spaceKey,
+        loginPageKey
+      )
       persistCentralizedAuthAttempt(attempt)
       const silentResult = await attemptSilentSSO({
         targetAppKey,
@@ -310,7 +318,8 @@ async function resolveLoginRedirectPolicy(
         state: attempt.state,
         nonce: attempt.nonce,
         targetPath: to.fullPath,
-        navigationSpaceKey: spaceKey
+        navigationSpaceKey: spaceKey,
+        loginPageKey
       })
       if (silentResult?.callback?.redirect_to) {
         window.location.assign(silentResult.callback.redirect_to)
@@ -321,7 +330,13 @@ async function resolveLoginRedirectPolicy(
     }
 
     userStore.clearSessionState({ broadcast: false })
-    const attempt = createCentralizedAuthAttempt(targetAppKey, to.fullPath, redirectUri, spaceKey)
+    const attempt = createCentralizedAuthAttempt(
+      targetAppKey,
+      to.fullPath,
+      redirectUri,
+      spaceKey,
+      loginPageKey
+    )
     persistCentralizedAuthAttempt(attempt)
     window.location.assign(
       buildCentralizedLoginURL({
@@ -332,6 +347,7 @@ async function resolveLoginRedirectPolicy(
         navigationSpaceKey: spaceKey,
         state: attempt.state,
         nonce: attempt.nonce,
+        loginPageKey: attempt.loginPageKey,
         // reauth 模式：带 prompt=login 强制重新认证
         prompt: ssoMode === 'reauth' ? 'login' : undefined
       })

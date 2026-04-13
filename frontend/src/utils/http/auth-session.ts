@@ -25,6 +25,7 @@ const AUTH_FLOW_ENDPOINTS = [
   '/auth/refresh',
   '/auth/register',
   '/auth/register-context',
+  '/auth/login-page-context',
   '/auth/callback/exchange',
   '/auth/callback/silent'
 ]

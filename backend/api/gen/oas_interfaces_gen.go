@@ -33,6 +33,10 @@ type DeleteDictTypeRes interface {
 	deleteDictTypeRes()
 }
 
+type DeleteLoginPageTemplateRes interface {
+	deleteLoginPageTemplateRes()
+}
+
 type DeleteMediaRes interface {
 	deleteMediaRes()
 }
@@ -75,6 +79,10 @@ type GetDictTypeRes interface {
 
 type GetDictsByCodesRes interface {
 	getDictsByCodesRes()
+}
+
+type GetLoginPageContextRes interface {
+	getLoginPageContextRes()
 }
 
 type GetRegisterContextRes interface {

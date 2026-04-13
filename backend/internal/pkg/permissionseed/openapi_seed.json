@@ -142,6 +142,16 @@
       "access_mode": "public"
     },
     {
+      "operation_id": "getLoginPageContext",
+      "method": "get",
+      "path": "/auth/login-page-context",
+      "permission_key": "",
+      "summary": "获取登录页模板上下文（登录/找回密码公共入口）",
+      "tags": "auth",
+      "api_category": "auth",
+      "access_mode": "public"
+    },
+    {
       "operation_id": "logout",
       "method": "post",
       "path": "/auth/logout",
@@ -1749,6 +1759,46 @@
       "summary": "更新快捷入口配置",
       "tags": "system",
       "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listLoginPageTemplates",
+      "method": "get",
+      "path": "/system/login-page-templates",
+      "permission_key": "system.register_entry.read",
+      "summary": "登录页模板列表",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createLoginPageTemplate",
+      "method": "post",
+      "path": "/system/login-page-templates",
+      "permission_key": "system.register_entry.write",
+      "summary": "创建登录页模板",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteLoginPageTemplate",
+      "method": "delete",
+      "path": "/system/login-page-templates/{templateKey}",
+      "permission_key": "system.register_entry.write",
+      "summary": "删除登录页模板",
+      "tags": "system-register",
+      "api_category": "system-register",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateLoginPageTemplate",
+      "method": "put",
+      "path": "/system/login-page-templates/{templateKey}",
+      "permission_key": "system.register_entry.write",
+      "summary": "更新登录页模板",
+      "tags": "system-register",
+      "api_category": "system-register",
       "access_mode": "permission"
     },
     {

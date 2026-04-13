@@ -64,3 +64,32 @@ export async function fetchListRegisterLogs(params: {
     v5Client.GET('/system/users/register-logs', { params: { query } })
   )
 }
+
+export async function fetchListLoginPageTemplates() {
+  return unwrap(v5Client.GET('/system/login-page-templates'))
+}
+
+export async function fetchCreateLoginPageTemplate(
+  body: V5RequestBody<'/system/login-page-templates', 'post'>
+) {
+  return unwrap(v5Client.POST('/system/login-page-templates', { body }))
+}
+
+export async function fetchUpdateLoginPageTemplate(
+  templateKey: string,
+  body: V5RequestBody<'/system/login-page-templates/{templateKey}', 'put'>
+) {
+  return unwrap(
+    v5Client.PUT('/system/login-page-templates/{templateKey}', {
+      params: { path: { templateKey } },
+      body
+    })
+  )
+}
+
+export async function fetchDeleteLoginPageTemplate(templateKey: string) {
+  const { error } = await v5Client.DELETE('/system/login-page-templates/{templateKey}', {
+    params: { path: { templateKey } }
+  })
+  if (error) throw new Error('delete failed')
+}

@@ -76,6 +76,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/login-page-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 登录页模板列表 */
+        get: operations["listLoginPageTemplates"];
+        put?: never;
+        /** 创建登录页模板 */
+        post: operations["createLoginPageTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/login-page-templates/{templateKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新登录页模板 */
+        put: operations["updateLoginPageTemplate"];
+        post?: never;
+        /** 删除登录页模板 */
+        delete: operations["deleteLoginPageTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/users/register-logs": {
         parameters: {
             query?: never;
@@ -144,6 +180,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/login-page-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取登录页模板上下文（登录/找回密码公共入口） */
+        get: operations["getLoginPageContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/refresh": {
         parameters: {
             query?: never;
@@ -189,6 +242,23 @@ export interface paths {
         put?: never;
         /** centralized_login 回调换取令牌 */
         post: operations["exchangeAuthCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/callback/silent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 静默 SSO — 中心会话有效时自动签发 callback code */
+        post: operations["silentSSOCallback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2649,6 +2719,10 @@ export interface components {
             state?: string;
             nonce?: string;
             auth_protocol_version?: string;
+            /** @description OIDC-like prompt 参数: none=静默 SSO 尝试, login=强制重新认证 */
+            prompt?: string;
+            /** @description 最大认证年龄(秒): 0=必须重新认证, 900=超过15分钟需重认证 */
+            max_age?: number;
         };
         LoginResponse: {
             access_token?: string | null;
@@ -3129,6 +3203,7 @@ export interface components {
             path_prefix?: string;
             register_source?: string;
             policy_code: string;
+            login_page_key: string;
             status: string;
             allow_public_register?: boolean | null;
             require_invite?: boolean | null;
@@ -3150,6 +3225,7 @@ export interface components {
             path_prefix?: string;
             register_source?: string;
             policy_code: string;
+            login_page_key?: string;
             status?: string;
             allow_public_register?: boolean | null;
             require_invite?: boolean | null;
@@ -3205,6 +3281,46 @@ export interface components {
             role_codes?: string[];
             feature_package_keys?: string[];
         };
+        LoginPageTemplateItem: {
+            /** Format: uuid */
+            id: string;
+            tenant_id: string;
+            template_key: string;
+            name: string;
+            scene: string;
+            app_scope: string;
+            status: string;
+            is_default: boolean;
+            config: {
+                [key: string]: unknown;
+            };
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        LoginPageTemplateList: {
+            records: components["schemas"]["LoginPageTemplateItem"][];
+            total: number;
+        };
+        LoginPageTemplateUpsertRequest: {
+            tenant_id?: string;
+            template_key: string;
+            name: string;
+            scene?: string;
+            app_scope?: string;
+            status?: string;
+            is_default?: boolean;
+            config?: {
+                [key: string]: unknown;
+            };
+            meta?: {
+                [key: string]: unknown;
+            };
+        };
         RegisterLogItem: {
             /** Format: uuid */
             user_id: string;
@@ -3244,6 +3360,7 @@ export interface components {
             entry_code: string;
             entry_name?: string;
             entry_app_key: string;
+            login_page_key: string;
             register_source?: string;
             policy_code: string;
             target_app_key: string;
@@ -3261,6 +3378,25 @@ export interface components {
             /** @description 对应提供商的公开 site_key，前端渲染 captcha widget 使用 */
             captcha_site_key?: string;
         };
+        LoginPageContext: {
+            app_key: string;
+            login_page_key: string;
+            login_ui_mode: string;
+            sso_mode: string;
+            resolved_by: string;
+            page_scene: string;
+            target_app_key: string;
+            entry_code?: string;
+            entry_name?: string;
+            register_path: string;
+            register_app_key: string;
+            /** @description 登录页模板显示名称 */
+            template_name?: string;
+            /** @description 模板配置(theme/features/texts 三大块) */
+            template_config?: {
+                [key: string]: unknown;
+            };
+        };
         AuthCallbackExchangeRequest: {
             code: string;
             state: string;
@@ -3268,6 +3404,22 @@ export interface components {
             target_app_key: string;
             redirect_uri: string;
             auth_protocol_version?: string;
+        };
+        SilentSSORequest: {
+            /** @description 目标业务 APP key */
+            target_app_key: string;
+            /** @description callback 回跳绝对地址 */
+            redirect_uri: string;
+            /** @description CSRF state token */
+            state: string;
+            /** @description 防重放 nonce */
+            nonce: string;
+            /** @description 最大认证年龄(秒): 0=必须重新认证 */
+            max_age?: number;
+            /** @description 登录成功后最终业务页路径 */
+            target_path?: string;
+            /** @description 期望进入的菜单空间 */
+            navigation_space_key?: string;
         };
         CollaborationWorkspaceItem: {
             /** Format: uuid */
@@ -5360,6 +5512,105 @@ export interface operations {
             };
         };
     };
+    listLoginPageTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginPageTemplateList"];
+                };
+            };
+        };
+    };
+    createLoginPageTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginPageTemplateUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginPageTemplateItem"];
+                };
+            };
+        };
+    };
+    updateLoginPageTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                templateKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginPageTemplateUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginPageTemplateItem"];
+                };
+            };
+        };
+    };
+    deleteLoginPageTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                templateKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listRegisterLogs: {
         parameters: {
             query?: {
@@ -5502,6 +5753,41 @@ export interface operations {
             };
         };
     };
+    getLoginPageContext: {
+        parameters: {
+            query?: {
+                host?: string;
+                path?: string;
+                target_app_key?: string;
+                login_page_key?: string;
+                page_scene?: "login" | "register" | "forget_password";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginPageContext"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     refreshToken: {
         parameters: {
             query?: never;
@@ -5596,6 +5882,39 @@ export interface operations {
                 };
             };
             /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    silentSSOCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SilentSSORequest"];
+            };
+        };
+        responses: {
+            /** @description SSO 成功，已签发 callback */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description 中心会话无效或不满足 max_age 要求 */
             401: {
                 headers: {
                     [name: string]: unknown;

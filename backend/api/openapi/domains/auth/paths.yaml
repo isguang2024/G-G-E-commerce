@@ -90,6 +90,50 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/login-page-context:
+    get:
+      operationId: getLoginPageContext
+      summary: 获取登录页模板上下文（登录/找回密码公共入口）
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      parameters:
+        - in: query
+          name: host
+          required: false
+          schema: {type: string}
+        - in: query
+          name: path
+          required: false
+          schema: {type: string}
+        - in: query
+          name: target_app_key
+          required: false
+          schema: {type: string}
+        - in: query
+          name: login_page_key
+          required: false
+          schema: {type: string}
+        - in: query
+          name: page_scene
+          required: false
+          schema:
+            type: string
+            enum: [login, register, forget_password]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/auth/schemas.yaml#/components/schemas/LoginPageContext'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /auth/refresh:
     post:
       operationId: refreshToken

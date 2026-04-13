@@ -222,11 +222,17 @@ export const useUserStore = defineStore(
         appContextStore.shouldUseCentralizedLoginForApp(targetAppKey)
       ) {
         const redirectUri = new URL(RoutesAlias.AuthCallback, window.location.origin).toString()
+        const loginUiMode = appContextStore.resolveAppLoginUiMode(targetAppKey)
+        const loginPageKey =
+          loginUiMode === 'auth_center_custom'
+            ? appContextStore.resolveAppLoginPageKey(targetAppKey)
+            : ''
         const attempt = createCentralizedAuthAttempt(
           targetAppKey,
           redirectTarget,
           redirectUri,
-          preferredSpaceKey || binding?.spaceKey || ''
+          preferredSpaceKey || binding?.spaceKey || '',
+          loginPageKey
         )
         persistCentralizedAuthAttempt(attempt)
         window.location.assign(
@@ -237,7 +243,8 @@ export const useUserStore = defineStore(
             redirectUri,
             navigationSpaceKey: preferredSpaceKey || binding?.spaceKey || '',
             state: attempt.state,
-            nonce: attempt.nonce
+            nonce: attempt.nonce,
+            loginPageKey: attempt.loginPageKey
           })
         )
         return

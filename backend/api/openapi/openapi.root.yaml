@@ -45,6 +45,10 @@ paths:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies
   /system/register-policies/{code}:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies~1{code}
+  /system/login-page-templates:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1login-page-templates
+  /system/login-page-templates/{templateKey}:
+    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1login-page-templates~1{templateKey}
   /system/users/register-logs:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1users~1register-logs
   /auth/login:
@@ -53,6 +57,8 @@ paths:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register
   /auth/register-context:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register-context
+  /auth/login-page-context:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1login-page-context
   /auth/refresh:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1refresh
   /auth/logout:

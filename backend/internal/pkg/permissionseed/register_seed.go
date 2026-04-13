@@ -23,6 +23,7 @@ const (
 	DefaultRegisterPolicyCode      = "default.self"
 	DefaultRegisterEntryCode       = "default"
 	DefaultRegisterEntryPathPrefix = "/account/auth/register"
+	DefaultLoginPageTemplateKey    = "default"
 	SelfServiceHomePath            = "/self/user-center"
 	AccountPortalHomePath          = "/account/auth/login"
 )
@@ -68,6 +69,9 @@ func EnsureRegisterSystemSeeds(db *gorm.DB) error {
 		return err
 	}
 	if err := ensureDefaultRegisterEntry(db); err != nil {
+		return err
+	}
+	if err := ensureLoginPageTemplates(db); err != nil {
 		return err
 	}
 	if err := ensureAccountPortalPublicPages(db); err != nil {
@@ -210,6 +214,7 @@ func ensureAccountPortalApp(db *gorm.DB) error {
 			"health_check_url":   desired.HealthCheckURL,
 			"capabilities":       desired.Capabilities,
 			"status":             desired.Status,
+			"meta":               desired.Meta,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -258,6 +263,7 @@ func ensureDemoApp(db *gorm.DB) error {
 			"health_check_url":   desired.HealthCheckURL,
 			"capabilities":       desired.Capabilities,
 			"status":             desired.Status,
+			"meta":               desired.Meta,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -601,6 +607,7 @@ func ensureDefaultRegisterEntry(db *gorm.DB) error {
 		PathPrefix:     DefaultRegisterEntryPathPrefix,
 		RegisterSource: "self",
 		PolicyCode:     DefaultRegisterPolicyCode,
+		LoginPageKey:   DefaultLoginPageTemplateKey,
 		Status:         "enabled",
 		SortOrder:      0,
 		Remark:         "兜底入口：当未命中其它 register_entries 时使用",
@@ -615,6 +622,7 @@ func ensureDefaultRegisterEntry(db *gorm.DB) error {
 			"path_prefix":     desired.PathPrefix,
 			"register_source": desired.RegisterSource,
 			"policy_code":     desired.PolicyCode,
+			"login_page_key":  desired.LoginPageKey,
 			"status":          desired.Status,
 			"sort_order":      desired.SortOrder,
 			"remark":          desired.Remark,
@@ -624,6 +632,153 @@ func ensureDefaultRegisterEntry(db *gorm.DB) error {
 	default:
 		return err
 	}
+}
+
+func ensureLoginPageTemplates(db *gorm.DB) error {
+	specs := []systemmodels.LoginPageTemplate{
+		{
+			ID:          StableID("login-page-template", DefaultLoginPageTemplateKey),
+			TenantID:    "default",
+			TemplateKey: DefaultLoginPageTemplateKey,
+			Name:        "默认认证模板",
+			Scene:       "auth_family",
+			AppScope:    "shared",
+			Status:      "normal",
+			IsDefault:   true,
+			Config: systemmodels.MetaJSON{
+				"theme": systemmodels.MetaJSON{
+					"primaryColor": "#409EFF",
+					"borderRadius": "8px",
+				},
+				"features": systemmodels.MetaJSON{
+					"socialLogin":    false,
+					"captcha":        false,
+					"rememberMe":     true,
+					"forgetPassword": true,
+					"register":       true,
+				},
+				"texts": systemmodels.MetaJSON{
+					"title":    "欢迎回来",
+					"subTitle": "继续完成登录或注册流程",
+					"btnText":  "登 录",
+				},
+				"pages": systemmodels.MetaJSON{
+					"login": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "欢迎回来",
+							"subTitle": "继续完成登录或注册流程",
+							"btnText":  "登 录",
+						},
+					},
+					"register": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "创建账号",
+							"subTitle": "填写基础信息完成注册",
+							"btnText":  "注 册",
+						},
+						"features": systemmodels.MetaJSON{
+							"register": true,
+						},
+					},
+					"forget_password": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "找回密码",
+							"subTitle": "输入账号后继续下一步重置流程",
+							"btnText":  "下一步",
+						},
+						"features": systemmodels.MetaJSON{
+							"forgetPassword": true,
+						},
+					},
+				},
+			},
+			Meta: systemmodels.MetaJSON{
+				"allowed_theme_variants": []string{"classic"},
+			},
+		},
+		{
+			ID:          StableID("login-page-template", "aurora"),
+			TenantID:    "default",
+			TemplateKey: "aurora",
+			Name:        "Aurora 认证模板",
+			Scene:       "auth_family",
+			AppScope:    "shared",
+			Status:      "normal",
+			IsDefault:   false,
+			Config: systemmodels.MetaJSON{
+				"theme": systemmodels.MetaJSON{
+					"primaryColor": "#7C4DFF",
+					"borderRadius": "14px",
+				},
+				"features": systemmodels.MetaJSON{
+					"socialLogin":    false,
+					"captcha":        false,
+					"rememberMe":     true,
+					"forgetPassword": true,
+					"register":       true,
+				},
+				"texts": systemmodels.MetaJSON{
+					"title":    "继续验证身份",
+					"subTitle": "输入账号凭据以继续当前 APP 的认证流程",
+					"btnText":  "继 续",
+				},
+				"pages": systemmodels.MetaJSON{
+					"login": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "继续验证身份",
+							"subTitle": "输入账号凭据以继续当前 APP 的认证流程",
+							"btnText":  "继 续",
+						},
+					},
+					"register": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "创建 Aurora 账号",
+							"subTitle": "完成注册后自动回到业务应用",
+							"btnText":  "立即注册",
+						},
+					},
+					"forget_password": systemmodels.MetaJSON{
+						"texts": systemmodels.MetaJSON{
+							"title":    "重置密码",
+							"subTitle": "验证账号后设置新的登录密码",
+							"btnText":  "重置密码",
+						},
+					},
+				},
+			},
+			Meta: systemmodels.MetaJSON{
+				"allowed_theme_variants": []string{"aurora"},
+			},
+		},
+	}
+
+	for i := range specs {
+		spec := specs[i]
+		var existing systemmodels.LoginPageTemplate
+		err := db.Where("tenant_id = ? AND template_key = ?", spec.TenantID, spec.TemplateKey).First(&existing).Error
+		switch {
+		case err == nil:
+			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
+				"name":       spec.Name,
+				"scene":      spec.Scene,
+				"app_scope":  spec.AppScope,
+				"status":     spec.Status,
+				"is_default": spec.IsDefault,
+				"config":     spec.Config,
+				"meta":       spec.Meta,
+			}).Error; updateErr != nil {
+				return updateErr
+			}
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if createErr := db.Create(&spec).Error; createErr != nil {
+				return createErr
+			}
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func ensureDemoAppPages(db *gorm.DB) error {

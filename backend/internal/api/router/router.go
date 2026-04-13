@@ -126,6 +126,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		v1.POST("/auth/refresh", publicBridge)
 		v1.POST("/auth/callback/exchange", publicBridge)
 		v1.GET("/auth/register-context", publicBridge)
+		v1.GET("/auth/login-page-context", publicBridge)
 		v1.GET("/pages/runtime/public", publicBridge)
 
 		authenticated := v1.Group("")
@@ -133,6 +134,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		{
 			authenticated.GET("/auth/me", ogenBridge)
 			authenticated.POST("/auth/logout", ogenBridge)
+			authenticated.POST("/auth/callback/silent", ogenBridge)
 			authenticated.POST("/workspaces/switch", ogenBridge)
 			authenticated.GET("/workspaces/my", ogenBridge)
 			authenticated.GET("/workspaces/current", ogenBridge)
@@ -344,6 +346,10 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/system/register-policies", ogenBridge)
 			authenticated.PUT("/system/register-policies/:code", ogenBridge)
 			authenticated.DELETE("/system/register-policies/:code", ogenBridge)
+			authenticated.GET("/system/login-page-templates", ogenBridge)
+			authenticated.POST("/system/login-page-templates", ogenBridge)
+			authenticated.PUT("/system/login-page-templates/:templateKey", ogenBridge)
+			authenticated.DELETE("/system/login-page-templates/:templateKey", ogenBridge)
 			authenticated.GET("/system/users/register-logs", ogenBridge)
 
 			// ── api-endpoints ─────────────────────────────────────────────

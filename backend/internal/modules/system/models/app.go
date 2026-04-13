@@ -100,6 +100,7 @@ func DefaultPlatformAdminCapabilities() MetaJSON {
 			"session_mode":   "token_exchange",
 			"sso_mode":       "participate",
 			"login_ui_mode":  "auth_center_ui",
+			"login_page_key": "default",
 		},
 		"routing": MetaJSON{
 			"entry_mode":              "inherit_host",
@@ -131,6 +132,7 @@ func DefaultAccountPortalCapabilities() MetaJSON {
 			"session_mode":   "first_party",
 			"sso_mode":       "participate",
 			"login_ui_mode":  "auth_center_ui",
+			"login_page_key": "default",
 		},
 		"routing": MetaJSON{
 			"entry_mode":              "path_prefix",

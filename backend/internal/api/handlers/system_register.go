@@ -138,6 +138,7 @@ func entryToDTO(e *systemmodels.RegisterEntry) *gen.RegisterEntryItem {
 		PathPrefix:          gen.NewOptString(e.PathPrefix),
 		RegisterSource:      gen.NewOptString(e.RegisterSource),
 		PolicyCode:          e.PolicyCode,
+		LoginPageKey:        e.LoginPageKey,
 		Status:              e.Status,
 		AllowPublicRegister: boolPtrToOptNil(e.AllowPublicRegister),
 		RequireInvite:       boolPtrToOptNil(e.RequireInvite),
@@ -150,6 +151,38 @@ func entryToDTO(e *systemmodels.RegisterEntry) *gen.RegisterEntryItem {
 	return out
 }
 
+func metaJSONToRawMap(src systemmodels.MetaJSON) map[string]jx.Raw {
+	if len(src) == 0 {
+		return map[string]jx.Raw{}
+	}
+	out := make(map[string]jx.Raw, len(src))
+	for key, value := range src {
+		if buf, err := json.Marshal(value); err == nil {
+			out[key] = jx.Raw(buf)
+		}
+	}
+	return out
+}
+
+func rawMapToMetaJSON(src map[string]jx.Raw) systemmodels.MetaJSON {
+	if len(src) == 0 {
+		return systemmodels.MetaJSON{}
+	}
+	out := make(systemmodels.MetaJSON, len(src))
+	for key, value := range src {
+		if len(value) == 0 {
+			out[key] = nil
+			continue
+		}
+		var decoded interface{}
+		if err := json.Unmarshal([]byte(value), &decoded); err != nil {
+			out[key] = string(value)
+			continue
+		}
+		out[key] = decoded
+	}
+	return out
+}
 func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpsertRequest) {
 	e.AppKey = req.AppKey
 	e.EntryCode = req.EntryCode
@@ -164,6 +197,9 @@ func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpser
 		e.RegisterSource = req.RegisterSource.Value
 	}
 	e.PolicyCode = req.PolicyCode
+	if req.LoginPageKey.Set {
+		e.LoginPageKey = req.LoginPageKey.Value
+	}
 	if req.Status.Set {
 		e.Status = req.Status.Value
 	} else if e.Status == "" {
@@ -250,6 +286,62 @@ func applyPolicyUpsert(p *systemmodels.RegisterPolicy, req *gen.RegisterPolicyUp
 	}
 	if req.CaptchaSiteKey.Set {
 		p.CaptchaSiteKey = req.CaptchaSiteKey.Value
+	}
+}
+
+func loginPageTemplateToDTO(item *systemmodels.LoginPageTemplate) *gen.LoginPageTemplateItem {
+	if item == nil {
+		return nil
+	}
+	return &gen.LoginPageTemplateItem{
+		ID:          item.ID,
+		TenantID:    item.TenantID,
+		TemplateKey: item.TemplateKey,
+		Name:        item.Name,
+		Scene:       item.Scene,
+		AppScope:    item.AppScope,
+		Status:      item.Status,
+		IsDefault:   item.IsDefault,
+		Config:      gen.LoginPageTemplateItemConfig(metaJSONToRawMap(item.Config)),
+		Meta:        gen.LoginPageTemplateItemMeta(metaJSONToRawMap(item.Meta)),
+		CreatedAt:   gen.NewOptDateTime(item.CreatedAt),
+		UpdatedAt:   gen.NewOptDateTime(item.UpdatedAt),
+	}
+}
+
+func applyLoginPageTemplateUpsert(
+	item *systemmodels.LoginPageTemplate,
+	req *gen.LoginPageTemplateUpsertRequest,
+) {
+	item.TenantID = "default"
+	if req.TenantID.Set && req.TenantID.Value != "" {
+		item.TenantID = req.TenantID.Value
+	}
+	item.TemplateKey = req.TemplateKey
+	item.Name = req.Name
+	if req.Scene.Set {
+		item.Scene = req.Scene.Value
+	} else if item.Scene == "" {
+		item.Scene = "auth_family"
+	}
+	if req.AppScope.Set {
+		item.AppScope = req.AppScope.Value
+	} else if item.AppScope == "" {
+		item.AppScope = "shared"
+	}
+	if req.Status.Set {
+		item.Status = req.Status.Value
+	} else if item.Status == "" {
+		item.Status = "normal"
+	}
+	if req.IsDefault.Set {
+		item.IsDefault = req.IsDefault.Value
+	}
+	if req.Config.Set {
+		item.Config = rawMapToMetaJSON(req.Config.Value)
+	}
+	if req.Meta.Set {
+		item.Meta = rawMapToMetaJSON(req.Meta.Value)
 	}
 }
 
@@ -381,6 +473,96 @@ func (h *APIHandler) DeleteRegisterPolicy(ctx context.Context, params gen.Delete
 		return &gen.Error{Code: 404, Message: "注册策略不存在"}, nil
 	}
 	return &gen.DeleteRegisterPolicyNoContent{}, nil
+}
+
+func (h *APIHandler) ListLoginPageTemplates(ctx context.Context) (*gen.LoginPageTemplateList, error) {
+	var rows []systemmodels.LoginPageTemplate
+	if err := h.db.WithContext(ctx).
+		Where("tenant_id = ? AND deleted_at IS NULL", "default").
+		Order("is_default DESC, updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	records := make([]gen.LoginPageTemplateItem, 0, len(rows))
+	for i := range rows {
+		if item := loginPageTemplateToDTO(&rows[i]); item != nil {
+			records = append(records, *item)
+		}
+	}
+	return &gen.LoginPageTemplateList{Records: records, Total: len(records)}, nil
+}
+
+func (h *APIHandler) CreateLoginPageTemplate(
+	ctx context.Context,
+	req *gen.LoginPageTemplateUpsertRequest,
+) (*gen.LoginPageTemplateItem, error) {
+	if req == nil {
+		return nil, errors.New("请求体为空")
+	}
+	var item systemmodels.LoginPageTemplate
+	applyLoginPageTemplateUpsert(&item, req)
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if item.IsDefault {
+			if err := tx.Model(&systemmodels.LoginPageTemplate{}).
+				Where("tenant_id = ? AND scene = ? AND deleted_at IS NULL", item.TenantID, item.Scene).
+				Update("is_default", false).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Create(&item).Error
+	}); err != nil {
+		return nil, err
+	}
+	return loginPageTemplateToDTO(&item), nil
+}
+
+func (h *APIHandler) UpdateLoginPageTemplate(
+	ctx context.Context,
+	req *gen.LoginPageTemplateUpsertRequest,
+	params gen.UpdateLoginPageTemplateParams,
+) (*gen.LoginPageTemplateItem, error) {
+	if req == nil {
+		return nil, errors.New("请求体为空")
+	}
+	var item systemmodels.LoginPageTemplate
+	if err := h.db.WithContext(ctx).
+		Where("tenant_id = ? AND template_key = ? AND deleted_at IS NULL", "default", params.TemplateKey).
+		First(&item).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	applyLoginPageTemplateUpsert(&item, req)
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if item.IsDefault {
+			if err := tx.Model(&systemmodels.LoginPageTemplate{}).
+				Where("tenant_id = ? AND scene = ? AND template_key <> ? AND deleted_at IS NULL", item.TenantID, item.Scene, item.TemplateKey).
+				Update("is_default", false).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Save(&item).Error
+	}); err != nil {
+		return nil, err
+	}
+	return loginPageTemplateToDTO(&item), nil
+}
+
+func (h *APIHandler) DeleteLoginPageTemplate(
+	ctx context.Context,
+	params gen.DeleteLoginPageTemplateParams,
+) (gen.DeleteLoginPageTemplateRes, error) {
+	res := h.db.WithContext(ctx).
+		Where("tenant_id = ? AND template_key = ?", "default", params.TemplateKey).
+		Delete(&systemmodels.LoginPageTemplate{})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &gen.DeleteLoginPageTemplateNoContent{}, nil
 }
 
 // ── register logs ────────────────────────────────────────────────────────

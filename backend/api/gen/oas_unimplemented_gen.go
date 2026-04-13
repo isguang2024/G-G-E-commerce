@@ -130,6 +130,15 @@ func (UnimplementedHandler) CreateFeaturePackage(ctx context.Context, req *Featu
 	return r, ht.ErrNotImplemented
 }
 
+// CreateLoginPageTemplate implements createLoginPageTemplate operation.
+//
+// 创建登录页模板.
+//
+// POST /system/login-page-templates
+func (UnimplementedHandler) CreateLoginPageTemplate(ctx context.Context, req *LoginPageTemplateUpsertRequest) (r *LoginPageTemplateItem, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateMenu implements createMenu operation.
 //
 // 创建菜单.
@@ -271,6 +280,15 @@ func (UnimplementedHandler) DeleteDictType(ctx context.Context, params DeleteDic
 //
 // DELETE /feature-packages/{id}
 func (UnimplementedHandler) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteLoginPageTemplate implements deleteLoginPageTemplate operation.
+//
+// 删除登录页模板.
+//
+// DELETE /system/login-page-templates/{templateKey}
+func (UnimplementedHandler) DeleteLoginPageTemplate(ctx context.Context, params DeleteLoginPageTemplateParams) (r DeleteLoginPageTemplateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -697,6 +715,15 @@ func (UnimplementedHandler) GetInboxSummary(ctx context.Context) (r *InboxSummar
 	return r, ht.ErrNotImplemented
 }
 
+// GetLoginPageContext implements getLoginPageContext operation.
+//
+// 获取登录页模板上下文（登录/找回密码公共入口）.
+//
+// GET /auth/login-page-context
+func (UnimplementedHandler) GetLoginPageContext(ctx context.Context, params GetLoginPageContextParams) (r GetLoginPageContextRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetMenuDeletePreview implements getMenuDeletePreview operation.
 //
 // 获取菜单删除预览.
@@ -1099,6 +1126,15 @@ func (UnimplementedHandler) ListFeaturePackages(ctx context.Context, params List
 //
 // GET /messages/inbox
 func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *InboxListResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListLoginPageTemplates implements listLoginPageTemplates operation.
+//
+// 登录页模板列表.
+//
+// GET /system/login-page-templates
+func (UnimplementedHandler) ListLoginPageTemplates(ctx context.Context) (r *LoginPageTemplateList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1828,6 +1864,15 @@ func (UnimplementedHandler) UpdateFastEnterConfig(ctx context.Context, req *Syst
 //
 // PUT /feature-packages/{id}
 func (UnimplementedHandler) UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateLoginPageTemplate implements updateLoginPageTemplate operation.
+//
+// 更新登录页模板.
+//
+// PUT /system/login-page-templates/{templateKey}
+func (UnimplementedHandler) UpdateLoginPageTemplate(ctx context.Context, req *LoginPageTemplateUpsertRequest, params UpdateLoginPageTemplateParams) (r *LoginPageTemplateItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

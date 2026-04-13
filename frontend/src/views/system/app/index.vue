@@ -389,6 +389,29 @@
             <ElOption label="独立认证中心" value="centralized_login" />
           </ElSelect>
         </ElFormItem>
+        <ElFormItem label="SSO 策略">
+          <ElSelect v-model="appAuthSsoMode" style="width: 100%">
+            <ElOption label="participate（可复用中心会话）" value="participate" />
+            <ElOption label="reauth（进入需重认证）" value="reauth" />
+            <ElOption label="isolated（不复用登录态）" value="isolated" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="登录页模式">
+          <ElSelect v-model="appAuthLoginUiMode" style="width: 100%">
+            <ElOption label="auth_center_ui（认证中心默认页）" value="auth_center_ui" />
+            <ElOption label="auth_center_custom（认证中心自定义模板）" value="auth_center_custom" />
+            <ElOption label="local_ui（业务 APP 自建登录页）" value="local_ui" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="登录页模板 Key">
+          <ElInput
+            v-model="appAuthLoginPageKey"
+            placeholder="例如 default / aurora"
+          />
+          <div class="app-form-hint">
+            仅在 `auth_center_custom` 场景生效；最终优先级仍受 URL query 或注册入口覆盖。
+          </div>
+        </ElFormItem>
         <div class="app-form-section">
           <div class="app-form-section__title">运行入口与部署探针</div>
           <div class="app-form-section__desc"
@@ -728,6 +751,11 @@
     meta: {}
   })
   const appCapabilitiesText = ref('{}')
+  const appAuthSsoMode = ref<'participate' | 'reauth' | 'isolated'>('participate')
+  const appAuthLoginUiMode = ref<'auth_center_ui' | 'auth_center_custom' | 'local_ui'>(
+    'auth_center_ui'
+  )
+  const appAuthLoginPageKey = ref('default')
   const appEnvProfilesText = ref('{}')
   const appFeatureFlagsText = ref('{}')
   const appSensitiveConfigText = ref('{}')
@@ -1125,6 +1153,41 @@
     return parsed as Record<string, unknown>
   }
 
+  function extractAuthCapability(
+    capabilities?: Record<string, any>
+  ): { ssoMode: 'participate' | 'reauth' | 'isolated'; loginUiMode: 'auth_center_ui' | 'auth_center_custom' | 'local_ui'; loginPageKey: string } {
+    const auth =
+      capabilities && typeof capabilities.auth === 'object' && !Array.isArray(capabilities.auth)
+        ? capabilities.auth
+        : {}
+    const rawSso = `${auth.sso_mode || auth.ssoMode || ''}`.trim()
+    const rawLoginUi = `${auth.login_ui_mode || auth.loginUiMode || ''}`.trim()
+    const ssoMode =
+      rawSso === 'reauth' || rawSso === 'isolated' ? rawSso : 'participate'
+    const loginUiMode =
+      rawLoginUi === 'auth_center_custom' || rawLoginUi === 'local_ui'
+        ? rawLoginUi
+        : 'auth_center_ui'
+    const loginPageKey = `${auth.login_page_key || auth.loginPageKey || ''}`.trim() || 'default'
+    return { ssoMode, loginUiMode, loginPageKey }
+  }
+
+  function patchAuthCapability(
+    capabilities: Record<string, any>,
+    authConfig: { ssoMode: string; loginUiMode: string; loginPageKey: string }
+  ) {
+    const next = {
+      ...capabilities,
+      auth: {
+        ...(capabilities?.auth || {}),
+        sso_mode: authConfig.ssoMode,
+        login_ui_mode: authConfig.loginUiMode,
+        login_page_key: authConfig.loginPageKey
+      }
+    }
+    return next
+  }
+
   function parseMetaSectionText(rawText: string, label: string) {
     const raw = `${rawText || ''}`.trim()
     if (!raw) {
@@ -1217,6 +1280,9 @@
     appForm.status = 'normal'
     appForm.meta = {}
     appCapabilitiesText.value = '{}'
+    appAuthSsoMode.value = 'participate'
+    appAuthLoginUiMode.value = 'auth_center_ui'
+    appAuthLoginPageKey.value = 'default'
     appEnvProfilesText.value = '{}'
     appFeatureFlagsText.value = '{}'
     appSensitiveConfigText.value = '{}'
@@ -1273,6 +1339,10 @@
       appForm.status = item.status || 'normal'
       appForm.meta = item.meta || {}
       appCapabilitiesText.value = formatCapabilitiesText(item.capabilities)
+      const authCapability = extractAuthCapability(item.capabilities || {})
+      appAuthSsoMode.value = authCapability.ssoMode
+      appAuthLoginUiMode.value = authCapability.loginUiMode
+      appAuthLoginPageKey.value = authCapability.loginPageKey
       appMetaBase.value = omitGovernedMetaSections(item.meta || {})
       appEnvProfilesText.value = formatCapabilitiesText(
         pickMetaObject(item.meta || {}, 'env_profiles')
@@ -1342,7 +1412,11 @@
     let featureFlags: Record<string, any>
     let sensitiveConfig: Record<string, any>
     try {
-      capabilities = parseCapabilitiesText()
+      capabilities = patchAuthCapability(parseCapabilitiesText(), {
+        ssoMode: appAuthSsoMode.value,
+        loginUiMode: appAuthLoginUiMode.value,
+        loginPageKey: `${appAuthLoginPageKey.value || ''}`.trim() || 'default'
+      })
       envProfiles = parseMetaSectionText(appEnvProfilesText.value, '环境配置')
       featureFlags = parseMetaSectionText(appFeatureFlagsText.value, 'Feature Flag')
       sensitiveConfig = parseMetaSectionText(appSensitiveConfigText.value, '敏感配置引用')

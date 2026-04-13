@@ -199,6 +199,91 @@ paths:
           content:
             application/json:
               schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /system/login-page-templates:
+    get:
+      operationId: listLoginPageTemplates
+      summary: 登录页模板列表
+      tags: [system-register]
+      x-permission-key: system.register_entry.read
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/LoginPageTemplateList'
+    post:
+      operationId: createLoginPageTemplate
+      summary: 创建登录页模板
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/LoginPageTemplateUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/LoginPageTemplateItem'
+  /system/login-page-templates/{templateKey}:
+    put:
+      operationId: updateLoginPageTemplate
+      summary: 更新登录页模板
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: templateKey
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/LoginPageTemplateUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/LoginPageTemplateItem'
+    delete:
+      operationId: deleteLoginPageTemplate
+      summary: 删除登录页模板
+      tags: [system-register]
+      x-permission-key: system.register_entry.write
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - in: path
+          name: templateKey
+          required: true
+          schema: {type: string}
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
   /system/users/register-logs:
     get:
       operationId: listRegisterLogs

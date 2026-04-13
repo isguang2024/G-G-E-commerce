@@ -644,6 +644,71 @@ func decodeDeleteFeaturePackageParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
+// DeleteLoginPageTemplateParams is parameters of deleteLoginPageTemplate operation.
+type DeleteLoginPageTemplateParams struct {
+	TemplateKey string
+}
+
+func unpackDeleteLoginPageTemplateParams(packed middleware.Parameters) (params DeleteLoginPageTemplateParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "templateKey",
+			In:   "path",
+		}
+		params.TemplateKey = packed[key].(string)
+	}
+	return params
+}
+
+func decodeDeleteLoginPageTemplateParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteLoginPageTemplateParams, _ error) {
+	// Decode path: templateKey.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "templateKey",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.TemplateKey = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "templateKey",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteMediaParams is parameters of deleteMedia operation.
 type DeleteMediaParams struct {
 	ID string
@@ -3345,6 +3410,289 @@ func decodeGetInboxDetailParams(args [1]string, argsEscaped bool, r *http.Reques
 		return params, &ogenerrors.DecodeParamError{
 			Name: "deliveryId",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetLoginPageContextParams is parameters of getLoginPageContext operation.
+type GetLoginPageContextParams struct {
+	Host         OptString                       `json:",omitempty,omitzero"`
+	Path         OptString                       `json:",omitempty,omitzero"`
+	TargetAppKey OptString                       `json:",omitempty,omitzero"`
+	LoginPageKey OptString                       `json:",omitempty,omitzero"`
+	PageScene    OptGetLoginPageContextPageScene `json:",omitempty,omitzero"`
+}
+
+func unpackGetLoginPageContextParams(packed middleware.Parameters) (params GetLoginPageContextParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "host",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Host = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "path",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Path = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "target_app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.TargetAppKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "login_page_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.LoginPageKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "page_scene",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PageScene = v.(OptGetLoginPageContextPageScene)
+		}
+	}
+	return params
+}
+
+func decodeGetLoginPageContextParams(args [0]string, argsEscaped bool, r *http.Request) (params GetLoginPageContextParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: host.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "host",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotHostVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotHostVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Host.SetTo(paramsDotHostVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "host",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: path.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPathVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPathVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Path.SetTo(paramsDotPathVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "path",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: target_app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "target_app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotTargetAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotTargetAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.TargetAppKey.SetTo(paramsDotTargetAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "target_app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: login_page_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "login_page_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotLoginPageKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotLoginPageKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.LoginPageKey.SetTo(paramsDotLoginPageKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "login_page_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: page_scene.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "page_scene",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPageSceneVal GetLoginPageContextPageScene
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPageSceneVal = GetLoginPageContextPageScene(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PageScene.SetTo(paramsDotPageSceneVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.PageScene.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "page_scene",
+			In:   "query",
 			Err:  err,
 		}
 	}
@@ -14295,6 +14643,71 @@ func decodeUpdateFeaturePackageParams(args [1]string, argsEscaped bool, r *http.
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateLoginPageTemplateParams is parameters of updateLoginPageTemplate operation.
+type UpdateLoginPageTemplateParams struct {
+	TemplateKey string
+}
+
+func unpackUpdateLoginPageTemplateParams(packed middleware.Parameters) (params UpdateLoginPageTemplateParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "templateKey",
+			In:   "path",
+		}
+		params.TemplateKey = packed[key].(string)
+	}
+	return params
+}
+
+func decodeUpdateLoginPageTemplateParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateLoginPageTemplateParams, _ error) {
+	// Decode path: templateKey.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "templateKey",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.TemplateKey = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "templateKey",
 			In:   "path",
 			Err:  err,
 		}

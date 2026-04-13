@@ -1,6 +1,13 @@
 <!-- 注册页面 -->
 <template>
-  <div class="flex w-full h-screen">
+  <div
+    class="flex w-full h-screen"
+    :class="themeClass"
+    :style="{
+      '--auth-primary-color': theme.primaryColor || undefined,
+      '--auth-border-radius': theme.borderRadius || undefined
+    }"
+  >
     <LoginLeftView />
 
     <div class="relative flex-1">
@@ -8,8 +15,11 @@
 
       <div class="auth-right-wrap">
         <div class="form">
-          <h3 class="title">{{ $t('register.title') }}</h3>
-          <p class="sub-title">{{ $t('register.subTitle') }}</p>
+          <h3 class="title">{{ texts.title || $t('register.title') }}</h3>
+          <p class="sub-title">{{ texts.subTitle || $t('register.subTitle') }}</p>
+          <ElTag v-if="loginPageKey" size="small" effect="plain" class="mt-3">
+            模板：{{ templateName || loginPageKey }}
+          </ElTag>
           <ElAlert
             v-if="contextError"
             class="mt-4"
@@ -47,6 +57,10 @@
               <div class="context-item">
                 <span class="context-label">注册后去向</span>
                 <span class="context-value">{{ landingSummary }}</span>
+              </div>
+              <div class="context-item">
+                <span class="context-label">登录页模板</span>
+                <span class="context-value">{{ ctx.login_page_key || 'default' }}</span>
               </div>
             </div>
             <div class="context-section">
@@ -168,16 +182,16 @@
                 type="primary"
                 @click="handleRegister"
                 :loading="loading"
-                :disabled="isPublicRegisterDisabled"
+                :disabled="isPublicRegisterDisabled || isPreview"
                 v-ripple
               >
-                {{ $t('register.submitBtnText') }}
+                {{ texts.btnText || $t('register.submitBtnText') }}
               </ElButton>
             </div>
 
             <div class="mt-5 text-sm text-g-600">
               <span>{{ $t('register.hasAccount') }}</span>
-              <RouterLink class="text-theme" :to="RoutesAlias.Login">{{
+              <RouterLink class="text-theme" :to="loginLink">{{
                 $t('register.toLogin')
               }}</RouterLink>
             </div>
@@ -193,6 +207,7 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import { RoutesAlias } from '@/router/routesAlias'
   import { useRegisterFlow, type RegisterFormState } from '@/domains/auth/flows/useRegisterFlow'
+  import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
 
   defineOptions({ name: 'Register' })
 
@@ -204,6 +219,8 @@
   const formRef = ref<FormInstance>()
   const { ctx, contextError, loading, isPublicRegisterDisabled, loadContext, register } =
     useRegisterFlow()
+  const { themeClass, loginPageKey, templateName, theme, texts, isPreview } =
+    useAuthPageTemplate('register')
 
   const formKey = ref(0)
   const registerSourceLabel = computed(() => {
@@ -244,6 +261,12 @@
     if (ctx.value.require_invite) checks.push('需准备有效邀请码')
     if (ctx.value.require_captcha) checks.push('需准备验证码或第三方人机验证')
     return checks.join('；')
+  })
+  const loginLink = computed(() => {
+    const target = RoutesAlias.Login
+    const key = `${loginPageKey.value || ''}`.trim()
+    if (!key || key === 'default') return target
+    return `${target}?login_page_key=${encodeURIComponent(key)}`
   })
 
   // 监听语言切换，重置表单
@@ -349,6 +372,9 @@
    * 验证表单后提交注册请求
    */
   const handleRegister = async () => {
+    if (isPreview.value) {
+      return
+    }
     if (!formRef.value) return
 
     try {

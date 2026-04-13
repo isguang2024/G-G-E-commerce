@@ -86,6 +86,12 @@ type Handler interface {
 	//
 	// POST /feature-packages
 	CreateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest) (*IDResult, error)
+	// CreateLoginPageTemplate implements createLoginPageTemplate operation.
+	//
+	// 创建登录页模板.
+	//
+	// POST /system/login-page-templates
+	CreateLoginPageTemplate(ctx context.Context, req *LoginPageTemplateUpsertRequest) (*LoginPageTemplateItem, error)
 	// CreateMenu implements createMenu operation.
 	//
 	// 创建菜单.
@@ -182,6 +188,12 @@ type Handler interface {
 	//
 	// DELETE /feature-packages/{id}
 	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// DeleteLoginPageTemplate implements deleteLoginPageTemplate operation.
+	//
+	// 删除登录页模板.
+	//
+	// DELETE /system/login-page-templates/{templateKey}
+	DeleteLoginPageTemplate(ctx context.Context, params DeleteLoginPageTemplateParams) (DeleteLoginPageTemplateRes, error)
 	// DeleteMedia implements deleteMedia operation.
 	//
 	// 删除媒体资源.
@@ -464,6 +476,12 @@ type Handler interface {
 	//
 	// GET /messages/inbox/summary
 	GetInboxSummary(ctx context.Context) (*InboxSummary, error)
+	// GetLoginPageContext implements getLoginPageContext operation.
+	//
+	// 获取登录页模板上下文（登录/找回密码公共入口）.
+	//
+	// GET /auth/login-page-context
+	GetLoginPageContext(ctx context.Context, params GetLoginPageContextParams) (GetLoginPageContextRes, error)
 	// GetMenuDeletePreview implements getMenuDeletePreview operation.
 	//
 	// 获取菜单删除预览.
@@ -734,6 +752,12 @@ type Handler interface {
 	//
 	// GET /messages/inbox
 	ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error)
+	// ListLoginPageTemplates implements listLoginPageTemplates operation.
+	//
+	// 登录页模板列表.
+	//
+	// GET /system/login-page-templates
+	ListLoginPageTemplates(ctx context.Context) (*LoginPageTemplateList, error)
 	// ListMedia implements listMedia operation.
 	//
 	// 获取媒体资源列表.
@@ -1220,6 +1244,12 @@ type Handler interface {
 	//
 	// PUT /feature-packages/{id}
 	UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// UpdateLoginPageTemplate implements updateLoginPageTemplate operation.
+	//
+	// 更新登录页模板.
+	//
+	// PUT /system/login-page-templates/{templateKey}
+	UpdateLoginPageTemplate(ctx context.Context, req *LoginPageTemplateUpsertRequest, params UpdateLoginPageTemplateParams) (*LoginPageTemplateItem, error)
 	// UpdateMenu implements updateMenu operation.
 	//
 	// 更新菜单.

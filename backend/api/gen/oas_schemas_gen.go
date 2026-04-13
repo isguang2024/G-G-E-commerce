@@ -2059,6 +2059,11 @@ type DeleteDictTypeOK Error
 
 func (*DeleteDictTypeOK) deleteDictTypeRes() {}
 
+// DeleteLoginPageTemplateNoContent is response for DeleteLoginPageTemplate operation.
+type DeleteLoginPageTemplateNoContent struct{}
+
+func (*DeleteLoginPageTemplateNoContent) deleteLoginPageTemplateRes() {}
+
 type DeleteMediaInternalServerError Error
 
 func (*DeleteMediaInternalServerError) deleteMediaRes() {}
@@ -3674,30 +3679,32 @@ func (s *Error) SetDetails(val OptNilErrorDetails) {
 	s.Details = val
 }
 
-func (*Error) createDictTypeRes()       {}
-func (*Error) createRegisterEntryRes()  {}
-func (*Error) createRegisterPolicyRes() {}
-func (*Error) deleteRegisterEntryRes()  {}
-func (*Error) deleteRegisterPolicyRes() {}
-func (*Error) explainPermissionsRes()   {}
-func (*Error) getAuthMeRes()            {}
-func (*Error) getCurrentWorkspaceRes()  {}
-func (*Error) getDictTypeRes()          {}
-func (*Error) getDictsByCodesRes()      {}
-func (*Error) getRegisterContextRes()   {}
-func (*Error) getRoleRes()              {}
-func (*Error) listDictItemsRes()        {}
-func (*Error) listDictTypesRes()        {}
-func (*Error) listMyWorkspacesRes()     {}
-func (*Error) listRegisterEntriesRes()  {}
-func (*Error) listRegisterLogsRes()     {}
-func (*Error) listRegisterPoliciesRes() {}
-func (*Error) logoutRes()               {}
-func (*Error) refreshTokenRes()         {}
-func (*Error) registerRes()             {}
-func (*Error) silentSSOCallbackRes()    {}
-func (*Error) updateRegisterEntryRes()  {}
-func (*Error) updateRegisterPolicyRes() {}
+func (*Error) createDictTypeRes()          {}
+func (*Error) createRegisterEntryRes()     {}
+func (*Error) createRegisterPolicyRes()    {}
+func (*Error) deleteLoginPageTemplateRes() {}
+func (*Error) deleteRegisterEntryRes()     {}
+func (*Error) deleteRegisterPolicyRes()    {}
+func (*Error) explainPermissionsRes()      {}
+func (*Error) getAuthMeRes()               {}
+func (*Error) getCurrentWorkspaceRes()     {}
+func (*Error) getDictTypeRes()             {}
+func (*Error) getDictsByCodesRes()         {}
+func (*Error) getLoginPageContextRes()     {}
+func (*Error) getRegisterContextRes()      {}
+func (*Error) getRoleRes()                 {}
+func (*Error) listDictItemsRes()           {}
+func (*Error) listDictTypesRes()           {}
+func (*Error) listMyWorkspacesRes()        {}
+func (*Error) listRegisterEntriesRes()     {}
+func (*Error) listRegisterLogsRes()        {}
+func (*Error) listRegisterPoliciesRes()    {}
+func (*Error) logoutRes()                  {}
+func (*Error) refreshTokenRes()            {}
+func (*Error) registerRes()                {}
+func (*Error) silentSSOCallbackRes()       {}
+func (*Error) updateRegisterEntryRes()     {}
+func (*Error) updateRegisterPolicyRes()    {}
 
 // 可选上下文，如参数校验失败时携带 {field: reason}.
 type ErrorDetails map[string]jx.Raw
@@ -4914,6 +4921,54 @@ type GetApiEndpointOverviewUnauthorized Error
 
 func (*GetApiEndpointOverviewUnauthorized) getApiEndpointOverviewRes() {}
 
+type GetLoginPageContextPageScene string
+
+const (
+	GetLoginPageContextPageSceneLogin          GetLoginPageContextPageScene = "login"
+	GetLoginPageContextPageSceneRegister       GetLoginPageContextPageScene = "register"
+	GetLoginPageContextPageSceneForgetPassword GetLoginPageContextPageScene = "forget_password"
+)
+
+// AllValues returns all GetLoginPageContextPageScene values.
+func (GetLoginPageContextPageScene) AllValues() []GetLoginPageContextPageScene {
+	return []GetLoginPageContextPageScene{
+		GetLoginPageContextPageSceneLogin,
+		GetLoginPageContextPageSceneRegister,
+		GetLoginPageContextPageSceneForgetPassword,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s GetLoginPageContextPageScene) MarshalText() ([]byte, error) {
+	switch s {
+	case GetLoginPageContextPageSceneLogin:
+		return []byte(s), nil
+	case GetLoginPageContextPageSceneRegister:
+		return []byte(s), nil
+	case GetLoginPageContextPageSceneForgetPassword:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *GetLoginPageContextPageScene) UnmarshalText(data []byte) error {
+	switch GetLoginPageContextPageScene(data) {
+	case GetLoginPageContextPageSceneLogin:
+		*s = GetLoginPageContextPageSceneLogin
+		return nil
+	case GetLoginPageContextPageSceneRegister:
+		*s = GetLoginPageContextPageSceneRegister
+		return nil
+	case GetLoginPageContextPageSceneForgetPassword:
+		*s = GetLoginPageContextPageSceneForgetPassword
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type GetUserForbidden Error
 
 func (*GetUserForbidden) getUserRes() {}
@@ -5449,6 +5504,478 @@ func (*ListUsersUnauthorized) listUsersRes() {}
 type LoginBadRequest Error
 
 func (*LoginBadRequest) loginRes() {}
+
+// Ref: #/components/schemas/LoginPageContext
+type LoginPageContext struct {
+	AppKey         string    `json:"app_key"`
+	LoginPageKey   string    `json:"login_page_key"`
+	LoginUIMode    string    `json:"login_ui_mode"`
+	SSOMode        string    `json:"sso_mode"`
+	ResolvedBy     string    `json:"resolved_by"`
+	PageScene      string    `json:"page_scene"`
+	TargetAppKey   string    `json:"target_app_key"`
+	EntryCode      OptString `json:"entry_code"`
+	EntryName      OptString `json:"entry_name"`
+	RegisterPath   string    `json:"register_path"`
+	RegisterAppKey string    `json:"register_app_key"`
+	// 登录页模板显示名称.
+	TemplateName OptString `json:"template_name"`
+	// 模板配置(theme/features/texts 三大块).
+	TemplateConfig OptLoginPageContextTemplateConfig `json:"template_config"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *LoginPageContext) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetLoginPageKey returns the value of LoginPageKey.
+func (s *LoginPageContext) GetLoginPageKey() string {
+	return s.LoginPageKey
+}
+
+// GetLoginUIMode returns the value of LoginUIMode.
+func (s *LoginPageContext) GetLoginUIMode() string {
+	return s.LoginUIMode
+}
+
+// GetSSOMode returns the value of SSOMode.
+func (s *LoginPageContext) GetSSOMode() string {
+	return s.SSOMode
+}
+
+// GetResolvedBy returns the value of ResolvedBy.
+func (s *LoginPageContext) GetResolvedBy() string {
+	return s.ResolvedBy
+}
+
+// GetPageScene returns the value of PageScene.
+func (s *LoginPageContext) GetPageScene() string {
+	return s.PageScene
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *LoginPageContext) GetTargetAppKey() string {
+	return s.TargetAppKey
+}
+
+// GetEntryCode returns the value of EntryCode.
+func (s *LoginPageContext) GetEntryCode() OptString {
+	return s.EntryCode
+}
+
+// GetEntryName returns the value of EntryName.
+func (s *LoginPageContext) GetEntryName() OptString {
+	return s.EntryName
+}
+
+// GetRegisterPath returns the value of RegisterPath.
+func (s *LoginPageContext) GetRegisterPath() string {
+	return s.RegisterPath
+}
+
+// GetRegisterAppKey returns the value of RegisterAppKey.
+func (s *LoginPageContext) GetRegisterAppKey() string {
+	return s.RegisterAppKey
+}
+
+// GetTemplateName returns the value of TemplateName.
+func (s *LoginPageContext) GetTemplateName() OptString {
+	return s.TemplateName
+}
+
+// GetTemplateConfig returns the value of TemplateConfig.
+func (s *LoginPageContext) GetTemplateConfig() OptLoginPageContextTemplateConfig {
+	return s.TemplateConfig
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *LoginPageContext) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetLoginPageKey sets the value of LoginPageKey.
+func (s *LoginPageContext) SetLoginPageKey(val string) {
+	s.LoginPageKey = val
+}
+
+// SetLoginUIMode sets the value of LoginUIMode.
+func (s *LoginPageContext) SetLoginUIMode(val string) {
+	s.LoginUIMode = val
+}
+
+// SetSSOMode sets the value of SSOMode.
+func (s *LoginPageContext) SetSSOMode(val string) {
+	s.SSOMode = val
+}
+
+// SetResolvedBy sets the value of ResolvedBy.
+func (s *LoginPageContext) SetResolvedBy(val string) {
+	s.ResolvedBy = val
+}
+
+// SetPageScene sets the value of PageScene.
+func (s *LoginPageContext) SetPageScene(val string) {
+	s.PageScene = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *LoginPageContext) SetTargetAppKey(val string) {
+	s.TargetAppKey = val
+}
+
+// SetEntryCode sets the value of EntryCode.
+func (s *LoginPageContext) SetEntryCode(val OptString) {
+	s.EntryCode = val
+}
+
+// SetEntryName sets the value of EntryName.
+func (s *LoginPageContext) SetEntryName(val OptString) {
+	s.EntryName = val
+}
+
+// SetRegisterPath sets the value of RegisterPath.
+func (s *LoginPageContext) SetRegisterPath(val string) {
+	s.RegisterPath = val
+}
+
+// SetRegisterAppKey sets the value of RegisterAppKey.
+func (s *LoginPageContext) SetRegisterAppKey(val string) {
+	s.RegisterAppKey = val
+}
+
+// SetTemplateName sets the value of TemplateName.
+func (s *LoginPageContext) SetTemplateName(val OptString) {
+	s.TemplateName = val
+}
+
+// SetTemplateConfig sets the value of TemplateConfig.
+func (s *LoginPageContext) SetTemplateConfig(val OptLoginPageContextTemplateConfig) {
+	s.TemplateConfig = val
+}
+
+func (*LoginPageContext) getLoginPageContextRes() {}
+
+// 模板配置(theme/features/texts 三大块).
+type LoginPageContextTemplateConfig map[string]jx.Raw
+
+func (s *LoginPageContextTemplateConfig) init() LoginPageContextTemplateConfig {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/LoginPageTemplateItem
+type LoginPageTemplateItem struct {
+	ID          uuid.UUID                   `json:"id"`
+	TenantID    string                      `json:"tenant_id"`
+	TemplateKey string                      `json:"template_key"`
+	Name        string                      `json:"name"`
+	Scene       string                      `json:"scene"`
+	AppScope    string                      `json:"app_scope"`
+	Status      string                      `json:"status"`
+	IsDefault   bool                        `json:"is_default"`
+	Config      LoginPageTemplateItemConfig `json:"config"`
+	Meta        LoginPageTemplateItemMeta   `json:"meta"`
+	CreatedAt   OptDateTime                 `json:"created_at"`
+	UpdatedAt   OptDateTime                 `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *LoginPageTemplateItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *LoginPageTemplateItem) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *LoginPageTemplateItem) GetTemplateKey() string {
+	return s.TemplateKey
+}
+
+// GetName returns the value of Name.
+func (s *LoginPageTemplateItem) GetName() string {
+	return s.Name
+}
+
+// GetScene returns the value of Scene.
+func (s *LoginPageTemplateItem) GetScene() string {
+	return s.Scene
+}
+
+// GetAppScope returns the value of AppScope.
+func (s *LoginPageTemplateItem) GetAppScope() string {
+	return s.AppScope
+}
+
+// GetStatus returns the value of Status.
+func (s *LoginPageTemplateItem) GetStatus() string {
+	return s.Status
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *LoginPageTemplateItem) GetIsDefault() bool {
+	return s.IsDefault
+}
+
+// GetConfig returns the value of Config.
+func (s *LoginPageTemplateItem) GetConfig() LoginPageTemplateItemConfig {
+	return s.Config
+}
+
+// GetMeta returns the value of Meta.
+func (s *LoginPageTemplateItem) GetMeta() LoginPageTemplateItemMeta {
+	return s.Meta
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *LoginPageTemplateItem) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *LoginPageTemplateItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *LoginPageTemplateItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *LoginPageTemplateItem) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *LoginPageTemplateItem) SetTemplateKey(val string) {
+	s.TemplateKey = val
+}
+
+// SetName sets the value of Name.
+func (s *LoginPageTemplateItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetScene sets the value of Scene.
+func (s *LoginPageTemplateItem) SetScene(val string) {
+	s.Scene = val
+}
+
+// SetAppScope sets the value of AppScope.
+func (s *LoginPageTemplateItem) SetAppScope(val string) {
+	s.AppScope = val
+}
+
+// SetStatus sets the value of Status.
+func (s *LoginPageTemplateItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *LoginPageTemplateItem) SetIsDefault(val bool) {
+	s.IsDefault = val
+}
+
+// SetConfig sets the value of Config.
+func (s *LoginPageTemplateItem) SetConfig(val LoginPageTemplateItemConfig) {
+	s.Config = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *LoginPageTemplateItem) SetMeta(val LoginPageTemplateItemMeta) {
+	s.Meta = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *LoginPageTemplateItem) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *LoginPageTemplateItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+type LoginPageTemplateItemConfig map[string]jx.Raw
+
+func (s *LoginPageTemplateItemConfig) init() LoginPageTemplateItemConfig {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type LoginPageTemplateItemMeta map[string]jx.Raw
+
+func (s *LoginPageTemplateItemMeta) init() LoginPageTemplateItemMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/LoginPageTemplateList
+type LoginPageTemplateList struct {
+	Records []LoginPageTemplateItem `json:"records"`
+	Total   int                     `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *LoginPageTemplateList) GetRecords() []LoginPageTemplateItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *LoginPageTemplateList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *LoginPageTemplateList) SetRecords(val []LoginPageTemplateItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *LoginPageTemplateList) SetTotal(val int) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/LoginPageTemplateUpsertRequest
+type LoginPageTemplateUpsertRequest struct {
+	TenantID    OptString                               `json:"tenant_id"`
+	TemplateKey string                                  `json:"template_key"`
+	Name        string                                  `json:"name"`
+	Scene       OptString                               `json:"scene"`
+	AppScope    OptString                               `json:"app_scope"`
+	Status      OptString                               `json:"status"`
+	IsDefault   OptBool                                 `json:"is_default"`
+	Config      OptLoginPageTemplateUpsertRequestConfig `json:"config"`
+	Meta        OptLoginPageTemplateUpsertRequestMeta   `json:"meta"`
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *LoginPageTemplateUpsertRequest) GetTenantID() OptString {
+	return s.TenantID
+}
+
+// GetTemplateKey returns the value of TemplateKey.
+func (s *LoginPageTemplateUpsertRequest) GetTemplateKey() string {
+	return s.TemplateKey
+}
+
+// GetName returns the value of Name.
+func (s *LoginPageTemplateUpsertRequest) GetName() string {
+	return s.Name
+}
+
+// GetScene returns the value of Scene.
+func (s *LoginPageTemplateUpsertRequest) GetScene() OptString {
+	return s.Scene
+}
+
+// GetAppScope returns the value of AppScope.
+func (s *LoginPageTemplateUpsertRequest) GetAppScope() OptString {
+	return s.AppScope
+}
+
+// GetStatus returns the value of Status.
+func (s *LoginPageTemplateUpsertRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *LoginPageTemplateUpsertRequest) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetConfig returns the value of Config.
+func (s *LoginPageTemplateUpsertRequest) GetConfig() OptLoginPageTemplateUpsertRequestConfig {
+	return s.Config
+}
+
+// GetMeta returns the value of Meta.
+func (s *LoginPageTemplateUpsertRequest) GetMeta() OptLoginPageTemplateUpsertRequestMeta {
+	return s.Meta
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *LoginPageTemplateUpsertRequest) SetTenantID(val OptString) {
+	s.TenantID = val
+}
+
+// SetTemplateKey sets the value of TemplateKey.
+func (s *LoginPageTemplateUpsertRequest) SetTemplateKey(val string) {
+	s.TemplateKey = val
+}
+
+// SetName sets the value of Name.
+func (s *LoginPageTemplateUpsertRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetScene sets the value of Scene.
+func (s *LoginPageTemplateUpsertRequest) SetScene(val OptString) {
+	s.Scene = val
+}
+
+// SetAppScope sets the value of AppScope.
+func (s *LoginPageTemplateUpsertRequest) SetAppScope(val OptString) {
+	s.AppScope = val
+}
+
+// SetStatus sets the value of Status.
+func (s *LoginPageTemplateUpsertRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *LoginPageTemplateUpsertRequest) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetConfig sets the value of Config.
+func (s *LoginPageTemplateUpsertRequest) SetConfig(val OptLoginPageTemplateUpsertRequestConfig) {
+	s.Config = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *LoginPageTemplateUpsertRequest) SetMeta(val OptLoginPageTemplateUpsertRequestMeta) {
+	s.Meta = val
+}
+
+type LoginPageTemplateUpsertRequestConfig map[string]jx.Raw
+
+func (s *LoginPageTemplateUpsertRequestConfig) init() LoginPageTemplateUpsertRequestConfig {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type LoginPageTemplateUpsertRequestMeta map[string]jx.Raw
+
+func (s *LoginPageTemplateUpsertRequestMeta) init() LoginPageTemplateUpsertRequestMeta {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Ref: #/components/schemas/LoginRequest
 type LoginRequest struct {
@@ -8663,6 +9190,52 @@ func (o OptDictTypeSaveRequestStatus) Or(d DictTypeSaveRequestStatus) DictTypeSa
 	return d
 }
 
+// NewOptGetLoginPageContextPageScene returns new OptGetLoginPageContextPageScene with value set to v.
+func NewOptGetLoginPageContextPageScene(v GetLoginPageContextPageScene) OptGetLoginPageContextPageScene {
+	return OptGetLoginPageContextPageScene{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptGetLoginPageContextPageScene is optional GetLoginPageContextPageScene.
+type OptGetLoginPageContextPageScene struct {
+	Value GetLoginPageContextPageScene
+	Set   bool
+}
+
+// IsSet returns true if OptGetLoginPageContextPageScene was set.
+func (o OptGetLoginPageContextPageScene) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptGetLoginPageContextPageScene) Reset() {
+	var v GetLoginPageContextPageScene
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptGetLoginPageContextPageScene) SetTo(v GetLoginPageContextPageScene) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptGetLoginPageContextPageScene) Get() (v GetLoginPageContextPageScene, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptGetLoginPageContextPageScene) Or(d GetLoginPageContextPageScene) GetLoginPageContextPageScene {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt returns new OptInt with value set to v.
 func NewOptInt(v int) OptInt {
 	return OptInt{
@@ -8749,6 +9322,144 @@ func (o OptInt64) Get() (v int64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt64) Or(d int64) int64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLoginPageContextTemplateConfig returns new OptLoginPageContextTemplateConfig with value set to v.
+func NewOptLoginPageContextTemplateConfig(v LoginPageContextTemplateConfig) OptLoginPageContextTemplateConfig {
+	return OptLoginPageContextTemplateConfig{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLoginPageContextTemplateConfig is optional LoginPageContextTemplateConfig.
+type OptLoginPageContextTemplateConfig struct {
+	Value LoginPageContextTemplateConfig
+	Set   bool
+}
+
+// IsSet returns true if OptLoginPageContextTemplateConfig was set.
+func (o OptLoginPageContextTemplateConfig) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLoginPageContextTemplateConfig) Reset() {
+	var v LoginPageContextTemplateConfig
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLoginPageContextTemplateConfig) SetTo(v LoginPageContextTemplateConfig) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLoginPageContextTemplateConfig) Get() (v LoginPageContextTemplateConfig, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLoginPageContextTemplateConfig) Or(d LoginPageContextTemplateConfig) LoginPageContextTemplateConfig {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLoginPageTemplateUpsertRequestConfig returns new OptLoginPageTemplateUpsertRequestConfig with value set to v.
+func NewOptLoginPageTemplateUpsertRequestConfig(v LoginPageTemplateUpsertRequestConfig) OptLoginPageTemplateUpsertRequestConfig {
+	return OptLoginPageTemplateUpsertRequestConfig{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLoginPageTemplateUpsertRequestConfig is optional LoginPageTemplateUpsertRequestConfig.
+type OptLoginPageTemplateUpsertRequestConfig struct {
+	Value LoginPageTemplateUpsertRequestConfig
+	Set   bool
+}
+
+// IsSet returns true if OptLoginPageTemplateUpsertRequestConfig was set.
+func (o OptLoginPageTemplateUpsertRequestConfig) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLoginPageTemplateUpsertRequestConfig) Reset() {
+	var v LoginPageTemplateUpsertRequestConfig
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLoginPageTemplateUpsertRequestConfig) SetTo(v LoginPageTemplateUpsertRequestConfig) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLoginPageTemplateUpsertRequestConfig) Get() (v LoginPageTemplateUpsertRequestConfig, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLoginPageTemplateUpsertRequestConfig) Or(d LoginPageTemplateUpsertRequestConfig) LoginPageTemplateUpsertRequestConfig {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLoginPageTemplateUpsertRequestMeta returns new OptLoginPageTemplateUpsertRequestMeta with value set to v.
+func NewOptLoginPageTemplateUpsertRequestMeta(v LoginPageTemplateUpsertRequestMeta) OptLoginPageTemplateUpsertRequestMeta {
+	return OptLoginPageTemplateUpsertRequestMeta{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLoginPageTemplateUpsertRequestMeta is optional LoginPageTemplateUpsertRequestMeta.
+type OptLoginPageTemplateUpsertRequestMeta struct {
+	Value LoginPageTemplateUpsertRequestMeta
+	Set   bool
+}
+
+// IsSet returns true if OptLoginPageTemplateUpsertRequestMeta was set.
+func (o OptLoginPageTemplateUpsertRequestMeta) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLoginPageTemplateUpsertRequestMeta) Reset() {
+	var v LoginPageTemplateUpsertRequestMeta
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLoginPageTemplateUpsertRequestMeta) SetTo(v LoginPageTemplateUpsertRequestMeta) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLoginPageTemplateUpsertRequestMeta) Get() (v LoginPageTemplateUpsertRequestMeta, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLoginPageTemplateUpsertRequestMeta) Or(d LoginPageTemplateUpsertRequestMeta) LoginPageTemplateUpsertRequestMeta {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14696,6 +15407,7 @@ type RegisterContext struct {
 	EntryCode                string    `json:"entry_code"`
 	EntryName                OptString `json:"entry_name"`
 	EntryAppKey              string    `json:"entry_app_key"`
+	LoginPageKey             string    `json:"login_page_key"`
 	RegisterSource           OptString `json:"register_source"`
 	PolicyCode               string    `json:"policy_code"`
 	TargetAppKey             string    `json:"target_app_key"`
@@ -14727,6 +15439,11 @@ func (s *RegisterContext) GetEntryName() OptString {
 // GetEntryAppKey returns the value of EntryAppKey.
 func (s *RegisterContext) GetEntryAppKey() string {
 	return s.EntryAppKey
+}
+
+// GetLoginPageKey returns the value of LoginPageKey.
+func (s *RegisterContext) GetLoginPageKey() string {
+	return s.LoginPageKey
 }
 
 // GetRegisterSource returns the value of RegisterSource.
@@ -14814,6 +15531,11 @@ func (s *RegisterContext) SetEntryAppKey(val string) {
 	s.EntryAppKey = val
 }
 
+// SetLoginPageKey sets the value of LoginPageKey.
+func (s *RegisterContext) SetLoginPageKey(val string) {
+	s.LoginPageKey = val
+}
+
 // SetRegisterSource sets the value of RegisterSource.
 func (s *RegisterContext) SetRegisterSource(val OptString) {
 	s.RegisterSource = val
@@ -14896,6 +15618,7 @@ type RegisterEntryItem struct {
 	PathPrefix          OptString  `json:"path_prefix"`
 	RegisterSource      OptString  `json:"register_source"`
 	PolicyCode          string     `json:"policy_code"`
+	LoginPageKey        string     `json:"login_page_key"`
 	Status              string     `json:"status"`
 	AllowPublicRegister OptNilBool `json:"allow_public_register"`
 	RequireInvite       OptNilBool `json:"require_invite"`
@@ -14944,6 +15667,11 @@ func (s *RegisterEntryItem) GetRegisterSource() OptString {
 // GetPolicyCode returns the value of PolicyCode.
 func (s *RegisterEntryItem) GetPolicyCode() string {
 	return s.PolicyCode
+}
+
+// GetLoginPageKey returns the value of LoginPageKey.
+func (s *RegisterEntryItem) GetLoginPageKey() string {
+	return s.LoginPageKey
 }
 
 // GetStatus returns the value of Status.
@@ -15026,6 +15754,11 @@ func (s *RegisterEntryItem) SetPolicyCode(val string) {
 	s.PolicyCode = val
 }
 
+// SetLoginPageKey sets the value of LoginPageKey.
+func (s *RegisterEntryItem) SetLoginPageKey(val string) {
+	s.LoginPageKey = val
+}
+
 // SetStatus sets the value of Status.
 func (s *RegisterEntryItem) SetStatus(val string) {
 	s.Status = val
@@ -15106,6 +15839,7 @@ type RegisterEntryUpsertRequest struct {
 	PathPrefix          OptString  `json:"path_prefix"`
 	RegisterSource      OptString  `json:"register_source"`
 	PolicyCode          string     `json:"policy_code"`
+	LoginPageKey        OptString  `json:"login_page_key"`
 	Status              OptString  `json:"status"`
 	AllowPublicRegister OptNilBool `json:"allow_public_register"`
 	RequireInvite       OptNilBool `json:"require_invite"`
@@ -15149,6 +15883,11 @@ func (s *RegisterEntryUpsertRequest) GetRegisterSource() OptString {
 // GetPolicyCode returns the value of PolicyCode.
 func (s *RegisterEntryUpsertRequest) GetPolicyCode() string {
 	return s.PolicyCode
+}
+
+// GetLoginPageKey returns the value of LoginPageKey.
+func (s *RegisterEntryUpsertRequest) GetLoginPageKey() OptString {
+	return s.LoginPageKey
 }
 
 // GetStatus returns the value of Status.
@@ -15224,6 +15963,11 @@ func (s *RegisterEntryUpsertRequest) SetRegisterSource(val OptString) {
 // SetPolicyCode sets the value of PolicyCode.
 func (s *RegisterEntryUpsertRequest) SetPolicyCode(val string) {
 	s.PolicyCode = val
+}
+
+// SetLoginPageKey sets the value of LoginPageKey.
+func (s *RegisterEntryUpsertRequest) SetLoginPageKey(val OptString) {
+	s.LoginPageKey = val
 }
 
 // SetStatus sets the value of Status.

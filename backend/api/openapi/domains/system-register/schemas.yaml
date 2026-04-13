@@ -2,7 +2,7 @@ components:
   schemas:
     RegisterEntryItem:
       type: object
-      required: [id, app_key, entry_code, name, policy_code, status]
+      required: [id, app_key, entry_code, name, policy_code, login_page_key, status]
       properties:
         id: {type: string, format: uuid}
         app_key: {type: string}
@@ -12,6 +12,7 @@ components:
         path_prefix: {type: string}
         register_source: {type: string}
         policy_code: {type: string}
+        login_page_key: {type: string}
         status: {type: string}
         allow_public_register: {type: boolean, nullable: true}
         require_invite: {type: boolean, nullable: true}
@@ -39,6 +40,7 @@ components:
         path_prefix: {type: string}
         register_source: {type: string}
         policy_code: {type: string}
+        login_page_key: {type: string}
         status: {type: string}
         allow_public_register: {type: boolean, nullable: true}
         require_invite: {type: boolean, nullable: true}
@@ -47,6 +49,51 @@ components:
         auto_login: {type: boolean, nullable: true}
         sort_order: {type: integer}
         remark: {type: string}
+    LoginPageTemplateItem:
+      type: object
+      required: [id, tenant_id, template_key, name, scene, app_scope, status, is_default, config, meta]
+      properties:
+        id: {type: string, format: uuid}
+        tenant_id: {type: string}
+        template_key: {type: string}
+        name: {type: string}
+        scene: {type: string}
+        app_scope: {type: string}
+        status: {type: string}
+        is_default: {type: boolean}
+        config:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    LoginPageTemplateList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/LoginPageTemplateItem'}
+        total: {type: integer}
+    LoginPageTemplateUpsertRequest:
+      type: object
+      required: [template_key, name]
+      properties:
+        tenant_id: {type: string}
+        template_key: {type: string}
+        name: {type: string}
+        scene: {type: string}
+        app_scope: {type: string}
+        status: {type: string}
+        is_default: {type: boolean}
+        config:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
     RegisterPolicyItem:
       type: object
       required: [id, app_key, policy_code, name, target_app_key, target_navigation_space_key, status]

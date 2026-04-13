@@ -8,6 +8,7 @@ export interface CentralizedAuthAttempt {
   targetPath: string
   redirectUri: string
   navigationSpaceKey?: string
+  loginPageKey?: string
 }
 
 function randomToken(): string {
@@ -21,7 +22,8 @@ export function createCentralizedAuthAttempt(
   targetAppKey: string,
   targetPath: string,
   redirectUri: string,
-  navigationSpaceKey = ''
+  navigationSpaceKey = '',
+  loginPageKey = ''
 ): CentralizedAuthAttempt {
   return {
     state: randomToken(),
@@ -29,7 +31,8 @@ export function createCentralizedAuthAttempt(
     targetAppKey: `${targetAppKey || ''}`.trim(),
     targetPath: `${targetPath || ''}`.trim() || '/',
     redirectUri: `${redirectUri || ''}`.trim(),
-    navigationSpaceKey: `${navigationSpaceKey || ''}`.trim()
+    navigationSpaceKey: `${navigationSpaceKey || ''}`.trim(),
+    loginPageKey: `${loginPageKey || ''}`.trim()
   }
 }
 
@@ -61,6 +64,7 @@ export function buildCentralizedLoginURL(input: {
   nonce: string
   prompt?: string
   maxAge?: number
+  loginPageKey?: string
 }): string {
   const url = new URL('/account/auth/login', window.location.origin)
   const loginHost = `${input.loginHost || ''}`.trim()
@@ -82,6 +86,9 @@ export function buildCentralizedLoginURL(input: {
   }
   if (input.maxAge != null) {
     url.searchParams.set('max_age', `${input.maxAge}`)
+  }
+  if (`${input.loginPageKey || ''}`.trim()) {
+    url.searchParams.set('login_page_key', `${input.loginPageKey || ''}`.trim())
   }
   return url.toString()
 }

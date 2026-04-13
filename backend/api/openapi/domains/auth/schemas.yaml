@@ -87,6 +87,7 @@ components:
       required:
         - entry_code
         - entry_app_key
+        - login_page_key
         - policy_code
         - target_app_key
         - target_navigation_space_key
@@ -100,6 +101,7 @@ components:
         entry_code: {type: string}
         entry_name: {type: string}
         entry_app_key: {type: string}
+        login_page_key: {type: string}
         register_source: {type: string}
         policy_code: {type: string}
         target_app_key: {type: string}
@@ -118,3 +120,34 @@ components:
         captcha_site_key:
           type: string
           description: 对应提供商的公开 site_key，前端渲染 captcha widget 使用
+    LoginPageContext:
+      type: object
+      required:
+        - app_key
+        - login_page_key
+        - login_ui_mode
+        - sso_mode
+        - resolved_by
+        - page_scene
+        - target_app_key
+        - register_path
+        - register_app_key
+      properties:
+        app_key: {type: string}
+        login_page_key: {type: string}
+        login_ui_mode: {type: string}
+        sso_mode: {type: string}
+        resolved_by: {type: string}
+        page_scene: {type: string}
+        target_app_key: {type: string}
+        entry_code: {type: string}
+        entry_name: {type: string}
+        register_path: {type: string}
+        register_app_key: {type: string}
+        template_name:
+          type: string
+          description: 登录页模板显示名称
+        template_config:
+          type: object
+          additionalProperties: true
+          description: 模板配置(theme/features/texts 三大块)

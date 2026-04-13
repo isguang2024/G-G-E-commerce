@@ -36,6 +36,24 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
 		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
+
+	// prompt 语义处理（OIDC-like）:
+	// prompt=none 意味着调用方期望静默登录，不应到达 Login 端点；直接返回 login_required。
+	// prompt=login 意味着强制重认证，记录日志后正常继续。
+	if req.Prompt.Set {
+		prompt := strings.TrimSpace(req.Prompt.Value)
+		if prompt == "none" {
+			h.logger.Warn("login endpoint received prompt=none; caller should use /auth/callback/silent instead")
+			return (*gen.LoginUnauthorized)(&gen.Error{
+				Code:    apperr.CodeLoginRequired,
+				Message: "login_required: silent authentication not available at login endpoint",
+			}), nil
+		}
+		if prompt == "login" {
+			h.logger.Info("login with prompt=login (force re-authentication)")
+		}
+	}
+
 	ip := clientIPFromCtx(ctx)
 	resp, err := h.authSvc.Login(req.Username, req.Password, ip)
 	if err != nil {
@@ -161,6 +179,7 @@ func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegis
 	out := &gen.RegisterContext{
 		EntryCode:                eff.EntryCode,
 		EntryAppKey:              eff.EntryAppKey,
+		LoginPageKey:             eff.LoginPageKey,
 		PolicyCode:               eff.PolicyCode,
 		TargetAppKey:             eff.TargetAppKey,
 		TargetNavigationSpaceKey: eff.TargetNavigationSpaceKey,
@@ -186,6 +205,66 @@ func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegis
 	if eff.CaptchaProvider != "" && eff.CaptchaProvider != "none" {
 		out.CaptchaProvider = gen.NewOptString(eff.CaptchaProvider)
 		out.CaptchaSiteKey = gen.NewOptString(eff.CaptchaSiteKey)
+	}
+	return out, nil
+}
+
+func (h *APIHandler) GetLoginPageContext(
+	ctx context.Context,
+	params gen.GetLoginPageContextParams,
+) (gen.GetLoginPageContextRes, error) {
+	host := ""
+	if params.Host.Set {
+		host = strings.TrimSpace(params.Host.Value)
+	}
+	path := strings.TrimSpace(optString(params.Path))
+	if path == "" {
+		path = "/account/auth/login"
+	}
+	targetAppKey := strings.TrimSpace(optString(params.TargetAppKey))
+	loginPageKey := strings.TrimSpace(optString(params.LoginPageKey))
+	pageScene := ""
+	if params.PageScene.Set {
+		pageScene = strings.TrimSpace(string(params.PageScene.Value))
+	}
+	if h.registerResolver == nil {
+		return nil, errors.New("register resolver not configured")
+	}
+	info, err := h.registerResolver.ResolveLoginPageContext(ctx, register.ResolveLoginPageContextInput{
+		Host:         host,
+		Path:         path,
+		TargetAppKey: targetAppKey,
+		LoginPageKey: loginPageKey,
+		PageScene:    pageScene,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := &gen.LoginPageContext{
+		AppKey:         info.AppKey,
+		LoginPageKey:   info.LoginPageKey,
+		LoginUIMode:    info.LoginUiMode,
+		SSOMode:        info.SsoMode,
+		ResolvedBy:     info.ResolvedBy,
+		PageScene:      info.PageScene,
+		TargetAppKey:   info.TargetAppKey,
+		RegisterPath:   info.RegisterPath,
+		RegisterAppKey: info.RegisterAppKey,
+		EntryCode:      gen.NewOptString(info.EntryCode),
+		EntryName:      gen.NewOptString(info.EntryName),
+	}
+	if info.TemplateName != "" {
+		out.TemplateName = gen.NewOptString(info.TemplateName)
+	}
+	if len(info.TemplateConfig) > 0 {
+		raw := make(gen.LoginPageContextTemplateConfig, len(info.TemplateConfig))
+		for k, v := range info.TemplateConfig {
+			b, jsonErr := json.Marshal(v)
+			if jsonErr == nil {
+				raw[k] = jx.Raw(b)
+			}
+		}
+		out.TemplateConfig = gen.NewOptLoginPageContextTemplateConfig(raw)
 	}
 	return out, nil
 }

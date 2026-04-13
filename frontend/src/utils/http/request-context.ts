@@ -24,6 +24,7 @@ type AppContextHandlers = {
   getCurrentRuntimeAppKey?: () => string
   resolveAppAuthMode?: (appKey?: string | null) => string
   resolveAppSsoMode?: (appKey?: string | null) => string
+  resolveAppLoginPageKey?: (appKey?: string | null) => string
   isFeatureEnabledForApp?: (appKey: string | null | undefined, flagKey: string) => boolean
 }
 
@@ -100,6 +101,10 @@ export function resolveHttpAppAuthMode(appKey?: string | null): string {
 
 export function resolveHttpAppSsoMode(appKey?: string | null): string {
   return `${appContextHandlers.resolveAppSsoMode?.(appKey) || 'participate'}`.trim()
+}
+
+export function resolveHttpAppLoginPageKey(appKey?: string | null): string {
+  return `${appContextHandlers.resolveAppLoginPageKey?.(appKey) || ''}`.trim()
 }
 
 export function isHttpAppFeatureEnabled(

@@ -19,6 +19,7 @@ type RegisterEntry struct {
 	PathPrefix          string         `gorm:"type:varchar(256);not null;default:''" json:"path_prefix"`
 	RegisterSource      string         `gorm:"type:varchar(32);not null;default:'self'" json:"register_source"`
 	PolicyCode          string         `gorm:"type:varchar(64);not null" json:"policy_code"`
+	LoginPageKey        string         `gorm:"type:varchar(64);not null;default:''" json:"login_page_key"`
 	Status              string         `gorm:"type:varchar(16);not null;default:'enabled'" json:"status"`
 	AllowPublicRegister *bool          `json:"allow_public_register,omitempty"`
 	RequireInvite       *bool          `json:"require_invite,omitempty"`
@@ -38,29 +39,29 @@ func (RegisterEntry) TableName() string { return "register_entries" }
 // 以及绑定哪些默认功能包和角色。target_app_key 与入口 app_key 解耦，便于未来
 // 把"入口归属 App"和"业务承载 App"拆开。
 type RegisterPolicy struct {
-	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey                   string         `gorm:"type:varchar(64);not null;index" json:"app_key"`
-	PolicyCode               string         `gorm:"type:varchar(64);not null;uniqueIndex" json:"policy_code"`
-	Name                     string         `gorm:"type:varchar(128);not null" json:"name"`
-	Description              string         `gorm:"type:text;not null;default:''" json:"description"`
-	TargetAppKey             string         `gorm:"type:varchar(64);not null" json:"target_app_key"`
-	TargetNavigationSpaceKey string         `gorm:"type:varchar(64);not null" json:"target_navigation_space_key"`
-	TargetHomePath           string         `gorm:"type:varchar(256);not null;default:''" json:"target_home_path"`
-	DefaultWorkspaceType     string         `gorm:"type:varchar(32);not null;default:'personal'" json:"default_workspace_type"`
-	Status                   string         `gorm:"type:varchar(16);not null;default:'enabled'" json:"status"`
-	WelcomeMessageTemplateKey string        `gorm:"type:varchar(128);not null;default:''" json:"welcome_message_template_key"`
-	AllowPublicRegister      bool           `gorm:"not null;default:false" json:"allow_public_register"`
-	RequireInvite            bool           `gorm:"not null;default:false" json:"require_invite"`
-	RequireEmailVerify       bool           `gorm:"not null;default:false" json:"require_email_verify"`
-	RequireCaptcha           bool           `gorm:"not null;default:false" json:"require_captcha"`
-	AutoLogin                bool           `gorm:"not null;default:true" json:"auto_login"`
+	ID                        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey                    string    `gorm:"type:varchar(64);not null;index" json:"app_key"`
+	PolicyCode                string    `gorm:"type:varchar(64);not null;uniqueIndex" json:"policy_code"`
+	Name                      string    `gorm:"type:varchar(128);not null" json:"name"`
+	Description               string    `gorm:"type:text;not null;default:''" json:"description"`
+	TargetAppKey              string    `gorm:"type:varchar(64);not null" json:"target_app_key"`
+	TargetNavigationSpaceKey  string    `gorm:"type:varchar(64);not null" json:"target_navigation_space_key"`
+	TargetHomePath            string    `gorm:"type:varchar(256);not null;default:''" json:"target_home_path"`
+	DefaultWorkspaceType      string    `gorm:"type:varchar(32);not null;default:'personal'" json:"default_workspace_type"`
+	Status                    string    `gorm:"type:varchar(16);not null;default:'enabled'" json:"status"`
+	WelcomeMessageTemplateKey string    `gorm:"type:varchar(128);not null;default:''" json:"welcome_message_template_key"`
+	AllowPublicRegister       bool      `gorm:"not null;default:false" json:"allow_public_register"`
+	RequireInvite             bool      `gorm:"not null;default:false" json:"require_invite"`
+	RequireEmailVerify        bool      `gorm:"not null;default:false" json:"require_email_verify"`
+	RequireCaptcha            bool      `gorm:"not null;default:false" json:"require_captcha"`
+	AutoLogin                 bool      `gorm:"not null;default:true" json:"auto_login"`
 	// 人机验证提供商：none | recaptcha | hcaptcha | turnstile
-	CaptchaProvider          string         `gorm:"type:varchar(32);not null;default:'none'" json:"captcha_provider"`
+	CaptchaProvider string `gorm:"type:varchar(32);not null;default:'none'" json:"captcha_provider"`
 	// 对应提供商的公开 site_key，前端渲染 captcha widget 使用
-	CaptchaSiteKey           string         `gorm:"type:varchar(256);not null;default:''" json:"captcha_site_key"`
-	CreatedAt                time.Time      `json:"created_at"`
-	UpdatedAt                time.Time      `json:"updated_at"`
-	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	CaptchaSiteKey string         `gorm:"type:varchar(256);not null;default:''" json:"captcha_site_key"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (RegisterPolicy) TableName() string { return "register_policies" }

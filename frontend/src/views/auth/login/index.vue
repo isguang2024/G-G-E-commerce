@@ -1,6 +1,13 @@
 <!-- 登录页面 -->
 <template>
-  <div class="flex w-full h-screen">
+  <div
+    class="flex w-full h-screen"
+    :class="themeClass"
+    :style="{
+      '--auth-primary-color': theme.primaryColor || undefined,
+      '--auth-border-radius': theme.borderRadius || undefined
+    }"
+  >
     <LoginLeftView />
 
     <div class="relative flex-1">
@@ -8,8 +15,11 @@
 
       <div class="auth-right-wrap">
         <div class="form">
-          <h3 class="title">{{ $t('login.title') }}</h3>
-          <p class="sub-title">{{ $t('login.subTitle') }}</p>
+          <h3 class="title">{{ texts.title || $t('login.title') }}</h3>
+          <p class="sub-title">{{ texts.subTitle || $t('login.subTitle') }}</p>
+          <ElTag v-if="loginPageKey" size="small" effect="plain" class="mt-3">
+            模板：{{ templateName || loginPageKey }}
+          </ElTag>
           <ElAlert
             v-if="submitError"
             :title="submitError"
@@ -45,11 +55,11 @@
               />
             </ElFormItem>
 
-            <div class="flex-cb mt-2 text-sm">
-              <ElCheckbox v-model="formData.rememberPassword">{{
+            <div v-if="features.rememberMe !== false || features.forgetPassword !== false" class="flex-cb mt-2 text-sm">
+              <ElCheckbox v-if="features.rememberMe !== false" v-model="formData.rememberPassword">{{
                 $t('login.rememberPwd')
               }}</ElCheckbox>
-              <RouterLink class="text-theme" to="/account/auth/forget-password">{{
+              <RouterLink v-if="features.forgetPassword !== false" class="text-theme" to="/account/auth/forget-password">{{
                 $t('login.forgetPwd')
               }}</RouterLink>
             </div>
@@ -60,15 +70,16 @@
                 type="primary"
                 @click="handleSubmit"
                 :loading="loading"
+                :disabled="isPreview"
                 v-ripple
               >
-                {{ $t('login.btnText') }}
+                {{ texts.btnText || $t('login.btnText') }}
               </ElButton>
             </div>
 
-            <div class="mt-5 text-sm text-gray-600">
+            <div v-if="features.register !== false" class="mt-5 text-sm text-gray-600">
               <span>{{ $t('login.noAccount') }}</span>
-              <RouterLink class="text-theme" to="/account/auth/register">{{
+              <RouterLink class="text-theme" :to="registerLink">{{
                 $t('login.register')
               }}</RouterLink>
             </div>
@@ -84,6 +95,7 @@
   import { type FormInstance, type FormRules } from 'element-plus'
   import { useLoginFlow } from '@/domains/auth/flows/useLoginFlow'
   import { type LoginFormState } from '@/domains/auth/flows/shared'
+  import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
 
   defineOptions({ name: 'Login' })
 
@@ -97,6 +109,8 @@
 
   const formRef = ref<FormInstance>()
   const { loading, submitError, loadRememberedCredentials, submit } = useLoginFlow()
+  const { themeClass, loginPageKey, templateName, registerLink, theme, features, texts, isPreview } =
+    useAuthPageTemplate('login')
 
   // 登录表单默认值（不再预置系统账号密码）
   const formData = reactive<LoginFormState>({
@@ -112,6 +126,10 @@
 
   // 登录
   const handleSubmit = async () => {
+    if (isPreview.value) {
+      console.info('[Login] preview mode — form submission blocked')
+      return
+    }
     if (!formRef.value) return
 
     try {
