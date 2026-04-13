@@ -36640,12 +36640,6 @@ func (s *RegisterContext) encodeFields(e *jx.Encoder) {
 		e.Str(s.TargetHomePath)
 	}
 	{
-		if s.DefaultWorkspaceType.Set {
-			e.FieldStart("default_workspace_type")
-			s.DefaultWorkspaceType.Encode(e)
-		}
-	}
-	{
 		e.FieldStart("allow_public_register")
 		e.Bool(s.AllowPublicRegister)
 	}
@@ -36685,7 +36679,7 @@ func (s *RegisterContext) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterContext = [18]string{
+var jsonFieldsNameOfRegisterContext = [17]string{
 	0:  "entry_code",
 	1:  "entry_name",
 	2:  "entry_app_key",
@@ -36695,15 +36689,14 @@ var jsonFieldsNameOfRegisterContext = [18]string{
 	6:  "target_app_key",
 	7:  "target_navigation_space_key",
 	8:  "target_home_path",
-	9:  "default_workspace_type",
-	10: "allow_public_register",
-	11: "require_invite",
-	12: "require_email_verify",
-	13: "require_captcha",
-	14: "auto_login",
-	15: "agreement_version",
-	16: "captcha_provider",
-	17: "captcha_site_key",
+	9:  "allow_public_register",
+	10: "require_invite",
+	11: "require_email_verify",
+	12: "require_captcha",
+	13: "auto_login",
+	14: "agreement_version",
+	15: "captcha_provider",
+	16: "captcha_site_key",
 }
 
 // Decode decodes RegisterContext from json.
@@ -36819,18 +36812,8 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"target_home_path\"")
 			}
-		case "default_workspace_type":
-			if err := func() error {
-				s.DefaultWorkspaceType.Reset()
-				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_workspace_type\"")
-			}
 		case "allow_public_register":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Bool()
 				s.AllowPublicRegister = bool(v)
@@ -36842,7 +36825,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"allow_public_register\"")
 			}
 		case "require_invite":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireInvite = bool(v)
@@ -36854,7 +36837,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_invite\"")
 			}
 		case "require_email_verify":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireEmailVerify = bool(v)
@@ -36866,7 +36849,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_email_verify\"")
 			}
 		case "require_captcha":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.RequireCaptcha = bool(v)
@@ -36878,7 +36861,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"require_captcha\"")
 			}
 		case "auto_login":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.AutoLogin = bool(v)
@@ -36930,7 +36913,7 @@ func (s *RegisterContext) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b11101101,
-		0b01111101,
+		0b00111111,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -38301,10 +38284,6 @@ func (s *RegisterPolicyItem) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
-		e.FieldStart("app_key")
-		e.Str(s.AppKey)
-	}
-	{
 		e.FieldStart("policy_code")
 		e.Str(s.PolicyCode)
 	}
@@ -38330,12 +38309,6 @@ func (s *RegisterPolicyItem) encodeFields(e *jx.Encoder) {
 		if s.TargetHomePath.Set {
 			e.FieldStart("target_home_path")
 			s.TargetHomePath.Encode(e)
-		}
-	}
-	{
-		if s.DefaultWorkspaceType.Set {
-			e.FieldStart("default_workspace_type")
-			s.DefaultWorkspaceType.Encode(e)
 		}
 	}
 	{
@@ -38406,26 +38379,24 @@ func (s *RegisterPolicyItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterPolicyItem = [19]string{
+var jsonFieldsNameOfRegisterPolicyItem = [17]string{
 	0:  "id",
-	1:  "app_key",
-	2:  "policy_code",
-	3:  "name",
-	4:  "description",
-	5:  "target_app_key",
-	6:  "target_navigation_space_key",
-	7:  "target_home_path",
-	8:  "default_workspace_type",
-	9:  "status",
-	10: "allow_public_register",
-	11: "require_invite",
-	12: "require_email_verify",
-	13: "require_captcha",
-	14: "auto_login",
-	15: "captcha_provider",
-	16: "captcha_site_key",
-	17: "role_codes",
-	18: "feature_package_keys",
+	1:  "policy_code",
+	2:  "name",
+	3:  "description",
+	4:  "target_app_key",
+	5:  "target_navigation_space_key",
+	6:  "target_home_path",
+	7:  "status",
+	8:  "allow_public_register",
+	9:  "require_invite",
+	10: "require_email_verify",
+	11: "require_captcha",
+	12: "auto_login",
+	13: "captcha_provider",
+	14: "captcha_site_key",
+	15: "role_codes",
+	16: "feature_package_keys",
 }
 
 // Decode decodes RegisterPolicyItem from json.
@@ -38449,20 +38420,8 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "app_key":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.AppKey = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"app_key\"")
-			}
 		case "policy_code":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.PolicyCode = string(v)
@@ -38474,7 +38433,7 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"policy_code\"")
 			}
 		case "name":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -38496,7 +38455,7 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "target_app_key":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetAppKey = string(v)
@@ -38508,7 +38467,7 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"target_app_key\"")
 			}
 		case "target_navigation_space_key":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetNavigationSpaceKey = string(v)
@@ -38529,18 +38488,8 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"target_home_path\"")
 			}
-		case "default_workspace_type":
-			if err := func() error {
-				s.DefaultWorkspaceType.Reset()
-				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_workspace_type\"")
-			}
 		case "status":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -38669,8 +38618,8 @@ func (s *RegisterPolicyItem) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b01101111,
-		0b00000010,
+		0b10110111,
+		0b00000000,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -38850,10 +38799,6 @@ func (s *RegisterPolicyUpsertRequest) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *RegisterPolicyUpsertRequest) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("app_key")
-		e.Str(s.AppKey)
-	}
-	{
 		e.FieldStart("policy_code")
 		e.Str(s.PolicyCode)
 	}
@@ -38879,12 +38824,6 @@ func (s *RegisterPolicyUpsertRequest) encodeFields(e *jx.Encoder) {
 		if s.TargetHomePath.Set {
 			e.FieldStart("target_home_path")
 			s.TargetHomePath.Encode(e)
-		}
-	}
-	{
-		if s.DefaultWorkspaceType.Set {
-			e.FieldStart("default_workspace_type")
-			s.DefaultWorkspaceType.Encode(e)
 		}
 	}
 	{
@@ -38957,25 +38896,23 @@ func (s *RegisterPolicyUpsertRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRegisterPolicyUpsertRequest = [18]string{
-	0:  "app_key",
-	1:  "policy_code",
-	2:  "name",
-	3:  "description",
-	4:  "target_app_key",
-	5:  "target_navigation_space_key",
-	6:  "target_home_path",
-	7:  "default_workspace_type",
-	8:  "status",
-	9:  "allow_public_register",
-	10: "require_invite",
-	11: "require_email_verify",
-	12: "require_captcha",
-	13: "auto_login",
-	14: "captcha_provider",
-	15: "captcha_site_key",
-	16: "role_codes",
-	17: "feature_package_keys",
+var jsonFieldsNameOfRegisterPolicyUpsertRequest = [16]string{
+	0:  "policy_code",
+	1:  "name",
+	2:  "description",
+	3:  "target_app_key",
+	4:  "target_navigation_space_key",
+	5:  "target_home_path",
+	6:  "status",
+	7:  "allow_public_register",
+	8:  "require_invite",
+	9:  "require_email_verify",
+	10: "require_captcha",
+	11: "auto_login",
+	12: "captcha_provider",
+	13: "captcha_site_key",
+	14: "role_codes",
+	15: "feature_package_keys",
 }
 
 // Decode decodes RegisterPolicyUpsertRequest from json.
@@ -38983,24 +38920,12 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode RegisterPolicyUpsertRequest to nil")
 	}
-	var requiredBitSet [3]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "app_key":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.AppKey = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"app_key\"")
-			}
 		case "policy_code":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
 				s.PolicyCode = string(v)
@@ -39012,7 +38937,7 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"policy_code\"")
 			}
 		case "name":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -39034,7 +38959,7 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "target_app_key":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetAppKey = string(v)
@@ -39046,7 +38971,7 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"target_app_key\"")
 			}
 		case "target_navigation_space_key":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.TargetNavigationSpaceKey = string(v)
@@ -39066,16 +38991,6 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"target_home_path\"")
-			}
-		case "default_workspace_type":
-			if err := func() error {
-				s.DefaultWorkspaceType.Reset()
-				if err := s.DefaultWorkspaceType.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_workspace_type\"")
 			}
 		case "status":
 			if err := func() error {
@@ -39204,9 +39119,8 @@ func (s *RegisterPolicyUpsertRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [3]uint8{
-		0b00110111,
-		0b00000000,
+	for i, mask := range [2]uint8{
+		0b00011011,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {

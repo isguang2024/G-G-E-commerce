@@ -3257,14 +3257,12 @@ export interface components {
         RegisterPolicyItem: {
             /** Format: uuid */
             id: string;
-            app_key: string;
             policy_code: string;
             name: string;
             description?: string;
             target_app_key: string;
             target_navigation_space_key: string;
             target_home_path?: string;
-            default_workspace_type?: string;
             status: string;
             allow_public_register?: boolean;
             require_invite?: boolean;
@@ -3281,14 +3279,12 @@ export interface components {
             total: number;
         };
         RegisterPolicyUpsertRequest: {
-            app_key: string;
             policy_code: string;
             name: string;
             description?: string;
             target_app_key: string;
             target_navigation_space_key: string;
             target_home_path?: string;
-            default_workspace_type?: string;
             status?: string;
             allow_public_register?: boolean;
             require_invite?: boolean;
@@ -3385,7 +3381,6 @@ export interface components {
             target_app_key: string;
             target_navigation_space_key: string;
             target_home_path: string;
-            default_workspace_type?: string;
             allow_public_register: boolean;
             require_invite: boolean;
             require_email_verify: boolean;

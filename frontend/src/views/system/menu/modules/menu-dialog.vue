@@ -407,7 +407,7 @@
 
   const kindDescription = computed(() => {
     if (form.kind === 'directory') {
-      return '目录只负责导航分组与层级，不再承载具体页面组件。'
+      return '目录只负责菜单分组与层级，不再承载具体页面组件。'
     }
     if (form.kind === 'external') {
       return '外链菜单只维护菜单展示与 link，适合文档、外部系统和跳转入口。'

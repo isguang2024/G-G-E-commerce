@@ -242,9 +242,6 @@ func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegis
 	if eff.RegisterSource != "" {
 		out.RegisterSource = gen.NewOptString(eff.RegisterSource)
 	}
-	if eff.DefaultWorkspaceType != "" {
-		out.DefaultWorkspaceType = gen.NewOptString(eff.DefaultWorkspaceType)
-	}
 	if eff.AgreementVersion != "" {
 		out.AgreementVersion = gen.NewOptString(eff.AgreementVersion)
 	}

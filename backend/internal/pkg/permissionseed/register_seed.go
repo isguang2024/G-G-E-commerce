@@ -30,7 +30,7 @@ const (
 
 // EnsureRegisterSystemSeeds 写入注册体系第一期所需的全部默认数据：
 // 1. account-portal App + Host/Path 绑定
-// 2. account-portal/public 与 platform-admin/self-service MenuSpace
+// 2. account-portal/public 与 platform-admin/self-service 菜单空间
 // 3. self_service.basic 功能包 + personal.self_user 角色 + 二者绑定
 // 4. default.self 注册策略 + 默认 register_entries
 //
@@ -353,7 +353,7 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 			Meta:            systemmodels.MetaJSON{},
 		},
 	}
-	// platform-admin self-service 路径绑定（Level 2 MenuSpace 入口）
+	// platform-admin self-service 路径绑定（Level 2 菜单空间入口）
 	spaceBindings := []systemmodels.MenuSpaceEntryBinding{
 		{
 			AppKey:      systemmodels.DefaultAppKey,
@@ -518,14 +518,12 @@ func ensureSelfServiceRolePackage(db *gorm.DB, roleID, packageID uuid.UUID) erro
 func ensureDefaultRegisterPolicy(db *gorm.DB) error {
 	desired := systemmodels.RegisterPolicy{
 		ID:                       StableID("register-policy", DefaultRegisterPolicyCode),
-		AppKey:                   AccountPortalAppKey,
 		PolicyCode:               DefaultRegisterPolicyCode,
 		Name:                     "默认自注册策略",
 		Description:              "公开注册默认策略：注册成功后进入 platform-admin/self-service 空间",
 		TargetAppKey:             systemmodels.DefaultAppKey,
 		TargetNavigationSpaceKey: SelfServiceMenuSpaceKey,
 		TargetHomePath:           SelfServiceHomePath,
-		DefaultWorkspaceType:     "personal",
 		Status:                   "enabled",
 		AllowPublicRegister:      false,
 		RequireInvite:            false,
@@ -539,13 +537,11 @@ func ensureDefaultRegisterPolicy(db *gorm.DB) error {
 	case err == nil:
 		// 不覆盖 allow_public_register / 各开关：尊重运维已修改的值
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"app_key":                     desired.AppKey,
 			"name":                        desired.Name,
 			"description":                 desired.Description,
 			"target_app_key":              desired.TargetAppKey,
 			"target_navigation_space_key": desired.TargetNavigationSpaceKey,
 			"target_home_path":            desired.TargetHomePath,
-			"default_workspace_type":      desired.DefaultWorkspaceType,
 			"status":                      desired.Status,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):

@@ -40,14 +40,12 @@ func (RegisterEntry) TableName() string { return "register_entries" }
 // 把"入口归属 App"和"业务承载 App"拆开。
 type RegisterPolicy struct {
 	ID                        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey                    string    `gorm:"type:varchar(64);not null;index" json:"app_key"`
 	PolicyCode                string    `gorm:"type:varchar(64);not null;uniqueIndex" json:"policy_code"`
 	Name                      string    `gorm:"type:varchar(128);not null" json:"name"`
 	Description               string    `gorm:"type:text;not null;default:''" json:"description"`
 	TargetAppKey              string    `gorm:"type:varchar(64);not null" json:"target_app_key"`
 	TargetNavigationSpaceKey  string    `gorm:"type:varchar(64);not null" json:"target_navigation_space_key"`
 	TargetHomePath            string    `gorm:"type:varchar(256);not null;default:''" json:"target_home_path"`
-	DefaultWorkspaceType      string    `gorm:"type:varchar(32);not null;default:'personal'" json:"default_workspace_type"`
 	Status                    string    `gorm:"type:varchar(16);not null;default:'enabled'" json:"status"`
 	WelcomeMessageTemplateKey string    `gorm:"type:varchar(128);not null;default:''" json:"welcome_message_template_key"`
 	AllowPublicRegister       bool      `gorm:"not null;default:false" json:"allow_public_register"`

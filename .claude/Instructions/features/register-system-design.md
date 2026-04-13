@@ -11,7 +11,7 @@
 ## 0. TL;DR
 
 - **共享后端 + 多 App 架构**：一个 Go 后端进程、一个数据库，在 `apps` 表里同时存在 `platform-admin`（治理）和 `account-portal`（认证中心）两条记录，通过 `AppHostBinding` + `app_key` 实现路由、菜单、权限的完全隔离。
-- **三层模型**：入口层（`register_entries`，归属 `account-portal`）→ 策略层（`register_policies`，`target_app_key` 解耦）→ 承载层（目标 App + MenuSpace + 功能包 + 角色）。
+- **三层模型**：入口层（`register_entries`，归属 `account-portal`）→ 策略层（`register_policies`）→ 承载层（目标 App + MenuSpace + 功能包 + 角色）。
 - **入口判定由服务端基于 `host + path` 命中 `register_entries`**，前端传来的 `register_source` 仅作辅助、不作真相。
 - **`platform-admin` 完全不开放公开注册**。公开注册入口全部归属 `account-portal`；注册成功后按策略 `target_app_key` 分流到承载 App（第一期承载 App 仍是 `platform-admin`，MenuSpace 进 `self-service`；未来新增 `user-portal` 时只改策略表，不改模型）。
 - **`account-portal` 自带最小 MenuSpace**，只包含注册、登录、邮箱验证、找回密码、邀请接受等公开页，不暴露任何业务菜单。
@@ -27,7 +27,7 @@
 |---|---|---|
 | `App` / `app_key`（默认 `platform-admin`） | ✅ 已有，`models/app.go` | **新增 `account-portal` App 记录** |
 | `AppHostBinding`（host+path 匹配） | ✅ 已有，`models/app.go` | **新增 `account-portal` 的 host/path 绑定** |
-| `MenuSpace`（导航空间） | ✅ 已有，`models/menu_space.go`，默认 `default` | **新增 `account-portal` 的 `public` space + `platform-admin` 的 `self-service` space** |
+| `MenuSpace`（菜单空间） | ✅ 已有，`models/menu_space.go`，默认 `default` | **新增 `account-portal` 的 `public` space + `platform-admin` 的 `self-service` space** |
 | `FeaturePackage`（功能包） | ✅ 已有，`models/model.go` | 新增 `self_service.basic` |
 | `Role`（角色） | ✅ 已有，`models/model.go` | 新增 `personal.self_user` |
 | `Workspace` / 个人空间 lazy 创建 | ✅ `workspace/service.go:62` | 改为注册时即刻创建 |
@@ -50,7 +50,7 @@
 | **承载（Landing）** | 由策略计算得出的 `{target_app_key, target_navigation_space_key, target_home_path, workspace}` | 回答"用户最终进入哪里" |
 | **来源（Source）** | `register_source` 字符串 | 审计维度：`self` / `invite` / `merchant_campaign` / `partner` |
 
-**关键解耦**：`register_entries.app_key`（入口归属 App）与 `register_policies.target_app_key`（承载 App）是两个字段。当前单 App 时两者都是 `platform-admin`；未来 `account-portal` 上线后，入口侧切换，承载侧不动。
+**关键解耦**：`register_entries.app_key` 负责入口归属；`register_policies.target_app_key` 负责注册后的承载 App。入口层与承载层分开，后续新增业务 App 时只改策略去向，不改入口模型。
 
 ---
 
@@ -59,7 +59,7 @@
 ### 3.1 共享后端，多 App 并存
 
 - **一个 Go 后端进程 + 一个 PostgreSQL 实例**，承载 `apps` 表里的多条 App 记录。
-- App 之间通过 `app_key` 做逻辑隔离：菜单（`menus.app_key`）、导航空间（`menu_spaces.app_key`）、功能包（`feature_packages.app_key`）、入口绑定（`app_host_bindings.app_key`）、路由注解（`routes.app_key`，如有）全部按 `app_key` 过滤。
+- App 之间通过 `app_key` 做逻辑隔离：菜单（`menus.app_key`）、菜单空间（`menu_spaces.app_key`）、功能包（`feature_packages.app_key`）、入口绑定（`app_host_bindings.app_key`）、路由注解（`routes.app_key`，如有）全部按 `app_key` 过滤。
 - **路由归属判定**：请求进入时，服务端根据 `host + path` 命中 `AppHostBinding`，得到当前请求的 `current_app_key`；后续鉴权、菜单加载、注册入口解析全部以此为准。
 - 所有 App 共用同一套 `users` / `roles` / `workspaces` 表（用户是平台级资产，不按 App 切分）。
 
@@ -153,14 +153,13 @@ admin.example.com/self/*              → platform-admin / self-service
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `id` | uuid (PK) | |
-| `app_key` | varchar(64) | 策略归属 App（通常同入口） |
 | `policy_code` | varchar(64), UNIQUE | 策略编码 |
 | `name` | varchar(128) | |
 | `description` | text | |
-| `target_app_key` | varchar(64) | **承载 App**（与 `app_key` 解耦） |
+| `target_app_key` | varchar(64) | **承载 App** |
 | `target_navigation_space_key` | varchar(64) | 目标 MenuSpace，例如 `self-service` |
 | `target_home_path` | varchar(256) | 默认首页，例如 `/user-center` |
-| `default_workspace_type` | varchar(32) | 默认创建的工作空间类型，一期固定 `personal` |
+
 | `status` | varchar(16) | `enabled` / `disabled` |
 | `welcome_message_template_key` | varchar(128) | 欢迎消息模板（可空） |
 | `allow_public_register` | bool | 策略级默认开关 |
@@ -292,11 +291,10 @@ default_home_path = "/self/user-center"
 
 ```
 policy_code = "default.self"
-app_key = "account-portal"              # 策略归属认证中心
 target_app_key = "platform-admin"       # 承载 App 仍是治理后端，但进 self-service space
 target_navigation_space_key = "self-service"
 target_home_path = "/self/user-center"
-default_workspace_type = "personal"
+
 status = "enabled"
 allow_public_register = false           # 默认关闭，部署方到后台开启
 require_invite = false

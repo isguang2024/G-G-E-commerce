@@ -10,7 +10,7 @@
     <div class="context-badge__space">
       当前协作空间视图 · {{ collaborationWorkspaceViewName }}
     </div>
-    <div v-if="showSpaceLabel" class="context-badge__space"> 菜单空间 · {{ spaceName }} </div>
+      <div v-if="showSpaceLabel" class="context-badge__space"> 菜单空间 · {{ spaceName }} </div>
   </div>
 </template>
 

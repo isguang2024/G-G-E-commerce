@@ -56,7 +56,6 @@ func (r *Resolver) Resolve(ctx context.Context, host, path string) (*EffectiveRe
 		TargetAppKey:             policy.TargetAppKey,
 		TargetNavigationSpaceKey: policy.TargetNavigationSpaceKey,
 		TargetHomePath:           policy.TargetHomePath,
-		DefaultWorkspaceType:     policy.DefaultWorkspaceType,
 		AllowPublicRegister:      policy.AllowPublicRegister,
 		RequireInvite:            policy.RequireInvite,
 		RequireEmailVerify:       policy.RequireEmailVerify,

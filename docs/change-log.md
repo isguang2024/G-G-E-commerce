@@ -128,3 +128,15 @@
 ### 下次方向
 - 用真实浏览器再做一轮模板编辑联调，确认 `pages` 面板改文案后，右侧登录页 / 注册页 / 找回密码页预览都能即时反映。
 - 如果后续还要扩展页面级文案，优先明确字段白名单，再决定是否补占位文案、链接文案等细项，避免重新膨胀成“全局 texts + 页面覆盖”双层模型。
+
+## 2026-04-14 注册策略去掉归属 App 与 Workspace 类型
+
+### 本次改动
+- 从注册策略配置链中彻底删除 `app_key` 与 `default_workspace_type`：前端表单不再展示“所属 App Key”，策略列表也不再单独显示归属 App，只保留真正影响注册结果的去向和规则字段。
+- 更新 [schemas.yaml](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/api/openapi/domains/system-register/schemas.yaml)、[schemas.yaml](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/api/openapi/domains/auth/schemas.yaml) 以及对应 handler / model 映射，确保请求、响应、`register-context` 和运行时结构都不再携带这两个字段。
+- 新增迁移 [00023_drop_unused_register_policy_columns.sql](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00023_drop_unused_register_policy_columns.sql)，从 `register_policies` 表实际删除这两列；默认 seed 与设计文档也同步改成新的最小策略结构。
+- 已完成 OpenAPI 生成链、前端 `gen:api`、`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit` 与 `go run ./cmd/migrate`，数据库版本已推进到 `23`。
+
+### 下次方向
+- 如果继续给注册策略做减法，下一步应评估 `target_home_path` 是否需要常驻表单，还是降级为高级项，避免“注册后去向”继续暴露过多实现细节。
+- `register-entry` 与 `register-policy` 目前仍保留模板卡片式入口；如果后续要继续收紧，可以把“预设模板”再收成下拉或轻量向导。

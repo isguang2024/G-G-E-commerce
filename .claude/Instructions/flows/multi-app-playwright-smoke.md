@@ -72,7 +72,7 @@
   - 控制台 `error = 0`
 - 失败定位：
   - 若切到错误入口或 404，优先检查 [ArtAppSwitcher.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/components/core/layouts/art-header-bar/widget/ArtAppSwitcher.vue)
-  - 若切回后台后导航为空，优先检查 [beforeEach.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/router/guards/beforeEach.ts) 与 runtime navigation 刷新链
+  - 若切回后台后菜单为空，优先检查 [beforeEach.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/router/guards/beforeEach.ts) 与 runtime navigation 刷新链
 
 ### 场景 5：治理页 smoke
 

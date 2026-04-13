@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDialog
     :model-value="visible"
     title="删除菜单"

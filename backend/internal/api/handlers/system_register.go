@@ -222,14 +222,12 @@ func (h *APIHandler) policyToDTO(ctx context.Context, p *systemmodels.RegisterPo
 	roleCodes, pkgKeys := h.policySubTables(ctx, p.PolicyCode)
 	item := &gen.RegisterPolicyItem{
 		ID:                       p.ID,
-		AppKey:                   p.AppKey,
 		PolicyCode:               p.PolicyCode,
 		Name:                     p.Name,
 		Description:              gen.NewOptString(p.Description),
 		TargetAppKey:             p.TargetAppKey,
 		TargetNavigationSpaceKey: p.TargetNavigationSpaceKey,
 		TargetHomePath:           gen.NewOptString(p.TargetHomePath),
-		DefaultWorkspaceType:     gen.NewOptString(p.DefaultWorkspaceType),
 		Status:                   p.Status,
 		AllowPublicRegister:      gen.NewOptBool(p.AllowPublicRegister),
 		RequireInvite:            gen.NewOptBool(p.RequireInvite),
@@ -245,7 +243,6 @@ func (h *APIHandler) policyToDTO(ctx context.Context, p *systemmodels.RegisterPo
 }
 
 func applyPolicyUpsert(p *systemmodels.RegisterPolicy, req *gen.RegisterPolicyUpsertRequest) {
-	p.AppKey = req.AppKey
 	p.PolicyCode = req.PolicyCode
 	p.Name = req.Name
 	if req.Description.Set {
@@ -255,9 +252,6 @@ func applyPolicyUpsert(p *systemmodels.RegisterPolicy, req *gen.RegisterPolicyUp
 	p.TargetNavigationSpaceKey = req.TargetNavigationSpaceKey
 	if req.TargetHomePath.Set {
 		p.TargetHomePath = req.TargetHomePath.Value
-	}
-	if req.DefaultWorkspaceType.Set {
-		p.DefaultWorkspaceType = req.DefaultWorkspaceType.Value
 	}
 	if req.Status.Set {
 		p.Status = req.Status.Value

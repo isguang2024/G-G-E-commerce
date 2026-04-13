@@ -15462,7 +15462,6 @@ type RegisterContext struct {
 	TargetAppKey             string    `json:"target_app_key"`
 	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
 	TargetHomePath           string    `json:"target_home_path"`
-	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
 	AllowPublicRegister      bool      `json:"allow_public_register"`
 	RequireInvite            bool      `json:"require_invite"`
 	RequireEmailVerify       bool      `json:"require_email_verify"`
@@ -15518,11 +15517,6 @@ func (s *RegisterContext) GetTargetNavigationSpaceKey() string {
 // GetTargetHomePath returns the value of TargetHomePath.
 func (s *RegisterContext) GetTargetHomePath() string {
 	return s.TargetHomePath
-}
-
-// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
-func (s *RegisterContext) GetDefaultWorkspaceType() OptString {
-	return s.DefaultWorkspaceType
 }
 
 // GetAllowPublicRegister returns the value of AllowPublicRegister.
@@ -15608,11 +15602,6 @@ func (s *RegisterContext) SetTargetNavigationSpaceKey(val string) {
 // SetTargetHomePath sets the value of TargetHomePath.
 func (s *RegisterContext) SetTargetHomePath(val string) {
 	s.TargetHomePath = val
-}
-
-// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
-func (s *RegisterContext) SetDefaultWorkspaceType(val OptString) {
-	s.DefaultWorkspaceType = val
 }
 
 // SetAllowPublicRegister sets the value of AllowPublicRegister.
@@ -16239,14 +16228,12 @@ func (*RegisterLogList) listRegisterLogsRes() {}
 // Ref: #/components/schemas/RegisterPolicyItem
 type RegisterPolicyItem struct {
 	ID                       uuid.UUID `json:"id"`
-	AppKey                   string    `json:"app_key"`
 	PolicyCode               string    `json:"policy_code"`
 	Name                     string    `json:"name"`
 	Description              OptString `json:"description"`
 	TargetAppKey             string    `json:"target_app_key"`
 	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
 	TargetHomePath           OptString `json:"target_home_path"`
-	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
 	Status                   string    `json:"status"`
 	AllowPublicRegister      OptBool   `json:"allow_public_register"`
 	RequireInvite            OptBool   `json:"require_invite"`
@@ -16262,11 +16249,6 @@ type RegisterPolicyItem struct {
 // GetID returns the value of ID.
 func (s *RegisterPolicyItem) GetID() uuid.UUID {
 	return s.ID
-}
-
-// GetAppKey returns the value of AppKey.
-func (s *RegisterPolicyItem) GetAppKey() string {
-	return s.AppKey
 }
 
 // GetPolicyCode returns the value of PolicyCode.
@@ -16297,11 +16279,6 @@ func (s *RegisterPolicyItem) GetTargetNavigationSpaceKey() string {
 // GetTargetHomePath returns the value of TargetHomePath.
 func (s *RegisterPolicyItem) GetTargetHomePath() OptString {
 	return s.TargetHomePath
-}
-
-// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
-func (s *RegisterPolicyItem) GetDefaultWorkspaceType() OptString {
-	return s.DefaultWorkspaceType
 }
 
 // GetStatus returns the value of Status.
@@ -16359,11 +16336,6 @@ func (s *RegisterPolicyItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
-// SetAppKey sets the value of AppKey.
-func (s *RegisterPolicyItem) SetAppKey(val string) {
-	s.AppKey = val
-}
-
 // SetPolicyCode sets the value of PolicyCode.
 func (s *RegisterPolicyItem) SetPolicyCode(val string) {
 	s.PolicyCode = val
@@ -16392,11 +16364,6 @@ func (s *RegisterPolicyItem) SetTargetNavigationSpaceKey(val string) {
 // SetTargetHomePath sets the value of TargetHomePath.
 func (s *RegisterPolicyItem) SetTargetHomePath(val OptString) {
 	s.TargetHomePath = val
-}
-
-// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
-func (s *RegisterPolicyItem) SetDefaultWorkspaceType(val OptString) {
-	s.DefaultWorkspaceType = val
 }
 
 // SetStatus sets the value of Status.
@@ -16482,14 +16449,12 @@ func (*RegisterPolicyList) listRegisterPoliciesRes() {}
 
 // Ref: #/components/schemas/RegisterPolicyUpsertRequest
 type RegisterPolicyUpsertRequest struct {
-	AppKey                   string    `json:"app_key"`
 	PolicyCode               string    `json:"policy_code"`
 	Name                     string    `json:"name"`
 	Description              OptString `json:"description"`
 	TargetAppKey             string    `json:"target_app_key"`
 	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
 	TargetHomePath           OptString `json:"target_home_path"`
-	DefaultWorkspaceType     OptString `json:"default_workspace_type"`
 	Status                   OptString `json:"status"`
 	AllowPublicRegister      OptBool   `json:"allow_public_register"`
 	RequireInvite            OptBool   `json:"require_invite"`
@@ -16500,11 +16465,6 @@ type RegisterPolicyUpsertRequest struct {
 	CaptchaSiteKey           OptString `json:"captcha_site_key"`
 	RoleCodes                []string  `json:"role_codes"`
 	FeaturePackageKeys       []string  `json:"feature_package_keys"`
-}
-
-// GetAppKey returns the value of AppKey.
-func (s *RegisterPolicyUpsertRequest) GetAppKey() string {
-	return s.AppKey
 }
 
 // GetPolicyCode returns the value of PolicyCode.
@@ -16535,11 +16495,6 @@ func (s *RegisterPolicyUpsertRequest) GetTargetNavigationSpaceKey() string {
 // GetTargetHomePath returns the value of TargetHomePath.
 func (s *RegisterPolicyUpsertRequest) GetTargetHomePath() OptString {
 	return s.TargetHomePath
-}
-
-// GetDefaultWorkspaceType returns the value of DefaultWorkspaceType.
-func (s *RegisterPolicyUpsertRequest) GetDefaultWorkspaceType() OptString {
-	return s.DefaultWorkspaceType
 }
 
 // GetStatus returns the value of Status.
@@ -16592,11 +16547,6 @@ func (s *RegisterPolicyUpsertRequest) GetFeaturePackageKeys() []string {
 	return s.FeaturePackageKeys
 }
 
-// SetAppKey sets the value of AppKey.
-func (s *RegisterPolicyUpsertRequest) SetAppKey(val string) {
-	s.AppKey = val
-}
-
 // SetPolicyCode sets the value of PolicyCode.
 func (s *RegisterPolicyUpsertRequest) SetPolicyCode(val string) {
 	s.PolicyCode = val
@@ -16625,11 +16575,6 @@ func (s *RegisterPolicyUpsertRequest) SetTargetNavigationSpaceKey(val string) {
 // SetTargetHomePath sets the value of TargetHomePath.
 func (s *RegisterPolicyUpsertRequest) SetTargetHomePath(val OptString) {
 	s.TargetHomePath = val
-}
-
-// SetDefaultWorkspaceType sets the value of DefaultWorkspaceType.
-func (s *RegisterPolicyUpsertRequest) SetDefaultWorkspaceType(val OptString) {
-	s.DefaultWorkspaceType = val
 }
 
 // SetStatus sets the value of Status.

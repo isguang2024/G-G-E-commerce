@@ -107,7 +107,6 @@ components:
         target_app_key: {type: string}
         target_navigation_space_key: {type: string}
         target_home_path: {type: string}
-        default_workspace_type: {type: string}
         allow_public_register: {type: boolean}
         require_invite: {type: boolean}
         require_email_verify: {type: boolean}

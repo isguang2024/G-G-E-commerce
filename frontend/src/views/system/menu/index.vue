@@ -1,4 +1,4 @@
-﻿<!-- 菜单管理页面 -->
+<!-- 菜单管理页面 -->
 <template>
   <div class="menu-page art-full-height">
     <div class="menu-top-stack">
@@ -84,15 +84,15 @@
             <div class="menu-toolbar-bottom">
               <div class="menu-toolbar-switches">
                 <span class="menu-switch-item">
-                  <span class="menu-switch-label">显示隐藏</span>
+                  <span class="menu-switch-label">显示隐藏菜单</span>
                   <ElSwitch v-model="showHiddenMenus" />
                 </span>
                 <span class="menu-switch-item">
-                  <span class="menu-switch-label">显示内嵌</span>
+                  <span class="menu-switch-label">显示内嵌菜单</span>
                   <ElSwitch v-model="showIframeMenus" />
                 </span>
                 <span class="menu-switch-item">
-                  <span class="menu-switch-label">显示启用</span>
+                  <span class="menu-switch-label">显示启用菜单</span>
                   <ElSwitch v-model="showEnabledMenus" />
                 </span>
                 <span class="menu-switch-item">

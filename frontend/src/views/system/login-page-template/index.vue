@@ -1,62 +1,27 @@
 ﻿<template>
-  <div class="p-4 login-page-template-page">
-    <div class="page-card">
-      <div class="page-hero">
-      <div>
-        <h3 class="text-lg font-semibold">认证页模板管理</h3>
-        <p class="hero-desc">
-          统一管理登录/注册/找回密码三页模板。支持全局配置（theme/features/social），以及按页面覆盖主题和文案（pages.login/register/forget_password）。
-        </p>
-      </div>
-      <div class="hero-actions">
-        <ElButton type="primary" @click="openCreate">新建模板</ElButton>
-      </div>
-    </div>
-
-      <div class="table-shell">
-        <ElTable :data="list" border stripe>
-      <ElTableColumn prop="template_key" label="模板 Key" width="180" />
-      <ElTableColumn prop="name" label="名称" width="180" />
-      <ElTableColumn prop="scene" label="场景" width="120" />
-      <ElTableColumn prop="app_scope" label="作用域" width="120" />
-      <ElTableColumn prop="status" label="状态" width="100" />
-      <ElTableColumn label="默认模板" width="100">
-        <template #default="{ row }">
-          <ElTag v-if="row.is_default" type="success" effect="plain">是</ElTag>
-          <span v-else>否</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="配置概览" min-width="220">
-        <template #default="{ row }">
-          <div class="config-badges">
-            <ElTag v-if="hasConfigKey(row, 'theme')" size="small" effect="plain">theme</ElTag>
-            <ElTag v-if="hasConfigKey(row, 'features')" size="small" effect="plain" type="success"
-              >features</ElTag
-            >
-            <ElTag v-if="hasConfigKey(row, 'pages')" size="small" effect="plain" type="info"
-              >pages</ElTag
-            >
-            <ElTag v-if="hasConfigKey(row, 'social')" size="small" effect="plain" type="danger"
-              >social</ElTag
-            >
-            <span v-if="!hasAnyConfig(row)" class="text-gray-400 text-xs">未配置</span>
+  <div class="p-4 login-page-template-page art-full-height">
+    <ElCard class="art-table-card login-page-template-main" shadow="never">
+      <ArtTableHeader layout="refresh,fullscreen" :loading="loading" @refresh="load">
+        <template #left>
+          <div class="login-template-header">
+            <div class="login-template-title">认证页模板管理</div>
+            <div class="login-template-tip">统一管理登录/注册/找回密码三页模板。</div>
           </div>
         </template>
-      </ElTableColumn>
-          <ElTableColumn label="操作" width="240" fixed="right">
-        <template #default="{ row }">
-          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-          <ElButton link type="info" @click="openPreviewOnly(row)">预览</ElButton>
-          <ElPopconfirm title="确认删除该模板？" @confirm="remove(row)">
-            <template #reference>
-              <ElButton link type="danger">删除</ElButton>
-            </template>
-          </ElPopconfirm>
+        <template #right>
+          <ElButton type="primary" @click="openCreate">新建模板</ElButton>
         </template>
-          </ElTableColumn>
-        </ElTable>
-      </div>
-    </div>
+      </ArtTableHeader>
+
+      <ArtTable
+        :loading="loading"
+        :data="pagedList"
+        :columns="columns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      />
+    </ElCard>
 
     <ElDrawer
       v-model="dialogVisible"
@@ -319,8 +284,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+  import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import type { ColumnOption } from '@/types/component'
   import {
     fetchCreateLoginPageTemplate,
     fetchDeleteLoginPageTemplate,
@@ -352,6 +318,7 @@
   }
 
   const list = ref<any[]>([])
+  const loading = ref(false)
   const dialogVisible = ref(false)
   const editing = ref<any>(null)
   const previewDialogVisible = ref(false)
@@ -364,6 +331,11 @@
   const previewViewportHeight = ref(960)
   const editorPanels = ref<string[]>(['basic'])
   const previewDraftID = ref('')
+  const pagination = reactive({
+    current: 1,
+    size: 10,
+    total: 0
+  })
   let previewDraftSyncTimer: number | null = null
 
   const form = reactive<any>({
@@ -558,6 +530,73 @@
     width: `${previewViewportWidth.value}px`,
     height: `${previewViewportHeight.value}px`
   }))
+  const pagedList = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return list.value.slice(start, start + pagination.size)
+  })
+  const columns = computed<ColumnOption[]>(() => [
+    { type: 'index', label: '序号', width: 70 },
+    { prop: 'template_key', label: '模板 Key', minWidth: 180, showOverflowTooltip: true },
+    { prop: 'name', label: '名称', minWidth: 180, showOverflowTooltip: true },
+    { prop: 'scene', label: '场景', width: 120 },
+    { prop: 'app_scope', label: '作用域', width: 120 },
+    { prop: 'status', label: '状态', width: 100 },
+    {
+      prop: 'is_default',
+      label: '默认模板',
+      width: 110,
+      formatter: (row) =>
+        row.is_default
+          ? h(ElTag, { type: 'success', effect: 'plain' }, () => '是')
+          : h('span', '否')
+    },
+    {
+      prop: 'config_overview',
+      label: '配置概览',
+      minWidth: 220,
+      formatter: (row) => {
+        const children = []
+        if (hasConfigKey(row, 'theme')) children.push(h(ElTag, { size: 'small', effect: 'plain' }, () => 'theme'))
+        if (hasConfigKey(row, 'features')) {
+          children.push(h(ElTag, { size: 'small', effect: 'plain', type: 'success' }, () => 'features'))
+        }
+        if (hasConfigKey(row, 'pages')) {
+          children.push(h(ElTag, { size: 'small', effect: 'plain', type: 'info' }, () => 'pages'))
+        }
+        if (hasConfigKey(row, 'social')) {
+          children.push(h(ElTag, { size: 'small', effect: 'plain', type: 'danger' }, () => 'social'))
+        }
+        if (children.length === 0) {
+          children.push(h('span', { class: 'text-gray-400 text-xs' }, '未配置'))
+        }
+        return h('div', { class: 'config-badges' }, children)
+      }
+    },
+    {
+      prop: 'actions',
+      label: '操作',
+      width: 180,
+      fixed: 'right',
+      formatter: (row) =>
+        h('div', { class: 'table-actions' }, [
+          h(
+            ElButton,
+            { link: true, type: 'primary', onClick: () => openEdit(row) },
+            () => '编辑'
+          ),
+          h(
+            ElButton,
+            { link: true, type: 'info', onClick: () => openPreviewOnly(row) },
+            () => '预览'
+          ),
+          h(
+            ElButton,
+            { link: true, type: 'danger', onClick: () => confirmRemove(row) },
+            () => '删除'
+          )
+        ])
+    }
+  ])
 
   function hasConfigKey(row: any, key: string): boolean {
     const config = row?.config
@@ -686,11 +725,16 @@
   }
 
   const load = async () => {
+    loading.value = true
     try {
       const data: any = await fetchListLoginPageTemplates()
       list.value = data?.records || []
+      pagination.total = list.value.length
+      syncCurrentPage()
     } catch (e: any) {
       ElMessage.error(e?.message || '加载失败')
+    } finally {
+      loading.value = false
     }
   }
 
@@ -794,6 +838,15 @@
     }
   }
 
+  const confirmRemove = async (row: any) => {
+    try {
+      await ElMessageBox.confirm(`确认删除模板“${row.name || row.template_key}”吗？`, '删除确认', {
+        type: 'warning'
+      })
+      await remove(row)
+    } catch {}
+  }
+
   const remove = async (row: any) => {
     try {
       await fetchDeleteLoginPageTemplate(row.template_key)
@@ -805,6 +858,24 @@
   }
 
   onMounted(load)
+
+  function syncCurrentPage() {
+    const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pagination.size))
+    if (pagination.current > totalPages) {
+      pagination.current = totalPages
+    }
+  }
+
+  function handleSizeChange(size: number) {
+    pagination.size = size
+    pagination.current = 1
+    syncCurrentPage()
+  }
+
+  function handleCurrentChange(current: number) {
+    pagination.current = current
+    syncCurrentPage()
+  }
 
   const previewDraftFingerprint = computed(() =>
     JSON.stringify({
@@ -849,14 +920,22 @@
     --el-drawer-padding-primary: 20px;
   }
 
-  .page-card {
-    padding: 24px;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 20px;
-    background: #fff;
-    box-shadow:
-      0 12px 30px rgb(15 23 42 / 5%),
-      0 2px 8px rgb(15 23 42 / 4%);
+  .login-page-template-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .login-page-template-main {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .login-page-template-main :deep(.el-card__body) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
   :deep(.template-editor-drawer .el-drawer__header) {
@@ -870,24 +949,22 @@
     overflow: hidden;
   }
 
-  .page-hero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
+  .login-template-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
   }
 
-  .hero-desc {
-    margin-top: 6px;
-    max-width: 760px;
+  .login-template-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .login-template-tip {
     color: var(--el-text-color-secondary);
     line-height: 1.7;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 12px;
   }
 
   .config-badges {
@@ -896,11 +973,10 @@
     flex-wrap: wrap;
   }
 
-  .table-shell {
-    overflow: hidden;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 16px;
-    background: #fff;
+  .table-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .drawer-shell {

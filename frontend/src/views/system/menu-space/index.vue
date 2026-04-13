@@ -2,7 +2,7 @@
   <div class="menu-space-page art-full-height" v-loading="loading">
     <AdminWorkspaceHero
       title="空间布局高级配置"
-      description="菜单定义与空间布局已经分层：这里负责空间列表、默认空间、Host 绑定与布局树入口，不再承担菜单定义本体维护。"
+      description="导航定义与空间布局已经分层：这里负责空间列表、默认空间、Host 绑定与布局树入口，不再承担导航定义本体维护。"
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
@@ -46,10 +46,10 @@
         <template #header>
           <div class="menu-space-panel__header">
             <div>
-              <div class="menu-space-panel__title">菜单空间</div>
+              <div class="menu-space-panel__title">导航空间</div>
               <div class="menu-space-panel__desc"
                 >这里负责当前 App 的空间列表、Host
-                绑定、默认空间与布局入口，菜单定义本体不在此维护。</div
+                绑定、默认空间与布局入口，导航定义本体不在此维护。</div
               >
             </div>
           </div>
@@ -79,7 +79,7 @@
               <div class="menu-space-item__meta">
                 <span>标识 {{ item.spaceKey }}</span>
                 <span>首页 {{ item.defaultHomePath || '-' }}</span>
-                <span>菜单 {{ item.menuCount || 0 }}</span>
+                <span>导航 {{ item.menuCount || 0 }}</span>
                 <span>独立页暴露 {{ item.pageCount || 0 }}</span>
                 <span>空间权限 {{ getAccessModeLabel(item.accessMode) }}</span>
                 <span>Host {{ item.hostCount || 0 }}</span>
@@ -109,7 +109,7 @@
                 :loading="initializingSpaceKey === item.spaceKey"
                 @click.stop="initializeSpace(item)"
               >
-                初始化菜单树
+                初始化导航树
               </ElButton>
               <ElButton v-else-if="!item.isDefault" text disabled> 已初始化 </ElButton>
               <ElButton text @click.stop="openHostDrawer(undefined, item.spaceKey)"
@@ -151,7 +151,7 @@
               <strong>{{ currentSpace.defaultHomePath || '未设置' }}</strong>
             </div>
             <div class="menu-space-overview__item">
-              <span class="menu-space-overview__label">菜单 / 独立页暴露</span>
+              <span class="menu-space-overview__label">导航 / 独立页暴露</span>
               <strong>{{ currentSpace.menuCount || 0 }} / {{ currentSpace.pageCount || 0 }}</strong>
             </div>
             <div class="menu-space-overview__item">
@@ -192,7 +192,7 @@
 
         <div class="menu-space-binding-list">
           <div v-if="!hostBindings.length" class="menu-space-empty">
-            还没有 Host 绑定。当前依然按默认菜单空间运行，不影响现有架构。
+            还没有 Host 绑定。当前依然按默认导航空间运行，不影响现有架构。
           </div>
           <button
             v-for="item in hostBindings"
@@ -213,7 +213,7 @@
                 </ElTag>
               </div>
               <div class="menu-space-binding__meta">
-                <span>菜单空间 {{ item.spaceName || item.spaceKey }}</span>
+                <span>导航空间 {{ item.spaceName || item.spaceKey }}</span>
                 <span v-if="item.isDefault">主绑定</span>
                 <span>{{ getHostAuthModeLabel(item.authMode) }}</span>
                 <span v-if="item.routePrefix">前缀 {{ item.routePrefix }}</span>
@@ -229,7 +229,7 @@
     <ElDrawer v-model="spaceDrawerVisible" :title="spaceDrawerTitle" size="520px" destroy-on-close>
       <ElForm ref="spaceFormRef" :model="spaceForm" label-position="top">
         <ElFormItem label="空间名称">
-          <ElInput v-model="spaceForm.name" placeholder="例如 默认菜单空间 / 平台运营空间" />
+          <ElInput v-model="spaceForm.name" placeholder="例如 默认导航空间 / 平台运营空间" />
         </ElFormItem>
         <ElFormItem label="空间标识">
           <ElInput
@@ -259,7 +259,7 @@
             v-model="spaceForm.description"
             type="textarea"
             :rows="3"
-            placeholder="说明这个菜单空间承载什么菜单树、默认入口与 Host 边界"
+            placeholder="说明这个导航空间承载什么导航树、默认入口与 Host 边界"
           />
         </ElFormItem>
         <ElFormItem label="空间权限">
@@ -270,7 +270,7 @@
             <ElOption label="指定空间角色码" value="role_codes" />
           </ElSelect>
           <div class="field-hint"
-            >先决定谁有资格进入这个菜单空间，进入后菜单入口与受管页面都统一复用后端访问编译结果。</div
+            >先决定谁有资格进入这个导航空间，进入后导航入口与受管页面都统一复用后端访问编译结果。</div
           >
         </ElFormItem>
         <ElFormItem v-if="spaceForm.access_mode === 'role_codes'" label="允许空间角色码">
@@ -309,7 +309,7 @@
             placeholder="例如 admin.example.com 或 collaboration_workspace.example.com"
           />
         </ElFormItem>
-        <ElFormItem label="菜单空间">
+        <ElFormItem label="导航空间">
           <ElSelect v-model="hostForm.space_key" filterable style="width: 100%">
             <ElOption
               v-for="item in spaceOptions"

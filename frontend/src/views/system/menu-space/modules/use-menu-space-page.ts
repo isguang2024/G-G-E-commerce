@@ -137,7 +137,7 @@ export function useMenuSpacePage() {
 
   const summaryMetrics = computed(() => [
     { label: '当前 App', value: targetAppKey.value },
-    { label: '菜单空间', value: spaces.value.length || 0 },
+    { label: '导航空间', value: spaces.value.length || 0 },
     { label: 'Host 绑定', value: hostBindings.value.length || 0 },
     {
       label: '已初始化',
@@ -161,7 +161,7 @@ export function useMenuSpacePage() {
   )
 
   const spaceDrawerTitle = computed(() =>
-    editingSpaceKey.value ? '编辑菜单空间' : '新增菜单空间'
+    editingSpaceKey.value ? '编辑导航空间' : '新增导航空间'
   )
   const hostDrawerTitle = computed(() => (editingHost.value ? '编辑 Host 绑定' : '新增 Host 绑定'))
   const landingPathHint = computed(() => {
@@ -176,12 +176,12 @@ export function useMenuSpacePage() {
       return '默认首页必须是以 / 开头的站内路径，例如 /dashboard/console。'
     }
     if (!landingPathOptions.value.length) {
-      return '当前空间下还没有可选入口路径，可以先留空，等菜单树与受管页面配置完成后再回填。'
+      return '当前空间下还没有可选入口路径，可以先留空，等导航树与受管页面配置完成后再回填。'
     }
     if (!landingPathOptions.value.includes(value)) {
-      return '当前填写的路径不在这个菜单空间的已注册入口里，保存前建议先确认菜单树或独立页暴露是否已经归属到该空间。'
+      return '当前填写的路径不在这个导航空间的已注册入口里，保存前建议先确认导航树或独立页暴露是否已经归属到该空间。'
     }
-    return '该路径已命中当前菜单空间的可选页面，登录后和进入根路径时会优先跳到这里。'
+    return '该路径已命中当前导航空间的可选页面，登录后和进入根路径时会优先跳到这里。'
   })
 
   async function loadData() {
@@ -217,7 +217,7 @@ export function useMenuSpacePage() {
       currentResolvedBy.value = ''
       currentRequestHost.value = ''
       currentAccessGranted.value = true
-      loadError.value = error?.message || '菜单空间数据暂时不可用，稍后重试或刷新状态。'
+      loadError.value = error?.message || '导航空间数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -233,10 +233,10 @@ export function useMenuSpacePage() {
     try {
       const res = await fetchUpdateMenuSpaceMode(targetAppKey.value, spaceMode.value)
       spaceMode.value = `${res?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
-      ElMessage.success(`菜单空间模式已更新为${spaceModeLabel.value}`)
+      ElMessage.success(`导航空间模式已更新为${spaceModeLabel.value}`)
       await loadData()
     } catch (error: any) {
-      ElMessage.error(error?.message || '菜单空间模式保存失败')
+      ElMessage.error(error?.message || '导航空间模式保存失败')
     } finally {
       savingSpaceMode.value = false
     }
@@ -369,7 +369,7 @@ export function useMenuSpacePage() {
       landingPathOptions.value.length > 0 &&
       !landingPathOptions.value.includes(normalizedHomePath)
     ) {
-      ElMessage.warning('默认首页未命中当前菜单空间的已注册页面，请先确认菜单或页面归属')
+      ElMessage.warning('默认首页未命中当前导航空间的已注册页面，请先确认导航或页面归属')
       return
     }
     savingSpace.value = true
@@ -390,11 +390,11 @@ export function useMenuSpacePage() {
         access_mode: spaceForm.access_mode || 'all',
         allowed_role_codes: spaceForm.access_mode === 'role_codes' ? allowedRoleCodes : []
       })
-      ElMessage.success('菜单空间已保存')
+      ElMessage.success('导航空间已保存')
       spaceDrawerVisible.value = false
       await loadData()
     } catch (error: any) {
-      ElMessage.error(error?.message || '菜单空间保存失败')
+      ElMessage.error(error?.message || '导航空间保存失败')
     } finally {
       savingSpace.value = false
     }
@@ -406,7 +406,7 @@ export function useMenuSpacePage() {
       return
     }
     if (!`${hostForm.space_key || ''}`.trim()) {
-      ElMessage.warning('请选择菜单空间')
+      ElMessage.warning('请选择导航空间')
       return
     }
     const normalizedHost = `${hostForm.host || ''}`.trim().toLowerCase()
@@ -417,7 +417,7 @@ export function useMenuSpacePage() {
     )
     if (duplicatedBinding) {
       ElMessage.warning(
-        `该 Host 已绑定到菜单空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
+        `该 Host 已绑定到导航空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
       )
       return
     }
@@ -466,19 +466,19 @@ export function useMenuSpacePage() {
       return
     }
     if (isSpaceInitialized(item)) {
-      ElMessage.info('当前菜单空间已经初始化，可直接进入菜单管理或受管页面继续调整')
+      ElMessage.info('当前导航空间已经初始化，可直接进入导航管理或受管页面继续调整')
       return
     }
     initializingSpaceKey.value = item.spaceKey
     try {
       const result = await fetchInitializeMenuSpaceFromDefault(targetAppKey.value, item.spaceKey)
       ElMessage.success(
-        `已完成初始化：复制 ${result.createdMenuCount} 个菜单、同步 ${result.createdPackageMenuLinkCount} 条功能包菜单关联，独立页暴露 ${result.createdPageCount || 0} 项`
+        `已完成初始化：复制 ${result.createdMenuCount} 个导航、同步 ${result.createdPackageMenuLinkCount} 条功能包导航关联，独立页暴露 ${result.createdPageCount || 0} 项`
       )
       await loadData()
       goToMenuManagement(item.spaceKey)
     } catch (error: any) {
-      ElMessage.error(error?.message || '复制默认空间菜单失败')
+      ElMessage.error(error?.message || '复制默认空间导航失败')
     } finally {
       initializingSpaceKey.value = ''
     }
@@ -490,7 +490,7 @@ export function useMenuSpacePage() {
     }
     try {
       await ElMessageBox.confirm(
-        `重新初始化会清空空间“${item.name}”当前已有的菜单树、独立页暴露和功能包菜单关联，然后重新复制默认空间内容。共享受管页面定义不会被复制，只会重新计算空间暴露。`,
+        `重新初始化会清空空间“${item.name}”当前已有的导航树、独立页暴露和功能包导航关联，然后重新复制默认空间内容。共享受管页面定义不会被复制，只会重新计算空间暴露。`,
         '确认重新初始化',
         {
           confirmButtonText: '确认覆盖',
@@ -510,7 +510,7 @@ export function useMenuSpacePage() {
         true
       )
       ElMessage.success(
-        `已重新初始化：清空 ${result.clearedMenuCount || 0} 个菜单、${result.clearedPageCount || 0} 项独立页暴露、${result.clearedPackageMenuLinkCount || 0} 条功能包菜单关联，并重新复制 ${result.createdMenuCount} 个菜单`
+        `已重新初始化：清空 ${result.clearedMenuCount || 0} 个导航、${result.clearedPageCount || 0} 项独立页暴露、${result.clearedPackageMenuLinkCount || 0} 条功能包导航关联，并重新复制 ${result.createdMenuCount} 个导航`
       )
       await loadData()
       goToMenuManagement(item.spaceKey)

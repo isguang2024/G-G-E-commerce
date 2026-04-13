@@ -96,17 +96,15 @@ components:
           additionalProperties: true
     RegisterPolicyItem:
       type: object
-      required: [id, app_key, policy_code, name, target_app_key, target_navigation_space_key, status]
+      required: [id, policy_code, name, target_app_key, target_navigation_space_key, status]
       properties:
         id: {type: string, format: uuid}
-        app_key: {type: string}
         policy_code: {type: string}
         name: {type: string}
         description: {type: string}
         target_app_key: {type: string}
         target_navigation_space_key: {type: string}
         target_home_path: {type: string}
-        default_workspace_type: {type: string}
         status: {type: string}
         allow_public_register: {type: boolean}
         require_invite: {type: boolean}
@@ -131,16 +129,14 @@ components:
         total: {type: integer}
     RegisterPolicyUpsertRequest:
       type: object
-      required: [app_key, policy_code, name, target_app_key, target_navigation_space_key]
+      required: [policy_code, name, target_app_key, target_navigation_space_key]
       properties:
-        app_key: {type: string}
         policy_code: {type: string}
         name: {type: string}
         description: {type: string}
         target_app_key: {type: string}
         target_navigation_space_key: {type: string}
         target_home_path: {type: string}
-        default_workspace_type: {type: string}
         status: {type: string}
         allow_public_register: {type: boolean}
         require_invite: {type: boolean}

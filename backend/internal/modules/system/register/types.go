@@ -12,7 +12,6 @@ type EffectiveRegisterContext struct {
 	TargetAppKey             string
 	TargetNavigationSpaceKey string
 	TargetHomePath           string
-	DefaultWorkspaceType     string
 	AllowPublicRegister      bool
 	RequireInvite            bool
 	RequireEmailVerify       bool

@@ -1,72 +1,30 @@
 <template>
-  <div class="p-4 register-entry-page">
-    <div class="page-hero">
-      <div>
-        <h3 class="text-lg font-semibold">注册入口</h3>
-        <p class="hero-desc">
-          入口决定“哪个 Host + Path 会命中哪套注册策略”。推荐顺序是：先准备注册策略，再为不同域名或路径补注册入口，最后访问 URL 验证命中结果。
-        </p>
-      </div>
-      <div class="hero-actions">
-        <ElButton @click="applyDefaultEntry">填入默认入口</ElButton>
-        <ElButton type="primary" @click="openCreate">新建入口</ElButton>
-      </div>
-    </div>
-
-    <ElAlert
-      class="mb-4"
-      type="info"
-      :closable="false"
-      title="怎么配"
-      description="默认本地场景使用 account-portal + /account/auth/register。Host 留空表示任意域名，Path 前缀越具体越优先命中；入口级“允许公开注册”会覆盖策略同名开关。"
-    />
-
-    <div class="mb-4 quick-checks">
-      <div class="quick-check-card">
-        <div class="quick-check-title">推荐顺序</div>
-        <div class="quick-check-value">1. 先配策略 2. 再配入口 3. 打开 URL 验证</div>
-      </div>
-      <div class="quick-check-card">
-        <div class="quick-check-title">默认入口</div>
-        <div class="quick-check-value">{{ defaultVerifyUrl }}</div>
-      </div>
-      <div class="quick-check-card">
-        <div class="quick-check-title">当前模板承载</div>
-        <div class="quick-check-value">注册模板 = 注册策略的预设组合</div>
-      </div>
-    </div>
-
-    <ElTable :data="list" border stripe>
-      <ElTableColumn prop="entry_code" label="入口 Code" width="160" />
-      <ElTableColumn prop="name" label="名称" width="180" />
-      <ElTableColumn prop="app_key" label="App" width="140" />
-      <ElTableColumn prop="login_page_key" label="登录页模板" width="140" />
-      <ElTableColumn label="命中规则" min-width="240">
-        <template #default="{ row }">
-          <div class="font-medium">{{ buildMatchRule(row) }}</div>
-          <div class="text-xs text-gray-500">{{ buildVerifyUrl(row) }}</div>
+  <div class="p-4 register-entry-page art-full-height">
+    <ElCard class="art-table-card register-entry-main" shadow="never">
+      <ArtTableHeader layout="refresh,fullscreen" :loading="loading" @refresh="load">
+        <template #left>
+          <div class="register-entry-header">
+            <div class="register-entry-title">注册入口</div>
+            <div class="register-entry-tip">
+              入口决定“哪个 Host + Path 会命中哪套注册策略”。推荐顺序是：先准备注册策略，再为不同域名或路径补注册入口，最后访问 URL 验证命中结果。
+            </div>
+          </div>
         </template>
-      </ElTableColumn>
-      <ElTableColumn prop="policy_code" label="策略 Code" width="160" />
-      <ElTableColumn label="公开注册" width="120">
-        <template #default="{ row }">
-          <ElTag :type="resolvePublicRegisterTag(row.allow_public_register).type" effect="plain">
-            {{ resolvePublicRegisterTag(row.allow_public_register).label }}
-          </ElTag>
+        <template #right>
+          <ElButton @click="applyDefaultEntry">填入默认入口</ElButton>
+          <ElButton type="primary" @click="openCreate">新建入口</ElButton>
         </template>
-      </ElTableColumn>
-      <ElTableColumn prop="status" label="状态" width="100" />
-      <ElTableColumn label="操作" width="160" fixed="right">
-        <template #default="{ row }">
-          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-          <ElPopconfirm title="确认删除该入口？" @confirm="remove(row)">
-            <template #reference>
-              <ElButton link type="danger">删除</ElButton>
-            </template>
-          </ElPopconfirm>
-        </template>
-      </ElTableColumn>
-    </ElTable>
+      </ArtTableHeader>
+
+      <ArtTable
+        :loading="loading"
+        :data="pagedList"
+        :columns="columns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      />
+    </ElCard>
 
     <ElDialog v-model="dialogVisible" :title="editing ? '编辑入口' : '新建入口'" width="860px">
       <div class="dialog-layout">
@@ -161,8 +119,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { computed, h, onMounted, reactive, ref } from 'vue'
+  import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import type { ColumnOption } from '@/types/component'
   import {
     fetchCreateRegisterEntry,
     fetchDeleteRegisterEntry,
@@ -192,22 +151,91 @@
   const templateList = ref<any[]>([])
   const dialogVisible = ref(false)
   const editing = ref<any>(null)
+  const loading = ref(false)
+  const pagination = reactive({
+    current: 1,
+    size: 10,
+    total: 0
+  })
 
   const emptyForm = () => ({ ...DEFAULT_ENTRY })
   const form = reactive<any>(emptyForm())
 
-  const defaultVerifyUrl = computed(() => buildVerifyUrl(DEFAULT_ENTRY))
   const formMatchRule = computed(() => buildMatchRule(form))
   const previewVerifyUrl = computed(() => buildVerifyUrl(form))
+  const pagedList = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return list.value.slice(start, start + pagination.size)
+  })
+  const columns = computed<ColumnOption[]>(() => [
+    { type: 'index', label: '序号', width: 70 },
+    { prop: 'entry_code', label: '入口 Code', minWidth: 160, showOverflowTooltip: true },
+    { prop: 'name', label: '名称', minWidth: 180, showOverflowTooltip: true },
+    { prop: 'app_key', label: 'App', width: 140 },
+    { prop: 'login_page_key', label: '登录页模板', width: 140 },
+    {
+      prop: 'match_rule',
+      label: '命中规则',
+      minWidth: 280,
+      formatter: (row) =>
+        h('div', {}, [
+          h('div', { class: 'font-medium' }, buildMatchRule(row)),
+          h('div', { class: 'text-xs text-gray-500' }, buildVerifyUrl(row))
+        ])
+    },
+    { prop: 'policy_code', label: '策略 Code', minWidth: 160, showOverflowTooltip: true },
+    {
+      prop: 'allow_public_register',
+      label: '公开注册',
+      width: 140,
+      formatter: (row) => {
+        const state = resolvePublicRegisterTag(row.allow_public_register)
+        return h(ElTag, { type: state.type, effect: 'plain' }, () => state.label)
+      }
+    },
+    { prop: 'status', label: '状态', width: 110 },
+    {
+      prop: 'actions',
+      label: '操作',
+      width: 150,
+      fixed: 'right',
+      formatter: (row) =>
+        h('div', { class: 'table-actions' }, [
+          h(
+            ElButton,
+            {
+              link: true,
+              type: 'primary',
+              onClick: () => openEdit(row)
+            },
+            () => '编辑'
+          ),
+          h(
+            ElButton,
+            {
+              link: true,
+              type: 'danger',
+              onClick: () => confirmRemove(row)
+            },
+            () => '删除'
+          )
+        ])
+    }
+  ])
 
   const load = async () => {
+    loading.value = true
     try {
       const data: any = await fetchListRegisterEntries()
       list.value = data?.records || []
+      pagination.total = list.value.length
+      syncCurrentPage()
       const templates: any = await fetchListLoginPageTemplates()
       templateList.value = templates?.records || []
     } catch (e: any) {
       ElMessage.error(e?.message || '加载失败')
+    } finally {
+      loading.value = false
     }
   }
 
@@ -250,6 +278,15 @@
     }
   }
 
+  const confirmRemove = async (row: any) => {
+    try {
+      await ElMessageBox.confirm(`确认删除入口“${row.name || row.entry_code}”吗？`, '删除确认', {
+        type: 'warning'
+      })
+      await remove(row)
+    } catch {}
+  }
+
   const remove = async (row: any) => {
     try {
       await fetchDeleteRegisterEntry(row.id)
@@ -282,53 +319,68 @@
     return { label: '继承策略', type: 'info' as const }
   }
 
+  function syncCurrentPage() {
+    const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pagination.size))
+    if (pagination.current > totalPages) {
+      pagination.current = totalPages
+    }
+  }
+
+  function handleSizeChange(size: number) {
+    pagination.size = size
+    pagination.current = 1
+    syncCurrentPage()
+  }
+
+  function handleCurrentChange(current: number) {
+    pagination.current = current
+    syncCurrentPage()
+  }
+
   onMounted(load)
 </script>
 
 <style scoped>
-  .page-hero {
+  .register-entry-page {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
+    flex-direction: column;
+    min-height: 0;
   }
 
-  .hero-desc {
-    margin-top: 6px;
-    max-width: 760px;
+  .register-entry-main {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .register-entry-main :deep(.el-card__body) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .register-entry-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .register-entry-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .register-entry-tip {
     color: var(--el-text-color-secondary);
     line-height: 1.7;
   }
 
-  .hero-actions {
+  .table-actions {
     display: flex;
-    gap: 12px;
-  }
-
-  .quick-checks {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .quick-check-card {
-    padding: 14px 16px;
-    border: 1px solid var(--el-border-color-light);
-    border-radius: 14px;
-    background: #fff;
-  }
-
-  .quick-check-title {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .quick-check-value {
-    margin-top: 6px;
-    line-height: 1.6;
-    color: var(--el-text-color-primary);
-    word-break: break-all;
+    align-items: center;
+    gap: 4px;
   }
 
   .dialog-layout {
