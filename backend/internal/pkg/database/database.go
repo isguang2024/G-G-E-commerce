@@ -179,6 +179,9 @@ func AutoMigrate() error {
 		&models.RegisterPolicy{},
 		&models.RegisterPolicyFeaturePackage{},
 		&models.RegisterPolicyRole{},
+		&models.SocialAuthProvider{},
+		&models.UserSocialAccount{},
+		&models.SocialOAuthState{},
 		// 数据字典
 		&models.DictType{},
 		&models.DictItem{},

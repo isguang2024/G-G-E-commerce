@@ -242,6 +242,33 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/social/exchange:
+    post:
+      operationId: exchangeSocialToken
+      summary: 兑换社交登录 token（登录或注册绑定上下文）
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/SocialTokenExchangeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/SocialTokenExchangeResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /auth/me:
     get:
       operationId: getAuthMe

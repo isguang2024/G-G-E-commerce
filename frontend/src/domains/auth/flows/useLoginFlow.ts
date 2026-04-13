@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { fetchLogin } from '@/domains/auth/api'
+import { fetchLogin, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { HttpError } from '@/utils/http/error'
 import {
   finalizeAuthenticatedSession,
@@ -18,6 +18,36 @@ export function useLoginFlow() {
   const { t } = useI18n()
   const loading = ref(false)
   const submitError = ref('')
+
+  async function consumeSocialToken(): Promise<boolean> {
+    const socialToken = `${route.query.social_token || ''}`.trim()
+    if (!socialToken) return false
+    try {
+      const result = await fetchSocialTokenExchange(socialToken)
+      if (result.intent === 'login' && result.access_token) {
+        await finalizeAuthenticatedSession(
+          {
+            access_token: result.access_token,
+            refresh_token: result.refresh_token
+          },
+          { refreshUserContext: false }
+        )
+        await gotoAfterLogin(normalizeRedirect(route.query.redirect as string), router)
+        return true
+      }
+      const query: Record<string, string> = { social_token: socialToken }
+      if (`${route.query.login_page_key || ''}`.trim()) {
+        query.login_page_key = `${route.query.login_page_key}`.trim()
+      }
+      await router.replace({ path: '/account/auth/register', query })
+      return true
+    } catch (error) {
+      const message =
+        error instanceof HttpError ? error.message : error instanceof Error ? error.message : ''
+      submitError.value = message || '社交登录凭证已失效，请重新发起'
+      return false
+    }
+  }
 
   async function submit(formData: LoginFormState): Promise<void> {
     loading.value = true
@@ -66,6 +96,7 @@ export function useLoginFlow() {
     loading,
     submitError,
     loadRememberedCredentials,
-    submit
+    submit,
+    consumeSocialToken
   }
 }

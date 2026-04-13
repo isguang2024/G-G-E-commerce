@@ -15,11 +15,11 @@ import (
 
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
@@ -156,6 +156,12 @@ func main() {
 		logger.Warn("Failed to initialize register system seeds", zap.Error(err))
 	} else {
 		logger.Info("Register system seeds initialized successfully")
+	}
+
+	if err := permissionseed.EnsureSocialAuthProviders(database.DB); err != nil {
+		logger.Warn("Failed to initialize social auth providers", zap.Error(err))
+	} else {
+		logger.Info("Social auth providers initialized successfully")
 	}
 
 	// 初始化内置字典
@@ -1960,4 +1966,3 @@ func transferMenuReferences(tx *gorm.DB, sourceMenuID, targetMenuID uuid.UUID) e
 
 	return nil
 }
-

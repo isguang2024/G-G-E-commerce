@@ -9,7 +9,6 @@
       </div>
       <div class="hero-actions">
         <ElButton @click="applyDefaultEntry">填入默认入口</ElButton>
-        <ElButton @click="gotoTemplateManage">登录页模板管理</ElButton>
         <ElButton type="primary" @click="openCreate">新建入口</ElButton>
       </div>
     </div>
@@ -158,103 +157,21 @@
       </template>
     </ElDialog>
 
-    <div class="page-hero mt-6">
-      <div>
-        <h3 class="text-lg font-semibold">登录页模板</h3>
-        <p class="hero-desc">认证中心模式下由模板键决定登录/注册/找回密码统一主题。</p>
-      </div>
-      <div class="hero-actions">
-        <ElButton type="primary" @click="openTemplateCreate">新建模板</ElButton>
-      </div>
-    </div>
-    <ElTable :data="templateList" border stripe>
-      <ElTableColumn prop="template_key" label="模板 Key" width="160" />
-      <ElTableColumn prop="name" label="名称" width="180" />
-      <ElTableColumn prop="scene" label="场景" width="120" />
-      <ElTableColumn prop="app_scope" label="作用域" width="120" />
-      <ElTableColumn prop="status" label="状态" width="100" />
-      <ElTableColumn label="默认模板" width="100">
-        <template #default="{ row }">
-          <ElTag v-if="row.is_default" type="success" effect="plain">是</ElTag>
-          <span v-else>否</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="操作" width="180" fixed="right">
-        <template #default="{ row }">
-          <ElButton link type="primary" @click="openTemplateEdit(row)">编辑</ElButton>
-          <ElPopconfirm title="确认删除该模板？" @confirm="removeTemplate(row)">
-            <template #reference>
-              <ElButton link type="danger">删除</ElButton>
-            </template>
-          </ElPopconfirm>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-
-    <ElDialog v-model="templateDialogVisible" :title="editingTemplate ? '编辑模板' : '新建模板'" width="760px">
-      <ElForm :model="templateForm" label-width="140px">
-        <ElFormItem label="模板 Key" required>
-          <ElInput
-            v-model="templateForm.template_key"
-            :disabled="!!editingTemplate"
-            placeholder="如 default / aurora"
-          />
-        </ElFormItem>
-        <ElFormItem label="名称" required>
-          <ElInput v-model="templateForm.name" />
-        </ElFormItem>
-        <ElFormItem label="场景">
-          <ElSelect v-model="templateForm.scene">
-            <ElOption label="auth_family" value="auth_family" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="作用域">
-          <ElSelect v-model="templateForm.app_scope">
-            <ElOption label="shared" value="shared" />
-            <ElOption label="app" value="app" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElSelect v-model="templateForm.status">
-            <ElOption label="normal" value="normal" />
-            <ElOption label="disabled" value="disabled" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="默认模板">
-          <ElSwitch v-model="templateForm.is_default" />
-        </ElFormItem>
-        <ElFormItem label="配置（JSON）">
-          <ElInput v-model="templateConfigText" type="textarea" :rows="5" />
-        </ElFormItem>
-        <ElFormItem label="元数据（JSON）">
-          <ElInput v-model="templateMetaText" type="textarea" :rows="5" />
-        </ElFormItem>
-      </ElForm>
-      <template #footer>
-        <ElButton @click="templateDialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="submitTemplate">保存</ElButton>
-      </template>
-    </ElDialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
-  import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import {
-    fetchCreateLoginPageTemplate,
     fetchCreateRegisterEntry,
-    fetchDeleteLoginPageTemplate,
     fetchDeleteRegisterEntry,
     fetchListLoginPageTemplates,
     fetchListRegisterEntries,
-    fetchUpdateLoginPageTemplate,
     fetchUpdateRegisterEntry
   } from '@/domains/governance/api/register'
 
   defineOptions({ name: 'SystemRegisterEntry' })
-  const router = useRouter()
 
   const DEFAULT_ENTRY = {
     entry_code: 'default',
@@ -275,21 +192,9 @@
   const templateList = ref<any[]>([])
   const dialogVisible = ref(false)
   const editing = ref<any>(null)
-  const templateDialogVisible = ref(false)
-  const editingTemplate = ref<any>(null)
 
   const emptyForm = () => ({ ...DEFAULT_ENTRY })
   const form = reactive<any>(emptyForm())
-  const templateForm = reactive<any>({
-    template_key: '',
-    name: '',
-    scene: 'auth_family',
-    app_scope: 'shared',
-    status: 'normal',
-    is_default: false
-  })
-  const templateConfigText = ref('{}')
-  const templateMetaText = ref('{}')
 
   const defaultVerifyUrl = computed(() => buildVerifyUrl(DEFAULT_ENTRY))
   const formMatchRule = computed(() => buildMatchRule(form))
@@ -324,10 +229,6 @@
     dialogVisible.value = true
   }
 
-  const gotoTemplateManage = () => {
-    void router.push('/system/login-page-template')
-  }
-
   const submit = async () => {
     try {
       const payload = { ...form }
@@ -356,86 +257,6 @@
       await load()
     } catch (e: any) {
       ElMessage.error(e?.message || '删除失败')
-    }
-  }
-
-  const openTemplateCreate = () => {
-    editingTemplate.value = null
-    Object.assign(templateForm, {
-      template_key: '',
-      name: '',
-      scene: 'auth_family',
-      app_scope: 'shared',
-      status: 'normal',
-      is_default: false
-    })
-    templateConfigText.value = '{}'
-    templateMetaText.value = '{}'
-    templateDialogVisible.value = true
-  }
-
-  const openTemplateEdit = (row: any) => {
-    editingTemplate.value = row
-    Object.assign(templateForm, {
-      template_key: row.template_key || '',
-      name: row.name || '',
-      scene: row.scene || 'auth_family',
-      app_scope: row.app_scope || 'shared',
-      status: row.status || 'normal',
-      is_default: Boolean(row.is_default)
-    })
-    templateConfigText.value = JSON.stringify(row.config || {}, null, 2)
-    templateMetaText.value = JSON.stringify(row.meta || {}, null, 2)
-    templateDialogVisible.value = true
-  }
-
-  const submitTemplate = async () => {
-    const templateKey = `${templateForm.template_key || ''}`.trim()
-    const name = `${templateForm.name || ''}`.trim()
-    if (!templateKey || !name) {
-      ElMessage.warning('请填写模板 Key 和名称')
-      return
-    }
-    let config: Record<string, unknown> = {}
-    let meta: Record<string, unknown> = {}
-    try {
-      config = JSON.parse(`${templateConfigText.value || '{}'}`) || {}
-      meta = JSON.parse(`${templateMetaText.value || '{}'}`) || {}
-    } catch {
-      ElMessage.warning('模板配置或元数据不是有效 JSON')
-      return
-    }
-    const payload = {
-      template_key: templateKey,
-      name,
-      scene: templateForm.scene || 'auth_family',
-      app_scope: templateForm.app_scope || 'shared',
-      status: templateForm.status || 'normal',
-      is_default: Boolean(templateForm.is_default),
-      config,
-      meta
-    }
-    try {
-      if (editingTemplate.value) {
-        await fetchUpdateLoginPageTemplate(editingTemplate.value.template_key, payload)
-      } else {
-        await fetchCreateLoginPageTemplate(payload)
-      }
-      ElMessage.success('模板已保存')
-      templateDialogVisible.value = false
-      await load()
-    } catch (e: any) {
-      ElMessage.error(e?.message || '模板保存失败')
-    }
-  }
-
-  const removeTemplate = async (row: any) => {
-    try {
-      await fetchDeleteLoginPageTemplate(row.template_key)
-      ElMessage.success('模板已删除')
-      await load()
-    } catch (e: any) {
-      ElMessage.error(e?.message || '模板删除失败')
     }
   }
 

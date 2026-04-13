@@ -15,6 +15,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/gg-ecommerce/backend/internal/modules/system/register"
+	"github.com/gg-ecommerce/backend/internal/modules/system/social"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
@@ -116,6 +118,18 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	}
 	publicBridge := func(c *gin.Context) { ogenServeWith(c, false) }
 	ogenBridge := func(c *gin.Context) { ogenServeWith(c, true) }
+	socialSvc := social.NewService(
+		db,
+		auth.NewAuthService(user.NewUserRepository(db), &cfg.JWT, logger),
+		user.NewUserRepository(db),
+		register.NewResolver(register.NewRepository(db)),
+		cfg.JWT.Secret,
+		logger,
+	)
+	socialHandler := social.NewHTTPHandler(socialSvc, logger)
+	r.GET("/api/v1/auth/oauth/:provider/authorize", socialHandler.Authorize)
+	r.GET("/api/v1/auth/oauth/:provider/callback", socialHandler.Callback)
+	r.POST("/api/v1/auth/social/exchange", socialHandler.Exchange)
 
 	v1 := r.Group("/api/v1")
 	v1.Use(endpointAccessService.RequireActiveEndpoint())

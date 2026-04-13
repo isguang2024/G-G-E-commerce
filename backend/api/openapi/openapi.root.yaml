@@ -67,6 +67,8 @@ paths:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1exchange
   /auth/callback/silent:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1callback~1silent
+  /auth/social/exchange:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1social~1exchange
   /auth/me:
     $ref: ./domains/auth/paths.yaml#/paths/~1auth~1me
   /workspaces/my:

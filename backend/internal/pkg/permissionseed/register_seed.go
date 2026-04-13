@@ -657,6 +657,16 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 					"forgetPassword": true,
 					"register":       true,
 				},
+				"social": systemmodels.MetaJSON{
+					"items": []any{
+						systemmodels.MetaJSON{
+							"key":  GitHubProviderKey,
+							"name": "GitHub",
+							"icon": "mdi:github",
+							"url":  "/auth/oauth/github/authorize",
+						},
+					},
+				},
 				"texts": systemmodels.MetaJSON{
 					"title":    "欢迎回来",
 					"subTitle": "继续完成登录或注册流程",
@@ -716,6 +726,16 @@ func ensureLoginPageTemplates(db *gorm.DB) error {
 					"rememberMe":     true,
 					"forgetPassword": true,
 					"register":       true,
+				},
+				"social": systemmodels.MetaJSON{
+					"items": []any{
+						systemmodels.MetaJSON{
+							"key":  GitHubProviderKey,
+							"name": "GitHub",
+							"icon": "mdi:github",
+							"url":  "/auth/oauth/github/authorize",
+						},
+					},
 				},
 				"texts": systemmodels.MetaJSON{
 					"title":    "继续验证身份",

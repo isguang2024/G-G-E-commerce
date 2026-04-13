@@ -45,6 +45,9 @@
             <ElTag v-if="hasConfigKey(row, 'pages')" size="small" effect="plain" type="info"
               >pages</ElTag
             >
+            <ElTag v-if="hasConfigKey(row, 'social')" size="small" effect="plain" type="danger"
+              >social</ElTag
+            >
             <span v-if="!hasAnyConfig(row)" class="text-gray-400 text-xs">未配置</span>
           </div>
         </template>
@@ -131,6 +134,49 @@
           </ElFormItem>
           <ElFormItem label="注册入口">
             <ElSwitch v-model="configFeatures.register" />
+          </ElFormItem>
+          <ElFormItem label="社交入口配置">
+            <div class="social-config-wrap">
+              <div class="social-config-header">
+                <ElButton size="small" @click="addSocialItem">新增入口</ElButton>
+              </div>
+              <div v-if="socialItems.length === 0" class="field-tip">未配置社交入口</div>
+              <div
+                v-for="(item, idx) in socialItems"
+                :key="`social-${idx}`"
+                class="social-config-row"
+              >
+                <ElInput v-model="item.key" placeholder="key（如 wechat）" />
+                <ElInput v-model="item.name" placeholder="显示名（如 微信）" />
+                <ElInput v-model="item.icon" placeholder="图标（emoji / URL）" />
+                <ElSelect
+                  v-model="item.preset"
+                  placeholder="预设"
+                  @change="(val) => applySocialPreset(item, val)"
+                >
+                  <ElOption label="无" value="" />
+                  <ElOption label="微信" value="wechat" />
+                  <ElOption label="GitHub" value="github" />
+                  <ElOption label="Google" value="google" />
+                </ElSelect>
+                <ElInput v-model="item.url" placeholder="跳转 URL（/auth/oauth/wechat）" />
+                <ElButton
+                  link
+                  type="primary"
+                  :disabled="!isValidSocialUrl(item.url)"
+                  @click="previewSocialUrl(item.url)"
+                >
+                  预览
+                </ElButton>
+                <ElButton link type="danger" @click="removeSocialItem(idx)">删除</ElButton>
+              </div>
+              <ElInput
+                v-model="socialCustomHtml"
+                type="textarea"
+                :rows="3"
+                placeholder="可选：自定义 HTML（仅 HTML，脚本会被过滤）"
+              />
+            </div>
           </ElFormItem>
 
           <ElDivider content-position="left">全局 texts (自定义文案)</ElDivider>
@@ -242,8 +288,25 @@
   defineOptions({ name: 'SystemLoginPageTemplate' })
 
   type SceneKey = 'login' | 'register' | 'forget_password'
+  interface SocialConfigItem {
+    key: string
+    name: string
+    icon: string
+    url: string
+    preset?: string
+  }
+  interface SocialPreset {
+    key: string
+    name: string
+    icon: string
+  }
 
   const SCENES: SceneKey[] = ['login', 'register', 'forget_password']
+  const SOCIAL_PRESETS: Record<string, SocialPreset> = {
+    wechat: { key: 'wechat', name: '微信', icon: '💬' },
+    github: { key: 'github', name: 'GitHub', icon: '🐙' },
+    google: { key: 'google', name: 'Google', icon: 'G' }
+  }
 
   const list = ref<any[]>([])
   const dialogVisible = ref(false)
@@ -278,6 +341,8 @@
     forgetPassword: true,
     register: true
   })
+  const socialItems = ref<SocialConfigItem[]>([])
+  const socialCustomHtml = ref('')
 
   const configTexts = reactive<any>({
     title: '',
@@ -293,6 +358,48 @@
 
   const rawConfigText = ref('{}')
   const rawMetaText = ref('{}')
+
+  function createEmptySocialItem(): SocialConfigItem {
+    return {
+      key: '',
+      name: '',
+      icon: '',
+      url: '',
+      preset: ''
+    }
+  }
+
+  function addSocialItem() {
+    socialItems.value.push(createEmptySocialItem())
+  }
+
+  function removeSocialItem(index: number) {
+    socialItems.value.splice(index, 1)
+  }
+
+  function isValidSocialUrl(url: string): boolean {
+    const value = `${url || ''}`.trim()
+    if (!value) return false
+    return /^https?:\/\//i.test(value) || value.startsWith('/')
+  }
+
+  function previewSocialUrl(url: string) {
+    const value = `${url || ''}`.trim()
+    if (!isValidSocialUrl(value)) return
+    const target = value.startsWith('/') ? `${window.location.origin}${value}` : value
+    window.open(target, '_blank', 'noopener,noreferrer')
+  }
+
+  function applySocialPreset(item: SocialConfigItem, presetKey: string) {
+    const preset = SOCIAL_PRESETS[presetKey]
+    if (!preset) return
+    item.key = item.key || preset.key
+    item.name = item.name || preset.name
+    item.icon = item.icon || preset.icon
+    if (!item.url) {
+      item.url = `/auth/oauth/${preset.key}`
+    }
+  }
 
   function sceneLabel(scene: SceneKey): string {
     if (scene === 'login') return '登录页'
@@ -334,7 +441,8 @@
       hasConfigKey(row, 'theme') ||
       hasConfigKey(row, 'features') ||
       hasConfigKey(row, 'texts') ||
-      hasConfigKey(row, 'pages')
+      hasConfigKey(row, 'pages') ||
+      hasConfigKey(row, 'social')
     )
   }
 
@@ -346,6 +454,17 @@
       }
     }
     return result
+  }
+
+  function buildSocialItems(): SocialConfigItem[] {
+    return socialItems.value
+      .map((item) => ({
+        key: `${item.key || ''}`.trim(),
+        name: `${item.name || ''}`.trim(),
+        icon: `${item.icon || ''}`.trim(),
+        url: `${item.url || ''}`.trim()
+      }))
+      .filter((item) => item.key && item.url)
   }
 
   function buildPageOverrides(): Record<string, unknown> {
@@ -382,10 +501,17 @@
     const features = cleanObject({ ...configFeatures })
     const texts = cleanObject({ ...configTexts })
     const pages = buildPageOverrides()
+    const items = buildSocialItems()
+    const customHtml = `${socialCustomHtml.value || ''}`.trim()
+    const social = cleanObject({
+      items: items.length > 0 ? items : undefined,
+      customHtml: customHtml || undefined
+    })
     if (Object.keys(theme).length > 0) base.theme = theme
     if (Object.keys(features).length > 0) base.features = features
     if (Object.keys(texts).length > 0) base.texts = texts
     if (Object.keys(pages).length > 0) base.pages = pages
+    if (Object.keys(social).length > 0) base.social = social
     return base
   }
 
@@ -428,6 +554,18 @@
       btnText: texts.btnText || ''
     })
     resetPageOverrides(config)
+    const social = config?.social || {}
+    const parsedItems = Array.isArray(social?.items) ? social.items : features?.socialItems
+    socialItems.value = (Array.isArray(parsedItems) ? parsedItems : [])
+      .map((item: any) => ({
+        key: `${item?.key || ''}`.trim(),
+        name: `${item?.name || ''}`.trim(),
+        icon: `${item?.icon || ''}`.trim(),
+        url: `${item?.url || ''}`.trim(),
+        preset: ''
+      }))
+      .filter((item: SocialConfigItem) => item.key || item.name || item.icon || item.url)
+    socialCustomHtml.value = `${social?.customHtml || features?.socialCustomHtml || ''}`.trim()
   }
 
   const load = async () => {
@@ -493,6 +631,13 @@
     const name = `${form.name || ''}`.trim()
     if (!templateKey || !name) {
       ElMessage.warning('请填写模板 Key 和名称')
+      return
+    }
+    const invalidSocialUrls = socialItems.value
+      .map((item) => `${item.url || ''}`.trim())
+      .filter((url) => url && !isValidSocialUrl(url))
+    if (invalidSocialUrls.length > 0) {
+      ElMessage.warning('社交入口 URL 仅支持 /path 或 http(s):// 开头')
       return
     }
     const config = buildConfigPayload()
@@ -656,5 +801,24 @@
     font-size: 12px;
     line-height: 1.6;
     color: var(--el-text-color-secondary);
+  }
+
+  .social-config-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .social-config-header {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .social-config-row {
+    display: grid;
+    grid-template-columns: 100px 110px minmax(110px, 1fr) 90px minmax(180px, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
   }
 </style>

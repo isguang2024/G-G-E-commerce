@@ -26,10 +26,27 @@ export interface AuthTemplateTheme {
 export interface AuthTemplateFeatures {
   socialLogin?: boolean
   socialProviders?: string[]
+  socialItems?: AuthTemplateSocialItem[]
+  socialCustomHtml?: string
   captcha?: boolean
   rememberMe?: boolean
   forgetPassword?: boolean
   register?: boolean
+  [key: string]: unknown
+}
+
+export interface AuthTemplateSocialItem {
+  key?: string
+  name?: string
+  icon?: string
+  url?: string
+  [key: string]: unknown
+}
+
+export interface AuthTemplateSocialCapability {
+  allow?: boolean
+  reason?: string
+  providers?: string[]
   [key: string]: unknown
 }
 
@@ -40,6 +57,14 @@ export interface AuthTemplateTexts {
   btnText?: string
   placeholder?: Record<string, string>
   copyright?: string
+  [key: string]: unknown
+}
+
+/** social 配置块：独立社交入口配置 */
+export interface AuthTemplateSocial {
+  items?: AuthTemplateSocialItem[]
+  customHtml?: string
+  capability?: AuthTemplateSocialCapability
   [key: string]: unknown
 }
 
@@ -135,6 +160,23 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
     ) as AuthTemplateTexts
   })
 
+  /** social: 社交登录入口（结构化项 + 可选受限 HTML） */
+  const social = computed<AuthTemplateSocial>(() => {
+    const merged = mergePlainObject(
+      normalizePlainObject(rawTemplateConfig.value.social),
+      normalizePlainObject(sceneTemplateConfig.value.social)
+    ) as AuthTemplateSocial
+    const featureItems = (features.value.socialItems || []) as AuthTemplateSocialItem[]
+    const featureHtml = `${features.value.socialCustomHtml || ''}`.trim()
+    if ((!merged.items || merged.items.length === 0) && featureItems.length > 0) {
+      merged.items = featureItems
+    }
+    if (!`${merged.customHtml || ''}`.trim() && featureHtml) {
+      merged.customHtml = featureHtml
+    }
+    return merged
+  })
+
   const isPreview = computed(() => {
     return `${route.query.preview || ''}`.trim() === '1'
   })
@@ -195,6 +237,7 @@ export function useAuthPageTemplate(scene: AuthPageScene) {
     theme,
     features,
     texts,
+    social,
     isPreview,
     registerPath,
     registerLink,

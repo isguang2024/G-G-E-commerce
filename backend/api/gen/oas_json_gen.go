@@ -25698,6 +25698,40 @@ func (s *OptPermissionGroupItem) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SocialTokenExchangeResponseUser as json.
+func (o OptSocialTokenExchangeResponseUser) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SocialTokenExchangeResponseUser from json.
+func (o *OptSocialTokenExchangeResponseUser) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSocialTokenExchangeResponseUser to nil")
+	}
+	o.Set = true
+	o.Value = make(SocialTokenExchangeResponseUser)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSocialTokenExchangeResponseUser) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSocialTokenExchangeResponseUser) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes string as json.
 func (o OptString) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -39272,9 +39306,15 @@ func (s *RegisterRequest) encodeFields(e *jx.Encoder) {
 			s.AgreementVersion.Encode(e)
 		}
 	}
+	{
+		if s.SocialToken.Set {
+			e.FieldStart("social_token")
+			s.SocialToken.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfRegisterRequest = [8]string{
+var jsonFieldsNameOfRegisterRequest = [9]string{
 	0: "username",
 	1: "password",
 	2: "confirm_password",
@@ -39283,6 +39323,7 @@ var jsonFieldsNameOfRegisterRequest = [8]string{
 	5: "captcha_token",
 	6: "invitation_code",
 	7: "agreement_version",
+	8: "social_token",
 }
 
 // Decode decodes RegisterRequest from json.
@@ -39290,7 +39331,7 @@ func (s *RegisterRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode RegisterRequest to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -39378,6 +39419,16 @@ func (s *RegisterRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"agreement_version\"")
 			}
+		case "social_token":
+			if err := func() error {
+				s.SocialToken.Reset()
+				if err := s.SocialToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"social_token\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -39387,8 +39438,9 @@ func (s *RegisterRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b00000011,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -42163,6 +42215,501 @@ func (s *SilentSSORequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SilentSSORequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SocialTokenExchangeRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SocialTokenExchangeRequest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("social_token")
+		e.Str(s.SocialToken)
+	}
+}
+
+var jsonFieldsNameOfSocialTokenExchangeRequest = [1]string{
+	0: "social_token",
+}
+
+// Decode decodes SocialTokenExchangeRequest from json.
+func (s *SocialTokenExchangeRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SocialTokenExchangeRequest to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "social_token":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.SocialToken = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"social_token\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SocialTokenExchangeRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSocialTokenExchangeRequest) {
+					name = jsonFieldsNameOfSocialTokenExchangeRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SocialTokenExchangeRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SocialTokenExchangeRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SocialTokenExchangeResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SocialTokenExchangeResponse) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("intent")
+		s.Intent.Encode(e)
+	}
+	{
+		e.FieldStart("provider_key")
+		e.Str(s.ProviderKey)
+	}
+	{
+		if s.ProviderName.Set {
+			e.FieldStart("provider_name")
+			s.ProviderName.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("provider_uid")
+		e.Str(s.ProviderUID)
+	}
+	{
+		if s.ProviderUser.Set {
+			e.FieldStart("provider_user")
+			s.ProviderUser.Encode(e)
+		}
+	}
+	{
+		if s.Email.Set {
+			e.FieldStart("email")
+			s.Email.Encode(e)
+		}
+	}
+	{
+		if s.AvatarURL.Set {
+			e.FieldStart("avatar_url")
+			s.AvatarURL.Encode(e)
+		}
+	}
+	{
+		if s.MatchedUserID.Set {
+			e.FieldStart("matched_user_id")
+			s.MatchedUserID.Encode(e)
+		}
+	}
+	{
+		if s.NeedRegister.Set {
+			e.FieldStart("need_register")
+			s.NeedRegister.Encode(e)
+		}
+	}
+	{
+		if s.AccessToken.Set {
+			e.FieldStart("access_token")
+			s.AccessToken.Encode(e)
+		}
+	}
+	{
+		if s.RefreshToken.Set {
+			e.FieldStart("refresh_token")
+			s.RefreshToken.Encode(e)
+		}
+	}
+	{
+		if s.ExpiresIn.Set {
+			e.FieldStart("expires_in")
+			s.ExpiresIn.Encode(e)
+		}
+	}
+	{
+		if s.User.Set {
+			e.FieldStart("user")
+			s.User.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSocialTokenExchangeResponse = [13]string{
+	0:  "intent",
+	1:  "provider_key",
+	2:  "provider_name",
+	3:  "provider_uid",
+	4:  "provider_user",
+	5:  "email",
+	6:  "avatar_url",
+	7:  "matched_user_id",
+	8:  "need_register",
+	9:  "access_token",
+	10: "refresh_token",
+	11: "expires_in",
+	12: "user",
+}
+
+// Decode decodes SocialTokenExchangeResponse from json.
+func (s *SocialTokenExchangeResponse) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SocialTokenExchangeResponse to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "intent":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Intent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"intent\"")
+			}
+		case "provider_key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.ProviderKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"provider_key\"")
+			}
+		case "provider_name":
+			if err := func() error {
+				s.ProviderName.Reset()
+				if err := s.ProviderName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"provider_name\"")
+			}
+		case "provider_uid":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.ProviderUID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"provider_uid\"")
+			}
+		case "provider_user":
+			if err := func() error {
+				s.ProviderUser.Reset()
+				if err := s.ProviderUser.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"provider_user\"")
+			}
+		case "email":
+			if err := func() error {
+				s.Email.Reset()
+				if err := s.Email.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"email\"")
+			}
+		case "avatar_url":
+			if err := func() error {
+				s.AvatarURL.Reset()
+				if err := s.AvatarURL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"avatar_url\"")
+			}
+		case "matched_user_id":
+			if err := func() error {
+				s.MatchedUserID.Reset()
+				if err := s.MatchedUserID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"matched_user_id\"")
+			}
+		case "need_register":
+			if err := func() error {
+				s.NeedRegister.Reset()
+				if err := s.NeedRegister.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"need_register\"")
+			}
+		case "access_token":
+			if err := func() error {
+				s.AccessToken.Reset()
+				if err := s.AccessToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"access_token\"")
+			}
+		case "refresh_token":
+			if err := func() error {
+				s.RefreshToken.Reset()
+				if err := s.RefreshToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"refresh_token\"")
+			}
+		case "expires_in":
+			if err := func() error {
+				s.ExpiresIn.Reset()
+				if err := s.ExpiresIn.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"expires_in\"")
+			}
+		case "user":
+			if err := func() error {
+				s.User.Reset()
+				if err := s.User.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"user\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SocialTokenExchangeResponse")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00001011,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSocialTokenExchangeResponse) {
+					name = jsonFieldsNameOfSocialTokenExchangeResponse[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SocialTokenExchangeResponse) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SocialTokenExchangeResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SocialTokenExchangeResponseIntent as json.
+func (s SocialTokenExchangeResponseIntent) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SocialTokenExchangeResponseIntent from json.
+func (s *SocialTokenExchangeResponseIntent) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SocialTokenExchangeResponseIntent to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SocialTokenExchangeResponseIntent(v) {
+	case SocialTokenExchangeResponseIntentLogin:
+		*s = SocialTokenExchangeResponseIntentLogin
+	case SocialTokenExchangeResponseIntentRegister:
+		*s = SocialTokenExchangeResponseIntentRegister
+	case SocialTokenExchangeResponseIntentConflict:
+		*s = SocialTokenExchangeResponseIntentConflict
+	default:
+		*s = SocialTokenExchangeResponseIntent(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SocialTokenExchangeResponseIntent) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SocialTokenExchangeResponseIntent) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s SocialTokenExchangeResponseUser) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s SocialTokenExchangeResponseUser) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes SocialTokenExchangeResponseUser from json.
+func (s *SocialTokenExchangeResponseUser) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SocialTokenExchangeResponseUser to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SocialTokenExchangeResponseUser")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SocialTokenExchangeResponseUser) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SocialTokenExchangeResponseUser) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

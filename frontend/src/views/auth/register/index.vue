@@ -26,7 +26,19 @@
             type="warning"
             :closable="false"
             title="注册上下文读取失败"
-            :description="contextError"
+              :description="contextError"
+          />
+          <ElAlert
+            v-if="socialContext"
+            class="mt-3"
+            :type="socialContext.intent === 'conflict' ? 'warning' : 'success'"
+            :closable="false"
+            :title="
+              socialContext.intent === 'conflict'
+                ? '检测到同邮箱已有账号，请使用该账号登录后再做账号绑定'
+                : '已获取社交账号信息，注册成功后将自动绑定'
+            "
+            :description="`来源：${socialContext.provider_name || socialContext.provider_key}，账号：${socialContext.provider_user || '-'}，邮箱：${socialContext.email || '-'}`"
           />
           <div v-else-if="ctx" class="mt-4 register-context-panel">
             <div class="context-header">
@@ -189,6 +201,13 @@
               </ElButton>
             </div>
 
+            <SocialLoginPanel
+              :enabled="features.socialLogin === true"
+              :social="social"
+              :login-page-key="loginPageKey"
+              page-scene="register"
+            />
+
             <div class="mt-5 text-sm text-g-600">
               <span>{{ $t('register.hasAccount') }}</span>
               <RouterLink class="text-theme" :to="loginLink">{{
@@ -208,6 +227,7 @@
   import { RoutesAlias } from '@/router/routesAlias'
   import { useRegisterFlow, type RegisterFormState } from '@/domains/auth/flows/useRegisterFlow'
   import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
+  import SocialLoginPanel from '../login/components/SocialLoginPanel.vue'
 
   defineOptions({ name: 'Register' })
 
@@ -217,9 +237,9 @@
 
   const { t, locale } = useI18n()
   const formRef = ref<FormInstance>()
-  const { ctx, contextError, loading, isPublicRegisterDisabled, loadContext, register } =
+  const { ctx, contextError, loading, isPublicRegisterDisabled, loadContext, register, socialContext } =
     useRegisterFlow()
-  const { themeClass, loginPageKey, templateName, theme, texts, isPreview } =
+  const { themeClass, loginPageKey, templateName, theme, texts, social, features, isPreview } =
     useAuthPageTemplate('register')
 
   const formKey = ref(0)
@@ -283,6 +303,16 @@
     captchaToken: '',
     agreement: false
   })
+
+  watch(
+    () => socialContext.value,
+    (val) => {
+      if (!val) return
+      if (!formData.email && val.email) formData.email = val.email
+      if (!formData.username && val.provider_user) formData.username = val.provider_user
+    },
+    { immediate: true }
+  )
 
   /**
    * 验证密码

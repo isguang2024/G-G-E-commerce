@@ -77,6 +77,13 @@
               </ElButton>
             </div>
 
+            <SocialLoginPanel
+              :enabled="features.socialLogin === true"
+              :social="social"
+              :login-page-key="loginPageKey"
+              page-scene="login"
+            />
+
             <div v-if="features.register !== false" class="mt-5 text-sm text-gray-600">
               <span>{{ $t('login.noAccount') }}</span>
               <RouterLink class="text-theme" :to="registerLink">{{
@@ -96,6 +103,7 @@
   import { useLoginFlow } from '@/domains/auth/flows/useLoginFlow'
   import { type LoginFormState } from '@/domains/auth/flows/shared'
   import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
+  import SocialLoginPanel from './components/SocialLoginPanel.vue'
 
   defineOptions({ name: 'Login' })
 
@@ -108,8 +116,8 @@
   })
 
   const formRef = ref<FormInstance>()
-  const { loading, submitError, loadRememberedCredentials, submit } = useLoginFlow()
-  const { themeClass, loginPageKey, templateName, registerLink, theme, features, texts, isPreview } =
+  const { loading, submitError, loadRememberedCredentials, submit, consumeSocialToken } = useLoginFlow()
+  const { themeClass, loginPageKey, templateName, registerLink, theme, features, texts, social, isPreview } =
     useAuthPageTemplate('login')
 
   // 登录表单默认值（不再预置系统账号密码）
@@ -141,8 +149,9 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     loadRememberedCredentials(formData)
+    await consumeSocialToken()
   })
 </script>
 

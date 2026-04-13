@@ -3685,6 +3685,7 @@ func (*Error) createRegisterPolicyRes()    {}
 func (*Error) deleteLoginPageTemplateRes() {}
 func (*Error) deleteRegisterEntryRes()     {}
 func (*Error) deleteRegisterPolicyRes()    {}
+func (*Error) exchangeSocialTokenRes()     {}
 func (*Error) explainPermissionsRes()      {}
 func (*Error) getAuthMeRes()               {}
 func (*Error) getCurrentWorkspaceRes()     {}
@@ -10694,6 +10695,52 @@ func (o OptPermissionGroupItem) Or(d PermissionGroupItem) PermissionGroupItem {
 	return d
 }
 
+// NewOptSocialTokenExchangeResponseUser returns new OptSocialTokenExchangeResponseUser with value set to v.
+func NewOptSocialTokenExchangeResponseUser(v SocialTokenExchangeResponseUser) OptSocialTokenExchangeResponseUser {
+	return OptSocialTokenExchangeResponseUser{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSocialTokenExchangeResponseUser is optional SocialTokenExchangeResponseUser.
+type OptSocialTokenExchangeResponseUser struct {
+	Value SocialTokenExchangeResponseUser
+	Set   bool
+}
+
+// IsSet returns true if OptSocialTokenExchangeResponseUser was set.
+func (o OptSocialTokenExchangeResponseUser) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSocialTokenExchangeResponseUser) Reset() {
+	var v SocialTokenExchangeResponseUser
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSocialTokenExchangeResponseUser) SetTo(v SocialTokenExchangeResponseUser) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSocialTokenExchangeResponseUser) Get() (v SocialTokenExchangeResponseUser, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSocialTokenExchangeResponseUser) Or(d SocialTokenExchangeResponseUser) SocialTokenExchangeResponseUser {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -16643,6 +16690,8 @@ type RegisterRequest struct {
 	CaptchaToken     OptString `json:"captcha_token"`
 	InvitationCode   OptString `json:"invitation_code"`
 	AgreementVersion OptString `json:"agreement_version"`
+	// 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号.
+	SocialToken OptString `json:"social_token"`
 }
 
 // GetUsername returns the value of Username.
@@ -16685,6 +16734,11 @@ func (s *RegisterRequest) GetAgreementVersion() OptString {
 	return s.AgreementVersion
 }
 
+// GetSocialToken returns the value of SocialToken.
+func (s *RegisterRequest) GetSocialToken() OptString {
+	return s.SocialToken
+}
+
 // SetUsername sets the value of Username.
 func (s *RegisterRequest) SetUsername(val string) {
 	s.Username = val
@@ -16723,6 +16777,11 @@ func (s *RegisterRequest) SetInvitationCode(val OptString) {
 // SetAgreementVersion sets the value of AgreementVersion.
 func (s *RegisterRequest) SetAgreementVersion(val OptString) {
 	s.AgreementVersion = val
+}
+
+// SetSocialToken sets the value of SocialToken.
+func (s *RegisterRequest) SetSocialToken(val OptString) {
+	s.SocialToken = val
 }
 
 // Ref: #/components/schemas/RiskAuditItem
@@ -17618,6 +17677,229 @@ func (s *SilentSSORequest) SetTargetPath(val OptString) {
 // SetNavigationSpaceKey sets the value of NavigationSpaceKey.
 func (s *SilentSSORequest) SetNavigationSpaceKey(val OptString) {
 	s.NavigationSpaceKey = val
+}
+
+// Ref: #/components/schemas/SocialTokenExchangeRequest
+type SocialTokenExchangeRequest struct {
+	SocialToken string `json:"social_token"`
+}
+
+// GetSocialToken returns the value of SocialToken.
+func (s *SocialTokenExchangeRequest) GetSocialToken() string {
+	return s.SocialToken
+}
+
+// SetSocialToken sets the value of SocialToken.
+func (s *SocialTokenExchangeRequest) SetSocialToken(val string) {
+	s.SocialToken = val
+}
+
+// Ref: #/components/schemas/SocialTokenExchangeResponse
+type SocialTokenExchangeResponse struct {
+	Intent        SocialTokenExchangeResponseIntent  `json:"intent"`
+	ProviderKey   string                             `json:"provider_key"`
+	ProviderName  OptString                          `json:"provider_name"`
+	ProviderUID   string                             `json:"provider_uid"`
+	ProviderUser  OptString                          `json:"provider_user"`
+	Email         OptString                          `json:"email"`
+	AvatarURL     OptString                          `json:"avatar_url"`
+	MatchedUserID OptString                          `json:"matched_user_id"`
+	NeedRegister  OptBool                            `json:"need_register"`
+	AccessToken   OptString                          `json:"access_token"`
+	RefreshToken  OptString                          `json:"refresh_token"`
+	ExpiresIn     OptInt                             `json:"expires_in"`
+	User          OptSocialTokenExchangeResponseUser `json:"user"`
+}
+
+// GetIntent returns the value of Intent.
+func (s *SocialTokenExchangeResponse) GetIntent() SocialTokenExchangeResponseIntent {
+	return s.Intent
+}
+
+// GetProviderKey returns the value of ProviderKey.
+func (s *SocialTokenExchangeResponse) GetProviderKey() string {
+	return s.ProviderKey
+}
+
+// GetProviderName returns the value of ProviderName.
+func (s *SocialTokenExchangeResponse) GetProviderName() OptString {
+	return s.ProviderName
+}
+
+// GetProviderUID returns the value of ProviderUID.
+func (s *SocialTokenExchangeResponse) GetProviderUID() string {
+	return s.ProviderUID
+}
+
+// GetProviderUser returns the value of ProviderUser.
+func (s *SocialTokenExchangeResponse) GetProviderUser() OptString {
+	return s.ProviderUser
+}
+
+// GetEmail returns the value of Email.
+func (s *SocialTokenExchangeResponse) GetEmail() OptString {
+	return s.Email
+}
+
+// GetAvatarURL returns the value of AvatarURL.
+func (s *SocialTokenExchangeResponse) GetAvatarURL() OptString {
+	return s.AvatarURL
+}
+
+// GetMatchedUserID returns the value of MatchedUserID.
+func (s *SocialTokenExchangeResponse) GetMatchedUserID() OptString {
+	return s.MatchedUserID
+}
+
+// GetNeedRegister returns the value of NeedRegister.
+func (s *SocialTokenExchangeResponse) GetNeedRegister() OptBool {
+	return s.NeedRegister
+}
+
+// GetAccessToken returns the value of AccessToken.
+func (s *SocialTokenExchangeResponse) GetAccessToken() OptString {
+	return s.AccessToken
+}
+
+// GetRefreshToken returns the value of RefreshToken.
+func (s *SocialTokenExchangeResponse) GetRefreshToken() OptString {
+	return s.RefreshToken
+}
+
+// GetExpiresIn returns the value of ExpiresIn.
+func (s *SocialTokenExchangeResponse) GetExpiresIn() OptInt {
+	return s.ExpiresIn
+}
+
+// GetUser returns the value of User.
+func (s *SocialTokenExchangeResponse) GetUser() OptSocialTokenExchangeResponseUser {
+	return s.User
+}
+
+// SetIntent sets the value of Intent.
+func (s *SocialTokenExchangeResponse) SetIntent(val SocialTokenExchangeResponseIntent) {
+	s.Intent = val
+}
+
+// SetProviderKey sets the value of ProviderKey.
+func (s *SocialTokenExchangeResponse) SetProviderKey(val string) {
+	s.ProviderKey = val
+}
+
+// SetProviderName sets the value of ProviderName.
+func (s *SocialTokenExchangeResponse) SetProviderName(val OptString) {
+	s.ProviderName = val
+}
+
+// SetProviderUID sets the value of ProviderUID.
+func (s *SocialTokenExchangeResponse) SetProviderUID(val string) {
+	s.ProviderUID = val
+}
+
+// SetProviderUser sets the value of ProviderUser.
+func (s *SocialTokenExchangeResponse) SetProviderUser(val OptString) {
+	s.ProviderUser = val
+}
+
+// SetEmail sets the value of Email.
+func (s *SocialTokenExchangeResponse) SetEmail(val OptString) {
+	s.Email = val
+}
+
+// SetAvatarURL sets the value of AvatarURL.
+func (s *SocialTokenExchangeResponse) SetAvatarURL(val OptString) {
+	s.AvatarURL = val
+}
+
+// SetMatchedUserID sets the value of MatchedUserID.
+func (s *SocialTokenExchangeResponse) SetMatchedUserID(val OptString) {
+	s.MatchedUserID = val
+}
+
+// SetNeedRegister sets the value of NeedRegister.
+func (s *SocialTokenExchangeResponse) SetNeedRegister(val OptBool) {
+	s.NeedRegister = val
+}
+
+// SetAccessToken sets the value of AccessToken.
+func (s *SocialTokenExchangeResponse) SetAccessToken(val OptString) {
+	s.AccessToken = val
+}
+
+// SetRefreshToken sets the value of RefreshToken.
+func (s *SocialTokenExchangeResponse) SetRefreshToken(val OptString) {
+	s.RefreshToken = val
+}
+
+// SetExpiresIn sets the value of ExpiresIn.
+func (s *SocialTokenExchangeResponse) SetExpiresIn(val OptInt) {
+	s.ExpiresIn = val
+}
+
+// SetUser sets the value of User.
+func (s *SocialTokenExchangeResponse) SetUser(val OptSocialTokenExchangeResponseUser) {
+	s.User = val
+}
+
+func (*SocialTokenExchangeResponse) exchangeSocialTokenRes() {}
+
+type SocialTokenExchangeResponseIntent string
+
+const (
+	SocialTokenExchangeResponseIntentLogin    SocialTokenExchangeResponseIntent = "login"
+	SocialTokenExchangeResponseIntentRegister SocialTokenExchangeResponseIntent = "register"
+	SocialTokenExchangeResponseIntentConflict SocialTokenExchangeResponseIntent = "conflict"
+)
+
+// AllValues returns all SocialTokenExchangeResponseIntent values.
+func (SocialTokenExchangeResponseIntent) AllValues() []SocialTokenExchangeResponseIntent {
+	return []SocialTokenExchangeResponseIntent{
+		SocialTokenExchangeResponseIntentLogin,
+		SocialTokenExchangeResponseIntentRegister,
+		SocialTokenExchangeResponseIntentConflict,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SocialTokenExchangeResponseIntent) MarshalText() ([]byte, error) {
+	switch s {
+	case SocialTokenExchangeResponseIntentLogin:
+		return []byte(s), nil
+	case SocialTokenExchangeResponseIntentRegister:
+		return []byte(s), nil
+	case SocialTokenExchangeResponseIntentConflict:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SocialTokenExchangeResponseIntent) UnmarshalText(data []byte) error {
+	switch SocialTokenExchangeResponseIntent(data) {
+	case SocialTokenExchangeResponseIntentLogin:
+		*s = SocialTokenExchangeResponseIntentLogin
+		return nil
+	case SocialTokenExchangeResponseIntentRegister:
+		*s = SocialTokenExchangeResponseIntentRegister
+		return nil
+	case SocialTokenExchangeResponseIntentConflict:
+		*s = SocialTokenExchangeResponseIntentConflict
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SocialTokenExchangeResponseUser map[string]jx.Raw
+
+func (s *SocialTokenExchangeResponseUser) init() SocialTokenExchangeResponseUser {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Ref: #/components/schemas/StaleApiEndpointList

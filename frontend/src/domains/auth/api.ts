@@ -81,6 +81,7 @@ export async function fetchRegister(body: {
   captcha_token?: string
   invitation_code?: string
   agreement_version?: string
+  social_token?: string
 }) {
   const { data, error, response } = await v5Client.POST('/auth/register', {
     body,
@@ -90,6 +91,19 @@ export async function fetchRegister(body: {
   })
   if (error || !data) {
     throw error ? createV5HttpError(error, response) : new Error('register failed')
+  }
+  return data
+}
+
+export async function fetchSocialTokenExchange(socialToken: string) {
+  const { data, error, response } = await v5Client.POST('/auth/social/exchange', {
+    body: { social_token: socialToken },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
+  })
+  if (error || !data) {
+    throw error ? createV5HttpError(error, response) : new Error('social token exchange failed')
   }
   return data
 }

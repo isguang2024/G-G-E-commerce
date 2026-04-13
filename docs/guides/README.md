@@ -12,6 +12,8 @@
 | [permission-system.md](permission-system.md) | 权限系统结构与调试 |
 | [database.md](database.md) | 数据库迁移、重置、seed |
 | [permission-audit.md](permission-audit.md) | 权限审计 |
+| [social-oauth-github.md](social-oauth-github.md) | GitHub OAuth 社交登录配置 |
+| [social-oauth-manual-checklist.md](social-oauth-manual-checklist.md) | 社交登录手工验证清单 |
 
 ### Spec 目录说明
 

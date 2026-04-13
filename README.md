@@ -1,6 +1,6 @@
-# G-G-E-commerce
+# Mabeng Admin
 
-GGE 多租户 SaaS 管理平台。后端 Go + 前端 Vue 3，采用 OpenAPI-first 契约驱动开发。
+Mabeng Admin 通用管理后台脚手架（多租户语义默认 `default`）。后端 Go + 前端 Vue 3，采用 OpenAPI-first 契约驱动开发。
 
 若文档说明出现冲突，以 `AGENTS.md` 定义的协作文档真相源为准。
 
@@ -39,6 +39,12 @@ GGE 多租户 SaaS 管理平台。后端 Go + 前端 Vue 3，采用 OpenAPI-firs
 - API 一律 OpenAPI-first，先改 `backend/api/openapi/`，再刷新生成物，最后改实现与前端调用。
 - 生成产物不手改，重点关注 `backend/api/gen/` 与 `frontend/src/api/v5/`。
 - 新增能力按固定闭环推进，详见 [`AGENTS.md`](AGENTS.md) 中的"API 变更固定步骤"。
+
+## 当前定位
+
+- 本项目定位为「通用 Admin 管理后台脚手架」，优先沉淀可复用的认证、权限、页面注册、API 治理与运行时能力。
+- 业务模块应按领域插件化接入，不在主干中固化单一行业语义。
+- 未经明确决策，不新增与脚手架定位冲突的垂直业务耦合。
 
 ## 文档入口
 

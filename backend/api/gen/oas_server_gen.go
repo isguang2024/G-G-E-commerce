@@ -266,6 +266,12 @@ type Handler interface {
 	//
 	// POST /auth/callback/exchange
 	ExchangeAuthCallback(ctx context.Context, req *AuthCallbackExchangeRequest) (ExchangeAuthCallbackRes, error)
+	// ExchangeSocialToken implements exchangeSocialToken operation.
+	//
+	// 兑换社交登录 token（登录或注册绑定上下文）.
+	//
+	// POST /auth/social/exchange
+	ExchangeSocialToken(ctx context.Context, req *SocialTokenExchangeRequest) (ExchangeSocialTokenRes, error)
 	// ExplainPermissions implements explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.

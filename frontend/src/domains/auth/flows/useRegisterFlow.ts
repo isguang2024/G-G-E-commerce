@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchRegister, fetchRegisterContext } from '@/domains/auth/api'
+import { fetchRegister, fetchRegisterContext, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { RoutesAlias } from '@/router/routesAlias'
 import { finalizeAuthenticatedSession } from './shared'
 
@@ -18,7 +18,10 @@ const REDIRECT_DELAY = 1000
 
 export function useRegisterFlow() {
   const router = useRouter()
+  const route = useRoute()
   const ctx = ref<Awaited<ReturnType<typeof fetchRegisterContext>> | null>(null)
+  const socialContext = ref<Awaited<ReturnType<typeof fetchSocialTokenExchange>> | null>(null)
+  const socialToken = ref('')
   const contextError = ref('')
   const loading = ref(false)
   const isPublicRegisterDisabled = computed(() => ctx.value?.allow_public_register === false)
@@ -27,6 +30,12 @@ export function useRegisterFlow() {
     try {
       ctx.value = await fetchRegisterContext(window.location.host, window.location.pathname)
       contextError.value = ''
+      socialToken.value = `${route.query.social_token || ''}`.trim()
+      if (socialToken.value) {
+        socialContext.value = await fetchSocialTokenExchange(socialToken.value)
+      } else {
+        socialContext.value = null
+      }
     } catch (error) {
       ctx.value = null
       contextError.value =
@@ -50,7 +59,8 @@ export function useRegisterFlow() {
         ...(formData.email ? { email: formData.email } : {}),
         ...(formData.invitationCode ? { invitation_code: formData.invitationCode } : {}),
         ...(formData.captchaToken ? { captcha_token: formData.captchaToken } : {}),
-        agreement_version: 'v1'
+        agreement_version: 'v1',
+        ...(socialToken.value ? { social_token: socialToken.value } : {})
       })
       ElMessage.success('注册成功')
 
@@ -101,6 +111,8 @@ export function useRegisterFlow() {
     loading,
     isPublicRegisterDisabled,
     loadContext,
-    register
+    register,
+    socialContext,
+    socialToken
   }
 }

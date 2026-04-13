@@ -265,6 +265,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/social/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 兑换社交登录 token（登录或注册绑定上下文） */
+        post: operations["exchangeSocialToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/me": {
         parameters: {
             query?: never;
@@ -2749,6 +2766,8 @@ export interface components {
             captcha_token?: string;
             invitation_code?: string;
             agreement_version?: string;
+            /** @description 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号 */
+            social_token?: string;
         };
         RefreshTokenRequest: {
             refresh_token: string;
@@ -3420,6 +3439,27 @@ export interface components {
             target_path?: string;
             /** @description 期望进入的菜单空间 */
             navigation_space_key?: string;
+        };
+        SocialTokenExchangeRequest: {
+            social_token: string;
+        };
+        SocialTokenExchangeResponse: {
+            /** @enum {string} */
+            intent: "login" | "register" | "conflict";
+            provider_key: string;
+            provider_name?: string;
+            provider_uid: string;
+            provider_user?: string;
+            email?: string;
+            avatar_url?: string;
+            matched_user_id?: string;
+            need_register?: boolean;
+            access_token?: string;
+            refresh_token?: string;
+            expires_in?: number;
+            user?: {
+                [key: string]: unknown;
+            };
         };
         CollaborationWorkspaceItem: {
             /** Format: uuid */
@@ -5916,6 +5956,39 @@ export interface operations {
             };
             /** @description 中心会话无效或不满足 max_age 要求 */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    exchangeSocialToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialTokenExchangeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialTokenExchangeResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

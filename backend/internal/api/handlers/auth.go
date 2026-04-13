@@ -20,6 +20,7 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 )
 
@@ -133,6 +134,11 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 		}
 		return nil, err
 	}
+	if h.socialSvc != nil && req.SocialToken.Set && result.User != nil {
+		if bindErr := h.socialSvc.BindBySocialToken(ctx, nil, strings.TrimSpace(req.SocialToken.Value), result.User.ID); bindErr != nil {
+			return nil, &apperr.ParamError{Msg: bindErr.Error()}
+		}
+	}
 	out := &gen.LoginResponse{}
 	if result.Login != nil {
 		out.AccessToken = gen.NewOptNilString(result.Login.AccessToken)
@@ -151,6 +157,46 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 			NavigationSpaceKey: gen.NewOptString(result.Landing.NavigationSpaceKey),
 			HomePath:           gen.NewOptString(result.Landing.HomePath),
 		})
+	}
+	return out, nil
+}
+
+func (h *APIHandler) ExchangeSocialToken(ctx context.Context, req *gen.SocialTokenExchangeRequest) (gen.ExchangeSocialTokenRes, error) {
+	if req == nil || h.socialSvc == nil {
+		return nil, &apperr.ParamError{Msg: "social exchange 未启用"}
+	}
+	result, err := h.socialSvc.ExchangeSocialToken(ctx, strings.TrimSpace(req.SocialToken))
+	if err != nil {
+		return nil, &apperr.ParamError{Msg: err.Error()}
+	}
+	out := &gen.SocialTokenExchangeResponse{
+		Intent:      gen.SocialTokenExchangeResponseIntent(result.Intent),
+		ProviderKey: result.ProviderKey,
+		ProviderUID: result.ProviderUID,
+	}
+	if strings.TrimSpace(result.ProviderName) != "" {
+		out.ProviderName = gen.NewOptString(result.ProviderName)
+	}
+	if strings.TrimSpace(result.ProviderUser) != "" {
+		out.ProviderUser = gen.NewOptString(result.ProviderUser)
+	}
+	if strings.TrimSpace(result.Email) != "" {
+		out.Email = gen.NewOptString(result.Email)
+	}
+	if strings.TrimSpace(result.AvatarURL) != "" {
+		out.AvatarURL = gen.NewOptString(result.AvatarURL)
+	}
+	if strings.TrimSpace(result.MatchedUserID) != "" {
+		out.MatchedUserID = gen.NewOptString(result.MatchedUserID)
+	}
+	out.NeedRegister = gen.NewOptBool(result.NeedRegister)
+	if result.LoginResponse != nil {
+		out.AccessToken = gen.NewOptString(result.LoginResponse.AccessToken)
+		out.RefreshToken = gen.NewOptString(result.LoginResponse.RefreshToken)
+		out.ExpiresIn = gen.NewOptInt(result.LoginResponse.ExpiresIn)
+		if userMap, ok := result.LoginResponse.User.(map[string]interface{}); ok {
+			out.User = gen.NewOptSocialTokenExchangeResponseUser(gen.SocialTokenExchangeResponseUser(toJxRawMap(userMap)))
+		}
 	}
 	return out, nil
 }
@@ -240,6 +286,18 @@ func (h *APIHandler) GetLoginPageContext(
 	if err != nil {
 		return nil, err
 	}
+	socialCapability := h.resolveSocialCapability(ctx, info.PageScene, host, path)
+	if info.TemplateConfig == nil {
+		info.TemplateConfig = map[string]interface{}{}
+	}
+	social := map[string]interface{}{}
+	if existing, ok := info.TemplateConfig["social"].(map[string]interface{}); ok && existing != nil {
+		for k, v := range existing {
+			social[k] = v
+		}
+	}
+	social["capability"] = socialCapability
+	info.TemplateConfig["social"] = social
 	out := &gen.LoginPageContext{
 		AppKey:         info.AppKey,
 		LoginPageKey:   info.LoginPageKey,
@@ -267,6 +325,46 @@ func (h *APIHandler) GetLoginPageContext(
 		out.TemplateConfig = gen.NewOptLoginPageContextTemplateConfig(raw)
 	}
 	return out, nil
+}
+
+func (h *APIHandler) resolveSocialCapability(ctx context.Context, pageScene, host, path string) map[string]interface{} {
+	capability := map[string]interface{}{
+		"allow":     true,
+		"reason":    "",
+		"providers": []string{},
+	}
+	var providers []struct {
+		ProviderKey string `gorm:"column:provider_key"`
+	}
+	if err := h.db.WithContext(ctx).
+		Model(&models.SocialAuthProvider{}).
+		Select("provider_key").
+		Where("tenant_id = ? AND enabled = ? AND deleted_at IS NULL", "default", true).
+		Find(&providers).Error; err != nil {
+		capability["allow"] = false
+		capability["reason"] = "provider_query_failed"
+		return capability
+	}
+	keys := make([]string, 0, len(providers))
+	for _, item := range providers {
+		if strings.TrimSpace(item.ProviderKey) != "" {
+			keys = append(keys, strings.TrimSpace(item.ProviderKey))
+		}
+	}
+	capability["providers"] = keys
+	if len(keys) == 0 {
+		capability["allow"] = false
+		capability["reason"] = "no_enabled_provider"
+		return capability
+	}
+	if strings.TrimSpace(pageScene) == "register" && h.registerResolver != nil {
+		eff, err := h.registerResolver.Resolve(ctx, host, path)
+		if err == nil && eff != nil && !eff.AllowPublicRegister {
+			capability["allow"] = false
+			capability["reason"] = "public_register_disabled"
+		}
+	}
+	return capability
 }
 
 func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequest) (gen.RefreshTokenRes, error) {

@@ -113,21 +113,14 @@
           </div>
         </template>
 
+        <!-- App 摘要行 -->
         <div v-if="selectedAppRecord" class="app-overview">
           <div class="app-overview__summary">
-            <span
-              >主 Host <strong>{{ selectedAppRecord.primaryHost || '未设置' }}</strong></span
-            >
+            <span>主 Host <strong>{{ selectedAppRecord.primaryHost || '未设置' }}</strong></span>
             <span>·</span>
-            <span
-              >默认空间
-              <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span
-            >
+            <span>默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span>
             <span>·</span>
-            <span
-              >前端入口
-              <strong>{{ selectedAppRecord.frontendEntryUrl || '继承当前地址' }}</strong></span
-            >
+            <span>前端入口 <strong>{{ selectedAppRecord.frontendEntryUrl || '继承当前地址' }}</strong></span>
           </div>
           <div class="app-overview__actions">
             <ElButton text @click="goToMenuManagement">菜单管理</ElButton>
@@ -136,405 +129,458 @@
           </div>
         </div>
 
-        <div v-if="selectedAppRecord" class="app-governance-grid">
-          <section class="app-governance-card">
-            <div class="app-governance-card__header">
-              <div>
-                <div class="app-governance-card__title">注册中心字段总览</div>
-                <div class="app-governance-card__desc"
-                  >把入口、认证、运行能力与治理约束拆开看，避免都堆在 JSON 里。</div
-                >
-              </div>
-              <ElTag size="small" effect="plain" :type="appReadinessTagType">
-                {{ appReadinessLabel }}
-              </ElTag>
-            </div>
-            <div class="app-governance-meta">
-              <span
-                >空间模式 {{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</span
-              >
-              <span>认证 {{ authModeLabel(selectedAppRecord.authMode) }}</span>
-              <span>入口绑定 {{ hostBindings.length || 0 }}</span>
-              <span>空间入口 {{ spaceEntryBindings.length || 0 }}</span>
-            </div>
-            <div class="app-governance-checks">
-              <div
-                v-for="item in appRegistrationChecks"
-                :key="item.key"
-                class="app-governance-check"
-                :class="`is-${item.level}`"
-              >
-                <div class="app-governance-check__title">{{ item.title }}</div>
-                <div class="app-governance-check__text">{{ item.text }}</div>
-              </div>
-            </div>
-          </section>
-
-          <section class="app-governance-card">
-            <div class="app-governance-card__header">
-              <div>
-                <div class="app-governance-card__title">接入预检查与本地预演</div>
-                <div class="app-governance-card__desc"
-                  >后端会聚合注册中心、入口绑定和认证配置输出 dry-run
-                  结果，前端只负责展示，不再本地拼接结论。</div
-                >
-              </div>
-            </div>
-            <div class="app-preview-list">
-              <div v-for="item in appDryRunPreview" :key="item.label" class="app-preview-item">
-                <div class="app-preview-item__label">{{ item.label }}</div>
-                <code class="app-preview-item__value">{{ item.value }}</code>
-                <div class="app-preview-item__hint">{{ item.hint }}</div>
-              </div>
-            </div>
-          </section>
-
-          <section class="app-governance-card">
-            <div class="app-governance-card__header">
-              <div>
-                <div class="app-governance-card__title">运行能力与敏感配置</div>
-                <div class="app-governance-card__desc"
-                  >能力声明适合描述
-                  runtime/navigation/integration；密钥、证书、回调域名不要直接写在公开表单。</div
-                >
-              </div>
-            </div>
-            <div class="app-capability-pills">
-              <span v-for="item in capabilityHighlights" :key="item" class="app-capability-pill">
-                {{ item }}
-              </span>
-              <span v-if="!capabilityHighlights.length" class="app-capability-pill is-soft">
-                暂无显式能力声明
-              </span>
-            </div>
-            <div class="app-capability-pills app-capability-pills--meta">
-              <span v-for="item in appMetaSections" :key="item" class="app-capability-pill is-soft">
-                {{ item }}
-              </span>
-            </div>
-            <div class="app-sensitive-list">
-              <div
-                v-for="item in sensitiveConfigHints"
-                :key="item.title"
-                class="app-sensitive-item"
-              >
-                <div class="app-sensitive-item__title">{{ item.title }}</div>
-                <div class="app-sensitive-item__text">{{ item.text }}</div>
-              </div>
-            </div>
-          </section>
+        <!-- 面板内切换导航 -->
+        <div v-if="selectedAppRecord" class="app-panel-nav">
+          <button
+            class="app-panel-nav__item"
+            :class="{ 'is-active': governanceTab === 'bindings' }"
+            @click="governanceTab = 'bindings'"
+          >
+            入口规则
+            <span class="app-panel-nav__badge">{{ hostBindings.length + spaceEntryBindings.length }}</span>
+          </button>
+          <button
+            class="app-panel-nav__item"
+            :class="{ 'is-active': governanceTab === 'overview' }"
+            @click="governanceTab = 'overview'"
+          >
+            配置总览
+            <ElTag size="small" effect="plain" :type="appReadinessTagType" style="margin-left:6px;vertical-align:middle">
+              {{ appReadinessLabel }}
+            </ElTag>
+          </button>
+          <button
+            class="app-panel-nav__item"
+            :class="{ 'is-active': governanceTab === 'dryrun' }"
+            @click="governanceTab = 'dryrun'"
+          >
+            快速预检
+          </button>
+          <button
+            class="app-panel-nav__item"
+            :class="{ 'is-active': governanceTab === 'capabilities' }"
+            @click="governanceTab = 'capabilities'"
+          >
+            能力声明
+            <span v-if="capabilityHighlights.length" class="app-panel-nav__badge">{{ capabilityHighlights.length }}</span>
+          </button>
         </div>
 
-        <div class="app-binding-section">
-          <div class="app-binding-section__header">
-            <div class="app-binding-section__title">Level 1 · APP 入口</div>
-            <ElButton size="small" type="primary" link @click="openEntryDialog()">+ 新增</ElButton>
-          </div>
-          <div class="app-binding-list">
-            <div v-if="!hostBindings.length" class="app-manage-empty">
-              暂无入口规则，未命中时系统将退回默认 App。
+        <!-- Tab: 入口规则 -->
+        <div v-if="selectedAppRecord && governanceTab === 'bindings'" class="app-tab-content">
+
+          <!-- Level 1 -->
+          <div class="app-rule-card">
+            <div class="app-rule-card__head">
+              <div class="app-rule-card__head-left">
+                <span class="app-rule-card__level">L1</span>
+                <div>
+                  <div class="app-rule-card__title">APP 入口</div>
+                  <div class="app-rule-card__desc">按 Host / 路径匹配请求归属的 App。精确域名 › 子域名通配 › 路径前缀，未命中退回默认 App。</div>
+                </div>
+              </div>
+              <ElButton size="small" @click="openEntryDialog()">+ 新增</ElButton>
+            </div>
+            <div v-if="!hostBindings.length" class="app-rule-card__empty">
+              暂无规则——缺少规则时此 App 无法独立解析域名或路径，所有请求退回默认 App。
             </div>
             <div
               v-for="item in hostBindings"
               :key="item.id || item.host + item.pathPattern"
-              class="app-binding-item"
+              class="app-rule-row"
+              @click="openEntryDialog(item)"
             >
-              <div class="app-binding-item__main" @click="openEntryDialog(item)">
-                <div class="app-binding-item__title-row">
+              <div class="app-rule-row__body">
+                <div class="app-rule-row__title-row">
                   <ElTag size="small" effect="plain">{{ matchTypeLabel(item.matchType) }}</ElTag>
-                  <span class="app-binding-item__host">{{ describeEntryRule(item) }}</span>
+                  <span class="app-rule-row__host">{{ describeEntryRule(item) }}</span>
                   <ElTag v-if="item.isPrimary" size="small" type="success" effect="plain">主</ElTag>
-                  <ElTag
-                    size="small"
-                    :type="item.status === 'normal' ? 'info' : 'danger'"
-                    effect="plain"
-                  >
+                  <ElTag size="small" :type="item.status === 'normal' ? 'info' : 'danger'" effect="plain">
                     {{ item.status === 'normal' ? '启用' : '停用' }}
                   </ElTag>
                 </div>
-                <div class="app-binding-item__meta">
-                  <span
-                    >默认空间
-                    {{
-                      displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey)
-                    }}</span
-                  >
+                <div class="app-rule-row__meta">
+                  <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey) }}</span>
                   <span>优先级 {{ item.priority || 0 }}</span>
                   <span v-if="item.description">{{ item.description }}</span>
                 </div>
               </div>
-              <ElButton text type="danger" size="small" @click.stop="deleteEntry(item)"
-                >删除</ElButton
-              >
+              <ElButton text type="danger" size="small" @click.stop="deleteEntry(item)">删除</ElButton>
             </div>
           </div>
-        </div>
 
-        <div v-if="isMultiSpaceApp" class="app-binding-section">
-          <div class="app-binding-section__header">
-            <div class="app-binding-section__title">Level 2 · 菜单空间入口</div>
-            <ElButton
-              size="small"
-              type="primary"
-              link
-              :disabled="!spaces.length"
-              @click="openSpaceEntryDialog()"
-            >
-              + 新增
-            </ElButton>
-          </div>
-          <div class="app-binding-list">
-            <div v-if="!spaceEntryBindings.length" class="app-manage-empty">
-              暂无菜单空间入口规则，未命中时按 APP 默认空间进入。
+          <!-- Level 2 -->
+          <div v-if="isMultiSpaceApp" class="app-rule-card">
+            <div class="app-rule-card__head">
+              <div class="app-rule-card__head-left">
+                <span class="app-rule-card__level app-rule-card__level--l2">L2</span>
+                <div>
+                  <div class="app-rule-card__title">菜单空间入口</div>
+                  <div class="app-rule-card__desc">在 L1 命中后，进一步按路径决定进入哪个菜单空间。未命中按 App 默认空间进入。仅多空间模式生效。</div>
+                </div>
+              </div>
+              <ElButton size="small" :disabled="!spaces.length" @click="openSpaceEntryDialog()">+ 新增</ElButton>
+            </div>
+            <div v-if="!spaceEntryBindings.length" class="app-rule-card__empty">
+              暂无规则——所有请求均落入 App 默认空间。
             </div>
             <div
               v-for="item in spaceEntryBindings"
               :key="item.id || item.spaceKey + item.host + item.pathPattern"
-              class="app-binding-item"
+              class="app-rule-row"
+              @click="openSpaceEntryDialog(item)"
             >
-              <div class="app-binding-item__main" @click="openSpaceEntryDialog(item)">
-                <div class="app-binding-item__title-row">
+              <div class="app-rule-row__body">
+                <div class="app-rule-row__title-row">
                   <ElTag size="small" effect="plain">{{ matchTypeLabel(item.matchType) }}</ElTag>
-                  <span class="app-binding-item__host">{{ describeEntryRule(item) }}</span>
-                  <ElTag size="small" type="warning" effect="plain"
-                    >→ {{ item.spaceName || item.spaceKey }}</ElTag
-                  >
-                  <ElTag
-                    size="small"
-                    :type="item.status === 'normal' ? 'info' : 'danger'"
-                    effect="plain"
-                  >
+                  <span class="app-rule-row__host">{{ describeEntryRule(item) }}</span>
+                  <ElTag size="small" type="warning" effect="plain">→ {{ item.spaceName || item.spaceKey }}</ElTag>
+                  <ElTag size="small" :type="item.status === 'normal' ? 'info' : 'danger'" effect="plain">
                     {{ item.status === 'normal' ? '启用' : '停用' }}
                   </ElTag>
                 </div>
-                <div class="app-binding-item__meta">
+                <div class="app-rule-row__meta">
                   <span>优先级 {{ item.priority || 0 }}</span>
                   <span v-if="item.description">{{ item.description }}</span>
                 </div>
               </div>
-              <ElButton text type="danger" size="small" @click.stop="deleteSpaceEntry(item)"
-                >删除</ElButton
-              >
+              <ElButton text type="danger" size="small" @click.stop="deleteSpaceEntry(item)">删除</ElButton>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tab: 配置总览 -->
+        <div v-if="selectedAppRecord && governanceTab === 'overview'" class="app-tab-content">
+          <div class="app-tab-header">
+            <div class="app-tab-header__title">配置总览</div>
+            <div class="app-tab-header__desc">
+              检查此 App 关键配置项的填写状态。每一项都会影响 App 的解析与接入质量，黄色表示缺少建议配置，不影响基本运行但会降低可观测性。
+            </div>
+          </div>
+          <div class="app-governance-meta">
+            <span>空间模式 {{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
+            <span>认证 {{ authModeLabel(selectedAppRecord.authMode) }}</span>
+            <span>APP 入口 {{ hostBindings.length || 0 }} 条</span>
+            <span>空间入口 {{ spaceEntryBindings.length || 0 }} 条</span>
+          </div>
+          <div class="app-governance-checks app-governance-checks--full">
+            <div
+              v-for="item in appRegistrationChecks"
+              :key="item.key"
+              class="app-governance-check"
+              :class="`is-${item.level}`"
+            >
+              <div class="app-governance-check__title">{{ item.title }}</div>
+              <div class="app-governance-check__text">{{ item.text }}</div>
             </div>
           </div>
         </div>
 
-        <div class="app-space-pills">
-          <span class="app-space-pills__label">空间配置</span>
-          <span v-for="item in spaces" :key="item.spaceKey" class="app-space-pill">
-            {{ item.name }} · {{ item.spaceKey }}
-          </span>
-          <span v-if="!spaces.length" class="app-space-pill is-soft">当前 App 暂无空间配置</span>
+        <!-- Tab: 快速预检 -->
+        <div v-if="selectedAppRecord && governanceTab === 'dryrun'" class="app-tab-content">
+          <div class="app-tab-header">
+            <div class="app-tab-header__title">快速预检</div>
+            <div class="app-tab-header__desc">
+              当前 App 的实时解析快照。展示入口命中情况、首跳落点、Manifest 和健康探针状态，帮助快速定位接入问题。数据由后端聚合，不在本地推断。
+            </div>
+          </div>
+          <div class="app-preview-list app-preview-list--full">
+            <div v-for="item in appDryRunPreview" :key="item.label" class="app-preview-item">
+              <div class="app-preview-item__label">{{ item.label }}</div>
+              <code class="app-preview-item__value">{{ item.value }}</code>
+              <div class="app-preview-item__hint">{{ item.hint }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: 能力声明 -->
+        <div v-if="selectedAppRecord && governanceTab === 'capabilities'" class="app-tab-content">
+          <div class="app-tab-header">
+            <div class="app-tab-header__title">能力声明</div>
+            <div class="app-tab-header__desc">
+              App Capabilities JSON 的结构化概览。routing / runtime / auth / navigation 等分组在这里一目了然。
+              敏感配置（密钥、证书、回调域名）只保留引用键名，不录入明文。
+            </div>
+          </div>
+          <div class="app-capability-pills">
+            <span v-for="item in capabilityHighlights" :key="item" class="app-capability-pill">{{ item }}</span>
+            <span v-if="!capabilityHighlights.length" class="app-capability-pill is-soft">暂无显式能力声明，建议在编辑 App 时填写 Capabilities JSON。</span>
+          </div>
+          <div class="app-capability-pills app-capability-pills--meta">
+            <span v-for="item in appMetaSections" :key="item" class="app-capability-pill is-soft">{{ item }}</span>
+          </div>
+          <div class="app-sensitive-list">
+            <div v-for="item in sensitiveConfigHints" :key="item.title" class="app-sensitive-item">
+              <div class="app-sensitive-item__title">{{ item.title }}</div>
+              <div class="app-sensitive-item__text">{{ item.text }}</div>
+            </div>
+          </div>
         </div>
       </ElCard>
     </section>
 
-    <ElDrawer v-model="appDrawerVisible" :title="appDrawerTitle" size="520px" destroy-on-close>
-      <ElForm :model="appForm" label-position="top">
-        <div class="app-form-section">
-          <div class="app-form-section__title">基础标识</div>
-          <div class="app-form-section__desc"
-            >面向注册中心的稳定标识。`app_key` 创建后即作为跨端导航、权限和 host 解析主键。</div
-          >
-        </div>
-        <ElFormItem label="应用名称">
-          <ElInput v-model="appForm.name" placeholder="例如 平台管理后台" />
-        </ElFormItem>
-        <ElFormItem label="应用标识">
-          <ElInput
-            v-model="appForm.app_key"
-            :disabled="Boolean(editingAppKey)"
-            placeholder="例如 platform-admin"
-          />
-        </ElFormItem>
-        <div v-if="!editingAppKey" class="app-form-hint">
-          新建 App 时系统会自动创建当前 App 自己的默认空间 `default`，无需手动选择。
-        </div>
-        <div class="app-form-section">
-          <div class="app-form-section__title">空间与认证</div>
-          <div class="app-form-section__desc"
-            >先决定多空间/单空间，再决定登录如何发生。登录方式决定是否需要单独的认证中心回跳治理。</div
-          >
-        </div>
-        <ElFormItem v-if="editingAppKey" label="默认空间">
-          <ElSelect
-            v-model="appForm.default_space_key"
-            filterable
-            allow-create
-            default-first-option
-            style="width: 100%"
-          >
-            <ElOption
-              v-for="item in spaces"
-              :key="item.spaceKey"
-              :label="`${item.name} · ${item.spaceKey}`"
-              :value="item.spaceKey"
-            />
-          </ElSelect>
-        </ElFormItem>
-        <div v-if="editingAppKey" class="app-form-hint">
-          这里控制 APP 首次解析落到哪个空间；空间内首页请到“高级空间配置”里调整
-          <code>default_home_path</code>。
-        </div>
-        <ElFormItem label="空间模式">
-          <ElSelect v-model="appForm.space_mode" style="width: 100%">
-            <ElOption label="单空间" value="single" />
-            <ElOption label="多空间" value="multi" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="认证模式">
-          <ElSelect v-model="appForm.auth_mode" style="width: 100%">
-            <ElOption label="继承当前 Host" value="inherit_host" />
-            <ElOption label="共享 Cookie" value="shared_cookie" />
-            <ElOption label="独立认证中心" value="centralized_login" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="SSO 策略">
-          <ElSelect v-model="appAuthSsoMode" style="width: 100%">
-            <ElOption label="participate（可复用中心会话）" value="participate" />
-            <ElOption label="reauth（进入需重认证）" value="reauth" />
-            <ElOption label="isolated（不复用登录态）" value="isolated" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="登录页模式">
-          <ElSelect v-model="appAuthLoginUiMode" style="width: 100%">
-            <ElOption label="auth_center_ui（认证中心默认页）" value="auth_center_ui" />
-            <ElOption label="auth_center_custom（认证中心自定义模板）" value="auth_center_custom" />
-            <ElOption label="local_ui（业务 APP 自建登录页）" value="local_ui" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="登录页模板 Key">
-          <ElInput
-            v-model="appAuthLoginPageKey"
-            placeholder="例如 default / aurora"
-          />
-          <div class="app-form-hint">
-            仅在 `auth_center_custom` 场景生效；最终优先级仍受 URL query 或注册入口覆盖。
+    <ElDrawer v-model="appDrawerVisible" :title="appDrawerTitle" size="50%" destroy-on-close>
+      <ElForm :model="appForm" label-position="top" class="app-drawer-form">
+
+        <!-- ① 基础标识 -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">基础标识</span>
+            <span class="app-form-card__desc">
+              App Key 创建后不可修改，是跨端导航、权限和 Host 解析的唯一主键。
+            </span>
           </div>
-        </ElFormItem>
-        <div class="app-form-section">
-          <div class="app-form-section__title">运行入口与部署探针</div>
-          <div class="app-form-section__desc"
-            >这里放可公开的入口地址和健康检查地址。环境差异、feature flag 和部署 profile
-            建议继续放进 `meta` 的环境分组，而不是散落在 description。</div
-          >
-        </div>
-        <div class="app-drawer-grid">
-          <ElFormItem label="前端入口地址">
+          <div class="app-drawer-grid">
+            <ElFormItem label="应用名称">
+              <ElInput v-model="appForm.name" placeholder="例如 平台管理后台" />
+            </ElFormItem>
+            <ElFormItem label="应用标识（app_key）">
+              <ElInput
+                v-model="appForm.app_key"
+                :disabled="Boolean(editingAppKey)"
+                placeholder="例如 platform-admin"
+              />
+            </ElFormItem>
+          </div>
+          <ElFormItem label="说明">
             <ElInput
-              v-model="appForm.frontend_entry_url"
-              placeholder="例如 /account 或 https://account.example.com"
+              v-model="appForm.description"
+              type="textarea"
+              :rows="2"
+              placeholder="说明这个 App 面向哪个站点或后台产品"
             />
           </ElFormItem>
-          <ElFormItem label="后端入口地址">
-            <ElInput
-              v-model="appForm.backend_entry_url"
-              placeholder="例如 /api 或 https://api.example.com"
-            />
-          </ElFormItem>
-          <ElFormItem label="Manifest 地址">
-            <ElInput
-              v-model="appForm.manifest_url"
-              placeholder="例如 https://cdn.example.com/app/manifest.json"
-            />
-          </ElFormItem>
-          <ElFormItem label="运行版本">
-            <ElInput v-model="appForm.runtime_version" placeholder="例如 2026.04.12-rc1" />
-          </ElFormItem>
-        </div>
-        <ElFormItem label="健康检查地址">
-          <ElInput v-model="appForm.health_check_url" placeholder="例如 /health" />
-        </ElFormItem>
-        <div class="app-form-section">
-          <div class="app-form-section__title">运行能力声明</div>
-          <div class="app-form-section__desc"
-            >把前端能力、集成方式、feature flag 读取能力写成结构化 JSON，避免靠命名约定猜测。</div
-          >
-        </div>
-        <ElFormItem label="运行能力声明">
-          <ElInput
-            v-model="appCapabilitiesText"
-            type="textarea"
-            :rows="8"
-            placeholder='例如 {"runtime":{"supports_worktab":true}}'
-          />
-          <div class="app-form-hint">
-            使用 JSON 对象描述 routing/runtime/navigation/integration 能力；这里不重复填写
-            `space_mode`、`auth_mode` 之类顶层字段。
+          <div class="app-drawer-grid">
+            <ElFormItem label="默认 App">
+              <div class="app-form-switch-row">
+                <ElSwitch v-model="appForm.is_default" />
+                <span class="app-form-switch-label">同一时间只有一个 App 为默认</span>
+              </div>
+            </ElFormItem>
+            <ElFormItem label="状态">
+              <ElSelect v-model="appForm.status" style="width: 100%">
+                <ElOption label="启用" value="normal" />
+                <ElOption label="停用" value="disabled" />
+              </ElSelect>
+            </ElFormItem>
           </div>
-        </ElFormItem>
-        <div class="app-form-section">
-          <div class="app-form-section__title">多环境与 Feature Flag</div>
-          <div class="app-form-section__desc"
-            >按 APP 维度维护环境 profile 与 feature flag。这里统一写结构化配置，避免同一应用的
-            dev/test/prod 规则散落在说明字段。</div
-          >
-        </div>
-        <ElFormItem label="环境配置（meta.env_profiles）">
-          <ElInput
-            v-model="appEnvProfilesText"
-            type="textarea"
-            :rows="6"
-            placeholder='例如 {"dev":{"frontend_base":"http://127.0.0.1:5174"},"prod":{"frontend_base":"https://app.example.com"}}'
-          />
-          <div class="app-form-hint">
-            推荐按环境名分组，记录入口、profile、外部系统键名等非敏感配置。
-          </div>
-        </ElFormItem>
-        <ElFormItem label="Feature Flag（meta.feature_flags）">
-          <ElInput
-            v-model="appFeatureFlagsText"
-            type="textarea"
-            :rows="6"
-            placeholder='例如 {"shared_cookie":{"default":false,"prod":true},"remote_manifest":{"default":false}}'
-          />
-          <div class="app-form-hint">
-            推荐按 flag 名存储默认值与环境覆盖，避免只在前端代码里写死开关判断。
-          </div>
-        </ElFormItem>
-        <div class="app-form-section">
-          <div class="app-form-section__title">治理补充</div>
-          <div class="app-form-section__desc"
-            >说明里写产品边界；敏感配置只记录键名、归属和托管方式，不直接录入明文。</div
-          >
-        </div>
-        <ElFormItem label="敏感配置引用（meta.sensitive_config）">
-          <ElInput
-            v-model="appSensitiveConfigText"
-            type="textarea"
-            :rows="7"
-            placeholder='例如 {"secret_refs":["oidc/client-secret"],"certificate_refs":["gateway/tls-cert"],"callback_domains":["https://account.example.com/callback"]}'
-          />
-          <div class="app-form-hint">
-            这里写引用键、证书别名、回调域名白名单与 issuer 说明，不写真实密钥内容。
-          </div>
-        </ElFormItem>
-        <ElFormItem label="说明">
-          <ElInput
-            v-model="appForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="说明这个 App 面向哪个站点或后台产品"
-          />
-        </ElFormItem>
-        <div class="app-sensitive-note">
-          <div class="app-sensitive-note__title">敏感配置约束</div>
-          <div class="app-sensitive-note__text">
-            密钥、证书、回调域名白名单、第三方 client secret
-            不要直接填在表单明文里；这里只保留引用键、用途和托管位置，实际值交给环境变量或密钥系统。
+          <div v-if="!editingAppKey" class="app-form-tip">
+            新建时系统自动为此 App 创建默认空间 <code>default</code>，无需手动选择。
           </div>
         </div>
-        <div class="app-drawer-grid">
-          <ElFormItem label="默认 App">
-            <ElSwitch v-model="appForm.is_default" />
-          </ElFormItem>
-          <ElFormItem label="状态">
-            <ElSelect v-model="appForm.status">
-              <ElOption label="启用" value="normal" />
-              <ElOption label="停用" value="disabled" />
+
+        <!-- ② 空间配置 -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">空间配置</span>
+            <span class="app-form-card__desc">
+              决定此 App 有几个导航空间。多空间支持按 Host 或路径分别进入不同空间。
+            </span>
+          </div>
+          <div class="app-drawer-grid">
+            <ElFormItem label="空间模式">
+              <ElSelect v-model="appForm.space_mode" style="width: 100%">
+                <ElOption label="单空间" value="single" />
+                <ElOption label="多空间" value="multi" />
+              </ElSelect>
+            </ElFormItem>
+            <ElFormItem v-if="editingAppKey" label="默认空间">
+              <ElSelect
+                v-model="appForm.default_space_key"
+                filterable
+                allow-create
+                default-first-option
+                style="width: 100%"
+              >
+                <ElOption
+                  v-for="item in spaces"
+                  :key="item.spaceKey"
+                  :label="`${item.name} · ${item.spaceKey}`"
+                  :value="item.spaceKey"
+                />
+              </ElSelect>
+            </ElFormItem>
+          </div>
+          <div v-if="editingAppKey" class="app-form-tip">
+            默认空间决定未命中 Level 2 入口时落入哪个空间；空间首页请到"高级空间配置"调整
+            <code>default_home_path</code>。
+          </div>
+        </div>
+
+        <!-- ③ 认证配置 -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">认证配置</span>
+            <span class="app-form-card__desc">
+              决定登录如何发生、是否复用认证中心会话，以及登录页面使用哪套 UI。
+            </span>
+          </div>
+          <div class="app-drawer-grid">
+            <ElFormItem label="认证模式">
+              <ElSelect v-model="appForm.auth_mode" style="width: 100%">
+                <ElOption label="继承当前 Host" value="inherit_host" />
+                <ElOption label="共享 Cookie" value="shared_cookie" />
+                <ElOption label="独立认证中心" value="centralized_login" />
+              </ElSelect>
+            </ElFormItem>
+            <ElFormItem label="SSO 策略">
+              <ElSelect v-model="appAuthSsoMode" style="width: 100%">
+                <ElOption label="participate — 复用中心会话" value="participate" />
+                <ElOption label="reauth — 进入须重新认证" value="reauth" />
+                <ElOption label="isolated — 完全不复用登录态" value="isolated" />
+              </ElSelect>
+            </ElFormItem>
+          </div>
+
+          <ElFormItem label="登录页模式">
+            <ElSelect v-model="appAuthLoginUiMode" style="width: 100%">
+              <ElOption label="auth_center_ui — 使用认证中心默认页（当前）" value="auth_center_ui" />
+              <ElOption label="auth_center_custom — 使用认证中心自定义模板" value="auth_center_custom" />
+              <ElOption label="local_ui — 业务 App 自建登录页" value="local_ui" />
             </ElSelect>
           </ElFormItem>
+
+          <!-- 联动：auth_center_ui — 简要说明 -->
+          <div v-if="appAuthLoginUiMode === 'auth_center_ui'" class="app-form-tip">
+            使用认证中心默认页（<code>/account/auth/login</code>），模板 Key 由系统自动解析：
+            URL query → 注册入口 → App 级 → <code>default</code>，无需在此额外配置。
+          </div>
+
+          <!-- 联动：auth_center_custom — 显示模板 Key 输入 -->
+          <div v-if="appAuthLoginUiMode === 'auth_center_custom'" class="app-form-sub-card">
+            <div class="app-form-sub-card__label">
+              指定认证中心模板
+            </div>
+            <ElFormItem label="登录页模板 Key" style="margin-bottom: 0">
+              <ElInput v-model="appAuthLoginPageKey" placeholder="例如 aurora" />
+              <div class="app-form-hint">
+                此处是 App 级兜底，优先级低于 URL query 和注册入口的模板 Key 设置。
+                模板需在"认证页模板管理"中预先创建。
+              </div>
+            </ElFormItem>
+          </div>
+
+          <!-- 联动：local_ui — 警告说明 -->
+          <ElAlert
+            v-if="appAuthLoginUiMode === 'local_ui'"
+            type="warning"
+            :closable="false"
+            show-icon
+            title="local_ui 功能尚在建设中"
+            description="此模式声明 App 使用自建登录页，认证中心登录页模板对本 App 不生效。当前路由守卫跳转逻辑待补全，实际行为与 auth_center_ui 一致，请知悉。"
+            style="margin-top: 4px"
+          />
         </div>
+
+        <!-- ④ 运行入口与探针 -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">运行入口与部署探针</span>
+            <span class="app-form-card__desc">
+              可公开的入口地址与健康检查地址。环境差异请放到下方多环境配置，不要散落在这里。
+            </span>
+          </div>
+          <div class="app-drawer-grid">
+            <ElFormItem label="前端入口地址">
+              <ElInput
+                v-model="appForm.frontend_entry_url"
+                placeholder="/account 或 https://account.example.com"
+              />
+            </ElFormItem>
+            <ElFormItem label="后端入口地址">
+              <ElInput
+                v-model="appForm.backend_entry_url"
+                placeholder="/api 或 https://api.example.com"
+              />
+            </ElFormItem>
+            <ElFormItem label="Manifest 地址">
+              <ElInput
+                v-model="appForm.manifest_url"
+                placeholder="https://cdn.example.com/app/manifest.json"
+              />
+            </ElFormItem>
+            <ElFormItem label="运行版本">
+              <ElInput v-model="appForm.runtime_version" placeholder="2026.04.12-rc1" />
+            </ElFormItem>
+          </div>
+          <ElFormItem label="健康检查地址" style="margin-bottom: 0">
+            <ElInput v-model="appForm.health_check_url" placeholder="/health" />
+          </ElFormItem>
+        </div>
+
+        <!-- ⑤ 运行能力声明 -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">运行能力声明</span>
+            <span class="app-form-card__desc">
+              用结构化 JSON 描述 routing / runtime / navigation / integration 能力，避免靠命名约定猜测。
+              顶层字段（space_mode、auth_mode 等）无需在这里重复填写。
+            </span>
+          </div>
+          <ElFormItem style="margin-bottom: 0">
+            <ElInput
+              v-model="appCapabilitiesText"
+              type="textarea"
+              :rows="6"
+              placeholder='{"runtime":{"supports_worktab":true}}'
+            />
+          </ElFormItem>
+        </div>
+
+        <!-- ⑥ 多环境与 Feature Flag -->
+        <div class="app-form-card">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">多环境与 Feature Flag</span>
+            <span class="app-form-card__desc">
+              按 App 维度维护环境 profile 与功能开关，避免 dev / test / prod 规则散落在说明字段。
+            </span>
+          </div>
+          <ElFormItem label="环境配置（meta.env_profiles）">
+            <ElInput
+              v-model="appEnvProfilesText"
+              type="textarea"
+              :rows="4"
+              placeholder='{"dev":{"frontend_base":"http://127.0.0.1:5174"},"prod":{"frontend_base":"https://app.example.com"}}'
+            />
+            <div class="app-form-hint">
+              按环境名分组，记录入口、profile、外部系统键名等非敏感配置。
+            </div>
+          </ElFormItem>
+          <ElFormItem label="Feature Flag（meta.feature_flags）" style="margin-bottom: 0">
+            <ElInput
+              v-model="appFeatureFlagsText"
+              type="textarea"
+              :rows="4"
+              placeholder='{"shared_cookie":{"default":false,"prod":true},"remote_manifest":{"default":false}}'
+            />
+            <div class="app-form-hint">
+              按 flag 名存储默认值与环境覆盖，避免只在前端代码里写死开关判断。
+            </div>
+          </ElFormItem>
+        </div>
+
+        <!-- ⑦ 治理补充 -->
+        <div class="app-form-card app-form-card--last">
+          <div class="app-form-card__header">
+            <span class="app-form-card__title">治理补充</span>
+            <span class="app-form-card__desc">
+              只记录敏感配置的引用键名和归属，不录入明文。密钥、证书内容交给环境变量或密钥系统管理。
+            </span>
+          </div>
+          <ElFormItem label="敏感配置引用（meta.sensitive_config）" style="margin-bottom: 0">
+            <ElInput
+              v-model="appSensitiveConfigText"
+              type="textarea"
+              :rows="5"
+              placeholder='{"secret_refs":["oidc/client-secret"],"certificate_refs":["gateway/tls-cert"],"callback_domains":["https://account.example.com/callback"]}'
+            />
+            <div class="app-form-hint">
+              写引用键名、证书别名、回调域名白名单与 issuer 说明，不写真实密钥内容。
+            </div>
+          </ElFormItem>
+        </div>
+
       </ElForm>
       <template #footer>
         <div class="drawer-footer">
@@ -717,6 +763,7 @@
   const loadError = ref('')
   const savingApp = ref(false)
   const savingHost = ref(false)
+  const governanceTab = ref<'bindings' | 'overview' | 'dryrun' | 'capabilities'>('bindings')
   const apps = ref<Api.SystemManage.AppItem[]>([])
   const hostBindings = ref<Api.SystemManage.AppHostBindingItem[]>([])
   const spaceEntryBindings = ref<Api.SystemManage.MenuSpaceEntryBindingItem[]>([])
@@ -1628,8 +1675,109 @@
     gap: 16px;
   }
 
+  /* ── 抽屉表单整体 ─────────────────────────── */
+  .app-drawer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── 分组卡片 ────────────────────────────── */
+  .app-form-card {
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 14px;
+    padding: 18px 20px 6px;
+    background: #fff;
+  }
+
+  .app-form-card--last {
+    margin-bottom: 8px;
+  }
+
+  .app-form-card__header {
+    margin-bottom: 16px;
+  }
+
+  .app-form-card__title {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--art-text-gray-900);
+    margin-bottom: 4px;
+  }
+
+  .app-form-card__desc {
+    display: block;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--art-text-gray-500);
+  }
+
+  /* ── 卡片内嵌子块（条件联动区） ──────────────── */
+  .app-form-sub-card {
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 14px 16px 8px;
+    background: color-mix(in srgb, var(--el-color-primary-light-9) 60%, white);
+    margin-top: 4px;
+    margin-bottom: 18px;
+  }
+
+  .app-form-sub-card__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--el-color-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .app-form-sub-card__label::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--el-color-primary);
+  }
+
+  /* ── 提示条 ──────────────────────────────── */
+  .app-form-tip {
+    margin: -4px 0 18px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--art-gray-100) 80%, white);
+    color: var(--art-text-gray-600);
+    font-size: 12px;
+    line-height: 1.65;
+
+    code {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--art-gray-200);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 11px;
+      color: var(--art-text-gray-800);
+    }
+  }
+
+  /* ── Switch 行 ───────────────────────────── */
+  .app-form-switch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .app-form-switch-label {
+    font-size: 12px;
+    color: var(--art-text-gray-500);
+    line-height: 1.4;
+  }
+
+  /* ── 原有 hint（保留兼容） ──────────────────── */
   .app-form-hint {
-    margin: -2px 0 14px;
+    margin: 4px 0 14px;
     color: var(--art-text-gray-600);
     font-size: 12px;
     line-height: 1.6;
@@ -1705,21 +1853,208 @@
     gap: 12px;
   }
 
-  .app-binding-section {
-    margin-top: 16px;
-  }
-
-  .app-binding-section__header {
+  /* ── 面板内切换导航 ───────────────────────── */
+  .app-panel-nav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+    gap: 4px;
+    margin: 12px 0 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--art-gray-100);
   }
 
-  .app-binding-section__title {
+  .app-panel-nav__item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--art-text-gray-600);
     font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    white-space: nowrap;
+
+    &:hover {
+      background: color-mix(in srgb, var(--art-gray-200) 80%, white);
+      color: var(--art-text-gray-900);
+    }
+
+    &.is-active {
+      background: #fff;
+      color: var(--art-text-gray-900);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
+    }
+  }
+
+  .app-panel-nav__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--art-gray-200);
+    color: var(--art-text-gray-600);
+    font-size: 11px;
     font-weight: 600;
-    color: var(--art-text-gray-700);
+  }
+
+  .app-panel-nav__item.is-active .app-panel-nav__badge {
+    background: color-mix(in srgb, var(--art-primary) 15%, white);
+    color: var(--art-primary);
+  }
+
+  /* ── Tab 内容区 ──────────────────────────── */
+  .app-tab-content {
+    margin-top: 14px;
+  }
+
+  .app-tab-header {
+    margin-bottom: 14px;
+  }
+
+  .app-tab-header__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--art-text-gray-900);
+    margin-bottom: 4px;
+  }
+
+  .app-tab-header__desc {
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--art-text-gray-500);
+  }
+
+  /* ── 配置总览 Full-width checks ─────────── */
+  .app-governance-checks--full {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  /* ── 快速预检 Full-width ──────────────────  */
+  .app-preview-list--full {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* ── 入口规则 card 容器 ──────────────────── */
+  .app-rule-card {
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 14px;
+    background: #fff;
+  }
+
+  .app-rule-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: color-mix(in srgb, var(--art-gray-100) 60%, white);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .app-rule-card__head-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .app-rule-card__level {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--el-color-primary) 14%, white);
+    color: var(--el-color-primary);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .app-rule-card__level--l2 {
+    background: color-mix(in srgb, var(--el-color-warning) 14%, white);
+    color: var(--el-color-warning-dark-2);
+  }
+
+  .app-rule-card__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--art-text-gray-900);
+    line-height: 1.4;
+  }
+
+  .app-rule-card__desc {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--art-text-gray-500);
+  }
+
+  .app-rule-card__empty {
+    padding: 16px;
+    font-size: 13px;
+    color: var(--art-text-gray-400);
+    line-height: 1.6;
+  }
+
+  /* ── 规则行 ──────────────────────────────── */
+  .app-rule-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: color-mix(in srgb, var(--el-color-primary-light-9) 50%, white);
+    }
+  }
+
+  .app-rule-row__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .app-rule-row__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .app-rule-row__host {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--art-text-gray-900);
+  }
+
+  .app-rule-row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--art-text-gray-500);
   }
 
   .app-binding-list {
@@ -1979,6 +2314,10 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+  }
+
+  :deep(.el-drawer) {
+    min-width: 680px;
   }
 
   @media (max-width: 1200px) {

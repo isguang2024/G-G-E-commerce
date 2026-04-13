@@ -18,8 +18,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	"github.com/gg-ecommerce/backend/internal/modules/system/collaborationworkspace"
+	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
 	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
@@ -28,6 +28,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
+	"github.com/gg-ecommerce/backend/internal/modules/system/social"
 	"github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
@@ -92,6 +93,7 @@ type APIHandler struct {
 	// 注册体系
 	registerResolver *register.Resolver
 	registerSvc      *register.Service
+	socialSvc        social.Service
 	// 数据字典
 	dictSvc *dictionary.Service
 }
@@ -238,6 +240,7 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		h.service,
 		logger,
 	)
+	h.socialSvc = social.NewService(db, h.authSvc, userRepo, registerResolver, cfg.JWT.Secret, logger)
 	h.dictSvc = dictionary.NewService(db, logger)
 	return h
 }

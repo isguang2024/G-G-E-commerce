@@ -165,6 +165,51 @@ components:
           type: string
         agreement_version:
           type: string
+        social_token:
+          type: string
+          description: 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号
+    SocialTokenExchangeRequest:
+      type: object
+      required:
+      - social_token
+      properties:
+        social_token:
+          type: string
+    SocialTokenExchangeResponse:
+      type: object
+      required:
+      - intent
+      - provider_key
+      - provider_uid
+      properties:
+        intent:
+          type: string
+          enum: [login, register, conflict]
+        provider_key:
+          type: string
+        provider_name:
+          type: string
+        provider_uid:
+          type: string
+        provider_user:
+          type: string
+        email:
+          type: string
+        avatar_url:
+          type: string
+        matched_user_id:
+          type: string
+        need_register:
+          type: boolean
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          type: object
+          additionalProperties: true
     RefreshTokenRequest:
       type: object
       required:

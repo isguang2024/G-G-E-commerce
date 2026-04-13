@@ -41,6 +41,11 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: 'auth-callback', isHideTab: true }
   },
   {
+    path: '/auth/social-callback',
+    redirect: '/account/auth/social-callback',
+    meta: { title: 'social-callback', isHideTab: true }
+  },
+  {
     path: '/account/auth/login',
     name: 'AccountPortalLogin',
     component: () => import('@views/auth/login/index.vue'),
@@ -63,6 +68,12 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     name: 'AuthCallback',
     component: () => import('@views/auth/callback/index.vue'),
     meta: { title: 'auth-callback', isHideTab: true, appKey: 'account-portal' }
+  },
+  {
+    path: '/account/auth/social-callback',
+    name: 'SocialCallback',
+    component: () => import('@views/auth/social-callback/index.vue'),
+    meta: { title: 'social-callback', isHideTab: true, appKey: 'account-portal' }
   },
   {
     path: '/403',

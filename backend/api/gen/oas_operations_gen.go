@@ -49,6 +49,7 @@ const (
 	DeleteUserOperation                                           OperationName = "DeleteUser"
 	DispatchMessageOperation                                      OperationName = "DispatchMessage"
 	ExchangeAuthCallbackOperation                                 OperationName = "ExchangeAuthCallback"
+	ExchangeSocialTokenOperation                                  OperationName = "ExchangeSocialToken"
 	ExplainPermissionsOperation                                   OperationName = "ExplainPermissions"
 	GetApiEndpointOverviewOperation                               OperationName = "GetApiEndpointOverview"
 	GetAppPreflightOperation                                      OperationName = "GetAppPreflight"

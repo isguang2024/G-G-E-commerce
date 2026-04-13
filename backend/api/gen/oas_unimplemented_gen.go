@@ -400,6 +400,15 @@ func (UnimplementedHandler) ExchangeAuthCallback(ctx context.Context, req *AuthC
 	return r, ht.ErrNotImplemented
 }
 
+// ExchangeSocialToken implements exchangeSocialToken operation.
+//
+// 兑换社交登录 token（登录或注册绑定上下文）.
+//
+// POST /auth/social/exchange
+func (UnimplementedHandler) ExchangeSocialToken(ctx context.Context, req *SocialTokenExchangeRequest) (r ExchangeSocialTokenRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExplainPermissions implements explainPermissions operation.
 //
 // 解释当前账号在指定工作空间内的最终权限及其来源.

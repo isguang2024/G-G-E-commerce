@@ -258,7 +258,7 @@
         workbook.Props = {
           Title: filename,
           Subject: '数据导出',
-          Author: props.workbookOptions.creator || 'G&G E-commerce',
+          Author: props.workbookOptions.creator || 'Mabeng Admin',
           Manager: props.workbookOptions.lastModifiedBy || '',
           Company: '系统导出',
           Category: '数据',

@@ -286,6 +286,12 @@ type Invoker interface {
 	//
 	// POST /auth/callback/exchange
 	ExchangeAuthCallback(ctx context.Context, request *AuthCallbackExchangeRequest) (ExchangeAuthCallbackRes, error)
+	// ExchangeSocialToken invokes exchangeSocialToken operation.
+	//
+	// 兑换社交登录 token（登录或注册绑定上下文）.
+	//
+	// POST /auth/social/exchange
+	ExchangeSocialToken(ctx context.Context, request *SocialTokenExchangeRequest) (ExchangeSocialTokenRes, error)
 	// ExplainPermissions invokes explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -6447,6 +6453,83 @@ func (c *Client) sendExchangeAuthCallback(ctx context.Context, request *AuthCall
 
 	stage = "DecodeResponse"
 	result, err := decodeExchangeAuthCallbackResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ExchangeSocialToken invokes exchangeSocialToken operation.
+//
+// 兑换社交登录 token（登录或注册绑定上下文）.
+//
+// POST /auth/social/exchange
+func (c *Client) ExchangeSocialToken(ctx context.Context, request *SocialTokenExchangeRequest) (ExchangeSocialTokenRes, error) {
+	res, err := c.sendExchangeSocialToken(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendExchangeSocialToken(ctx context.Context, request *SocialTokenExchangeRequest) (res ExchangeSocialTokenRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("exchangeSocialToken"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/social/exchange"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ExchangeSocialTokenOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/social/exchange"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeExchangeSocialTokenRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeExchangeSocialTokenResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

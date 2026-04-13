@@ -3114,6 +3114,42 @@ func (s SaveDictItemsOKApplicationJSON) Validate() error {
 	return nil
 }
 
+func (s *SocialTokenExchangeResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Intent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "intent",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SocialTokenExchangeResponseIntent) Validate() error {
+	switch s {
+	case "login":
+		return nil
+	case "register":
+		return nil
+	case "conflict":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *StaleApiEndpointList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

@@ -57,6 +57,10 @@ type ExchangeAuthCallbackRes interface {
 	exchangeAuthCallbackRes()
 }
 
+type ExchangeSocialTokenRes interface {
+	exchangeSocialTokenRes()
+}
+
 type ExplainPermissionsRes interface {
 	explainPermissionsRes()
 }
