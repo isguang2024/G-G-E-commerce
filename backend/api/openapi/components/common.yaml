@@ -137,6 +137,7 @@ components:
           type: object
           nullable: true
           properties:
+            url: {type: string, description: 注册入口配置的 target_url（最高优先级跳转目标）}
             app_key: {type: string}
             navigation_space_key: {type: string}
             home_path: {type: string}
@@ -168,6 +169,15 @@ components:
         social_token:
           type: string
           description: 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号
+        source_app_key:
+          type: string
+          description: 来源 App（注册后回源优先级 3）
+        source_navigation_space_key:
+          type: string
+          description: 来源菜单空间
+        source_home_path:
+          type: string
+          description: 来源首页路径
     SocialTokenExchangeRequest:
       type: object
       required:

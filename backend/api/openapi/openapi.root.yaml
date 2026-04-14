@@ -41,10 +41,6 @@ paths:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
   /system/register-entries/{id}:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries~1{id}
-  /system/register-policies:
-    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies
-  /system/register-policies/{code}:
-    $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-policies~1{code}
   /system/login-page-templates:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1login-page-templates
   /system/login-page-templates/{templateKey}:

@@ -59,10 +59,6 @@
                 <span class="context-value">{{ ctx.entry_code }}</span>
               </div>
               <div class="context-item">
-                <span class="context-label">策略 Code</span>
-                <span class="context-value">{{ ctx.policy_code }}</span>
-              </div>
-              <div class="context-item">
                 <span class="context-label">注册来源</span>
                 <span class="context-value">{{ registerSourceLabel }}</span>
               </div>

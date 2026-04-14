@@ -1261,71 +1261,6 @@ func decodeDeleteRegisterEntryParams(args [1]string, argsEscaped bool, r *http.R
 	return params, nil
 }
 
-// DeleteRegisterPolicyParams is parameters of deleteRegisterPolicy operation.
-type DeleteRegisterPolicyParams struct {
-	Code string
-}
-
-func unpackDeleteRegisterPolicyParams(packed middleware.Parameters) (params DeleteRegisterPolicyParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "code",
-			In:   "path",
-		}
-		params.Code = packed[key].(string)
-	}
-	return params
-}
-
-func decodeDeleteRegisterPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteRegisterPolicyParams, _ error) {
-	// Decode path: code.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "code",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
-					return err
-				}
-
-				params.Code = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "code",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
 // DeleteRoleParams is parameters of deleteRole operation.
 type DeleteRoleParams struct {
 	ID uuid.UUID
@@ -9977,11 +9912,10 @@ func decodeListPublicRuntimePagesParams(args [0]string, argsEscaped bool, r *htt
 
 // ListRegisterLogsParams is parameters of listRegisterLogs operation.
 type ListRegisterLogsParams struct {
-	Source     OptString `json:",omitempty,omitzero"`
-	EntryCode  OptString `json:",omitempty,omitzero"`
-	PolicyCode OptString `json:",omitempty,omitzero"`
-	Page       OptInt    `json:",omitempty,omitzero"`
-	PageSize   OptInt    `json:",omitempty,omitzero"`
+	Source    OptString `json:",omitempty,omitzero"`
+	EntryCode OptString `json:",omitempty,omitzero"`
+	Page      OptInt    `json:",omitempty,omitzero"`
+	PageSize  OptInt    `json:",omitempty,omitzero"`
 }
 
 func unpackListRegisterLogsParams(packed middleware.Parameters) (params ListRegisterLogsParams) {
@@ -10001,15 +9935,6 @@ func unpackListRegisterLogsParams(packed middleware.Parameters) (params ListRegi
 		}
 		if v, ok := packed[key]; ok {
 			params.EntryCode = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "policy_code",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.PolicyCode = v.(OptString)
 		}
 	}
 	{
@@ -10113,47 +10038,6 @@ func decodeListRegisterLogsParams(args [0]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "entry_code",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: policy_code.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "policy_code",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotPolicyCodeVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotPolicyCodeVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.PolicyCode.SetTo(paramsDotPolicyCodeVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "policy_code",
 			In:   "query",
 			Err:  err,
 		}
@@ -15273,71 +15157,6 @@ func decodeUpdateRegisterEntryParams(args [1]string, argsEscaped bool, r *http.R
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// UpdateRegisterPolicyParams is parameters of updateRegisterPolicy operation.
-type UpdateRegisterPolicyParams struct {
-	Code string
-}
-
-func unpackUpdateRegisterPolicyParams(packed middleware.Parameters) (params UpdateRegisterPolicyParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "code",
-			In:   "path",
-		}
-		params.Code = packed[key].(string)
-	}
-	return params
-}
-
-func decodeUpdateRegisterPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateRegisterPolicyParams, _ error) {
-	// Decode path: code.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "code",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
-					return err
-				}
-
-				params.Code = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "code",
 			In:   "path",
 			Err:  err,
 		}

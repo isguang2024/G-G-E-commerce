@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchRegister, fetchRegisterContext, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { RoutesAlias } from '@/router/routesAlias'
-import { finalizeAuthenticatedSession } from './shared'
+import { finalizeAuthenticatedSession, gotoAfterAuth } from './shared'
 
 export interface RegisterFormState {
   username: string
@@ -52,6 +52,10 @@ export function useRegisterFlow() {
         return
       }
 
+      const sourceAppKey = `${route.query.source_app_key || ''}`.trim()
+      const sourceSpaceKey = `${route.query.source_navigation_space_key || ''}`.trim()
+      const sourceHomePath = `${route.query.source_home_path || ''}`.trim()
+
       const response = await fetchRegister({
         username: formData.username,
         password: formData.password,
@@ -60,7 +64,10 @@ export function useRegisterFlow() {
         ...(formData.invitationCode ? { invitation_code: formData.invitationCode } : {}),
         ...(formData.captchaToken ? { captcha_token: formData.captchaToken } : {}),
         agreement_version: 'v1',
-        ...(socialToken.value ? { social_token: socialToken.value } : {})
+        ...(socialToken.value ? { social_token: socialToken.value } : {}),
+        ...(sourceAppKey ? { source_app_key: sourceAppKey } : {}),
+        ...(sourceSpaceKey ? { source_navigation_space_key: sourceSpaceKey } : {}),
+        ...(sourceHomePath ? { source_home_path: sourceHomePath } : {})
       })
       ElMessage.success('注册成功')
 
@@ -76,23 +83,21 @@ export function useRegisterFlow() {
             refreshMenus: true
           }
         )
-        const homePath = response.landing?.home_path ?? '/dashboard/console'
         setTimeout(() => {
-          void router.push(homePath)
+          void gotoAfterAuth(response.landing, router, '/dashboard/console')
         }, REDIRECT_DELAY)
         return
       }
 
       if (response.pending) {
+        const query: Record<string, string> = { registered: '1' }
+        if (response.landing?.url) query.landing_url = response.landing.url
+        if (response.landing?.app_key) query.landing_app_key = response.landing.app_key
+        if (response.landing?.navigation_space_key)
+          query.landing_space = response.landing.navigation_space_key
+        if (response.landing?.home_path) query.landing_path = response.landing.home_path
         setTimeout(() => {
-          void router.push({ path: RoutesAlias.Login, query: { registered: '1' } })
-        }, REDIRECT_DELAY)
-        return
-      }
-
-      if (response.landing?.home_path) {
-        setTimeout(() => {
-          void router.push(response.landing?.home_path || '/')
+          void router.push({ path: RoutesAlias.Login, query })
         }, REDIRECT_DELAY)
         return
       }

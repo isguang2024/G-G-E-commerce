@@ -26,36 +26,9 @@ export async function fetchDeleteRegisterEntry(id: string) {
   if (error) throw new Error('delete failed')
 }
 
-export async function fetchListRegisterPolicies() {
-  return unwrap(v5Client.GET('/system/register-policies'))
-}
-
-export async function fetchCreateRegisterPolicy(
-  body: V5RequestBody<'/system/register-policies', 'post'>
-) {
-  return unwrap(v5Client.POST('/system/register-policies', { body }))
-}
-
-export async function fetchUpdateRegisterPolicy(
-  code: string,
-  body: V5RequestBody<'/system/register-policies/{code}', 'put'>
-) {
-  return unwrap(
-    v5Client.PUT('/system/register-policies/{code}', { params: { path: { code } }, body })
-  )
-}
-
-export async function fetchDeleteRegisterPolicy(code: string) {
-  const { error } = await v5Client.DELETE('/system/register-policies/{code}', {
-    params: { path: { code } }
-  })
-  if (error) throw new Error('delete failed')
-}
-
 export async function fetchListRegisterLogs(params: {
   source?: string
   entry_code?: string
-  policy_code?: string
   page?: number
   page_size?: number
 }) {

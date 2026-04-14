@@ -2,7 +2,7 @@ components:
   schemas:
     RegisterEntryItem:
       type: object
-      required: [id, app_key, entry_code, name, policy_code, login_page_key, status]
+      required: [id, app_key, entry_code, name, login_page_key, status, allow_public_register, require_invite, require_email_verify, require_captcha, auto_login, is_system_reserved]
       properties:
         id: {type: string, format: uuid}
         app_key: {type: string}
@@ -11,14 +11,27 @@ components:
         host: {type: string}
         path_prefix: {type: string}
         register_source: {type: string}
-        policy_code: {type: string}
         login_page_key: {type: string}
         status: {type: string}
-        allow_public_register: {type: boolean, nullable: true}
-        require_invite: {type: boolean, nullable: true}
-        require_email_verify: {type: boolean, nullable: true}
-        require_captcha: {type: boolean, nullable: true}
-        auto_login: {type: boolean, nullable: true}
+        allow_public_register: {type: boolean}
+        require_invite: {type: boolean}
+        require_email_verify: {type: boolean}
+        require_captcha: {type: boolean}
+        auto_login: {type: boolean}
+        is_system_reserved: {type: boolean}
+        target_url: {type: string}
+        target_app_key: {type: string}
+        target_navigation_space_key: {type: string}
+        target_home_path: {type: string}
+        captcha_provider: {type: string}
+        captcha_site_key: {type: string}
+        description: {type: string}
+        role_codes:
+          type: array
+          items: {type: string}
+        feature_package_keys:
+          type: array
+          items: {type: string}
         sort_order: {type: integer}
         remark: {type: string}
     RegisterEntryList:
@@ -31,7 +44,7 @@ components:
         total: {type: integer}
     RegisterEntryUpsertRequest:
       type: object
-      required: [app_key, entry_code, name, policy_code]
+      required: [app_key, entry_code, name]
       properties:
         app_key: {type: string}
         entry_code: {type: string}
@@ -39,14 +52,27 @@ components:
         host: {type: string}
         path_prefix: {type: string}
         register_source: {type: string}
-        policy_code: {type: string}
         login_page_key: {type: string}
         status: {type: string}
-        allow_public_register: {type: boolean, nullable: true}
-        require_invite: {type: boolean, nullable: true}
-        require_email_verify: {type: boolean, nullable: true}
-        require_captcha: {type: boolean, nullable: true}
-        auto_login: {type: boolean, nullable: true}
+        allow_public_register: {type: boolean}
+        require_invite: {type: boolean}
+        require_email_verify: {type: boolean}
+        require_captcha: {type: boolean}
+        auto_login: {type: boolean}
+        is_system_reserved: {type: boolean}
+        target_url: {type: string}
+        target_app_key: {type: string}
+        target_navigation_space_key: {type: string}
+        target_home_path: {type: string}
+        captcha_provider: {type: string}
+        captcha_site_key: {type: string}
+        description: {type: string}
+        role_codes:
+          type: array
+          items: {type: string}
+        feature_package_keys:
+          type: array
+          items: {type: string}
         sort_order: {type: integer}
         remark: {type: string}
     LoginPageTemplateItem:
@@ -94,73 +120,15 @@ components:
         meta:
           type: object
           additionalProperties: true
-    RegisterPolicyItem:
-      type: object
-      required: [id, policy_code, name, target_app_key, target_navigation_space_key, status]
-      properties:
-        id: {type: string, format: uuid}
-        policy_code: {type: string}
-        name: {type: string}
-        description: {type: string}
-        target_app_key: {type: string}
-        target_navigation_space_key: {type: string}
-        target_home_path: {type: string}
-        status: {type: string}
-        allow_public_register: {type: boolean}
-        require_invite: {type: boolean}
-        require_email_verify: {type: boolean}
-        require_captcha: {type: boolean}
-        auto_login: {type: boolean}
-        captcha_provider: {type: string}
-        captcha_site_key: {type: string}
-        role_codes:
-          type: array
-          items: {type: string}
-        feature_package_keys:
-          type: array
-          items: {type: string}
-    RegisterPolicyList:
-      type: object
-      required: [records, total]
-      properties:
-        records:
-          type: array
-          items: {$ref: '#/components/schemas/RegisterPolicyItem'}
-        total: {type: integer}
-    RegisterPolicyUpsertRequest:
-      type: object
-      required: [policy_code, name, target_app_key, target_navigation_space_key]
-      properties:
-        policy_code: {type: string}
-        name: {type: string}
-        description: {type: string}
-        target_app_key: {type: string}
-        target_navigation_space_key: {type: string}
-        target_home_path: {type: string}
-        status: {type: string}
-        allow_public_register: {type: boolean}
-        require_invite: {type: boolean}
-        require_email_verify: {type: boolean}
-        require_captcha: {type: boolean}
-        auto_login: {type: boolean}
-        captcha_provider: {type: string}
-        captcha_site_key: {type: string}
-        role_codes:
-          type: array
-          items: {type: string}
-        feature_package_keys:
-          type: array
-          items: {type: string}
     RegisterLogItem:
       type: object
-      required: [user_id, username, register_source, register_entry_code, register_policy_code, created_at]
+      required: [user_id, username, register_source, register_entry_code, created_at]
       properties:
         user_id: {type: string, format: uuid}
         username: {type: string}
         email: {type: string}
         register_app_key: {type: string}
         register_entry_code: {type: string}
-        register_policy_code: {type: string}
         register_source: {type: string}
         register_ip: {type: string}
         register_user_agent: {type: string}

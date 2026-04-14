@@ -21,10 +21,6 @@ type CreateRegisterEntryRes interface {
 	createRegisterEntryRes()
 }
 
-type CreateRegisterPolicyRes interface {
-	createRegisterPolicyRes()
-}
-
 type CreateUserRes interface {
 	createUserRes()
 }
@@ -43,10 +39,6 @@ type DeleteMediaRes interface {
 
 type DeleteRegisterEntryRes interface {
 	deleteRegisterEntryRes()
-}
-
-type DeleteRegisterPolicyRes interface {
-	deleteRegisterPolicyRes()
 }
 
 type DeleteUserRes interface {
@@ -137,10 +129,6 @@ type ListRegisterLogsRes interface {
 	listRegisterLogsRes()
 }
 
-type ListRegisterPoliciesRes interface {
-	listRegisterPoliciesRes()
-}
-
 type ListStaleApiEndpointsRes interface {
 	listStaleApiEndpointsRes()
 }
@@ -203,10 +191,6 @@ type UpdateDictTypeRes interface {
 
 type UpdateRegisterEntryRes interface {
 	updateRegisterEntryRes()
-}
-
-type UpdateRegisterPolicyRes interface {
-	updateRegisterPolicyRes()
 }
 
 type UpdateUserRes interface {

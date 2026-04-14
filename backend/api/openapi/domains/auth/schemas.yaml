@@ -88,22 +88,20 @@ components:
         - entry_code
         - entry_app_key
         - login_page_key
-        - policy_code
-        - target_app_key
-        - target_navigation_space_key
-        - target_home_path
         - allow_public_register
         - require_invite
         - require_email_verify
         - require_captcha
         - auto_login
+        - is_system_reserved
       properties:
         entry_code: {type: string}
         entry_name: {type: string}
         entry_app_key: {type: string}
         login_page_key: {type: string}
         register_source: {type: string}
-        policy_code: {type: string}
+        is_system_reserved: {type: boolean}
+        target_url: {type: string}
         target_app_key: {type: string}
         target_navigation_space_key: {type: string}
         target_home_path: {type: string}
@@ -119,6 +117,14 @@ components:
         captcha_site_key:
           type: string
           description: 对应提供商的公开 site_key，前端渲染 captcha widget 使用
+        role_codes:
+          type: array
+          items: {type: string}
+          description: 注册时自动绑定的角色 codes
+        feature_package_keys:
+          type: array
+          items: {type: string}
+          description: 注册时自动绑定的功能包 keys
     LoginPageContext:
       type: object
       required:

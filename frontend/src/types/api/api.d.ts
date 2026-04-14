@@ -89,7 +89,9 @@ declare namespace Api {
       refresh_token?: string
       expires_in?: number
       user?: UserInfo
+      pending?: boolean
       landing?: {
+        url?: string
         app_key?: string
         navigation_space_key?: string
         home_path?: string

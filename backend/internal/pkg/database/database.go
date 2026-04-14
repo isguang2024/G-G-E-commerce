@@ -176,9 +176,6 @@ func AutoMigrate() error {
 		&models.PermissionBatchTemplate{},
 		// 注册体系（v5.x register slice）
 		&models.RegisterEntry{},
-		&models.RegisterPolicy{},
-		&models.RegisterPolicyFeaturePackage{},
-		&models.RegisterPolicyRole{},
 		&models.SocialAuthProvider{},
 		&models.UserSocialAccount{},
 		&models.SocialOAuthState{},

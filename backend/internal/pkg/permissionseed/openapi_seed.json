@@ -1962,46 +1962,6 @@
       "access_mode": "permission"
     },
     {
-      "operation_id": "listRegisterPolicies",
-      "method": "get",
-      "path": "/system/register-policies",
-      "permission_key": "system.register_policy.read",
-      "summary": "注册策略列表",
-      "tags": "system-register",
-      "api_category": "system-register",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "createRegisterPolicy",
-      "method": "post",
-      "path": "/system/register-policies",
-      "permission_key": "system.register_policy.write",
-      "summary": "创建注册策略",
-      "tags": "system-register",
-      "api_category": "system-register",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "deleteRegisterPolicy",
-      "method": "delete",
-      "path": "/system/register-policies/{code}",
-      "permission_key": "system.register_policy.write",
-      "summary": "删除注册策略",
-      "tags": "system-register",
-      "api_category": "system-register",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "updateRegisterPolicy",
-      "method": "put",
-      "path": "/system/register-policies/{code}",
-      "permission_key": "system.register_policy.write",
-      "summary": "更新注册策略",
-      "tags": "system-register",
-      "api_category": "system-register",
-      "access_mode": "permission"
-    },
-    {
       "operation_id": "listRegisterLogs",
       "method": "get",
       "path": "/system/users/register-logs",

@@ -62,6 +62,10 @@ type RegisterInput struct {
 	Path             string
 	IP               string
 	UserAgent        string
+	// 来源上下文（优先级 3：请求来源 app 回源）
+	SourceAppKey             string
+	SourceNavigationSpaceKey string
+	SourceHomePath           string
 }
 
 // RegisterResult 注册结果（auto_login 决定返回 Login 或 Pending）。
@@ -117,7 +121,6 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*RegisterResu
 		updates := map[string]interface{}{
 			"register_app_key":     eff.EntryAppKey,
 			"register_entry_code":  eff.EntryCode,
-			"register_policy_code": eff.PolicyCode,
 			"register_source":      eff.RegisterSource,
 			"register_ip":          in.IP,
 			"register_user_agent":  truncate(in.UserAgent, 512),
@@ -127,73 +130,56 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*RegisterResu
 			return fmt.Errorf("update audit fields: %w", err)
 		}
 
-		// 3. 绑定策略角色（user_roles + workspace binding snapshot，同一 tx）
-		roleLinks, err := s.repo.ListPolicyRoles(ctx, eff.PolicyCode)
-		if err != nil {
-			return fmt.Errorf("list policy roles: %w", err)
-		}
-		roleCodes := make([]string, 0)
-		if len(roleLinks) > 0 {
-			roleIDs := make([]uuid.UUID, 0, len(roleLinks))
-			for _, link := range roleLinks {
-				roleIDs = append(roleIDs, link.RoleID)
-			}
-			// 更新 workspace binding snapshot（EnsurePersonalWorkspace 会在 tx 内幂等建 workspace）
-			if err := workspacerolebinding.ReplacePersonalRoleBindings(tx, u.ID, roleIDs); err != nil {
-				return fmt.Errorf("replace personal role bindings: %w", err)
-			}
-			// 写 user_roles
-			userRoles := make([]systemmodels.UserRole, 0, len(roleIDs))
-			for _, rid := range roleIDs {
-				userRoles = append(userRoles, systemmodels.UserRole{UserID: u.ID, RoleID: rid})
-			}
-			if err := tx.Create(&userRoles).Error; err != nil {
-				return fmt.Errorf("create user_roles: %w", err)
-			}
-			// 读取 role code，供策略快照使用
+		// 3. 绑定角色（从 entry 内联 role_codes 解析，写 user_roles + workspace binding）
+		roleCodes := eff.RoleCodes
+		if len(roleCodes) > 0 {
 			var roles []systemmodels.Role
-			if err := tx.Select("code").Where("id IN ?", roleIDs).Find(&roles).Error; err == nil {
+			if err := tx.Where("code IN ?", roleCodes).Find(&roles).Error; err != nil {
+				return fmt.Errorf("find roles by codes: %w", err)
+			}
+			if len(roles) > 0 {
+				roleIDs := make([]uuid.UUID, 0, len(roles))
 				for _, r := range roles {
-					roleCodes = append(roleCodes, r.Code)
+					roleIDs = append(roleIDs, r.ID)
+				}
+				if err := workspacerolebinding.ReplacePersonalRoleBindings(tx, u.ID, roleIDs); err != nil {
+					return fmt.Errorf("replace personal role bindings: %w", err)
+				}
+				userRoles := make([]systemmodels.UserRole, 0, len(roleIDs))
+				for _, rid := range roleIDs {
+					userRoles = append(userRoles, systemmodels.UserRole{UserID: u.ID, RoleID: rid})
+				}
+				if err := tx.Create(&userRoles).Error; err != nil {
+					return fmt.Errorf("create user_roles: %w", err)
 				}
 			}
 		}
 
-		// 4. 绑定策略功能包（user_feature_packages）
-		pkgLinks, err := s.repo.ListPolicyFeaturePackages(ctx, eff.PolicyCode)
-		if err != nil {
-			return fmt.Errorf("list policy packages: %w", err)
-		}
-		pkgKeys := make([]string, 0)
-		for _, link := range pkgLinks {
-			ufp := systemmodels.UserFeaturePackage{
-				AppKey:    eff.TargetAppKey,
-				UserID:    u.ID,
-				PackageID: link.PackageID,
-				Enabled:   true,
-			}
-			if err := tx.Where("user_id = ? AND package_id = ?", u.ID, link.PackageID).
-				FirstOrCreate(&ufp).Error; err != nil {
-				return fmt.Errorf("assign user package: %w", err)
-			}
-		}
-		// 读取 package_key，供策略快照使用
-		if len(pkgLinks) > 0 {
-			pkgIDs := make([]uuid.UUID, 0, len(pkgLinks))
-			for _, p := range pkgLinks {
-				pkgIDs = append(pkgIDs, p.PackageID)
-			}
+		// 4. 绑定功能包（从 entry 内联 feature_package_keys 解析）
+		pkgKeys := eff.FeaturePackageKeys
+		if len(pkgKeys) > 0 {
 			var pkgs []systemmodels.FeaturePackage
-			if err := tx.Select("package_key").Where("id IN ?", pkgIDs).Find(&pkgs).Error; err == nil {
-				for _, p := range pkgs {
-					pkgKeys = append(pkgKeys, p.PackageKey)
+			if err := tx.Where("package_key IN ?", pkgKeys).Find(&pkgs).Error; err != nil {
+				return fmt.Errorf("find packages by keys: %w", err)
+			}
+			for _, pkg := range pkgs {
+				ufp := systemmodels.UserFeaturePackage{
+					AppKey:    eff.TargetAppKey,
+					UserID:    u.ID,
+					PackageID: pkg.ID,
+					Enabled:   true,
+				}
+				if err := tx.Where("user_id = ? AND package_id = ?", u.ID, pkg.ID).
+					FirstOrCreate(&ufp).Error; err != nil {
+					return fmt.Errorf("assign user package: %w", err)
 				}
 			}
 		}
 
-		// 5. 写入策略快照（冻结注册时刻的有效策略，防止后续策略变更污染历史记录）
+		// 5. 写入注册决策快照（冻结注册时刻的有效配置，防止后续变更污染历史记录）
 		snapshot := systemmodels.MetaJSON{
-			"policy_code":                 eff.PolicyCode,
+			"entry_code":                  eff.EntryCode,
+			"target_url":                  eff.TargetURL,
 			"target_app_key":              eff.TargetAppKey,
 			"target_navigation_space_key": eff.TargetNavigationSpaceKey,
 			"target_home_path":            eff.TargetHomePath,
@@ -221,11 +207,15 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*RegisterResu
 	}
 
 	// 事务成功后生成 token（auto_login）
-	landing := &LandingInfo{
-		AppKey:             eff.TargetAppKey,
-		NavigationSpaceKey: eff.TargetNavigationSpaceKey,
-		HomePath:           eff.TargetHomePath,
-	}
+	landing := ResolvePostAuthLanding(PostAuthLandingInput{
+		EntryTargetURL:                eff.TargetURL,
+		EntryTargetAppKey:             eff.TargetAppKey,
+		EntryTargetNavigationSpaceKey: eff.TargetNavigationSpaceKey,
+		EntryTargetHomePath:           eff.TargetHomePath,
+		SourceAppKey:                  in.SourceAppKey,
+		SourceNavigationSpaceKey:      in.SourceNavigationSpaceKey,
+		SourceHomePath:                in.SourceHomePath,
+	})
 	result := &RegisterResult{User: created, Landing: landing}
 	if eff.AutoLogin {
 		loginResp, err := s.authSvc.BuildLoginResponse(created)

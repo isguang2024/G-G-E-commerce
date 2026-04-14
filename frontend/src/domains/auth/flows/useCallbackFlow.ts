@@ -4,7 +4,7 @@ import {
   consumeCentralizedAuthAttempt,
   resolveCentralizedTargetPath
 } from '@/domains/auth/centralized-login'
-import { finalizeAuthenticatedSession, gotoAfterLogin } from './shared'
+import { finalizeAuthenticatedSession, gotoAfterAuth, gotoAfterLogin } from './shared'
 
 export function useCallbackFlow() {
   const router = useRouter()
@@ -38,15 +38,16 @@ export function useCallbackFlow() {
       refreshMenus: true
     })
 
-    const landingPath = resolveCentralizedTargetPath(
+    const fallbackPath = resolveCentralizedTargetPath(
       result.landing?.home_path,
       attempt.targetPath || `${route.query.target_path || ''}`.trim()
     )
-    await gotoAfterLogin(
-      landingPath,
-      router,
-      result.landing?.navigation_space_key || attempt.navigationSpaceKey || ''
-    )
+    const mergedLanding = {
+      ...result.landing,
+      navigation_space_key:
+        result.landing?.navigation_space_key || attempt.navigationSpaceKey || ''
+    }
+    await gotoAfterAuth(mergedLanding, router, fallbackPath)
   }
 
   return {

@@ -20,7 +20,6 @@ const (
 	SelfServiceMenuSpaceKey        = "self-service"
 	SelfServiceFeaturePackageKey   = "self_service.basic"
 	SelfServiceRoleCode            = "personal.self_user"
-	DefaultRegisterPolicyCode      = "default.self"
 	DefaultRegisterEntryCode       = "default"
 	DefaultRegisterEntryPathPrefix = "/account/auth/register"
 	DefaultLoginPageTemplateKey    = "default"
@@ -60,12 +59,6 @@ func EnsureRegisterSystemSeeds(db *gorm.DB) error {
 		return err
 	}
 	if err := ensureSelfServiceRolePackage(db, roleID, pkgID); err != nil {
-		return err
-	}
-	if err := ensureDefaultRegisterPolicy(db); err != nil {
-		return err
-	}
-	if err := ensureDefaultRegisterPolicyBindings(db, pkgID, roleID); err != nil {
 		return err
 	}
 	if err := ensureDefaultRegisterEntry(db); err != nil {
@@ -515,109 +508,53 @@ func ensureSelfServiceRolePackage(db *gorm.DB, roleID, packageID uuid.UUID) erro
 	}
 }
 
-func ensureDefaultRegisterPolicy(db *gorm.DB) error {
-	desired := systemmodels.RegisterPolicy{
-		ID:                       StableID("register-policy", DefaultRegisterPolicyCode),
-		PolicyCode:               DefaultRegisterPolicyCode,
-		Name:                     "默认自注册策略",
-		Description:              "公开注册默认策略：注册成功后进入 platform-admin/self-service 空间",
-		TargetAppKey:             systemmodels.DefaultAppKey,
-		TargetNavigationSpaceKey: SelfServiceMenuSpaceKey,
-		TargetHomePath:           SelfServiceHomePath,
-		Status:                   "enabled",
-		AllowPublicRegister:      false,
-		RequireInvite:            false,
-		RequireEmailVerify:       false,
-		RequireCaptcha:           false,
-		AutoLogin:                true,
-	}
-	var existing systemmodels.RegisterPolicy
-	err := db.Where("policy_code = ?", DefaultRegisterPolicyCode).First(&existing).Error
-	switch {
-	case err == nil:
-		// 不覆盖 allow_public_register / 各开关：尊重运维已修改的值
-		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":                        desired.Name,
-			"description":                 desired.Description,
-			"target_app_key":              desired.TargetAppKey,
-			"target_navigation_space_key": desired.TargetNavigationSpaceKey,
-			"target_home_path":            desired.TargetHomePath,
-			"status":                      desired.Status,
-		}).Error
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		return db.Create(&desired).Error
-	default:
-		return err
-	}
-}
-
-func ensureDefaultRegisterPolicyBindings(db *gorm.DB, packageID, roleID uuid.UUID) error {
-	if packageID != uuid.Nil {
-		var existing systemmodels.RegisterPolicyFeaturePackage
-		err := db.Where("policy_code = ? AND package_id = ? AND workspace_scope = ?",
-			DefaultRegisterPolicyCode, packageID, "personal").First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if createErr := db.Create(&systemmodels.RegisterPolicyFeaturePackage{
-				PolicyCode:     DefaultRegisterPolicyCode,
-				PackageID:      packageID,
-				WorkspaceScope: "personal",
-				SortOrder:      0,
-			}).Error; createErr != nil {
-				return createErr
-			}
-		} else if err != nil {
-			return err
-		}
-	}
-	if roleID != uuid.Nil {
-		var existing systemmodels.RegisterPolicyRole
-		err := db.Where("policy_code = ? AND role_id = ? AND workspace_scope = ?",
-			DefaultRegisterPolicyCode, roleID, "personal").First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if createErr := db.Create(&systemmodels.RegisterPolicyRole{
-				PolicyCode:     DefaultRegisterPolicyCode,
-				RoleID:         roleID,
-				WorkspaceScope: "personal",
-				SortOrder:      0,
-			}).Error; createErr != nil {
-				return createErr
-			}
-		} else if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func ensureDefaultRegisterEntry(db *gorm.DB) error {
 	desired := systemmodels.RegisterEntry{
 		ID:             StableID("register-entry", DefaultRegisterEntryCode),
 		AppKey:         AccountPortalAppKey,
 		EntryCode:      DefaultRegisterEntryCode,
 		Name:           "默认公开注册入口",
+		Description:    "系统保留兜底入口：当未命中其它 register_entries 时使用",
 		Host:           "",
 		PathPrefix:     DefaultRegisterEntryPathPrefix,
 		RegisterSource: "self",
-		PolicyCode:     DefaultRegisterPolicyCode,
 		LoginPageKey:   DefaultLoginPageTemplateKey,
 		Status:         "enabled",
-		SortOrder:      0,
-		Remark:         "兜底入口：当未命中其它 register_entries 时使用",
+		// 注册规则（从 default.self 策略内联）
+		AllowPublicRegister: false,
+		AutoLogin:           true,
+		// 注册后去向
+		TargetAppKey:             systemmodels.DefaultAppKey,
+		TargetNavigationSpaceKey: SelfServiceMenuSpaceKey,
+		TargetHomePath:           SelfServiceHomePath,
+		// 注册决策：绑定
+		RoleCodes:          systemmodels.StringList{SelfServiceRoleCode},
+		FeaturePackageKeys: systemmodels.StringList{SelfServiceFeaturePackageKey},
+		// 系统保留
+		IsSystemReserved: true,
+		SortOrder:        0,
+		Remark:           "兜底入口：当未命中其它 register_entries 时使用",
 	}
 	var existing systemmodels.RegisterEntry
 	err := db.Where("entry_code = ?", DefaultRegisterEntryCode).First(&existing).Error
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"app_key":         desired.AppKey,
-			"name":            desired.Name,
-			"path_prefix":     desired.PathPrefix,
-			"register_source": desired.RegisterSource,
-			"policy_code":     desired.PolicyCode,
-			"login_page_key":  desired.LoginPageKey,
-			"status":          desired.Status,
-			"sort_order":      desired.SortOrder,
-			"remark":          desired.Remark,
+			"app_key":                      desired.AppKey,
+			"name":                         desired.Name,
+			"description":                  desired.Description,
+			"path_prefix":                  desired.PathPrefix,
+			"register_source":              desired.RegisterSource,
+			"login_page_key":               desired.LoginPageKey,
+			"status":                       desired.Status,
+			"target_app_key":               desired.TargetAppKey,
+			"target_navigation_space_key":  desired.TargetNavigationSpaceKey,
+			"target_home_path":             desired.TargetHomePath,
+			"role_codes":                   desired.RoleCodes,
+			"feature_package_keys":         desired.FeaturePackageKeys,
+			"is_system_reserved":           desired.IsSystemReserved,
+			"sort_order":                   desired.SortOrder,
+			"remark":                       desired.Remark,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error

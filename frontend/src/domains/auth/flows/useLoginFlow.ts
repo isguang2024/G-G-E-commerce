@@ -3,8 +3,9 @@ import { useI18n } from 'vue-i18n'
 import { fetchLogin, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { HttpError } from '@/utils/http/error'
 import {
+  buildLandingFromQuery,
   finalizeAuthenticatedSession,
-  gotoAfterLogin,
+  gotoAfterAuth,
   loadRememberedCredentials,
   normalizeRedirect,
   persistRememberedCredentials,
@@ -32,12 +33,19 @@ export function useLoginFlow() {
           },
           { refreshUserContext: false }
         )
-        await gotoAfterLogin(normalizeRedirect(route.query.redirect as string), router)
+        const fallbackRedirect = normalizeRedirect(route.query.redirect as string)
+        await gotoAfterAuth(
+          { home_path: fallbackRedirect, navigation_space_key: `${route.query.navigation_space_key || ''}`.trim() },
+          router
+        )
         return true
       }
       const query: Record<string, string> = { social_token: socialToken }
       if (`${route.query.login_page_key || ''}`.trim()) {
         query.login_page_key = `${route.query.login_page_key}`.trim()
+      }
+      if (`${route.query.source_app_key || ''}`.trim()) {
+        query.source_app_key = `${route.query.source_app_key}`.trim()
       }
       await router.replace({ path: '/account/auth/register', query })
       return true
@@ -78,7 +86,10 @@ export function useLoginFlow() {
         response.user?.nickname || response.user?.username || response.user?.email || ''
       showLoginSuccessNotice(displayName, t)
 
-      await gotoAfterLogin(normalizeRedirect(route.query.redirect as string), router)
+      // 构造 landing：优先 login response landing > URL query landing_* (pending register intent) > redirect
+      const landing = response.landing || buildLandingFromQuery(route.query)
+      const fallbackRedirect = normalizeRedirect(route.query.redirect as string)
+      await gotoAfterAuth(landing, router, fallbackRedirect)
     } catch (error) {
       const message =
         error instanceof HttpError ? error.message : error instanceof Error ? error.message : ''

@@ -140,12 +140,6 @@ type Handler interface {
 	//
 	// POST /system/register-entries
 	CreateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest) (CreateRegisterEntryRes, error)
-	// CreateRegisterPolicy implements createRegisterPolicy operation.
-	//
-	// 创建注册策略.
-	//
-	// POST /system/register-policies
-	CreateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest) (CreateRegisterPolicyRes, error)
 	// CreateRole implements createRole operation.
 	//
 	// 创建角色.
@@ -236,12 +230,6 @@ type Handler interface {
 	//
 	// DELETE /system/register-entries/{id}
 	DeleteRegisterEntry(ctx context.Context, params DeleteRegisterEntryParams) (DeleteRegisterEntryRes, error)
-	// DeleteRegisterPolicy implements deleteRegisterPolicy operation.
-	//
-	// 删除注册策略.
-	//
-	// DELETE /system/register-policies/{code}
-	DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (DeleteRegisterPolicyRes, error)
 	// DeleteRole implements deleteRole operation.
 	//
 	// 删除角色.
@@ -896,12 +884,6 @@ type Handler interface {
 	//
 	// GET /system/users/register-logs
 	ListRegisterLogs(ctx context.Context, params ListRegisterLogsParams) (ListRegisterLogsRes, error)
-	// ListRegisterPolicies implements listRegisterPolicies operation.
-	//
-	// 注册策略列表.
-	//
-	// GET /system/register-policies
-	ListRegisterPolicies(ctx context.Context) (ListRegisterPoliciesRes, error)
 	// ListRoleOptions implements listRoleOptions operation.
 	//
 	// 获取角色候选列表.
@@ -1304,12 +1286,6 @@ type Handler interface {
 	//
 	// PUT /system/register-entries/{id}
 	UpdateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest, params UpdateRegisterEntryParams) (UpdateRegisterEntryRes, error)
-	// UpdateRegisterPolicy implements updateRegisterPolicy operation.
-	//
-	// 更新注册策略.
-	//
-	// PUT /system/register-policies/{code}
-	UpdateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (UpdateRegisterPolicyRes, error)
 	// UpdateRole implements updateRole operation.
 	//
 	// 更新角色.

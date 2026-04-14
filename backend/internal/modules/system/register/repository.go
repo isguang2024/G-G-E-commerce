@@ -49,15 +49,6 @@ func (r *Repository) FindEntryByCode(ctx context.Context, code string) (*systemm
 	return &entry, nil
 }
 
-// FindPolicyByCode 按 policy_code 精确查找。
-func (r *Repository) FindPolicyByCode(ctx context.Context, code string) (*systemmodels.RegisterPolicy, error) {
-	var p systemmodels.RegisterPolicy
-	if err := r.db.WithContext(ctx).Where("policy_code = ?", code).First(&p).Error; err != nil {
-		return nil, err
-	}
-	return &p, nil
-}
-
 func (r *Repository) FindAppByKey(ctx context.Context, appKey string) (*systemmodels.App, error) {
 	var app systemmodels.App
 	if err := r.db.WithContext(ctx).
@@ -94,20 +85,28 @@ func (r *Repository) FindDefaultLoginPageTemplate(
 	return &item, nil
 }
 
-func (r *Repository) ListPolicyFeaturePackages(ctx context.Context, policyCode string) ([]systemmodels.RegisterPolicyFeaturePackage, error) {
-	var list []systemmodels.RegisterPolicyFeaturePackage
-	if err := r.db.WithContext(ctx).Where("policy_code = ?", policyCode).Order("sort_order ASC").Find(&list).Error; err != nil {
+// ListRolesByCodesForEntry 按 entry 内联的 role_codes 查询角色 ID 列表。
+func (r *Repository) ListRolesByCodesForEntry(ctx context.Context, codes []string) ([]systemmodels.Role, error) {
+	if len(codes) == 0 {
+		return nil, nil
+	}
+	var roles []systemmodels.Role
+	if err := r.db.WithContext(ctx).Where("code IN ?", codes).Find(&roles).Error; err != nil {
 		return nil, err
 	}
-	return list, nil
+	return roles, nil
 }
 
-func (r *Repository) ListPolicyRoles(ctx context.Context, policyCode string) ([]systemmodels.RegisterPolicyRole, error) {
-	var list []systemmodels.RegisterPolicyRole
-	if err := r.db.WithContext(ctx).Where("policy_code = ?", policyCode).Order("sort_order ASC").Find(&list).Error; err != nil {
+// ListFeaturePackagesByKeysForEntry 按 entry 内联的 feature_package_keys 查询功能包 ID 列表。
+func (r *Repository) ListFeaturePackagesByKeysForEntry(ctx context.Context, keys []string) ([]systemmodels.FeaturePackage, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	var pkgs []systemmodels.FeaturePackage
+	if err := r.db.WithContext(ctx).Where("package_key IN ?", keys).Find(&pkgs).Error; err != nil {
 		return nil, err
 	}
-	return list, nil
+	return pkgs, nil
 }
 
 // IsNotFound helper.

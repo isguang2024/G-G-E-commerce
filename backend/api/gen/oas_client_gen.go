@@ -160,12 +160,6 @@ type Invoker interface {
 	//
 	// POST /system/register-entries
 	CreateRegisterEntry(ctx context.Context, request *RegisterEntryUpsertRequest) (CreateRegisterEntryRes, error)
-	// CreateRegisterPolicy invokes createRegisterPolicy operation.
-	//
-	// 创建注册策略.
-	//
-	// POST /system/register-policies
-	CreateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest) (CreateRegisterPolicyRes, error)
 	// CreateRole invokes createRole operation.
 	//
 	// 创建角色.
@@ -256,12 +250,6 @@ type Invoker interface {
 	//
 	// DELETE /system/register-entries/{id}
 	DeleteRegisterEntry(ctx context.Context, params DeleteRegisterEntryParams) (DeleteRegisterEntryRes, error)
-	// DeleteRegisterPolicy invokes deleteRegisterPolicy operation.
-	//
-	// 删除注册策略.
-	//
-	// DELETE /system/register-policies/{code}
-	DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (DeleteRegisterPolicyRes, error)
 	// DeleteRole invokes deleteRole operation.
 	//
 	// 删除角色.
@@ -916,12 +904,6 @@ type Invoker interface {
 	//
 	// GET /system/users/register-logs
 	ListRegisterLogs(ctx context.Context, params ListRegisterLogsParams) (ListRegisterLogsRes, error)
-	// ListRegisterPolicies invokes listRegisterPolicies operation.
-	//
-	// 注册策略列表.
-	//
-	// GET /system/register-policies
-	ListRegisterPolicies(ctx context.Context) (ListRegisterPoliciesRes, error)
 	// ListRoleOptions invokes listRoleOptions operation.
 	//
 	// 获取角色候选列表.
@@ -1324,12 +1306,6 @@ type Invoker interface {
 	//
 	// PUT /system/register-entries/{id}
 	UpdateRegisterEntry(ctx context.Context, request *RegisterEntryUpsertRequest, params UpdateRegisterEntryParams) (UpdateRegisterEntryRes, error)
-	// UpdateRegisterPolicy invokes updateRegisterPolicy operation.
-	//
-	// 更新注册策略.
-	//
-	// PUT /system/register-policies/{code}
-	UpdateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (UpdateRegisterPolicyRes, error)
 	// UpdateRole invokes updateRole operation.
 	//
 	// 更新角色.
@@ -3883,116 +3859,6 @@ func (c *Client) sendCreateRegisterEntry(ctx context.Context, request *RegisterE
 	return result, nil
 }
 
-// CreateRegisterPolicy invokes createRegisterPolicy operation.
-//
-// 创建注册策略.
-//
-// POST /system/register-policies
-func (c *Client) CreateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest) (CreateRegisterPolicyRes, error) {
-	res, err := c.sendCreateRegisterPolicy(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendCreateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest) (res CreateRegisterPolicyRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createRegisterPolicy"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/system/register-policies"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateRegisterPolicyOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/system/register-policies"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeCreateRegisterPolicyRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, CreateRegisterPolicyOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeCreateRegisterPolicyResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // CreateRole invokes createRole operation.
 //
 // 创建角色.
@@ -5891,131 +5757,6 @@ func (c *Client) sendDeleteRegisterEntry(ctx context.Context, params DeleteRegis
 
 	stage = "DecodeResponse"
 	result, err := decodeDeleteRegisterEntryResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// DeleteRegisterPolicy invokes deleteRegisterPolicy operation.
-//
-// 删除注册策略.
-//
-// DELETE /system/register-policies/{code}
-func (c *Client) DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (DeleteRegisterPolicyRes, error) {
-	res, err := c.sendDeleteRegisterPolicy(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendDeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (res DeleteRegisterPolicyRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteRegisterPolicy"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/system/register-policies/{code}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, DeleteRegisterPolicyOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/system/register-policies/"
-	{
-		// Encode "code" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "code",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.StringToString(params.Code))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, DeleteRegisterPolicyOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeDeleteRegisterPolicyResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -20257,23 +19998,6 @@ func (c *Client) sendListRegisterLogs(ctx context.Context, params ListRegisterLo
 		}
 	}
 	{
-		// Encode "policy_code" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "policy_code",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.PolicyCode.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
 		// Encode "page" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
 			Name:    "page",
@@ -20358,113 +20082,6 @@ func (c *Client) sendListRegisterLogs(ctx context.Context, params ListRegisterLo
 
 	stage = "DecodeResponse"
 	result, err := decodeListRegisterLogsResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// ListRegisterPolicies invokes listRegisterPolicies operation.
-//
-// 注册策略列表.
-//
-// GET /system/register-policies
-func (c *Client) ListRegisterPolicies(ctx context.Context) (ListRegisterPoliciesRes, error) {
-	res, err := c.sendListRegisterPolicies(ctx)
-	return res, err
-}
-
-func (c *Client) sendListRegisterPolicies(ctx context.Context) (res ListRegisterPoliciesRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listRegisterPolicies"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/system/register-policies"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListRegisterPoliciesOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/system/register-policies"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListRegisterPoliciesOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeListRegisterPoliciesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29237,134 +28854,6 @@ func (c *Client) sendUpdateRegisterEntry(ctx context.Context, request *RegisterE
 
 	stage = "DecodeResponse"
 	result, err := decodeUpdateRegisterEntryResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// UpdateRegisterPolicy invokes updateRegisterPolicy operation.
-//
-// 更新注册策略.
-//
-// PUT /system/register-policies/{code}
-func (c *Client) UpdateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (UpdateRegisterPolicyRes, error) {
-	res, err := c.sendUpdateRegisterPolicy(ctx, request, params)
-	return res, err
-}
-
-func (c *Client) sendUpdateRegisterPolicy(ctx context.Context, request *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (res UpdateRegisterPolicyRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateRegisterPolicy"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/system/register-policies/{code}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateRegisterPolicyOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/system/register-policies/"
-	{
-		// Encode "code" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "code",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.StringToString(params.Code))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "PUT", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeUpdateRegisterPolicyRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateRegisterPolicyOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeUpdateRegisterPolicyResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -114,18 +114,21 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 		return nil, errors.New("register service not configured")
 	}
 	result, err := h.registerSvc.Register(ctx, register.RegisterInput{
-		Username:         req.Username,
-		Password:         req.Password,
-		ConfirmPassword:  optString(req.ConfirmPassword),
-		Email:            optString(req.Email),
-		Nickname:         optString(req.Nickname),
-		CaptchaToken:     optString(req.CaptchaToken),
-		InvitationCode:   optString(req.InvitationCode),
-		AgreementVersion: optString(req.AgreementVersion),
-		Host:             stringFromCtx(ctx, CtxRequestHost),
-		Path:             stringFromCtx(ctx, CtxRequestPath),
-		IP:               clientIPFromCtx(ctx),
-		UserAgent:        stringFromCtx(ctx, CtxUserAgent),
+		Username:                 req.Username,
+		Password:                 req.Password,
+		ConfirmPassword:          optString(req.ConfirmPassword),
+		Email:                    optString(req.Email),
+		Nickname:                 optString(req.Nickname),
+		CaptchaToken:             optString(req.CaptchaToken),
+		InvitationCode:           optString(req.InvitationCode),
+		AgreementVersion:         optString(req.AgreementVersion),
+		Host:                     stringFromCtx(ctx, CtxRequestHost),
+		Path:                     stringFromCtx(ctx, CtxRequestPath),
+		IP:                       clientIPFromCtx(ctx),
+		UserAgent:                stringFromCtx(ctx, CtxUserAgent),
+		SourceAppKey:             optString(req.SourceAppKey),
+		SourceNavigationSpaceKey: optString(req.SourceNavigationSpaceKey),
+		SourceHomePath:           optString(req.SourceHomePath),
 	})
 	if err != nil {
 		h.logger.Debug("register failed", zap.Error(err))
@@ -153,6 +156,7 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 	}
 	if result.Landing != nil {
 		out.Landing = gen.NewOptNilLoginResponseLanding(gen.LoginResponseLanding{
+			URL:                gen.NewOptString(result.Landing.URL),
 			AppKey:             gen.NewOptString(result.Landing.AppKey),
 			NavigationSpaceKey: gen.NewOptString(result.Landing.NavigationSpaceKey),
 			HomePath:           gen.NewOptString(result.Landing.HomePath),
@@ -223,24 +227,35 @@ func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegis
 		return nil, err
 	}
 	out := &gen.RegisterContext{
-		EntryCode:                eff.EntryCode,
-		EntryAppKey:              eff.EntryAppKey,
-		LoginPageKey:             eff.LoginPageKey,
-		PolicyCode:               eff.PolicyCode,
-		TargetAppKey:             eff.TargetAppKey,
-		TargetNavigationSpaceKey: eff.TargetNavigationSpaceKey,
-		TargetHomePath:           eff.TargetHomePath,
-		AllowPublicRegister:      eff.AllowPublicRegister,
-		RequireInvite:            eff.RequireInvite,
-		RequireEmailVerify:       eff.RequireEmailVerify,
-		RequireCaptcha:           eff.RequireCaptcha,
-		AutoLogin:                eff.AutoLogin,
+		EntryCode:           eff.EntryCode,
+		EntryAppKey:         eff.EntryAppKey,
+		LoginPageKey:        eff.LoginPageKey,
+		IsSystemReserved:    eff.IsSystemReserved,
+		AllowPublicRegister: eff.AllowPublicRegister,
+		RequireInvite:       eff.RequireInvite,
+		RequireEmailVerify:  eff.RequireEmailVerify,
+		RequireCaptcha:      eff.RequireCaptcha,
+		AutoLogin:           eff.AutoLogin,
+		RoleCodes:           eff.RoleCodes,
+		FeaturePackageKeys:  eff.FeaturePackageKeys,
 	}
 	if eff.EntryName != "" {
 		out.EntryName = gen.NewOptString(eff.EntryName)
 	}
 	if eff.RegisterSource != "" {
 		out.RegisterSource = gen.NewOptString(eff.RegisterSource)
+	}
+	if eff.TargetURL != "" {
+		out.TargetURL = gen.NewOptString(eff.TargetURL)
+	}
+	if eff.TargetAppKey != "" {
+		out.TargetAppKey = gen.NewOptString(eff.TargetAppKey)
+	}
+	if eff.TargetNavigationSpaceKey != "" {
+		out.TargetNavigationSpaceKey = gen.NewOptString(eff.TargetNavigationSpaceKey)
+	}
+	if eff.TargetHomePath != "" {
+		out.TargetHomePath = gen.NewOptString(eff.TargetHomePath)
 	}
 	if eff.AgreementVersion != "" {
 		out.AgreementVersion = gen.NewOptString(eff.AgreementVersion)

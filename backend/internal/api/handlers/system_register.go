@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
@@ -15,101 +16,9 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
-
-// policySubTables 从 DB 加载策略绑定的 role_codes 和 feature_package_keys。
-func (h *APIHandler) policySubTables(ctx context.Context, policyCode string) (roleCodes, pkgKeys []string) {
-	roleCodes = []string{}
-	pkgKeys = []string{}
-
-	var roleLinks []systemmodels.RegisterPolicyRole
-	if err := h.db.WithContext(ctx).Where("policy_code = ?", policyCode).Find(&roleLinks).Error; err == nil {
-		if len(roleLinks) > 0 {
-			roleIDs := make([]uuid.UUID, 0, len(roleLinks))
-			for _, r := range roleLinks {
-				roleIDs = append(roleIDs, r.RoleID)
-			}
-			var roles []systemmodels.Role
-			if err := h.db.WithContext(ctx).Where("id IN ?", roleIDs).Find(&roles).Error; err == nil {
-				for _, r := range roles {
-					roleCodes = append(roleCodes, r.Code)
-				}
-			}
-		}
-	}
-
-	var pkgLinks []systemmodels.RegisterPolicyFeaturePackage
-	if err := h.db.WithContext(ctx).Where("policy_code = ?", policyCode).Find(&pkgLinks).Error; err == nil {
-		if len(pkgLinks) > 0 {
-			pkgIDs := make([]uuid.UUID, 0, len(pkgLinks))
-			for _, p := range pkgLinks {
-				pkgIDs = append(pkgIDs, p.PackageID)
-			}
-			var pkgs []systemmodels.FeaturePackage
-			if err := h.db.WithContext(ctx).Where("id IN ?", pkgIDs).Find(&pkgs).Error; err == nil {
-				for _, p := range pkgs {
-					pkgKeys = append(pkgKeys, p.PackageKey)
-				}
-			}
-		}
-	}
-	return roleCodes, pkgKeys
-}
-
-// upsertPolicySubTables 在事务内替换策略子表（roles + feature packages）。
-func upsertPolicySubTables(tx *gorm.DB, policyCode string, roleCodes, featurePkgKeys []string) error {
-	// 删除旧绑定
-	if err := tx.Where("policy_code = ?", policyCode).Delete(&systemmodels.RegisterPolicyRole{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Where("policy_code = ?", policyCode).Delete(&systemmodels.RegisterPolicyFeaturePackage{}).Error; err != nil {
-		return err
-	}
-
-	// 写角色绑定
-	if len(roleCodes) > 0 {
-		var roles []systemmodels.Role
-		if err := tx.Where("code IN ?", roleCodes).Find(&roles).Error; err != nil {
-			return err
-		}
-		roleLinks := make([]systemmodels.RegisterPolicyRole, 0, len(roles))
-		for i, r := range roles {
-			roleLinks = append(roleLinks, systemmodels.RegisterPolicyRole{
-				PolicyCode: policyCode,
-				RoleID:     r.ID,
-				SortOrder:  i,
-			})
-		}
-		if len(roleLinks) > 0 {
-			if err := tx.Create(&roleLinks).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	// 写功能包绑定
-	if len(featurePkgKeys) > 0 {
-		var pkgs []systemmodels.FeaturePackage
-		if err := tx.Where("package_key IN ?", featurePkgKeys).Find(&pkgs).Error; err != nil {
-			return err
-		}
-		pkgLinks := make([]systemmodels.RegisterPolicyFeaturePackage, 0, len(pkgs))
-		for i, p := range pkgs {
-			pkgLinks = append(pkgLinks, systemmodels.RegisterPolicyFeaturePackage{
-				PolicyCode: policyCode,
-				PackageID:  p.ID,
-				SortOrder:  i,
-			})
-		}
-		if len(pkgLinks) > 0 {
-			if err := tx.Create(&pkgLinks).Error; err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
 
 // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -130,23 +39,32 @@ func boolPtrToOptNil(p *bool) gen.OptNilBool {
 
 func entryToDTO(e *systemmodels.RegisterEntry) *gen.RegisterEntryItem {
 	out := &gen.RegisterEntryItem{
-		ID:                  e.ID,
-		AppKey:              e.AppKey,
-		EntryCode:           e.EntryCode,
-		Name:                e.Name,
-		Host:                gen.NewOptString(e.Host),
-		PathPrefix:          gen.NewOptString(e.PathPrefix),
-		RegisterSource:      gen.NewOptString(e.RegisterSource),
-		PolicyCode:          e.PolicyCode,
-		LoginPageKey:        e.LoginPageKey,
-		Status:              e.Status,
-		AllowPublicRegister: boolPtrToOptNil(e.AllowPublicRegister),
-		RequireInvite:       boolPtrToOptNil(e.RequireInvite),
-		RequireEmailVerify:  boolPtrToOptNil(e.RequireEmailVerify),
-		RequireCaptcha:      boolPtrToOptNil(e.RequireCaptcha),
-		AutoLogin:           boolPtrToOptNil(e.AutoLogin),
-		SortOrder:           gen.NewOptInt(e.SortOrder),
-		Remark:              gen.NewOptString(e.Remark),
+		ID:                       e.ID,
+		AppKey:                   e.AppKey,
+		EntryCode:                e.EntryCode,
+		Name:                     e.Name,
+		Host:                     gen.NewOptString(e.Host),
+		PathPrefix:               gen.NewOptString(e.PathPrefix),
+		RegisterSource:           gen.NewOptString(e.RegisterSource),
+		LoginPageKey:             e.LoginPageKey,
+		Status:                   e.Status,
+		AllowPublicRegister:      e.AllowPublicRegister,
+		RequireInvite:            e.RequireInvite,
+		RequireEmailVerify:       e.RequireEmailVerify,
+		RequireCaptcha:           e.RequireCaptcha,
+		AutoLogin:                e.AutoLogin,
+		IsSystemReserved:         e.IsSystemReserved,
+		TargetURL:                gen.NewOptString(e.TargetURL),
+		TargetAppKey:             gen.NewOptString(e.TargetAppKey),
+		TargetNavigationSpaceKey: gen.NewOptString(e.TargetNavigationSpaceKey),
+		TargetHomePath:           gen.NewOptString(e.TargetHomePath),
+		CaptchaProvider:          gen.NewOptString(e.CaptchaProvider),
+		CaptchaSiteKey:           gen.NewOptString(e.CaptchaSiteKey),
+		Description:              gen.NewOptString(e.Description),
+		RoleCodes:                []string(e.RoleCodes),
+		FeaturePackageKeys:       []string(e.FeaturePackageKeys),
+		SortOrder:                gen.NewOptInt(e.SortOrder),
+		Remark:                   gen.NewOptString(e.Remark),
 	}
 	return out
 }
@@ -183,7 +101,7 @@ func rawMapToMetaJSON(src map[string]jx.Raw) systemmodels.MetaJSON {
 	}
 	return out
 }
-func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpsertRequest) {
+func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpsertRequest) error {
 	e.AppKey = req.AppKey
 	e.EntryCode = req.EntryCode
 	e.Name = req.Name
@@ -196,7 +114,6 @@ func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpser
 	if req.RegisterSource.Set {
 		e.RegisterSource = req.RegisterSource.Value
 	}
-	e.PolicyCode = req.PolicyCode
 	if req.LoginPageKey.Set {
 		e.LoginPageKey = req.LoginPageKey.Value
 	}
@@ -205,82 +122,61 @@ func applyEntryUpsert(e *systemmodels.RegisterEntry, req *gen.RegisterEntryUpser
 	} else if e.Status == "" {
 		e.Status = "enabled"
 	}
-	e.AllowPublicRegister = optBoolPtr(req.AllowPublicRegister)
-	e.RequireInvite = optBoolPtr(req.RequireInvite)
-	e.RequireEmailVerify = optBoolPtr(req.RequireEmailVerify)
-	e.RequireCaptcha = optBoolPtr(req.RequireCaptcha)
-	e.AutoLogin = optBoolPtr(req.AutoLogin)
+	if req.AllowPublicRegister.Set {
+		e.AllowPublicRegister = req.AllowPublicRegister.Value
+	}
+	if req.RequireInvite.Set {
+		e.RequireInvite = req.RequireInvite.Value
+	}
+	if req.RequireEmailVerify.Set {
+		e.RequireEmailVerify = req.RequireEmailVerify.Value
+	}
+	if req.RequireCaptcha.Set {
+		e.RequireCaptcha = req.RequireCaptcha.Value
+	}
+	if req.AutoLogin.Set {
+		e.AutoLogin = req.AutoLogin.Value
+	}
+	if req.IsSystemReserved.Set {
+		e.IsSystemReserved = req.IsSystemReserved.Value
+	}
+	if req.TargetURL.Set {
+		if v := strings.TrimSpace(req.TargetURL.Value); v != "" && !register.IsSafeRedirectURL(v) {
+			return fmt.Errorf("target_url 不安全，仅允许 http(s) 或相对路径")
+		}
+		e.TargetURL = req.TargetURL.Value
+	}
+	if req.TargetAppKey.Set {
+		e.TargetAppKey = req.TargetAppKey.Value
+	}
+	if req.TargetNavigationSpaceKey.Set {
+		e.TargetNavigationSpaceKey = req.TargetNavigationSpaceKey.Value
+	}
+	if req.TargetHomePath.Set {
+		e.TargetHomePath = req.TargetHomePath.Value
+	}
+	if req.CaptchaProvider.Set {
+		e.CaptchaProvider = req.CaptchaProvider.Value
+	}
+	if req.CaptchaSiteKey.Set {
+		e.CaptchaSiteKey = req.CaptchaSiteKey.Value
+	}
+	if req.Description.Set {
+		e.Description = req.Description.Value
+	}
+	if req.RoleCodes != nil {
+		e.RoleCodes = systemmodels.StringList(req.RoleCodes)
+	}
+	if req.FeaturePackageKeys != nil {
+		e.FeaturePackageKeys = systemmodels.StringList(req.FeaturePackageKeys)
+	}
 	if req.SortOrder.Set {
 		e.SortOrder = req.SortOrder.Value
 	}
 	if req.Remark.Set {
 		e.Remark = req.Remark.Value
 	}
-}
-
-func (h *APIHandler) policyToDTO(ctx context.Context, p *systemmodels.RegisterPolicy) *gen.RegisterPolicyItem {
-	roleCodes, pkgKeys := h.policySubTables(ctx, p.PolicyCode)
-	item := &gen.RegisterPolicyItem{
-		ID:                       p.ID,
-		PolicyCode:               p.PolicyCode,
-		Name:                     p.Name,
-		Description:              gen.NewOptString(p.Description),
-		TargetAppKey:             p.TargetAppKey,
-		TargetNavigationSpaceKey: p.TargetNavigationSpaceKey,
-		TargetHomePath:           gen.NewOptString(p.TargetHomePath),
-		Status:                   p.Status,
-		AllowPublicRegister:      gen.NewOptBool(p.AllowPublicRegister),
-		RequireInvite:            gen.NewOptBool(p.RequireInvite),
-		RequireEmailVerify:       gen.NewOptBool(p.RequireEmailVerify),
-		RequireCaptcha:           gen.NewOptBool(p.RequireCaptcha),
-		AutoLogin:                gen.NewOptBool(p.AutoLogin),
-		CaptchaProvider:          gen.NewOptString(p.CaptchaProvider),
-		CaptchaSiteKey:           gen.NewOptString(p.CaptchaSiteKey),
-		RoleCodes:                roleCodes,
-		FeaturePackageKeys:       pkgKeys,
-	}
-	return item
-}
-
-func applyPolicyUpsert(p *systemmodels.RegisterPolicy, req *gen.RegisterPolicyUpsertRequest) {
-	p.PolicyCode = req.PolicyCode
-	p.Name = req.Name
-	if req.Description.Set {
-		p.Description = req.Description.Value
-	}
-	p.TargetAppKey = req.TargetAppKey
-	p.TargetNavigationSpaceKey = req.TargetNavigationSpaceKey
-	if req.TargetHomePath.Set {
-		p.TargetHomePath = req.TargetHomePath.Value
-	}
-	if req.Status.Set {
-		p.Status = req.Status.Value
-	} else if p.Status == "" {
-		p.Status = "enabled"
-	}
-	if req.AllowPublicRegister.Set {
-		p.AllowPublicRegister = req.AllowPublicRegister.Value
-	}
-	if req.RequireInvite.Set {
-		p.RequireInvite = req.RequireInvite.Value
-	}
-	if req.RequireEmailVerify.Set {
-		p.RequireEmailVerify = req.RequireEmailVerify.Value
-	}
-	if req.RequireCaptcha.Set {
-		p.RequireCaptcha = req.RequireCaptcha.Value
-	}
-	if req.AutoLogin.Set {
-		p.AutoLogin = req.AutoLogin.Value
-	}
-	if req.CaptchaProvider.Set {
-		p.CaptchaProvider = req.CaptchaProvider.Value
-	} else if p.CaptchaProvider == "" {
-		p.CaptchaProvider = "none"
-	}
-	if req.CaptchaSiteKey.Set {
-		p.CaptchaSiteKey = req.CaptchaSiteKey.Value
-	}
+	return nil
 }
 
 func loginPageTemplateToDTO(item *systemmodels.LoginPageTemplate) *gen.LoginPageTemplateItem {
@@ -358,7 +254,9 @@ func (h *APIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterE
 		return nil, errors.New("请求体为空")
 	}
 	var entry systemmodels.RegisterEntry
-	applyEntryUpsert(&entry, req)
+	if err := applyEntryUpsert(&entry, req); err != nil {
+		return nil, &apperr.ParamError{Msg: err.Error()}
+	}
 	if err := h.db.WithContext(ctx).Create(&entry).Error; err != nil {
 		h.logger.Error("create register entry failed", zap.Error(err))
 		return nil, err
@@ -377,7 +275,18 @@ func (h *APIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterE
 		}
 		return nil, err
 	}
-	applyEntryUpsert(&entry, req)
+	// 系统保留入口：不允许修改 entry_code 和 is_system_reserved
+	if entry.IsSystemReserved {
+		if req.EntryCode != entry.EntryCode {
+			return nil, &apperr.ParamError{Msg: "系统保留入口不可修改 entry_code"}
+		}
+		if req.IsSystemReserved.Set && !req.IsSystemReserved.Value {
+			return nil, &apperr.ParamError{Msg: "系统保留入口不可取消保留标记"}
+		}
+	}
+	if err := applyEntryUpsert(&entry, req); err != nil {
+		return nil, &apperr.ParamError{Msg: err.Error()}
+	}
 	if err := h.db.WithContext(ctx).Save(&entry).Error; err != nil {
 		return nil, err
 	}
@@ -385,88 +294,20 @@ func (h *APIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterE
 }
 
 func (h *APIHandler) DeleteRegisterEntry(ctx context.Context, params gen.DeleteRegisterEntryParams) (gen.DeleteRegisterEntryRes, error) {
-	res := h.db.WithContext(ctx).Where("id = ?", params.ID).Delete(&systemmodels.RegisterEntry{})
-	if res.Error != nil {
-		return nil, res.Error
+	var entry systemmodels.RegisterEntry
+	if err := h.db.WithContext(ctx).Where("id = ?", params.ID).First(&entry).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &gen.Error{Code: 404, Message: "注册入口不存在"}, nil
+		}
+		return nil, err
 	}
-	if res.RowsAffected == 0 {
-		return &gen.Error{Code: 404, Message: "注册入口不存在"}, nil
+	if entry.IsSystemReserved {
+		return nil, &apperr.ParamError{Msg: "系统保留入口不可删除"}
+	}
+	if err := h.db.WithContext(ctx).Delete(&entry).Error; err != nil {
+		return nil, err
 	}
 	return &gen.DeleteRegisterEntryNoContent{}, nil
-}
-
-// ── register policies CRUD ───────────────────────────────────────────────
-
-func (h *APIHandler) ListRegisterPolicies(ctx context.Context) (gen.ListRegisterPoliciesRes, error) {
-	var rows []systemmodels.RegisterPolicy
-	if err := h.db.WithContext(ctx).Order("created_at ASC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	records := make([]gen.RegisterPolicyItem, 0, len(rows))
-	for i := range rows {
-		records = append(records, *h.policyToDTO(ctx, &rows[i]))
-	}
-	return &gen.RegisterPolicyList{Records: records, Total: len(records)}, nil
-}
-
-func (h *APIHandler) CreateRegisterPolicy(ctx context.Context, req *gen.RegisterPolicyUpsertRequest) (gen.CreateRegisterPolicyRes, error) {
-	if req == nil {
-		return nil, errors.New("请求体为空")
-	}
-	var p systemmodels.RegisterPolicy
-	applyPolicyUpsert(&p, req)
-	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&p).Error; err != nil {
-			return err
-		}
-		return upsertPolicySubTables(tx, p.PolicyCode, req.RoleCodes, req.FeaturePackageKeys)
-	}); err != nil {
-		return nil, err
-	}
-	return h.policyToDTO(ctx, &p), nil
-}
-
-func (h *APIHandler) UpdateRegisterPolicy(ctx context.Context, req *gen.RegisterPolicyUpsertRequest, params gen.UpdateRegisterPolicyParams) (gen.UpdateRegisterPolicyRes, error) {
-	if req == nil {
-		return nil, errors.New("请求体为空")
-	}
-	var p systemmodels.RegisterPolicy
-	if err := h.db.WithContext(ctx).Where("policy_code = ?", params.Code).First(&p).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return &gen.Error{Code: 404, Message: "注册策略不存在"}, nil
-		}
-		return nil, err
-	}
-	applyPolicyUpsert(&p, req)
-	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(&p).Error; err != nil {
-			return err
-		}
-		return upsertPolicySubTables(tx, p.PolicyCode, req.RoleCodes, req.FeaturePackageKeys)
-	}); err != nil {
-		return nil, err
-	}
-	return h.policyToDTO(ctx, &p), nil
-}
-
-func (h *APIHandler) DeleteRegisterPolicy(ctx context.Context, params gen.DeleteRegisterPolicyParams) (gen.DeleteRegisterPolicyRes, error) {
-	// 守卫：检查是否有入口仍在引用该策略
-	var refCount int64
-	if err := h.db.WithContext(ctx).Model(&systemmodels.RegisterEntry{}).
-		Where("policy_code = ?", params.Code).Count(&refCount).Error; err != nil {
-		return nil, err
-	}
-	if refCount > 0 {
-		return nil, &apperr.ParamError{Msg: fmt.Sprintf("该策略被 %d 个注册入口引用，请先解绑入口后再删除", refCount)}
-	}
-	res := h.db.WithContext(ctx).Where("policy_code = ?", params.Code).Delete(&systemmodels.RegisterPolicy{})
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	if res.RowsAffected == 0 {
-		return &gen.Error{Code: 404, Message: "注册策略不存在"}, nil
-	}
-	return &gen.DeleteRegisterPolicyNoContent{}, nil
 }
 
 func (h *APIHandler) ListLoginPageTemplates(ctx context.Context) (*gen.LoginPageTemplateList, error) {
@@ -570,9 +411,6 @@ func (h *APIHandler) ListRegisterLogs(ctx context.Context, params gen.ListRegist
 	if params.EntryCode.Set {
 		q = q.Where("register_entry_code = ?", params.EntryCode.Value)
 	}
-	if params.PolicyCode.Set {
-		q = q.Where("register_policy_code = ?", params.PolicyCode.Value)
-	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, err
@@ -598,7 +436,6 @@ func (h *APIHandler) ListRegisterLogs(ctx context.Context, params gen.ListRegist
 			Email:              gen.NewOptString(u.Email),
 			RegisterAppKey:     gen.NewOptString(u.RegisterAppKey),
 			RegisterEntryCode:  u.RegisterEntryCode,
-			RegisterPolicyCode: u.RegisterPolicyCode,
 			RegisterSource:     u.RegisterSource,
 			RegisterIP:         gen.NewOptString(u.RegisterIP),
 			RegisterUserAgent:  gen.NewOptString(u.RegisterUserAgent),

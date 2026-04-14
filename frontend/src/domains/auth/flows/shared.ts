@@ -142,6 +142,59 @@ export function normalizeRedirect(raw?: string): string {
   return normalized
 }
 
+export interface PostAuthLanding {
+  url?: string
+  app_key?: string
+  navigation_space_key?: string
+  home_path?: string
+}
+
+/**
+ * 从 URL query 参数中恢复 pending register 保留的 landing 信息。
+ * query 参数名：landing_url, landing_app_key, landing_space, landing_path
+ */
+export function buildLandingFromQuery(
+  query: Record<string, string | (string | null)[] | null | undefined>
+): PostAuthLanding | undefined {
+  const url = `${query.landing_url || ''}`.trim()
+  const appKey = `${query.landing_app_key || ''}`.trim()
+  const space = `${query.landing_space || ''}`.trim()
+  const path = `${query.landing_path || ''}`.trim()
+  if (!url && !appKey && !path) return undefined
+  return {
+    ...(url ? { url } : {}),
+    ...(appKey ? { app_key: appKey } : {}),
+    ...(space ? { navigation_space_key: space } : {}),
+    ...(path ? { home_path: path } : {})
+  }
+}
+
+function isSafeRedirectURL(url: string): boolean {
+  const trimmed = url.trim()
+  if (!trimmed) return false
+  if (trimmed.startsWith('/')) return true
+  const lower = trimmed.toLowerCase()
+  return lower.startsWith('http://') || lower.startsWith('https://')
+}
+
+/**
+ * 统一认证后跳转方法。
+ * 优先级：landing.url → landing.home_path + navigation_space_key → fallbackRedirect → '/'
+ */
+export async function gotoAfterAuth(
+  landing: PostAuthLanding | null | undefined,
+  router: ReturnType<typeof useRouter>,
+  fallbackRedirect?: string
+): Promise<void> {
+  if (landing?.url && isSafeRedirectURL(landing.url)) {
+    window.location.assign(landing.url)
+    return
+  }
+  const landingPath = landing?.home_path || fallbackRedirect || '/'
+  const navigationSpaceKey = landing?.navigation_space_key || ''
+  await gotoAfterLogin(landingPath, router, navigationSpaceKey)
+}
+
 export async function gotoAfterLogin(
   landingPath: string,
   router: ReturnType<typeof useRouter>,

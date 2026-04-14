@@ -40,42 +40,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/register-policies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 注册策略列表 */
-        get: operations["listRegisterPolicies"];
-        put?: never;
-        /** 创建注册策略 */
-        post: operations["createRegisterPolicy"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/register-policies/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** 更新注册策略 */
-        put: operations["updateRegisterPolicy"];
-        post?: never;
-        /** 删除注册策略 */
-        delete: operations["deleteRegisterPolicy"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/login-page-templates": {
         parameters: {
             query?: never;
@@ -2751,6 +2715,8 @@ export interface components {
                 [key: string]: unknown;
             } | null;
             landing?: {
+                /** @description 注册入口配置的 target_url（最高优先级跳转目标） */
+                url?: string;
                 app_key?: string;
                 navigation_space_key?: string;
                 home_path?: string;
@@ -2768,6 +2734,12 @@ export interface components {
             agreement_version?: string;
             /** @description 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号 */
             social_token?: string;
+            /** @description 来源 App（注册后回源优先级 3） */
+            source_app_key?: string;
+            /** @description 来源菜单空间 */
+            source_navigation_space_key?: string;
+            /** @description 来源首页路径 */
+            source_home_path?: string;
         };
         RefreshTokenRequest: {
             refresh_token: string;
@@ -3221,14 +3193,23 @@ export interface components {
             host?: string;
             path_prefix?: string;
             register_source?: string;
-            policy_code: string;
             login_page_key: string;
             status: string;
-            allow_public_register?: boolean | null;
-            require_invite?: boolean | null;
-            require_email_verify?: boolean | null;
-            require_captcha?: boolean | null;
-            auto_login?: boolean | null;
+            allow_public_register: boolean;
+            require_invite: boolean;
+            require_email_verify: boolean;
+            require_captcha: boolean;
+            auto_login: boolean;
+            is_system_reserved: boolean;
+            target_url?: string;
+            target_app_key?: string;
+            target_navigation_space_key?: string;
+            target_home_path?: string;
+            captcha_provider?: string;
+            captcha_site_key?: string;
+            description?: string;
+            role_codes?: string[];
+            feature_package_keys?: string[];
             sort_order?: number;
             remark?: string;
         };
@@ -3243,58 +3224,25 @@ export interface components {
             host?: string;
             path_prefix?: string;
             register_source?: string;
-            policy_code: string;
             login_page_key?: string;
             status?: string;
-            allow_public_register?: boolean | null;
-            require_invite?: boolean | null;
-            require_email_verify?: boolean | null;
-            require_captcha?: boolean | null;
-            auto_login?: boolean | null;
+            allow_public_register?: boolean;
+            require_invite?: boolean;
+            require_email_verify?: boolean;
+            require_captcha?: boolean;
+            auto_login?: boolean;
+            is_system_reserved?: boolean;
+            target_url?: string;
+            target_app_key?: string;
+            target_navigation_space_key?: string;
+            target_home_path?: string;
+            captcha_provider?: string;
+            captcha_site_key?: string;
+            description?: string;
+            role_codes?: string[];
+            feature_package_keys?: string[];
             sort_order?: number;
             remark?: string;
-        };
-        RegisterPolicyItem: {
-            /** Format: uuid */
-            id: string;
-            policy_code: string;
-            name: string;
-            description?: string;
-            target_app_key: string;
-            target_navigation_space_key: string;
-            target_home_path?: string;
-            status: string;
-            allow_public_register?: boolean;
-            require_invite?: boolean;
-            require_email_verify?: boolean;
-            require_captcha?: boolean;
-            auto_login?: boolean;
-            captcha_provider?: string;
-            captcha_site_key?: string;
-            role_codes?: string[];
-            feature_package_keys?: string[];
-        };
-        RegisterPolicyList: {
-            records: components["schemas"]["RegisterPolicyItem"][];
-            total: number;
-        };
-        RegisterPolicyUpsertRequest: {
-            policy_code: string;
-            name: string;
-            description?: string;
-            target_app_key: string;
-            target_navigation_space_key: string;
-            target_home_path?: string;
-            status?: string;
-            allow_public_register?: boolean;
-            require_invite?: boolean;
-            require_email_verify?: boolean;
-            require_captcha?: boolean;
-            auto_login?: boolean;
-            captcha_provider?: string;
-            captcha_site_key?: string;
-            role_codes?: string[];
-            feature_package_keys?: string[];
         };
         LoginPageTemplateItem: {
             /** Format: uuid */
@@ -3343,7 +3291,6 @@ export interface components {
             email?: string;
             register_app_key?: string;
             register_entry_code: string;
-            register_policy_code: string;
             register_source: string;
             register_ip?: string;
             register_user_agent?: string;
@@ -3377,10 +3324,11 @@ export interface components {
             entry_app_key: string;
             login_page_key: string;
             register_source?: string;
-            policy_code: string;
-            target_app_key: string;
-            target_navigation_space_key: string;
-            target_home_path: string;
+            is_system_reserved: boolean;
+            target_url?: string;
+            target_app_key?: string;
+            target_navigation_space_key?: string;
+            target_home_path?: string;
             allow_public_register: boolean;
             require_invite: boolean;
             require_email_verify: boolean;
@@ -3391,6 +3339,10 @@ export interface components {
             captcha_provider?: string;
             /** @description 对应提供商的公开 site_key，前端渲染 captcha widget 使用 */
             captcha_site_key?: string;
+            /** @description 注册时自动绑定的角色 codes */
+            role_codes?: string[];
+            /** @description 注册时自动绑定的功能包 keys */
+            feature_package_keys?: string[];
         };
         LoginPageContext: {
             app_key: string;
@@ -5421,132 +5373,6 @@ export interface operations {
             };
         };
     };
-    listRegisterPolicies: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegisterPolicyList"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    createRegisterPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterPolicyUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegisterPolicyItem"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    updateRegisterPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterPolicyUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegisterPolicyItem"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    deleteRegisterPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     listLoginPageTemplates: {
         parameters: {
             query?: never;
@@ -5651,7 +5477,6 @@ export interface operations {
             query?: {
                 source?: string;
                 entry_code?: string;
-                policy_code?: string;
                 page?: number;
                 page_size?: number;
             };

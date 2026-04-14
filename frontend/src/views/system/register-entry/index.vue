@@ -6,13 +6,33 @@
           <div class="register-entry-header">
             <div class="register-entry-title">注册入口</div>
             <div class="register-entry-tip">
-              入口决定“哪个 Host + Path 会命中哪套注册策略”。推荐顺序是：先准备注册策略，再为不同域名或路径补注册入口，最后访问 URL 验证命中结果。
+              每个入口自带完整的注册决策（角色/功能包/开关/跳转目标）。运营无需单独管理策略，在入口内直接配置即可。
             </div>
           </div>
         </template>
         <template #right>
-          <ElButton @click="applyDefaultEntry">填入默认入口</ElButton>
-          <ElButton type="primary" @click="openCreate">新建入口</ElButton>
+          <ElSelect
+            v-model="filterAppKey"
+            clearable
+            placeholder="按 App 筛选"
+            style="width: 200px; margin-right: 12px"
+          >
+            <ElOption v-for="key in appKeyOptions" :key="key" :label="key" :value="key" />
+          </ElSelect>
+          <ElDropdown trigger="click" @command="handleCreateCommand">
+            <ElButton type="primary">
+              新建入口 <ElIcon class="el-icon--right"><ArrowDown /></ElIcon>
+            </ElButton>
+            <template #dropdown>
+              <ElDropdownMenu>
+                <ElDropdownItem command="blank">空白入口</ElDropdownItem>
+                <ElDropdownItem divided disabled>从模板创建</ElDropdownItem>
+                <ElDropdownItem command="tpl:public-default">默认公开注册</ElDropdownItem>
+                <ElDropdownItem command="tpl:invite-only">邀请码注册</ElDropdownItem>
+                <ElDropdownItem command="tpl:email-verify">邮箱验证注册</ElDropdownItem>
+              </ElDropdownMenu>
+            </template>
+          </ElDropdown>
         </template>
       </ArtTableHeader>
 
@@ -26,101 +46,177 @@
       />
     </ElCard>
 
-    <ElDialog v-model="dialogVisible" :title="editing ? '编辑入口' : '新建入口'" width="860px">
-      <div class="dialog-layout">
-        <ElForm :model="form" label-width="140px" class="dialog-form">
-          <ElFormItem label="入口 Code" required>
-            <ElInput v-model="form.entry_code" :disabled="!!editing" placeholder="如 default / invite-only" />
-          </ElFormItem>
-          <ElFormItem label="名称" required>
-            <ElInput v-model="form.name" placeholder="给运营可读的入口名称" />
-          </ElFormItem>
-          <ElFormItem label="App Key" required>
-            <ElInput v-model="form.app_key" placeholder="如 account-portal" />
-            <div class="field-tip">公开注册页建议归属到 account-portal，便于和登录/找回密码统一治理。</div>
-          </ElFormItem>
-          <ElFormItem label="Host">
-            <ElInput v-model="form.host" placeholder="留空匹配任意 host；也可填 account.example.com" />
-          </ElFormItem>
-          <ElFormItem label="Path 前缀">
-            <ElInput v-model="form.path_prefix" placeholder="如 /account/auth/register" />
-            <div class="field-tip">按前缀命中，越具体越优先。一个策略可挂多个入口。</div>
-          </ElFormItem>
-          <ElFormItem label="Register Source">
-            <ElInput v-model="form.register_source" placeholder="self / invite / ..." />
-          </ElFormItem>
-          <ElFormItem label="策略 Code" required>
-            <ElInput v-model="form.policy_code" placeholder="如 default.self" />
-            <div class="field-tip">策略负责“注册后去哪、是否需要邀请码/邮箱验证/验证码、绑定哪些角色与功能包”。</div>
-          </ElFormItem>
-          <ElFormItem label="登录页模板 Key">
-            <ElSelect v-model="form.login_page_key" filterable allow-create default-first-option>
-              <ElOption
-                v-for="item in templateList"
-                :key="item.template_key"
-                :label="`${item.template_key} · ${item.name}`"
-                :value="item.template_key"
-              />
-            </ElSelect>
-            <div class="field-tip">优先级低于 URL query，未填写时回退到 APP auth.login_page_key 或 default。</div>
-          </ElFormItem>
-          <ElFormItem label="状态">
-            <ElSelect v-model="form.status">
-              <ElOption label="enabled" value="enabled" />
-              <ElOption label="disabled" value="disabled" />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem label="排序">
-            <ElInputNumber v-model="form.sort_order" :min="0" />
-          </ElFormItem>
-          <ElFormItem label="允许公开注册">
-            <ElSelect v-model="form.allow_public_register" clearable placeholder="继承策略">
-              <ElOption :value="true" label="是" />
-              <ElOption :value="false" label="否" />
-            </ElSelect>
-            <div class="field-tip">留空表示继承策略；显式设置后，优先级高于策略同名开关。</div>
-          </ElFormItem>
-          <ElFormItem label="备注">
-            <ElInput v-model="form.remark" type="textarea" :rows="2" />
-          </ElFormItem>
-        </ElForm>
-
-        <div class="dialog-preview">
-          <div class="preview-card">
-            <div class="preview-title">配置预览</div>
-            <ElDescriptions :column="1" border size="small">
-              <ElDescriptionsItem label="命中规则">{{ formMatchRule }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="验证地址">{{ previewVerifyUrl }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="策略来源">{{ form.policy_code || '待填写策略 Code' }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="模板 Key">{{ form.login_page_key || 'default' }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="公开注册">
-                {{ resolvePublicRegisterTag(form.allow_public_register).label }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="注册来源">{{ form.register_source || 'self' }}</ElDescriptionsItem>
-            </ElDescriptions>
-          </div>
-
+    <!-- ── 抽屉编辑器 ── -->
+    <ElDrawer
+      v-model="drawerVisible"
+      :title="drawerTitle"
+      size="50%"
+      direction="rtl"
+      destroy-on-close
+      class="entry-editor-drawer"
+    >
+      <div class="drawer-shell">
+        <div class="drawer-body">
           <ElAlert
-            class="mt-4"
-            type="success"
+            v-if="isSystemReserved"
+            class="mb-4"
+            type="warning"
             :closable="false"
-            title="保存后怎么验"
-            :description="`1. 打开 ${previewVerifyUrl}；2. 检查页面顶部是否显示命中入口和策略；3. 如果未命中，优先检查 host/path_prefix 与排序。`"
+            title="系统保留入口"
+            description="此入口为系统保留，不可删除，不可修改 entry_code。"
           />
+
+          <ElForm :model="form" label-width="150px" class="entry-form">
+            <!-- 基础信息 -->
+            <div class="form-section">
+              <div class="section-title">基础信息</div>
+              <div class="section-tip">定义入口标识和匹配规则。当用户访问的 Host + Path 命中此规则时，使用该入口的注册配置。</div>
+              <ElFormItem label="入口 Code" required>
+                <ElInput v-model="form.entry_code" :disabled="isSystemReserved || !!editing" placeholder="如 default / invite-only" />
+              </ElFormItem>
+              <ElFormItem label="名称" required>
+                <ElInput v-model="form.name" placeholder="给运营可读的入口名称" />
+              </ElFormItem>
+              <ElFormItem label="App Key" required>
+                <ElInput v-model="form.app_key" placeholder="如 account-portal" />
+              </ElFormItem>
+              <div class="field-row">
+                <ElFormItem label="Host" class="field-half">
+                  <ElInput v-model="form.host" placeholder="留空匹配任意 host" />
+                </ElFormItem>
+                <ElFormItem label="Path 前缀" class="field-half">
+                  <ElInput v-model="form.path_prefix" placeholder="/account/auth/register" />
+                </ElFormItem>
+              </div>
+              <ElFormItem label="注册来源标识">
+                <ElInput v-model="form.register_source" placeholder="self / invite / ..." />
+              </ElFormItem>
+              <ElFormItem label="登录页模板">
+                <ElSelect v-model="form.login_page_key" filterable allow-create default-first-option style="width: 100%">
+                  <ElOption
+                    v-for="item in templateList"
+                    :key="item.template_key"
+                    :label="`${item.template_key} · ${item.name}`"
+                    :value="item.template_key"
+                  />
+                </ElSelect>
+              </ElFormItem>
+            </div>
+
+            <!-- 注册规则 -->
+            <div class="form-section">
+              <div class="section-title">注册规则</div>
+              <div class="section-tip">控制注册开关和验证强度。关闭公开注册后，此入口页面仍可展示但无法提交注册。</div>
+              <div class="switch-grid">
+                <ElFormItem label="允许公开注册">
+                  <ElSwitch v-model="form.allow_public_register" />
+                </ElFormItem>
+                <ElFormItem label="需要邀请码">
+                  <ElSwitch v-model="form.require_invite" />
+                </ElFormItem>
+                <ElFormItem label="需要邮箱验证">
+                  <ElSwitch v-model="form.require_email_verify" />
+                </ElFormItem>
+                <ElFormItem label="需要人机验证">
+                  <ElSwitch v-model="form.require_captcha" />
+                </ElFormItem>
+              </div>
+              <ElFormItem label="自动登录">
+                <ElSwitch v-model="form.auto_login" />
+                <div class="field-tip">开启后注册成功直接返回 token，关闭则返回 pending 提示用户手动登录。</div>
+              </ElFormItem>
+            </div>
+
+            <!-- 验证码 -->
+            <div v-if="form.require_captcha" class="form-section">
+              <div class="section-title">验证码配置</div>
+              <div class="section-tip">选择人机验证服务商和对应的公钥。前端会在注册表单中嵌入对应的验证组件。</div>
+              <ElFormItem label="验证码提供商">
+                <ElSelect v-model="form.captcha_provider" style="width: 100%">
+                  <ElOption value="none" label="none" />
+                  <ElOption value="recaptcha" label="reCAPTCHA v3" />
+                  <ElOption value="hcaptcha" label="hCaptcha" />
+                  <ElOption value="turnstile" label="Turnstile" />
+                </ElSelect>
+              </ElFormItem>
+              <ElFormItem v-if="form.captcha_provider !== 'none'" label="Site Key">
+                <ElInput v-model="form.captcha_site_key" placeholder="验证码公钥" />
+              </ElFormItem>
+            </div>
+
+            <!-- 注册后去向 -->
+            <div class="form-section">
+              <div class="section-title">注册后去向</div>
+              <div class="section-tip">注册成功后前端跳转目标。优先级：Target URL > Target App Key + Home Path > 来源回源 > 前端默认。</div>
+              <ElFormItem label="Target URL">
+                <ElInput v-model="form.target_url" placeholder="https://app.example.com/welcome" />
+                <div class="field-tip">填写后将忽略下方 App Key / Home Path 配置，直接外跳此 URL。仅允许 http(s) 或相对路径。</div>
+              </ElFormItem>
+              <ElFormItem label="Target App Key">
+                <ElInput v-model="form.target_app_key" placeholder="注册成功后跳转到的目标 App" />
+              </ElFormItem>
+              <div class="field-row">
+                <ElFormItem label="导航空间 Key" class="field-half">
+                  <ElInput v-model="form.target_navigation_space_key" placeholder="目标 App 的菜单空间" />
+                </ElFormItem>
+                <ElFormItem label="Home Path" class="field-half">
+                  <ElInput v-model="form.target_home_path" placeholder="如 /dashboard" />
+                </ElFormItem>
+              </div>
+            </div>
+
+            <!-- 注册决策 -->
+            <div class="form-section">
+              <div class="section-title">注册决策</div>
+              <div class="section-tip">注册时自动绑定的角色和功能包。新用户创建后立即拥有这些能力，无需管理员手动分配。</div>
+              <ElFormItem label="绑定角色 Codes">
+                <ElSelect v-model="form.role_codes" multiple filterable allow-create default-first-option placeholder="输入角色 code 回车添加" style="width: 100%">
+                </ElSelect>
+              </ElFormItem>
+              <ElFormItem label="绑定功能包 Keys">
+                <ElSelect v-model="form.feature_package_keys" multiple filterable allow-create default-first-option placeholder="输入功能包 key 回车添加" style="width: 100%">
+                </ElSelect>
+              </ElFormItem>
+            </div>
+
+            <!-- 其他 -->
+            <div class="form-section">
+              <div class="section-title">其他</div>
+              <div class="section-tip">辅助字段，用于审计溯源和运维管理。</div>
+              <ElFormItem label="说明">
+                <ElInput v-model="form.description" type="textarea" :rows="2" placeholder="入口用途说明" />
+              </ElFormItem>
+              <div class="field-row">
+                <ElFormItem label="状态" class="field-half">
+                  <ElSelect v-model="form.status" style="width: 100%">
+                    <ElOption label="enabled" value="enabled" />
+                    <ElOption label="disabled" value="disabled" />
+                  </ElSelect>
+                </ElFormItem>
+                <ElFormItem label="排序" class="field-half">
+                  <ElInputNumber v-model="form.sort_order" :min="0" />
+                </ElFormItem>
+              </div>
+              <ElFormItem label="备注">
+                <ElInput v-model="form.remark" type="textarea" :rows="2" />
+              </ElFormItem>
+            </div>
+          </ElForm>
+        </div>
+
+        <div class="drawer-footer">
+          <ElButton @click="drawerVisible = false">取消</ElButton>
+          <ElButton type="primary" @click="submit">保存</ElButton>
         </div>
       </div>
-      <template #footer>
-        <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="submit">保存</ElButton>
-      </template>
-    </ElDialog>
-
+    </ElDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref } from 'vue'
-  import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { computed, h, onMounted, reactive, ref, watch } from 'vue'
+  import { ArrowDown } from '@element-plus/icons-vue'
+  import { ElButton, ElIcon, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { ColumnOption } from '@/types/component'
   import {
     fetchCreateRegisterEntry,
@@ -132,68 +228,170 @@
 
   defineOptions({ name: 'SystemRegisterEntry' })
 
-  const DEFAULT_ENTRY = {
-    entry_code: 'default',
-    name: '默认公开注册入口',
+  interface EntryForm {
+    entry_code: string
+    name: string
+    app_key: string
+    host: string
+    path_prefix: string
+    register_source: string
+    login_page_key: string
+    status: string
+    sort_order: number
+    allow_public_register: boolean
+    require_invite: boolean
+    require_email_verify: boolean
+    require_captcha: boolean
+    auto_login: boolean
+    is_system_reserved: boolean
+    target_url: string
+    target_app_key: string
+    target_navigation_space_key: string
+    target_home_path: string
+    captcha_provider: string
+    captcha_site_key: string
+    description: string
+    role_codes: string[]
+    feature_package_keys: string[]
+    remark: string
+  }
+
+  const DEFAULT_FORM: EntryForm = {
+    entry_code: '',
+    name: '',
     app_key: 'account-portal',
     host: '',
     path_prefix: '/account/auth/register',
     register_source: 'self',
-    policy_code: 'default.self',
     login_page_key: 'default',
     status: 'enabled',
     sort_order: 0,
-    allow_public_register: null,
-    remark: '默认本地入口：命中 account-portal 注册页'
+    allow_public_register: true,
+    require_invite: false,
+    require_email_verify: false,
+    require_captcha: false,
+    auto_login: true,
+    is_system_reserved: false,
+    target_url: '',
+    target_app_key: '',
+    target_navigation_space_key: '',
+    target_home_path: '',
+    captcha_provider: 'none',
+    captcha_site_key: '',
+    description: '',
+    role_codes: [],
+    feature_package_keys: [],
+    remark: ''
+  }
+
+  const TEMPLATES: Record<string, Partial<EntryForm>> = {
+    'public-default': {
+      name: '默认公开注册入口',
+      description: '适合默认自助注册。开放公开注册，成功后自动登录。',
+      allow_public_register: true,
+      auto_login: true,
+      role_codes: ['personal.self_user'],
+      feature_package_keys: ['self_service.basic'],
+      target_app_key: 'platform-admin',
+      target_navigation_space_key: 'self-service',
+      target_home_path: '/self/user-center'
+    },
+    'invite-only': {
+      name: '邀请码注册入口',
+      description: '适合活动或私域邀请。必须携带邀请码才能通过注册。',
+      allow_public_register: true,
+      require_invite: true,
+      auto_login: false,
+      role_codes: ['personal.self_user'],
+      feature_package_keys: ['self_service.basic']
+    },
+    'email-verify': {
+      name: '邮箱验证注册入口',
+      description: '适合对账户真实性要求更高的场景，可叠加人机验证。',
+      allow_public_register: true,
+      require_email_verify: true,
+      require_captcha: true,
+      captcha_provider: 'none',
+      auto_login: true,
+      role_codes: ['personal.self_user'],
+      feature_package_keys: ['self_service.basic']
+    }
   }
 
   const list = ref<any[]>([])
   const templateList = ref<any[]>([])
-  const dialogVisible = ref(false)
+  const drawerVisible = ref(false)
   const editing = ref<any>(null)
   const loading = ref(false)
-  const pagination = reactive({
-    current: 1,
-    size: 10,
-    total: 0
+  const pagination = reactive({ current: 1, size: 10, total: 0 })
+
+  const form = reactive<EntryForm>({ ...DEFAULT_FORM })
+  const filterAppKey = ref('')
+
+  const isSystemReserved = computed(() => editing.value?.is_system_reserved === true)
+  const drawerTitle = computed(() => {
+    if (!editing.value) return '新建入口'
+    return isSystemReserved.value ? '编辑入口（系统保留）' : '编辑入口'
   })
-
-  const emptyForm = () => ({ ...DEFAULT_ENTRY })
-  const form = reactive<any>(emptyForm())
-
-  const formMatchRule = computed(() => buildMatchRule(form))
-  const previewVerifyUrl = computed(() => buildVerifyUrl(form))
+  const appKeyOptions = computed(() => {
+    const keys = new Set(list.value.map((r: any) => r.app_key).filter(Boolean))
+    return Array.from(keys).sort()
+  })
+  const filteredList = computed(() => {
+    if (!filterAppKey.value) return list.value
+    return list.value.filter((r: any) => r.app_key === filterAppKey.value)
+  })
   const pagedList = computed(() => {
     const start = (pagination.current - 1) * pagination.size
-    return list.value.slice(start, start + pagination.size)
+    return filteredList.value.slice(start, start + pagination.size)
   })
+
   const columns = computed<ColumnOption[]>(() => [
     { type: 'index', label: '序号', width: 70 },
-    { prop: 'entry_code', label: '入口 Code', minWidth: 160, showOverflowTooltip: true },
+    {
+      prop: 'entry_code',
+      label: '入口 Code',
+      minWidth: 160,
+      showOverflowTooltip: true,
+      formatter: (row) =>
+        h('span', {}, [
+          row.entry_code,
+          row.is_system_reserved
+            ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain', class: 'ml-1' }, () => '保留')
+            : null
+        ])
+    },
     { prop: 'name', label: '名称', minWidth: 180, showOverflowTooltip: true },
     { prop: 'app_key', label: 'App', width: 140 },
-    { prop: 'login_page_key', label: '登录页模板', width: 140 },
     {
       prop: 'match_rule',
       label: '命中规则',
-      minWidth: 280,
+      minWidth: 260,
       formatter: (row) =>
         h('div', {}, [
           h('div', { class: 'font-medium' }, buildMatchRule(row)),
           h('div', { class: 'text-xs text-gray-500' }, buildVerifyUrl(row))
         ])
     },
-    { prop: 'policy_code', label: '策略 Code', minWidth: 160, showOverflowTooltip: true },
     {
       prop: 'allow_public_register',
       label: '公开注册',
-      width: 140,
-      formatter: (row) => {
-        const state = resolvePublicRegisterTag(row.allow_public_register)
-        return h(ElTag, { type: state.type, effect: 'plain' }, () => state.label)
-      }
+      width: 100,
+      formatter: (row) =>
+        h(ElTag, { type: row.allow_public_register ? 'success' : 'warning', effect: 'plain' }, () =>
+          row.allow_public_register ? '开启' : '关闭'
+        )
     },
-    { prop: 'status', label: '状态', width: 110 },
+    {
+      prop: 'auto_login',
+      label: '自动登录',
+      width: 100,
+      formatter: (row) =>
+        h(ElTag, { type: row.auto_login ? 'success' : 'info', effect: 'plain' }, () =>
+          row.auto_login ? '是' : '否'
+        )
+    },
+    { prop: 'status', label: '状态', width: 90 },
     {
       prop: 'actions',
       label: '操作',
@@ -201,24 +399,10 @@
       fixed: 'right',
       formatter: (row) =>
         h('div', { class: 'table-actions' }, [
-          h(
-            ElButton,
-            {
-              link: true,
-              type: 'primary',
-              onClick: () => openEdit(row)
-            },
-            () => '编辑'
-          ),
-          h(
-            ElButton,
-            {
-              link: true,
-              type: 'danger',
-              onClick: () => confirmRemove(row)
-            },
-            () => '删除'
-          )
+          h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑'),
+          row.is_system_reserved
+            ? null
+            : h(ElButton, { link: true, type: 'danger', onClick: () => confirmRemove(row) }, () => '删除')
         ])
     }
   ])
@@ -228,7 +412,7 @@
     try {
       const data: any = await fetchListRegisterEntries()
       list.value = data?.records || []
-      pagination.total = list.value.length
+      pagination.total = filteredList.value.length
       syncCurrentPage()
       const templates: any = await fetchListLoginPageTemplates()
       templateList.value = templates?.records || []
@@ -239,31 +423,38 @@
     }
   }
 
-  const openCreate = () => {
+  function handleCreateCommand(command: string) {
     editing.value = null
-    Object.assign(form, emptyForm())
-    dialogVisible.value = true
+    if (command === 'blank') {
+      Object.assign(form, { ...DEFAULT_FORM, role_codes: [], feature_package_keys: [] })
+    } else if (command.startsWith('tpl:')) {
+      const tplKey = command.slice(4)
+      const tpl = TEMPLATES[tplKey]
+      Object.assign(form, {
+        ...DEFAULT_FORM,
+        ...(tpl || {}),
+        role_codes: tpl?.role_codes ? [...tpl.role_codes] : [],
+        feature_package_keys: tpl?.feature_package_keys ? [...tpl.feature_package_keys] : []
+      })
+    }
+    drawerVisible.value = true
   }
 
   const openEdit = (row: any) => {
     editing.value = row
-    Object.assign(form, emptyForm(), row)
-    dialogVisible.value = true
-  }
-
-  const applyDefaultEntry = () => {
-    editing.value = null
-    Object.assign(form, emptyForm())
-    dialogVisible.value = true
+    Object.assign(form, {
+      ...DEFAULT_FORM,
+      ...row,
+      role_codes: Array.isArray(row.role_codes) ? [...row.role_codes] : [],
+      feature_package_keys: Array.isArray(row.feature_package_keys) ? [...row.feature_package_keys] : []
+    })
+    drawerVisible.value = true
   }
 
   const submit = async () => {
     try {
-      const payload = { ...form }
+      const payload: any = { ...form }
       payload.login_page_key = `${payload.login_page_key || ''}`.trim() || 'default'
-      if (payload.allow_public_register === '' || payload.allow_public_register === undefined) {
-        payload.allow_public_register = null
-      }
       if (editing.value) {
         await fetchUpdateRegisterEntry(editing.value.id, payload)
         ElMessage.success('更新成功')
@@ -271,7 +462,7 @@
         await fetchCreateRegisterEntry(payload)
         ElMessage.success('创建成功')
       }
-      dialogVisible.value = false
+      drawerVisible.value = false
       await load()
     } catch (e: any) {
       ElMessage.error(e?.message || '保存失败')
@@ -280,28 +471,16 @@
 
   const confirmRemove = async (row: any) => {
     try {
-      await ElMessageBox.confirm(`确认删除入口“${row.name || row.entry_code}”吗？`, '删除确认', {
+      await ElMessageBox.confirm(`确认删除入口"${row.name || row.entry_code}"吗？`, '删除确认', {
         type: 'warning'
       })
-      await remove(row)
-    } catch {}
-  }
-
-  const remove = async (row: any) => {
-    try {
       await fetchDeleteRegisterEntry(row.id)
       ElMessage.success('已删除')
       await load()
-    } catch (e: any) {
-      ElMessage.error(e?.message || '删除失败')
-    }
+    } catch {}
   }
 
-  function buildMatchRule(row: {
-    host?: string
-    path_prefix?: string
-    status?: string
-  }) {
+  function buildMatchRule(row: { host?: string; path_prefix?: string }) {
     const host = `${row.host || ''}`.trim() || '任意 Host'
     const pathPrefix = `${row.path_prefix || ''}`.trim() || '任意路径'
     return `${host} + ${pathPrefix}`
@@ -313,17 +492,9 @@
     return `https://${host}${pathPrefix}`
   }
 
-  function resolvePublicRegisterTag(value: boolean | null | undefined) {
-    if (value === true) return { label: '入口强制开启', type: 'success' as const }
-    if (value === false) return { label: '入口强制关闭', type: 'warning' as const }
-    return { label: '继承策略', type: 'info' as const }
-  }
-
   function syncCurrentPage() {
     const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pagination.size))
-    if (pagination.current > totalPages) {
-      pagination.current = totalPages
-    }
+    if (pagination.current > totalPages) pagination.current = totalPages
   }
 
   function handleSizeChange(size: number) {
@@ -336,6 +507,11 @@
     pagination.current = current
     syncCurrentPage()
   }
+
+  watch(filterAppKey, () => {
+    pagination.current = 1
+    pagination.total = filteredList.value.length
+  })
 
   onMounted(load)
 </script>
@@ -383,35 +559,88 @@
     gap: 4px;
   }
 
-  .dialog-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
-    gap: 20px;
+  /* ── Drawer ── */
+  :deep(.entry-editor-drawer) {
+    --el-drawer-padding-primary: 0;
   }
 
-  .dialog-form {
-    min-width: 0;
+  :deep(.entry-editor-drawer .el-drawer__header) {
+    margin-bottom: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--el-border-color-light);
   }
 
-  .dialog-preview {
-    min-width: 0;
+  :deep(.entry-editor-drawer .el-drawer__body) {
+    padding: 0;
+    overflow: hidden;
   }
 
-  .preview-card {
+  .drawer-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .entry-form {
+    max-width: 640px;
+  }
+
+  .drawer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--el-border-color-light);
+    background: var(--el-fill-color-blank);
+  }
+
+  /* ── Form sections ── */
+  .form-section {
+    margin-bottom: 20px;
     padding: 16px;
-    border-radius: 16px;
-    border: 1px solid var(--el-border-color-light);
-    background: linear-gradient(180deg, rgb(248 250 252 / 95%), #fff);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 12px;
+    background: var(--el-fill-color-blank);
   }
 
-  .preview-title {
-    margin-bottom: 12px;
+  .section-title {
+    font-size: 15px;
     font-weight: 600;
     color: var(--el-text-color-primary);
   }
 
+  .section-tip {
+    margin: 4px 0 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--el-text-color-secondary);
+  }
+
+  .switch-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+  }
+
+  .field-half {
+    min-width: 0;
+  }
+
   .field-tip {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 12px;
     line-height: 1.6;
     color: var(--el-text-color-secondary);

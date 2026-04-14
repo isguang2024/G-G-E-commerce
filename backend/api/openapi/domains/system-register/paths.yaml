@@ -99,106 +99,6 @@ paths:
           content:
             application/json:
               schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
-  /system/register-policies:
-    get:
-      operationId: listRegisterPolicies
-      summary: 注册策略列表
-      tags: [system-register]
-      x-permission-key: system.register_policy.read
-      x-tenant-scoped: true
-      x-app-scope: none
-      x-access-mode: permission
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyList'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
-    post:
-      operationId: createRegisterPolicy
-      summary: 创建注册策略
-      tags: [system-register]
-      x-permission-key: system.register_policy.write
-      x-tenant-scoped: true
-      x-app-scope: none
-      x-access-mode: permission
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyUpsertRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyItem'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
-  /system/register-policies/{code}:
-    put:
-      operationId: updateRegisterPolicy
-      summary: 更新注册策略
-      tags: [system-register]
-      x-permission-key: system.register_policy.write
-      x-tenant-scoped: true
-      x-app-scope: none
-      x-access-mode: permission
-      parameters:
-        - in: path
-          name: code
-          required: true
-          schema: {type: string}
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyUpsertRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '../../domains/system-register/schemas.yaml#/components/schemas/RegisterPolicyItem'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
-    delete:
-      operationId: deleteRegisterPolicy
-      summary: 删除注册策略
-      tags: [system-register]
-      x-permission-key: system.register_policy.write
-      x-tenant-scoped: true
-      x-app-scope: none
-      x-access-mode: permission
-      parameters:
-        - in: path
-          name: code
-          required: true
-          schema: {type: string}
-      responses:
-        '204':
-          description: No Content
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
   /system/login-page-templates:
     get:
       operationId: listLoginPageTemplates
@@ -299,9 +199,6 @@ paths:
           schema: {type: string}
         - in: query
           name: entry_code
-          schema: {type: string}
-        - in: query
-          name: policy_code
           schema: {type: string}
         - in: query
           name: page

@@ -82,6 +82,9 @@ export async function fetchRegister(body: {
   invitation_code?: string
   agreement_version?: string
   social_token?: string
+  source_app_key?: string
+  source_navigation_space_key?: string
+  source_home_path?: string
 }) {
   const { data, error, response } = await v5Client.POST('/auth/register', {
     body,

@@ -2077,11 +2077,6 @@ type DeleteRegisterEntryNoContent struct{}
 
 func (*DeleteRegisterEntryNoContent) deleteRegisterEntryRes() {}
 
-// DeleteRegisterPolicyNoContent is response for DeleteRegisterPolicy operation.
-type DeleteRegisterPolicyNoContent struct{}
-
-func (*DeleteRegisterPolicyNoContent) deleteRegisterPolicyRes() {}
-
 type DeleteUserForbidden Error
 
 func (*DeleteUserForbidden) deleteUserRes() {}
@@ -3681,10 +3676,8 @@ func (s *Error) SetDetails(val OptNilErrorDetails) {
 
 func (*Error) createDictTypeRes()          {}
 func (*Error) createRegisterEntryRes()     {}
-func (*Error) createRegisterPolicyRes()    {}
 func (*Error) deleteLoginPageTemplateRes() {}
 func (*Error) deleteRegisterEntryRes()     {}
-func (*Error) deleteRegisterPolicyRes()    {}
 func (*Error) exchangeSocialTokenRes()     {}
 func (*Error) explainPermissionsRes()      {}
 func (*Error) getAuthMeRes()               {}
@@ -3699,13 +3692,11 @@ func (*Error) listDictTypesRes()           {}
 func (*Error) listMyWorkspacesRes()        {}
 func (*Error) listRegisterEntriesRes()     {}
 func (*Error) listRegisterLogsRes()        {}
-func (*Error) listRegisterPoliciesRes()    {}
 func (*Error) logoutRes()                  {}
 func (*Error) refreshTokenRes()            {}
 func (*Error) registerRes()                {}
 func (*Error) silentSSOCallbackRes()       {}
 func (*Error) updateRegisterEntryRes()     {}
-func (*Error) updateRegisterPolicyRes()    {}
 
 // 可选上下文，如参数校验失败时携带 {field: reason}.
 type ErrorDetails map[string]jx.Raw
@@ -6199,9 +6190,16 @@ func (*LoginResponse) registerRes()             {}
 func (*LoginResponse) silentSSOCallbackRes()    {}
 
 type LoginResponseLanding struct {
+	// 注册入口配置的 target_url（最高优先级跳转目标）.
+	URL                OptString `json:"url"`
 	AppKey             OptString `json:"app_key"`
 	NavigationSpaceKey OptString `json:"navigation_space_key"`
 	HomePath           OptString `json:"home_path"`
+}
+
+// GetURL returns the value of URL.
+func (s *LoginResponseLanding) GetURL() OptString {
+	return s.URL
 }
 
 // GetAppKey returns the value of AppKey.
@@ -6217,6 +6215,11 @@ func (s *LoginResponseLanding) GetNavigationSpaceKey() OptString {
 // GetHomePath returns the value of HomePath.
 func (s *LoginResponseLanding) GetHomePath() OptString {
 	return s.HomePath
+}
+
+// SetURL sets the value of URL.
+func (s *LoginResponseLanding) SetURL(val OptString) {
+	s.URL = val
 }
 
 // SetAppKey sets the value of AppKey.
@@ -15458,10 +15461,11 @@ type RegisterContext struct {
 	EntryAppKey              string    `json:"entry_app_key"`
 	LoginPageKey             string    `json:"login_page_key"`
 	RegisterSource           OptString `json:"register_source"`
-	PolicyCode               string    `json:"policy_code"`
-	TargetAppKey             string    `json:"target_app_key"`
-	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
-	TargetHomePath           string    `json:"target_home_path"`
+	IsSystemReserved         bool      `json:"is_system_reserved"`
+	TargetURL                OptString `json:"target_url"`
+	TargetAppKey             OptString `json:"target_app_key"`
+	TargetNavigationSpaceKey OptString `json:"target_navigation_space_key"`
+	TargetHomePath           OptString `json:"target_home_path"`
 	AllowPublicRegister      bool      `json:"allow_public_register"`
 	RequireInvite            bool      `json:"require_invite"`
 	RequireEmailVerify       bool      `json:"require_email_verify"`
@@ -15472,6 +15476,10 @@ type RegisterContext struct {
 	CaptchaProvider OptString `json:"captcha_provider"`
 	// 对应提供商的公开 site_key，前端渲染 captcha widget 使用.
 	CaptchaSiteKey OptString `json:"captcha_site_key"`
+	// 注册时自动绑定的角色 codes.
+	RoleCodes []string `json:"role_codes"`
+	// 注册时自动绑定的功能包 keys.
+	FeaturePackageKeys []string `json:"feature_package_keys"`
 }
 
 // GetEntryCode returns the value of EntryCode.
@@ -15499,23 +15507,28 @@ func (s *RegisterContext) GetRegisterSource() OptString {
 	return s.RegisterSource
 }
 
-// GetPolicyCode returns the value of PolicyCode.
-func (s *RegisterContext) GetPolicyCode() string {
-	return s.PolicyCode
+// GetIsSystemReserved returns the value of IsSystemReserved.
+func (s *RegisterContext) GetIsSystemReserved() bool {
+	return s.IsSystemReserved
+}
+
+// GetTargetURL returns the value of TargetURL.
+func (s *RegisterContext) GetTargetURL() OptString {
+	return s.TargetURL
 }
 
 // GetTargetAppKey returns the value of TargetAppKey.
-func (s *RegisterContext) GetTargetAppKey() string {
+func (s *RegisterContext) GetTargetAppKey() OptString {
 	return s.TargetAppKey
 }
 
 // GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
-func (s *RegisterContext) GetTargetNavigationSpaceKey() string {
+func (s *RegisterContext) GetTargetNavigationSpaceKey() OptString {
 	return s.TargetNavigationSpaceKey
 }
 
 // GetTargetHomePath returns the value of TargetHomePath.
-func (s *RegisterContext) GetTargetHomePath() string {
+func (s *RegisterContext) GetTargetHomePath() OptString {
 	return s.TargetHomePath
 }
 
@@ -15559,6 +15572,16 @@ func (s *RegisterContext) GetCaptchaSiteKey() OptString {
 	return s.CaptchaSiteKey
 }
 
+// GetRoleCodes returns the value of RoleCodes.
+func (s *RegisterContext) GetRoleCodes() []string {
+	return s.RoleCodes
+}
+
+// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
+func (s *RegisterContext) GetFeaturePackageKeys() []string {
+	return s.FeaturePackageKeys
+}
+
 // SetEntryCode sets the value of EntryCode.
 func (s *RegisterContext) SetEntryCode(val string) {
 	s.EntryCode = val
@@ -15584,23 +15607,28 @@ func (s *RegisterContext) SetRegisterSource(val OptString) {
 	s.RegisterSource = val
 }
 
-// SetPolicyCode sets the value of PolicyCode.
-func (s *RegisterContext) SetPolicyCode(val string) {
-	s.PolicyCode = val
+// SetIsSystemReserved sets the value of IsSystemReserved.
+func (s *RegisterContext) SetIsSystemReserved(val bool) {
+	s.IsSystemReserved = val
+}
+
+// SetTargetURL sets the value of TargetURL.
+func (s *RegisterContext) SetTargetURL(val OptString) {
+	s.TargetURL = val
 }
 
 // SetTargetAppKey sets the value of TargetAppKey.
-func (s *RegisterContext) SetTargetAppKey(val string) {
+func (s *RegisterContext) SetTargetAppKey(val OptString) {
 	s.TargetAppKey = val
 }
 
 // SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
-func (s *RegisterContext) SetTargetNavigationSpaceKey(val string) {
+func (s *RegisterContext) SetTargetNavigationSpaceKey(val OptString) {
 	s.TargetNavigationSpaceKey = val
 }
 
 // SetTargetHomePath sets the value of TargetHomePath.
-func (s *RegisterContext) SetTargetHomePath(val string) {
+func (s *RegisterContext) SetTargetHomePath(val OptString) {
 	s.TargetHomePath = val
 }
 
@@ -15644,27 +15672,46 @@ func (s *RegisterContext) SetCaptchaSiteKey(val OptString) {
 	s.CaptchaSiteKey = val
 }
 
+// SetRoleCodes sets the value of RoleCodes.
+func (s *RegisterContext) SetRoleCodes(val []string) {
+	s.RoleCodes = val
+}
+
+// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
+func (s *RegisterContext) SetFeaturePackageKeys(val []string) {
+	s.FeaturePackageKeys = val
+}
+
 func (*RegisterContext) getRegisterContextRes() {}
 
 // Ref: #/components/schemas/RegisterEntryItem
 type RegisterEntryItem struct {
-	ID                  uuid.UUID  `json:"id"`
-	AppKey              string     `json:"app_key"`
-	EntryCode           string     `json:"entry_code"`
-	Name                string     `json:"name"`
-	Host                OptString  `json:"host"`
-	PathPrefix          OptString  `json:"path_prefix"`
-	RegisterSource      OptString  `json:"register_source"`
-	PolicyCode          string     `json:"policy_code"`
-	LoginPageKey        string     `json:"login_page_key"`
-	Status              string     `json:"status"`
-	AllowPublicRegister OptNilBool `json:"allow_public_register"`
-	RequireInvite       OptNilBool `json:"require_invite"`
-	RequireEmailVerify  OptNilBool `json:"require_email_verify"`
-	RequireCaptcha      OptNilBool `json:"require_captcha"`
-	AutoLogin           OptNilBool `json:"auto_login"`
-	SortOrder           OptInt     `json:"sort_order"`
-	Remark              OptString  `json:"remark"`
+	ID                       uuid.UUID `json:"id"`
+	AppKey                   string    `json:"app_key"`
+	EntryCode                string    `json:"entry_code"`
+	Name                     string    `json:"name"`
+	Host                     OptString `json:"host"`
+	PathPrefix               OptString `json:"path_prefix"`
+	RegisterSource           OptString `json:"register_source"`
+	LoginPageKey             string    `json:"login_page_key"`
+	Status                   string    `json:"status"`
+	AllowPublicRegister      bool      `json:"allow_public_register"`
+	RequireInvite            bool      `json:"require_invite"`
+	RequireEmailVerify       bool      `json:"require_email_verify"`
+	RequireCaptcha           bool      `json:"require_captcha"`
+	AutoLogin                bool      `json:"auto_login"`
+	IsSystemReserved         bool      `json:"is_system_reserved"`
+	TargetURL                OptString `json:"target_url"`
+	TargetAppKey             OptString `json:"target_app_key"`
+	TargetNavigationSpaceKey OptString `json:"target_navigation_space_key"`
+	TargetHomePath           OptString `json:"target_home_path"`
+	CaptchaProvider          OptString `json:"captcha_provider"`
+	CaptchaSiteKey           OptString `json:"captcha_site_key"`
+	Description              OptString `json:"description"`
+	RoleCodes                []string  `json:"role_codes"`
+	FeaturePackageKeys       []string  `json:"feature_package_keys"`
+	SortOrder                OptInt    `json:"sort_order"`
+	Remark                   OptString `json:"remark"`
 }
 
 // GetID returns the value of ID.
@@ -15702,11 +15749,6 @@ func (s *RegisterEntryItem) GetRegisterSource() OptString {
 	return s.RegisterSource
 }
 
-// GetPolicyCode returns the value of PolicyCode.
-func (s *RegisterEntryItem) GetPolicyCode() string {
-	return s.PolicyCode
-}
-
 // GetLoginPageKey returns the value of LoginPageKey.
 func (s *RegisterEntryItem) GetLoginPageKey() string {
 	return s.LoginPageKey
@@ -15718,28 +15760,78 @@ func (s *RegisterEntryItem) GetStatus() string {
 }
 
 // GetAllowPublicRegister returns the value of AllowPublicRegister.
-func (s *RegisterEntryItem) GetAllowPublicRegister() OptNilBool {
+func (s *RegisterEntryItem) GetAllowPublicRegister() bool {
 	return s.AllowPublicRegister
 }
 
 // GetRequireInvite returns the value of RequireInvite.
-func (s *RegisterEntryItem) GetRequireInvite() OptNilBool {
+func (s *RegisterEntryItem) GetRequireInvite() bool {
 	return s.RequireInvite
 }
 
 // GetRequireEmailVerify returns the value of RequireEmailVerify.
-func (s *RegisterEntryItem) GetRequireEmailVerify() OptNilBool {
+func (s *RegisterEntryItem) GetRequireEmailVerify() bool {
 	return s.RequireEmailVerify
 }
 
 // GetRequireCaptcha returns the value of RequireCaptcha.
-func (s *RegisterEntryItem) GetRequireCaptcha() OptNilBool {
+func (s *RegisterEntryItem) GetRequireCaptcha() bool {
 	return s.RequireCaptcha
 }
 
 // GetAutoLogin returns the value of AutoLogin.
-func (s *RegisterEntryItem) GetAutoLogin() OptNilBool {
+func (s *RegisterEntryItem) GetAutoLogin() bool {
 	return s.AutoLogin
+}
+
+// GetIsSystemReserved returns the value of IsSystemReserved.
+func (s *RegisterEntryItem) GetIsSystemReserved() bool {
+	return s.IsSystemReserved
+}
+
+// GetTargetURL returns the value of TargetURL.
+func (s *RegisterEntryItem) GetTargetURL() OptString {
+	return s.TargetURL
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *RegisterEntryItem) GetTargetAppKey() OptString {
+	return s.TargetAppKey
+}
+
+// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
+func (s *RegisterEntryItem) GetTargetNavigationSpaceKey() OptString {
+	return s.TargetNavigationSpaceKey
+}
+
+// GetTargetHomePath returns the value of TargetHomePath.
+func (s *RegisterEntryItem) GetTargetHomePath() OptString {
+	return s.TargetHomePath
+}
+
+// GetCaptchaProvider returns the value of CaptchaProvider.
+func (s *RegisterEntryItem) GetCaptchaProvider() OptString {
+	return s.CaptchaProvider
+}
+
+// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
+func (s *RegisterEntryItem) GetCaptchaSiteKey() OptString {
+	return s.CaptchaSiteKey
+}
+
+// GetDescription returns the value of Description.
+func (s *RegisterEntryItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetRoleCodes returns the value of RoleCodes.
+func (s *RegisterEntryItem) GetRoleCodes() []string {
+	return s.RoleCodes
+}
+
+// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
+func (s *RegisterEntryItem) GetFeaturePackageKeys() []string {
+	return s.FeaturePackageKeys
 }
 
 // GetSortOrder returns the value of SortOrder.
@@ -15787,11 +15879,6 @@ func (s *RegisterEntryItem) SetRegisterSource(val OptString) {
 	s.RegisterSource = val
 }
 
-// SetPolicyCode sets the value of PolicyCode.
-func (s *RegisterEntryItem) SetPolicyCode(val string) {
-	s.PolicyCode = val
-}
-
 // SetLoginPageKey sets the value of LoginPageKey.
 func (s *RegisterEntryItem) SetLoginPageKey(val string) {
 	s.LoginPageKey = val
@@ -15803,28 +15890,78 @@ func (s *RegisterEntryItem) SetStatus(val string) {
 }
 
 // SetAllowPublicRegister sets the value of AllowPublicRegister.
-func (s *RegisterEntryItem) SetAllowPublicRegister(val OptNilBool) {
+func (s *RegisterEntryItem) SetAllowPublicRegister(val bool) {
 	s.AllowPublicRegister = val
 }
 
 // SetRequireInvite sets the value of RequireInvite.
-func (s *RegisterEntryItem) SetRequireInvite(val OptNilBool) {
+func (s *RegisterEntryItem) SetRequireInvite(val bool) {
 	s.RequireInvite = val
 }
 
 // SetRequireEmailVerify sets the value of RequireEmailVerify.
-func (s *RegisterEntryItem) SetRequireEmailVerify(val OptNilBool) {
+func (s *RegisterEntryItem) SetRequireEmailVerify(val bool) {
 	s.RequireEmailVerify = val
 }
 
 // SetRequireCaptcha sets the value of RequireCaptcha.
-func (s *RegisterEntryItem) SetRequireCaptcha(val OptNilBool) {
+func (s *RegisterEntryItem) SetRequireCaptcha(val bool) {
 	s.RequireCaptcha = val
 }
 
 // SetAutoLogin sets the value of AutoLogin.
-func (s *RegisterEntryItem) SetAutoLogin(val OptNilBool) {
+func (s *RegisterEntryItem) SetAutoLogin(val bool) {
 	s.AutoLogin = val
+}
+
+// SetIsSystemReserved sets the value of IsSystemReserved.
+func (s *RegisterEntryItem) SetIsSystemReserved(val bool) {
+	s.IsSystemReserved = val
+}
+
+// SetTargetURL sets the value of TargetURL.
+func (s *RegisterEntryItem) SetTargetURL(val OptString) {
+	s.TargetURL = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *RegisterEntryItem) SetTargetAppKey(val OptString) {
+	s.TargetAppKey = val
+}
+
+// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
+func (s *RegisterEntryItem) SetTargetNavigationSpaceKey(val OptString) {
+	s.TargetNavigationSpaceKey = val
+}
+
+// SetTargetHomePath sets the value of TargetHomePath.
+func (s *RegisterEntryItem) SetTargetHomePath(val OptString) {
+	s.TargetHomePath = val
+}
+
+// SetCaptchaProvider sets the value of CaptchaProvider.
+func (s *RegisterEntryItem) SetCaptchaProvider(val OptString) {
+	s.CaptchaProvider = val
+}
+
+// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
+func (s *RegisterEntryItem) SetCaptchaSiteKey(val OptString) {
+	s.CaptchaSiteKey = val
+}
+
+// SetDescription sets the value of Description.
+func (s *RegisterEntryItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetRoleCodes sets the value of RoleCodes.
+func (s *RegisterEntryItem) SetRoleCodes(val []string) {
+	s.RoleCodes = val
+}
+
+// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
+func (s *RegisterEntryItem) SetFeaturePackageKeys(val []string) {
+	s.FeaturePackageKeys = val
 }
 
 // SetSortOrder sets the value of SortOrder.
@@ -15870,22 +16007,31 @@ func (*RegisterEntryList) listRegisterEntriesRes() {}
 
 // Ref: #/components/schemas/RegisterEntryUpsertRequest
 type RegisterEntryUpsertRequest struct {
-	AppKey              string     `json:"app_key"`
-	EntryCode           string     `json:"entry_code"`
-	Name                string     `json:"name"`
-	Host                OptString  `json:"host"`
-	PathPrefix          OptString  `json:"path_prefix"`
-	RegisterSource      OptString  `json:"register_source"`
-	PolicyCode          string     `json:"policy_code"`
-	LoginPageKey        OptString  `json:"login_page_key"`
-	Status              OptString  `json:"status"`
-	AllowPublicRegister OptNilBool `json:"allow_public_register"`
-	RequireInvite       OptNilBool `json:"require_invite"`
-	RequireEmailVerify  OptNilBool `json:"require_email_verify"`
-	RequireCaptcha      OptNilBool `json:"require_captcha"`
-	AutoLogin           OptNilBool `json:"auto_login"`
-	SortOrder           OptInt     `json:"sort_order"`
-	Remark              OptString  `json:"remark"`
+	AppKey                   string    `json:"app_key"`
+	EntryCode                string    `json:"entry_code"`
+	Name                     string    `json:"name"`
+	Host                     OptString `json:"host"`
+	PathPrefix               OptString `json:"path_prefix"`
+	RegisterSource           OptString `json:"register_source"`
+	LoginPageKey             OptString `json:"login_page_key"`
+	Status                   OptString `json:"status"`
+	AllowPublicRegister      OptBool   `json:"allow_public_register"`
+	RequireInvite            OptBool   `json:"require_invite"`
+	RequireEmailVerify       OptBool   `json:"require_email_verify"`
+	RequireCaptcha           OptBool   `json:"require_captcha"`
+	AutoLogin                OptBool   `json:"auto_login"`
+	IsSystemReserved         OptBool   `json:"is_system_reserved"`
+	TargetURL                OptString `json:"target_url"`
+	TargetAppKey             OptString `json:"target_app_key"`
+	TargetNavigationSpaceKey OptString `json:"target_navigation_space_key"`
+	TargetHomePath           OptString `json:"target_home_path"`
+	CaptchaProvider          OptString `json:"captcha_provider"`
+	CaptchaSiteKey           OptString `json:"captcha_site_key"`
+	Description              OptString `json:"description"`
+	RoleCodes                []string  `json:"role_codes"`
+	FeaturePackageKeys       []string  `json:"feature_package_keys"`
+	SortOrder                OptInt    `json:"sort_order"`
+	Remark                   OptString `json:"remark"`
 }
 
 // GetAppKey returns the value of AppKey.
@@ -15918,11 +16064,6 @@ func (s *RegisterEntryUpsertRequest) GetRegisterSource() OptString {
 	return s.RegisterSource
 }
 
-// GetPolicyCode returns the value of PolicyCode.
-func (s *RegisterEntryUpsertRequest) GetPolicyCode() string {
-	return s.PolicyCode
-}
-
 // GetLoginPageKey returns the value of LoginPageKey.
 func (s *RegisterEntryUpsertRequest) GetLoginPageKey() OptString {
 	return s.LoginPageKey
@@ -15934,28 +16075,78 @@ func (s *RegisterEntryUpsertRequest) GetStatus() OptString {
 }
 
 // GetAllowPublicRegister returns the value of AllowPublicRegister.
-func (s *RegisterEntryUpsertRequest) GetAllowPublicRegister() OptNilBool {
+func (s *RegisterEntryUpsertRequest) GetAllowPublicRegister() OptBool {
 	return s.AllowPublicRegister
 }
 
 // GetRequireInvite returns the value of RequireInvite.
-func (s *RegisterEntryUpsertRequest) GetRequireInvite() OptNilBool {
+func (s *RegisterEntryUpsertRequest) GetRequireInvite() OptBool {
 	return s.RequireInvite
 }
 
 // GetRequireEmailVerify returns the value of RequireEmailVerify.
-func (s *RegisterEntryUpsertRequest) GetRequireEmailVerify() OptNilBool {
+func (s *RegisterEntryUpsertRequest) GetRequireEmailVerify() OptBool {
 	return s.RequireEmailVerify
 }
 
 // GetRequireCaptcha returns the value of RequireCaptcha.
-func (s *RegisterEntryUpsertRequest) GetRequireCaptcha() OptNilBool {
+func (s *RegisterEntryUpsertRequest) GetRequireCaptcha() OptBool {
 	return s.RequireCaptcha
 }
 
 // GetAutoLogin returns the value of AutoLogin.
-func (s *RegisterEntryUpsertRequest) GetAutoLogin() OptNilBool {
+func (s *RegisterEntryUpsertRequest) GetAutoLogin() OptBool {
 	return s.AutoLogin
+}
+
+// GetIsSystemReserved returns the value of IsSystemReserved.
+func (s *RegisterEntryUpsertRequest) GetIsSystemReserved() OptBool {
+	return s.IsSystemReserved
+}
+
+// GetTargetURL returns the value of TargetURL.
+func (s *RegisterEntryUpsertRequest) GetTargetURL() OptString {
+	return s.TargetURL
+}
+
+// GetTargetAppKey returns the value of TargetAppKey.
+func (s *RegisterEntryUpsertRequest) GetTargetAppKey() OptString {
+	return s.TargetAppKey
+}
+
+// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
+func (s *RegisterEntryUpsertRequest) GetTargetNavigationSpaceKey() OptString {
+	return s.TargetNavigationSpaceKey
+}
+
+// GetTargetHomePath returns the value of TargetHomePath.
+func (s *RegisterEntryUpsertRequest) GetTargetHomePath() OptString {
+	return s.TargetHomePath
+}
+
+// GetCaptchaProvider returns the value of CaptchaProvider.
+func (s *RegisterEntryUpsertRequest) GetCaptchaProvider() OptString {
+	return s.CaptchaProvider
+}
+
+// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
+func (s *RegisterEntryUpsertRequest) GetCaptchaSiteKey() OptString {
+	return s.CaptchaSiteKey
+}
+
+// GetDescription returns the value of Description.
+func (s *RegisterEntryUpsertRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetRoleCodes returns the value of RoleCodes.
+func (s *RegisterEntryUpsertRequest) GetRoleCodes() []string {
+	return s.RoleCodes
+}
+
+// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
+func (s *RegisterEntryUpsertRequest) GetFeaturePackageKeys() []string {
+	return s.FeaturePackageKeys
 }
 
 // GetSortOrder returns the value of SortOrder.
@@ -15998,11 +16189,6 @@ func (s *RegisterEntryUpsertRequest) SetRegisterSource(val OptString) {
 	s.RegisterSource = val
 }
 
-// SetPolicyCode sets the value of PolicyCode.
-func (s *RegisterEntryUpsertRequest) SetPolicyCode(val string) {
-	s.PolicyCode = val
-}
-
 // SetLoginPageKey sets the value of LoginPageKey.
 func (s *RegisterEntryUpsertRequest) SetLoginPageKey(val OptString) {
 	s.LoginPageKey = val
@@ -16014,28 +16200,78 @@ func (s *RegisterEntryUpsertRequest) SetStatus(val OptString) {
 }
 
 // SetAllowPublicRegister sets the value of AllowPublicRegister.
-func (s *RegisterEntryUpsertRequest) SetAllowPublicRegister(val OptNilBool) {
+func (s *RegisterEntryUpsertRequest) SetAllowPublicRegister(val OptBool) {
 	s.AllowPublicRegister = val
 }
 
 // SetRequireInvite sets the value of RequireInvite.
-func (s *RegisterEntryUpsertRequest) SetRequireInvite(val OptNilBool) {
+func (s *RegisterEntryUpsertRequest) SetRequireInvite(val OptBool) {
 	s.RequireInvite = val
 }
 
 // SetRequireEmailVerify sets the value of RequireEmailVerify.
-func (s *RegisterEntryUpsertRequest) SetRequireEmailVerify(val OptNilBool) {
+func (s *RegisterEntryUpsertRequest) SetRequireEmailVerify(val OptBool) {
 	s.RequireEmailVerify = val
 }
 
 // SetRequireCaptcha sets the value of RequireCaptcha.
-func (s *RegisterEntryUpsertRequest) SetRequireCaptcha(val OptNilBool) {
+func (s *RegisterEntryUpsertRequest) SetRequireCaptcha(val OptBool) {
 	s.RequireCaptcha = val
 }
 
 // SetAutoLogin sets the value of AutoLogin.
-func (s *RegisterEntryUpsertRequest) SetAutoLogin(val OptNilBool) {
+func (s *RegisterEntryUpsertRequest) SetAutoLogin(val OptBool) {
 	s.AutoLogin = val
+}
+
+// SetIsSystemReserved sets the value of IsSystemReserved.
+func (s *RegisterEntryUpsertRequest) SetIsSystemReserved(val OptBool) {
+	s.IsSystemReserved = val
+}
+
+// SetTargetURL sets the value of TargetURL.
+func (s *RegisterEntryUpsertRequest) SetTargetURL(val OptString) {
+	s.TargetURL = val
+}
+
+// SetTargetAppKey sets the value of TargetAppKey.
+func (s *RegisterEntryUpsertRequest) SetTargetAppKey(val OptString) {
+	s.TargetAppKey = val
+}
+
+// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
+func (s *RegisterEntryUpsertRequest) SetTargetNavigationSpaceKey(val OptString) {
+	s.TargetNavigationSpaceKey = val
+}
+
+// SetTargetHomePath sets the value of TargetHomePath.
+func (s *RegisterEntryUpsertRequest) SetTargetHomePath(val OptString) {
+	s.TargetHomePath = val
+}
+
+// SetCaptchaProvider sets the value of CaptchaProvider.
+func (s *RegisterEntryUpsertRequest) SetCaptchaProvider(val OptString) {
+	s.CaptchaProvider = val
+}
+
+// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
+func (s *RegisterEntryUpsertRequest) SetCaptchaSiteKey(val OptString) {
+	s.CaptchaSiteKey = val
+}
+
+// SetDescription sets the value of Description.
+func (s *RegisterEntryUpsertRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetRoleCodes sets the value of RoleCodes.
+func (s *RegisterEntryUpsertRequest) SetRoleCodes(val []string) {
+	s.RoleCodes = val
+}
+
+// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
+func (s *RegisterEntryUpsertRequest) SetFeaturePackageKeys(val []string) {
+	s.FeaturePackageKeys = val
 }
 
 // SetSortOrder sets the value of SortOrder.
@@ -16050,17 +16286,16 @@ func (s *RegisterEntryUpsertRequest) SetRemark(val OptString) {
 
 // Ref: #/components/schemas/RegisterLogItem
 type RegisterLogItem struct {
-	UserID             uuid.UUID `json:"user_id"`
-	Username           string    `json:"username"`
-	Email              OptString `json:"email"`
-	RegisterAppKey     OptString `json:"register_app_key"`
-	RegisterEntryCode  string    `json:"register_entry_code"`
-	RegisterPolicyCode string    `json:"register_policy_code"`
-	RegisterSource     string    `json:"register_source"`
-	RegisterIP         OptString `json:"register_ip"`
-	RegisterUserAgent  OptString `json:"register_user_agent"`
-	AgreementVersion   OptString `json:"agreement_version"`
-	CreatedAt          time.Time `json:"created_at"`
+	UserID            uuid.UUID `json:"user_id"`
+	Username          string    `json:"username"`
+	Email             OptString `json:"email"`
+	RegisterAppKey    OptString `json:"register_app_key"`
+	RegisterEntryCode string    `json:"register_entry_code"`
+	RegisterSource    string    `json:"register_source"`
+	RegisterIP        OptString `json:"register_ip"`
+	RegisterUserAgent OptString `json:"register_user_agent"`
+	AgreementVersion  OptString `json:"agreement_version"`
+	CreatedAt         time.Time `json:"created_at"`
 	// 注册时刻冻结的有效策略快照（含布尔开关、角色 codes、功能包 keys）.
 	PolicySnapshot OptNilRegisterLogItemPolicySnapshot `json:"policy_snapshot"`
 }
@@ -16088,11 +16323,6 @@ func (s *RegisterLogItem) GetRegisterAppKey() OptString {
 // GetRegisterEntryCode returns the value of RegisterEntryCode.
 func (s *RegisterLogItem) GetRegisterEntryCode() string {
 	return s.RegisterEntryCode
-}
-
-// GetRegisterPolicyCode returns the value of RegisterPolicyCode.
-func (s *RegisterLogItem) GetRegisterPolicyCode() string {
-	return s.RegisterPolicyCode
 }
 
 // GetRegisterSource returns the value of RegisterSource.
@@ -16148,11 +16378,6 @@ func (s *RegisterLogItem) SetRegisterAppKey(val OptString) {
 // SetRegisterEntryCode sets the value of RegisterEntryCode.
 func (s *RegisterLogItem) SetRegisterEntryCode(val string) {
 	s.RegisterEntryCode = val
-}
-
-// SetRegisterPolicyCode sets the value of RegisterPolicyCode.
-func (s *RegisterLogItem) SetRegisterPolicyCode(val string) {
-	s.RegisterPolicyCode = val
 }
 
 // SetRegisterSource sets the value of RegisterSource.
@@ -16225,408 +16450,6 @@ func (s *RegisterLogList) SetTotal(val int) {
 
 func (*RegisterLogList) listRegisterLogsRes() {}
 
-// Ref: #/components/schemas/RegisterPolicyItem
-type RegisterPolicyItem struct {
-	ID                       uuid.UUID `json:"id"`
-	PolicyCode               string    `json:"policy_code"`
-	Name                     string    `json:"name"`
-	Description              OptString `json:"description"`
-	TargetAppKey             string    `json:"target_app_key"`
-	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
-	TargetHomePath           OptString `json:"target_home_path"`
-	Status                   string    `json:"status"`
-	AllowPublicRegister      OptBool   `json:"allow_public_register"`
-	RequireInvite            OptBool   `json:"require_invite"`
-	RequireEmailVerify       OptBool   `json:"require_email_verify"`
-	RequireCaptcha           OptBool   `json:"require_captcha"`
-	AutoLogin                OptBool   `json:"auto_login"`
-	CaptchaProvider          OptString `json:"captcha_provider"`
-	CaptchaSiteKey           OptString `json:"captcha_site_key"`
-	RoleCodes                []string  `json:"role_codes"`
-	FeaturePackageKeys       []string  `json:"feature_package_keys"`
-}
-
-// GetID returns the value of ID.
-func (s *RegisterPolicyItem) GetID() uuid.UUID {
-	return s.ID
-}
-
-// GetPolicyCode returns the value of PolicyCode.
-func (s *RegisterPolicyItem) GetPolicyCode() string {
-	return s.PolicyCode
-}
-
-// GetName returns the value of Name.
-func (s *RegisterPolicyItem) GetName() string {
-	return s.Name
-}
-
-// GetDescription returns the value of Description.
-func (s *RegisterPolicyItem) GetDescription() OptString {
-	return s.Description
-}
-
-// GetTargetAppKey returns the value of TargetAppKey.
-func (s *RegisterPolicyItem) GetTargetAppKey() string {
-	return s.TargetAppKey
-}
-
-// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
-func (s *RegisterPolicyItem) GetTargetNavigationSpaceKey() string {
-	return s.TargetNavigationSpaceKey
-}
-
-// GetTargetHomePath returns the value of TargetHomePath.
-func (s *RegisterPolicyItem) GetTargetHomePath() OptString {
-	return s.TargetHomePath
-}
-
-// GetStatus returns the value of Status.
-func (s *RegisterPolicyItem) GetStatus() string {
-	return s.Status
-}
-
-// GetAllowPublicRegister returns the value of AllowPublicRegister.
-func (s *RegisterPolicyItem) GetAllowPublicRegister() OptBool {
-	return s.AllowPublicRegister
-}
-
-// GetRequireInvite returns the value of RequireInvite.
-func (s *RegisterPolicyItem) GetRequireInvite() OptBool {
-	return s.RequireInvite
-}
-
-// GetRequireEmailVerify returns the value of RequireEmailVerify.
-func (s *RegisterPolicyItem) GetRequireEmailVerify() OptBool {
-	return s.RequireEmailVerify
-}
-
-// GetRequireCaptcha returns the value of RequireCaptcha.
-func (s *RegisterPolicyItem) GetRequireCaptcha() OptBool {
-	return s.RequireCaptcha
-}
-
-// GetAutoLogin returns the value of AutoLogin.
-func (s *RegisterPolicyItem) GetAutoLogin() OptBool {
-	return s.AutoLogin
-}
-
-// GetCaptchaProvider returns the value of CaptchaProvider.
-func (s *RegisterPolicyItem) GetCaptchaProvider() OptString {
-	return s.CaptchaProvider
-}
-
-// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
-func (s *RegisterPolicyItem) GetCaptchaSiteKey() OptString {
-	return s.CaptchaSiteKey
-}
-
-// GetRoleCodes returns the value of RoleCodes.
-func (s *RegisterPolicyItem) GetRoleCodes() []string {
-	return s.RoleCodes
-}
-
-// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
-func (s *RegisterPolicyItem) GetFeaturePackageKeys() []string {
-	return s.FeaturePackageKeys
-}
-
-// SetID sets the value of ID.
-func (s *RegisterPolicyItem) SetID(val uuid.UUID) {
-	s.ID = val
-}
-
-// SetPolicyCode sets the value of PolicyCode.
-func (s *RegisterPolicyItem) SetPolicyCode(val string) {
-	s.PolicyCode = val
-}
-
-// SetName sets the value of Name.
-func (s *RegisterPolicyItem) SetName(val string) {
-	s.Name = val
-}
-
-// SetDescription sets the value of Description.
-func (s *RegisterPolicyItem) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// SetTargetAppKey sets the value of TargetAppKey.
-func (s *RegisterPolicyItem) SetTargetAppKey(val string) {
-	s.TargetAppKey = val
-}
-
-// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
-func (s *RegisterPolicyItem) SetTargetNavigationSpaceKey(val string) {
-	s.TargetNavigationSpaceKey = val
-}
-
-// SetTargetHomePath sets the value of TargetHomePath.
-func (s *RegisterPolicyItem) SetTargetHomePath(val OptString) {
-	s.TargetHomePath = val
-}
-
-// SetStatus sets the value of Status.
-func (s *RegisterPolicyItem) SetStatus(val string) {
-	s.Status = val
-}
-
-// SetAllowPublicRegister sets the value of AllowPublicRegister.
-func (s *RegisterPolicyItem) SetAllowPublicRegister(val OptBool) {
-	s.AllowPublicRegister = val
-}
-
-// SetRequireInvite sets the value of RequireInvite.
-func (s *RegisterPolicyItem) SetRequireInvite(val OptBool) {
-	s.RequireInvite = val
-}
-
-// SetRequireEmailVerify sets the value of RequireEmailVerify.
-func (s *RegisterPolicyItem) SetRequireEmailVerify(val OptBool) {
-	s.RequireEmailVerify = val
-}
-
-// SetRequireCaptcha sets the value of RequireCaptcha.
-func (s *RegisterPolicyItem) SetRequireCaptcha(val OptBool) {
-	s.RequireCaptcha = val
-}
-
-// SetAutoLogin sets the value of AutoLogin.
-func (s *RegisterPolicyItem) SetAutoLogin(val OptBool) {
-	s.AutoLogin = val
-}
-
-// SetCaptchaProvider sets the value of CaptchaProvider.
-func (s *RegisterPolicyItem) SetCaptchaProvider(val OptString) {
-	s.CaptchaProvider = val
-}
-
-// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
-func (s *RegisterPolicyItem) SetCaptchaSiteKey(val OptString) {
-	s.CaptchaSiteKey = val
-}
-
-// SetRoleCodes sets the value of RoleCodes.
-func (s *RegisterPolicyItem) SetRoleCodes(val []string) {
-	s.RoleCodes = val
-}
-
-// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
-func (s *RegisterPolicyItem) SetFeaturePackageKeys(val []string) {
-	s.FeaturePackageKeys = val
-}
-
-func (*RegisterPolicyItem) createRegisterPolicyRes() {}
-func (*RegisterPolicyItem) updateRegisterPolicyRes() {}
-
-// Ref: #/components/schemas/RegisterPolicyList
-type RegisterPolicyList struct {
-	Records []RegisterPolicyItem `json:"records"`
-	Total   int                  `json:"total"`
-}
-
-// GetRecords returns the value of Records.
-func (s *RegisterPolicyList) GetRecords() []RegisterPolicyItem {
-	return s.Records
-}
-
-// GetTotal returns the value of Total.
-func (s *RegisterPolicyList) GetTotal() int {
-	return s.Total
-}
-
-// SetRecords sets the value of Records.
-func (s *RegisterPolicyList) SetRecords(val []RegisterPolicyItem) {
-	s.Records = val
-}
-
-// SetTotal sets the value of Total.
-func (s *RegisterPolicyList) SetTotal(val int) {
-	s.Total = val
-}
-
-func (*RegisterPolicyList) listRegisterPoliciesRes() {}
-
-// Ref: #/components/schemas/RegisterPolicyUpsertRequest
-type RegisterPolicyUpsertRequest struct {
-	PolicyCode               string    `json:"policy_code"`
-	Name                     string    `json:"name"`
-	Description              OptString `json:"description"`
-	TargetAppKey             string    `json:"target_app_key"`
-	TargetNavigationSpaceKey string    `json:"target_navigation_space_key"`
-	TargetHomePath           OptString `json:"target_home_path"`
-	Status                   OptString `json:"status"`
-	AllowPublicRegister      OptBool   `json:"allow_public_register"`
-	RequireInvite            OptBool   `json:"require_invite"`
-	RequireEmailVerify       OptBool   `json:"require_email_verify"`
-	RequireCaptcha           OptBool   `json:"require_captcha"`
-	AutoLogin                OptBool   `json:"auto_login"`
-	CaptchaProvider          OptString `json:"captcha_provider"`
-	CaptchaSiteKey           OptString `json:"captcha_site_key"`
-	RoleCodes                []string  `json:"role_codes"`
-	FeaturePackageKeys       []string  `json:"feature_package_keys"`
-}
-
-// GetPolicyCode returns the value of PolicyCode.
-func (s *RegisterPolicyUpsertRequest) GetPolicyCode() string {
-	return s.PolicyCode
-}
-
-// GetName returns the value of Name.
-func (s *RegisterPolicyUpsertRequest) GetName() string {
-	return s.Name
-}
-
-// GetDescription returns the value of Description.
-func (s *RegisterPolicyUpsertRequest) GetDescription() OptString {
-	return s.Description
-}
-
-// GetTargetAppKey returns the value of TargetAppKey.
-func (s *RegisterPolicyUpsertRequest) GetTargetAppKey() string {
-	return s.TargetAppKey
-}
-
-// GetTargetNavigationSpaceKey returns the value of TargetNavigationSpaceKey.
-func (s *RegisterPolicyUpsertRequest) GetTargetNavigationSpaceKey() string {
-	return s.TargetNavigationSpaceKey
-}
-
-// GetTargetHomePath returns the value of TargetHomePath.
-func (s *RegisterPolicyUpsertRequest) GetTargetHomePath() OptString {
-	return s.TargetHomePath
-}
-
-// GetStatus returns the value of Status.
-func (s *RegisterPolicyUpsertRequest) GetStatus() OptString {
-	return s.Status
-}
-
-// GetAllowPublicRegister returns the value of AllowPublicRegister.
-func (s *RegisterPolicyUpsertRequest) GetAllowPublicRegister() OptBool {
-	return s.AllowPublicRegister
-}
-
-// GetRequireInvite returns the value of RequireInvite.
-func (s *RegisterPolicyUpsertRequest) GetRequireInvite() OptBool {
-	return s.RequireInvite
-}
-
-// GetRequireEmailVerify returns the value of RequireEmailVerify.
-func (s *RegisterPolicyUpsertRequest) GetRequireEmailVerify() OptBool {
-	return s.RequireEmailVerify
-}
-
-// GetRequireCaptcha returns the value of RequireCaptcha.
-func (s *RegisterPolicyUpsertRequest) GetRequireCaptcha() OptBool {
-	return s.RequireCaptcha
-}
-
-// GetAutoLogin returns the value of AutoLogin.
-func (s *RegisterPolicyUpsertRequest) GetAutoLogin() OptBool {
-	return s.AutoLogin
-}
-
-// GetCaptchaProvider returns the value of CaptchaProvider.
-func (s *RegisterPolicyUpsertRequest) GetCaptchaProvider() OptString {
-	return s.CaptchaProvider
-}
-
-// GetCaptchaSiteKey returns the value of CaptchaSiteKey.
-func (s *RegisterPolicyUpsertRequest) GetCaptchaSiteKey() OptString {
-	return s.CaptchaSiteKey
-}
-
-// GetRoleCodes returns the value of RoleCodes.
-func (s *RegisterPolicyUpsertRequest) GetRoleCodes() []string {
-	return s.RoleCodes
-}
-
-// GetFeaturePackageKeys returns the value of FeaturePackageKeys.
-func (s *RegisterPolicyUpsertRequest) GetFeaturePackageKeys() []string {
-	return s.FeaturePackageKeys
-}
-
-// SetPolicyCode sets the value of PolicyCode.
-func (s *RegisterPolicyUpsertRequest) SetPolicyCode(val string) {
-	s.PolicyCode = val
-}
-
-// SetName sets the value of Name.
-func (s *RegisterPolicyUpsertRequest) SetName(val string) {
-	s.Name = val
-}
-
-// SetDescription sets the value of Description.
-func (s *RegisterPolicyUpsertRequest) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// SetTargetAppKey sets the value of TargetAppKey.
-func (s *RegisterPolicyUpsertRequest) SetTargetAppKey(val string) {
-	s.TargetAppKey = val
-}
-
-// SetTargetNavigationSpaceKey sets the value of TargetNavigationSpaceKey.
-func (s *RegisterPolicyUpsertRequest) SetTargetNavigationSpaceKey(val string) {
-	s.TargetNavigationSpaceKey = val
-}
-
-// SetTargetHomePath sets the value of TargetHomePath.
-func (s *RegisterPolicyUpsertRequest) SetTargetHomePath(val OptString) {
-	s.TargetHomePath = val
-}
-
-// SetStatus sets the value of Status.
-func (s *RegisterPolicyUpsertRequest) SetStatus(val OptString) {
-	s.Status = val
-}
-
-// SetAllowPublicRegister sets the value of AllowPublicRegister.
-func (s *RegisterPolicyUpsertRequest) SetAllowPublicRegister(val OptBool) {
-	s.AllowPublicRegister = val
-}
-
-// SetRequireInvite sets the value of RequireInvite.
-func (s *RegisterPolicyUpsertRequest) SetRequireInvite(val OptBool) {
-	s.RequireInvite = val
-}
-
-// SetRequireEmailVerify sets the value of RequireEmailVerify.
-func (s *RegisterPolicyUpsertRequest) SetRequireEmailVerify(val OptBool) {
-	s.RequireEmailVerify = val
-}
-
-// SetRequireCaptcha sets the value of RequireCaptcha.
-func (s *RegisterPolicyUpsertRequest) SetRequireCaptcha(val OptBool) {
-	s.RequireCaptcha = val
-}
-
-// SetAutoLogin sets the value of AutoLogin.
-func (s *RegisterPolicyUpsertRequest) SetAutoLogin(val OptBool) {
-	s.AutoLogin = val
-}
-
-// SetCaptchaProvider sets the value of CaptchaProvider.
-func (s *RegisterPolicyUpsertRequest) SetCaptchaProvider(val OptString) {
-	s.CaptchaProvider = val
-}
-
-// SetCaptchaSiteKey sets the value of CaptchaSiteKey.
-func (s *RegisterPolicyUpsertRequest) SetCaptchaSiteKey(val OptString) {
-	s.CaptchaSiteKey = val
-}
-
-// SetRoleCodes sets the value of RoleCodes.
-func (s *RegisterPolicyUpsertRequest) SetRoleCodes(val []string) {
-	s.RoleCodes = val
-}
-
-// SetFeaturePackageKeys sets the value of FeaturePackageKeys.
-func (s *RegisterPolicyUpsertRequest) SetFeaturePackageKeys(val []string) {
-	s.FeaturePackageKeys = val
-}
-
 // Ref: #/components/schemas/RegisterRequest
 type RegisterRequest struct {
 	Username         string    `json:"username"`
@@ -16639,6 +16462,12 @@ type RegisterRequest struct {
 	AgreementVersion OptString `json:"agreement_version"`
 	// 社交登录回调签发的一次性 token，用于注册后自动绑定社交账号.
 	SocialToken OptString `json:"social_token"`
+	// 来源 App（注册后回源优先级 3）.
+	SourceAppKey OptString `json:"source_app_key"`
+	// 来源菜单空间.
+	SourceNavigationSpaceKey OptString `json:"source_navigation_space_key"`
+	// 来源首页路径.
+	SourceHomePath OptString `json:"source_home_path"`
 }
 
 // GetUsername returns the value of Username.
@@ -16686,6 +16515,21 @@ func (s *RegisterRequest) GetSocialToken() OptString {
 	return s.SocialToken
 }
 
+// GetSourceAppKey returns the value of SourceAppKey.
+func (s *RegisterRequest) GetSourceAppKey() OptString {
+	return s.SourceAppKey
+}
+
+// GetSourceNavigationSpaceKey returns the value of SourceNavigationSpaceKey.
+func (s *RegisterRequest) GetSourceNavigationSpaceKey() OptString {
+	return s.SourceNavigationSpaceKey
+}
+
+// GetSourceHomePath returns the value of SourceHomePath.
+func (s *RegisterRequest) GetSourceHomePath() OptString {
+	return s.SourceHomePath
+}
+
 // SetUsername sets the value of Username.
 func (s *RegisterRequest) SetUsername(val string) {
 	s.Username = val
@@ -16729,6 +16573,21 @@ func (s *RegisterRequest) SetAgreementVersion(val OptString) {
 // SetSocialToken sets the value of SocialToken.
 func (s *RegisterRequest) SetSocialToken(val OptString) {
 	s.SocialToken = val
+}
+
+// SetSourceAppKey sets the value of SourceAppKey.
+func (s *RegisterRequest) SetSourceAppKey(val OptString) {
+	s.SourceAppKey = val
+}
+
+// SetSourceNavigationSpaceKey sets the value of SourceNavigationSpaceKey.
+func (s *RegisterRequest) SetSourceNavigationSpaceKey(val OptString) {
+	s.SourceNavigationSpaceKey = val
+}
+
+// SetSourceHomePath sets the value of SourceHomePath.
+func (s *RegisterRequest) SetSourceHomePath(val OptString) {
+	s.SourceHomePath = val
 }
 
 // Ref: #/components/schemas/RiskAuditItem

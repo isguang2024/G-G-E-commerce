@@ -10,7 +10,7 @@
 <script setup lang="ts">
   import { ElMessage } from 'element-plus'
   import { fetchSocialTokenExchange } from '@/domains/auth/api'
-  import { finalizeAuthenticatedSession, gotoAfterLogin, normalizeRedirect } from '@/domains/auth/flows/shared'
+  import { finalizeAuthenticatedSession, gotoAfterAuth } from '@/domains/auth/flows/shared'
   import { RoutesAlias } from '@/router/routesAlias'
 
   defineOptions({ name: 'SocialCallbackPage' })
@@ -34,7 +34,9 @@
         },
         { refreshUserContext: false }
       )
-      await gotoAfterLogin(normalizeRedirect(`${route.query.target_path || '/'}`), router)
+      const fallbackPath = `${route.query.target_path || '/'}`.trim()
+      const navigationSpaceKey = `${route.query.navigation_space_key || ''}`.trim()
+      await gotoAfterAuth({ home_path: fallbackPath, navigation_space_key: navigationSpaceKey }, router)
       return
     }
 
@@ -46,6 +48,12 @@
     if (loginPageKey) query.login_page_key = loginPageKey
     const targetPath = `${route.query.target_path || ''}`.trim()
     if (targetPath) query.redirect = targetPath
+    const sourceAppKey = `${route.query.source_app_key || ''}`.trim()
+    if (sourceAppKey) query.source_app_key = sourceAppKey
+    const sourceSpaceKey = `${route.query.source_navigation_space_key || ''}`.trim()
+    if (sourceSpaceKey) query.source_navigation_space_key = sourceSpaceKey
+    const sourceHomePath = `${route.query.source_home_path || ''}`.trim()
+    if (sourceHomePath) query.source_home_path = sourceHomePath
     await router.replace({ path: '/account/auth/register', query })
   }
 

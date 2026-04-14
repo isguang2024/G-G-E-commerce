@@ -211,15 +211,6 @@ func (UnimplementedHandler) CreateRegisterEntry(ctx context.Context, req *Regist
 	return r, ht.ErrNotImplemented
 }
 
-// CreateRegisterPolicy implements createRegisterPolicy operation.
-//
-// 创建注册策略.
-//
-// POST /system/register-policies
-func (UnimplementedHandler) CreateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest) (r CreateRegisterPolicyRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // CreateRole implements createRole operation.
 //
 // 创建角色.
@@ -352,15 +343,6 @@ func (UnimplementedHandler) DeletePermissionActionGroup(ctx context.Context, par
 //
 // DELETE /system/register-entries/{id}
 func (UnimplementedHandler) DeleteRegisterEntry(ctx context.Context, params DeleteRegisterEntryParams) (r DeleteRegisterEntryRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// DeleteRegisterPolicy implements deleteRegisterPolicy operation.
-//
-// 删除注册策略.
-//
-// DELETE /system/register-policies/{code}
-func (UnimplementedHandler) DeleteRegisterPolicy(ctx context.Context, params DeleteRegisterPolicyParams) (r DeleteRegisterPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1345,15 +1327,6 @@ func (UnimplementedHandler) ListRegisterLogs(ctx context.Context, params ListReg
 	return r, ht.ErrNotImplemented
 }
 
-// ListRegisterPolicies implements listRegisterPolicies operation.
-//
-// 注册策略列表.
-//
-// GET /system/register-policies
-func (UnimplementedHandler) ListRegisterPolicies(ctx context.Context) (r ListRegisterPoliciesRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // ListRoleOptions implements listRoleOptions operation.
 //
 // 获取角色候选列表.
@@ -1954,15 +1927,6 @@ func (UnimplementedHandler) UpdatePermissionActionGroup(ctx context.Context, req
 //
 // PUT /system/register-entries/{id}
 func (UnimplementedHandler) UpdateRegisterEntry(ctx context.Context, req *RegisterEntryUpsertRequest, params UpdateRegisterEntryParams) (r UpdateRegisterEntryRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// UpdateRegisterPolicy implements updateRegisterPolicy operation.
-//
-// 更新注册策略.
-//
-// PUT /system/register-policies/{code}
-func (UnimplementedHandler) UpdateRegisterPolicy(ctx context.Context, req *RegisterPolicyUpsertRequest, params UpdateRegisterPolicyParams) (r UpdateRegisterPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

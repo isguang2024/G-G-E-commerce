@@ -8,9 +8,6 @@
         <ElFormItem label="入口 Code">
           <ElInput v-model="filter.entry_code" clearable />
         </ElFormItem>
-        <ElFormItem label="策略 Code">
-          <ElInput v-model="filter.policy_code" clearable />
-        </ElFormItem>
         <ElFormItem>
           <ElButton type="primary" @click="load(1)">查询</ElButton>
           <ElButton @click="reset">重置</ElButton>
@@ -52,7 +49,7 @@
   const page = ref(1)
   const pageSize = ref(20)
   const loading = ref(false)
-  const filter = reactive<any>({ source: '', entry_code: '', policy_code: '' })
+  const filter = reactive<any>({ source: '', entry_code: '' })
   const pagination = computed(() => ({
     current: page.value,
     size: pageSize.value,
@@ -64,7 +61,6 @@
     { prop: 'email', label: '邮箱', minWidth: 200, showOverflowTooltip: true },
     { prop: 'register_source', label: '来源', width: 100 },
     { prop: 'register_entry_code', label: '入口 Code', minWidth: 160, showOverflowTooltip: true },
-    { prop: 'register_policy_code', label: '策略 Code', minWidth: 160, showOverflowTooltip: true },
     { prop: 'register_app_key', label: '注册 App', width: 140 },
     {
       prop: 'policy_snapshot',
@@ -92,7 +88,6 @@
       const data: any = await fetchListRegisterLogs({
         source: filter.source || undefined,
         entry_code: filter.entry_code || undefined,
-        policy_code: filter.policy_code || undefined,
         page: page.value,
         page_size: pageSize.value
       })
@@ -108,7 +103,6 @@
   const reset = () => {
     filter.source = ''
     filter.entry_code = ''
-    filter.policy_code = ''
     load(1)
   }
 

@@ -30,6 +30,29 @@ func (m *MetaJSON) Scan(value interface{}) error {
 	return json.Unmarshal(b, m)
 }
 
+// StringList 是一个 []string，序列化为 PostgreSQL JSONB 数组。
+// 用于 register_entries 的 role_codes / feature_package_keys 等字段。
+type StringList []string
+
+func (s StringList) Value() (driver.Value, error) {
+	if s == nil {
+		return "[]", nil
+	}
+	return json.Marshal(s)
+}
+
+func (s *StringList) Scan(value interface{}) error {
+	if value == nil {
+		*s = StringList{}
+		return nil
+	}
+	b, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+	return json.Unmarshal(b, s)
+}
+
 func (m MetaJSON) String() string {
 	if m == nil {
 		return "{}"
@@ -54,7 +77,6 @@ type User struct {
 	RegisterSource     string     `gorm:"type:varchar(20);default:'self'" json:"register_source"`
 	RegisterAppKey     string     `gorm:"type:varchar(64);not null;default:''" json:"register_app_key"`
 	RegisterEntryCode  string     `gorm:"type:varchar(64);not null;default:''" json:"register_entry_code"`
-	RegisterPolicyCode string     `gorm:"type:varchar(64);not null;default:''" json:"register_policy_code"`
 	RegisterIP         string     `gorm:"type:varchar(64);not null;default:''" json:"register_ip"`
 	RegisterUserAgent  string     `gorm:"type:varchar(512);not null;default:''" json:"register_user_agent"`
 	AgreementVersion        string     `gorm:"type:varchar(32);not null;default:''" json:"agreement_version"`
