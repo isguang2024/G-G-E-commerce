@@ -6,7 +6,9 @@
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import type { FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { HttpError } from '@/utils/http/error'
 import {
   fetchGetApps,
   fetchGetCurrentMenuSpace,
@@ -66,6 +68,38 @@ export function useMenuSpacePage() {
 
   const spaceFormRef = ref()
   const hostFormRef = ref()
+
+  // fieldErrors: 后端 Error.details.<field> 回显容器；规范见 docs/guides/frontend-observability-spec.md §2.4
+  const spaceFieldErrors = reactive<Record<string, string>>({})
+  const hostFieldErrors = reactive<Record<string, string>>({})
+  const spaceFormRules: FormRules = {
+    name: [{ required: true, message: '请输入空间名称', trigger: 'blur' }],
+    space_key: [
+      { required: true, message: '请输入空间标识', trigger: 'blur' },
+      { pattern: /^[a-z0-9][a-z0-9-_]*$/, message: '仅允许小写字母数字和 - _', trigger: 'blur' }
+    ]
+  }
+  const hostFormRules: FormRules = {
+    host: [{ required: true, message: '请输入 Host', trigger: 'blur' }],
+    space_key: [{ required: true, message: '请选择导航空间', trigger: 'change' }]
+  }
+  function clearFieldErrors(target: Record<string, string>) {
+    for (const k of Object.keys(target)) delete target[k]
+  }
+  function applyBackendFieldErrors(target: Record<string, string>, e: unknown): boolean {
+    if (!(e instanceof HttpError)) return false
+    const data = (e.data || {}) as { details?: Record<string, string> }
+    const details = data.details
+    if (!details || typeof details !== 'object') return false
+    let applied = false
+    for (const [field, reason] of Object.entries(details)) {
+      if (typeof reason === 'string') {
+        target[field] = reason
+        applied = true
+      }
+    }
+    return applied
+  }
 
   const spaceForm = reactive<Api.SystemManage.MenuSpaceSaveParams>({
     app_key: '',
@@ -264,7 +298,7 @@ export function useMenuSpacePage() {
         new Set([...collectMenuPaths(manifest.menuTree || []), ...pagePaths])
       ).sort((a, b) => a.localeCompare(b, 'zh-CN'))
     } catch (error) {
-      warnDev('[MenuSpaceManage] 加载默认首页候选失败，已回退为空列表', error)
+      warnDev('load_landing_paths_failed', { err: error })
       landingPathOptions.value = []
     } finally {
       loadingLandingPaths.value = false
@@ -351,17 +385,20 @@ export function useMenuSpacePage() {
   }
 
   async function saveSpace() {
+    clearFieldErrors(spaceFieldErrors)
+    const valid = await spaceFormRef.value?.validate().catch(() => false)
+    if (!valid) return
     if (!spaceForm.name.trim()) {
-      ElMessage.warning('请输入空间名称')
+      spaceFieldErrors.name = '请输入空间名称'
       return
     }
     if (!`${spaceForm.space_key || ''}`.trim()) {
-      ElMessage.warning('请输入空间标识')
+      spaceFieldErrors.space_key = '请输入空间标识'
       return
     }
     const normalizedHomePath = normalizeInternalPath(spaceForm.default_home_path || '')
     if (spaceForm.default_home_path?.trim() && !normalizedHomePath) {
-      ElMessage.warning('默认首页必须是以 / 开头的站内路径')
+      spaceFieldErrors.default_home_path = '默认首页必须是以 / 开头的站内路径'
       return
     }
     if (
@@ -394,6 +431,7 @@ export function useMenuSpacePage() {
       spaceDrawerVisible.value = false
       await loadData()
     } catch (error: any) {
+      if (applyBackendFieldErrors(spaceFieldErrors, error)) return
       ElMessage.error(error?.message || '导航空间保存失败')
     } finally {
       savingSpace.value = false
@@ -401,12 +439,15 @@ export function useMenuSpacePage() {
   }
 
   async function saveHostBinding() {
+    clearFieldErrors(hostFieldErrors)
+    const valid = await hostFormRef.value?.validate().catch(() => false)
+    if (!valid) return
     if (!hostForm.host.trim()) {
-      ElMessage.warning('请输入 Host')
+      hostFieldErrors.host = '请输入 Host'
       return
     }
     if (!`${hostForm.space_key || ''}`.trim()) {
-      ElMessage.warning('请选择导航空间')
+      hostFieldErrors.space_key = '请选择导航空间'
       return
     }
     const normalizedHost = `${hostForm.host || ''}`.trim().toLowerCase()
@@ -416,9 +457,7 @@ export function useMenuSpacePage() {
         normalizeMenuSpaceKey(item.spaceKey) !== normalizeMenuSpaceKey(hostForm.space_key)
     )
     if (duplicatedBinding) {
-      ElMessage.warning(
-        `该 Host 已绑定到导航空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
-      )
+      hostFieldErrors.host = `该 Host 已绑定到导航空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
       return
     }
     savingHost.value = true
@@ -445,6 +484,7 @@ export function useMenuSpacePage() {
       hostDrawerVisible.value = false
       await loadData()
     } catch (error: any) {
+      if (applyBackendFieldErrors(hostFieldErrors, error)) return
       ElMessage.error(error?.message || 'Host 绑定保存失败')
     } finally {
       savingHost.value = false
@@ -631,6 +671,10 @@ export function useMenuSpacePage() {
     spaceFormRef,
     hostFormRef,
     spaceForm,
+    spaceFormRules,
+    spaceFieldErrors,
+    hostFormRules,
+    hostFieldErrors,
     allowedRoleCodesText,
     hostForm,
     // computed

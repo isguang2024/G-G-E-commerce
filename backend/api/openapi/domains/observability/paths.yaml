@@ -1,0 +1,340 @@
+# domains/observability/paths.yaml
+# 审计 + 遥测日志查询端点。数据源分别是 audit_logs / telemetry_logs 两张 append-only
+# 表，页面只读，不提供更新 / 删除入口（合规要求）。
+paths:
+  /observability/audit-logs:
+    get:
+      operationId: listAuditLogs
+      summary: 查询审计日志
+      description: |-
+        按 action / actor / outcome / resource / request_id / 时间段过滤分页查询
+        audit_logs。只读端点，永远不触发 DB 写入。
+      tags:
+      - observability
+      x-permission-key: observability.audit.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      - name: action
+        in: query
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      - name: outcome
+        in: query
+        schema:
+          type: string
+      - name: resource_type
+        in: query
+        schema:
+          type: string
+      - name: resource_id
+        in: query
+        schema:
+          type: string
+      - name: request_id
+        in: query
+        schema:
+          type: string
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/AuditLogList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/audit-logs/stats:
+    get:
+      operationId: getAuditLogStats
+      summary: 审计日志聚合统计
+      description: |-
+        按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。
+        典型用途：dashboard widget、运维仪表盘小图。
+        - `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；
+        - `group_by=action`：按 `action` 聚合，桶按 count 降序；
+        - `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。
+        空区间返回 `buckets: []`（不是 null）。只读端点。
+      tags:
+      - observability
+      x-permission-key: observability.audit.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: group_by
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [action, outcome, hour]
+      - name: limit
+        in: query
+        description: 非时间维度返回桶上限，默认 20，最大 100
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/AuditLogStats'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/audit-logs/{id}:
+    get:
+      operationId: getAuditLog
+      summary: 审计日志详情
+      description: 返回单条 audit_logs 行，含完整 before / after / metadata JSON。
+      tags:
+      - observability
+      x-permission-key: observability.audit.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/AuditLogDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/telemetry-logs:
+    get:
+      operationId: listTelemetryLogs
+      summary: 查询前端遥测日志
+      description: |-
+        按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
+        telemetry_logs。只读端点。
+      tags:
+      - observability
+      x-permission-key: observability.telemetry.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      - name: level
+        in: query
+        schema:
+          type: string
+      - name: event
+        in: query
+        schema:
+          type: string
+      - name: session_id
+        in: query
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      - name: request_id
+        in: query
+        schema:
+          type: string
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/TelemetryLogList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/telemetry-logs/{id}:
+    get:
+      operationId: getTelemetryLog
+      summary: 遥测日志详情
+      description: 返回单条 telemetry_logs 行，含完整 payload JSON。
+      tags:
+      - observability
+      x-permission-key: observability.telemetry.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/TelemetryLogDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/trace/{request_id}:
+    get:
+      operationId: getObservabilityTrace
+      summary: 按 request_id 拉取审计 + 遥测全链路
+      description: |-
+        给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
+        条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。
+        权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中
+        telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。
+      tags:
+      - observability
+      x-permission-key: observability.audit.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/ObservabilityTraceBundle'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'

@@ -16,6 +16,7 @@ import {
 } from '@/domains/navigation/utils/menu-space'
 import { registerNavigationRuntimeResetHandler } from '@/domains/navigation/runtime/reset-handlers'
 import { hasRegisteredRoutePath } from '@/utils/router'
+import { logger } from '@/utils/logger'
 
 export class RuntimeManifestInvalidError extends Error {
   constructor(message: string) {
@@ -123,7 +124,7 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
       await menuSpaceStore.refreshRuntimeConfig(false)
       requestedAppKey = `${appContextStore.effectiveManagedAppKey || ''}`.trim()
     } catch (error) {
-      console.warn('[NavigationRuntime] 预热运行时 app 上下文失败，继续按现有上下文请求导航', error)
+      logger.warn('navigation.runtime.prewarm_app_context_failed', { err: error })
     }
   }
   const fallbackSpaceKey = normalizeMenuSpaceKey(menuSpaceStore.defaultSpaceKey)
@@ -298,7 +299,7 @@ export async function ensurePublicRuntimeRoutes(
         Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
     )
   } catch (error) {
-    console.error('[NavigationRuntime] 注册公开运行时页面失败:', error)
+    logger.error('navigation.runtime.register_public_pages_failed', { err: error })
     routeRegistry?.unregister()
     routeRegistrationMode = 'none'
     return false

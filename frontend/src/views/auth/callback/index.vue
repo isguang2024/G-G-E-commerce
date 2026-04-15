@@ -11,6 +11,7 @@
   import { ElMessage } from 'element-plus'
   import { RoutesAlias } from '@/router/routesAlias'
   import { useCallbackFlow } from '@/domains/auth/flows/useCallbackFlow'
+  import { logger } from '@/utils/logger'
 
   defineOptions({ name: 'AuthCallbackPage' })
 
@@ -21,7 +22,7 @@
     try {
       await run()
     } catch (error) {
-      console.error('[AuthCallback] 回调处理失败:', error)
+      logger.error('auth.callback.handle_failed', { err: error })
       message.value = error instanceof Error ? error.message : '登录回调失败，请重试'
       ElMessage.error(message.value)
       setTimeout(() => {

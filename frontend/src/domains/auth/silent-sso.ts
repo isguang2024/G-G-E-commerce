@@ -1,4 +1,5 @@
 import { getHttpAccessToken } from '@/utils/http/request-context'
+import { logger } from '@/utils/logger'
 
 export interface SilentSSOParams {
   targetAppKey: string
@@ -52,7 +53,7 @@ export async function attemptSilentSSO(params: SilentSSOParams): Promise<SilentS
     if (!res.ok) return null
     return await res.json()
   } catch (err) {
-    console.warn('[SilentSSO] attempt failed:', err)
+    logger.warn('auth.silent_sso_failed', { err })
     return null
   }
 }

@@ -657,6 +657,591 @@ type AssignUserRolesUnauthorized Error
 
 func (*AssignUserRolesUnauthorized) assignUserRolesRes() {}
 
+// 单条审计日志详情，含脱敏后的 before / after / metadata JSON。.
+// Ref: #/components/schemas/AuditLogDetail
+type AuditLogDetail struct {
+	ID           int64                        `json:"id"`
+	Ts           time.Time                    `json:"ts"`
+	RequestID    OptString                    `json:"request_id"`
+	TenantID     string                       `json:"tenant_id"`
+	ActorID      string                       `json:"actor_id"`
+	ActorType    string                       `json:"actor_type"`
+	AppKey       OptString                    `json:"app_key"`
+	WorkspaceID  OptString                    `json:"workspace_id"`
+	Action       string                       `json:"action"`
+	ResourceType OptString                    `json:"resource_type"`
+	ResourceID   OptString                    `json:"resource_id"`
+	Outcome      string                       `json:"outcome"`
+	ErrorCode    OptString                    `json:"error_code"`
+	HTTPStatus   OptInt                       `json:"http_status"`
+	IP           OptString                    `json:"ip"`
+	UserAgent    OptString                    `json:"user_agent"`
+	Before       OptNilAuditLogDetailBefore   `json:"before"`
+	After        OptNilAuditLogDetailAfter    `json:"after"`
+	Metadata     OptNilAuditLogDetailMetadata `json:"metadata"`
+}
+
+// GetID returns the value of ID.
+func (s *AuditLogDetail) GetID() int64 {
+	return s.ID
+}
+
+// GetTs returns the value of Ts.
+func (s *AuditLogDetail) GetTs() time.Time {
+	return s.Ts
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *AuditLogDetail) GetRequestID() OptString {
+	return s.RequestID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *AuditLogDetail) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetActorID returns the value of ActorID.
+func (s *AuditLogDetail) GetActorID() string {
+	return s.ActorID
+}
+
+// GetActorType returns the value of ActorType.
+func (s *AuditLogDetail) GetActorType() string {
+	return s.ActorType
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *AuditLogDetail) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *AuditLogDetail) GetWorkspaceID() OptString {
+	return s.WorkspaceID
+}
+
+// GetAction returns the value of Action.
+func (s *AuditLogDetail) GetAction() string {
+	return s.Action
+}
+
+// GetResourceType returns the value of ResourceType.
+func (s *AuditLogDetail) GetResourceType() OptString {
+	return s.ResourceType
+}
+
+// GetResourceID returns the value of ResourceID.
+func (s *AuditLogDetail) GetResourceID() OptString {
+	return s.ResourceID
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *AuditLogDetail) GetOutcome() string {
+	return s.Outcome
+}
+
+// GetErrorCode returns the value of ErrorCode.
+func (s *AuditLogDetail) GetErrorCode() OptString {
+	return s.ErrorCode
+}
+
+// GetHTTPStatus returns the value of HTTPStatus.
+func (s *AuditLogDetail) GetHTTPStatus() OptInt {
+	return s.HTTPStatus
+}
+
+// GetIP returns the value of IP.
+func (s *AuditLogDetail) GetIP() OptString {
+	return s.IP
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *AuditLogDetail) GetUserAgent() OptString {
+	return s.UserAgent
+}
+
+// GetBefore returns the value of Before.
+func (s *AuditLogDetail) GetBefore() OptNilAuditLogDetailBefore {
+	return s.Before
+}
+
+// GetAfter returns the value of After.
+func (s *AuditLogDetail) GetAfter() OptNilAuditLogDetailAfter {
+	return s.After
+}
+
+// GetMetadata returns the value of Metadata.
+func (s *AuditLogDetail) GetMetadata() OptNilAuditLogDetailMetadata {
+	return s.Metadata
+}
+
+// SetID sets the value of ID.
+func (s *AuditLogDetail) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTs sets the value of Ts.
+func (s *AuditLogDetail) SetTs(val time.Time) {
+	s.Ts = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *AuditLogDetail) SetRequestID(val OptString) {
+	s.RequestID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *AuditLogDetail) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetActorID sets the value of ActorID.
+func (s *AuditLogDetail) SetActorID(val string) {
+	s.ActorID = val
+}
+
+// SetActorType sets the value of ActorType.
+func (s *AuditLogDetail) SetActorType(val string) {
+	s.ActorType = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *AuditLogDetail) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *AuditLogDetail) SetWorkspaceID(val OptString) {
+	s.WorkspaceID = val
+}
+
+// SetAction sets the value of Action.
+func (s *AuditLogDetail) SetAction(val string) {
+	s.Action = val
+}
+
+// SetResourceType sets the value of ResourceType.
+func (s *AuditLogDetail) SetResourceType(val OptString) {
+	s.ResourceType = val
+}
+
+// SetResourceID sets the value of ResourceID.
+func (s *AuditLogDetail) SetResourceID(val OptString) {
+	s.ResourceID = val
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *AuditLogDetail) SetOutcome(val string) {
+	s.Outcome = val
+}
+
+// SetErrorCode sets the value of ErrorCode.
+func (s *AuditLogDetail) SetErrorCode(val OptString) {
+	s.ErrorCode = val
+}
+
+// SetHTTPStatus sets the value of HTTPStatus.
+func (s *AuditLogDetail) SetHTTPStatus(val OptInt) {
+	s.HTTPStatus = val
+}
+
+// SetIP sets the value of IP.
+func (s *AuditLogDetail) SetIP(val OptString) {
+	s.IP = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *AuditLogDetail) SetUserAgent(val OptString) {
+	s.UserAgent = val
+}
+
+// SetBefore sets the value of Before.
+func (s *AuditLogDetail) SetBefore(val OptNilAuditLogDetailBefore) {
+	s.Before = val
+}
+
+// SetAfter sets the value of After.
+func (s *AuditLogDetail) SetAfter(val OptNilAuditLogDetailAfter) {
+	s.After = val
+}
+
+// SetMetadata sets the value of Metadata.
+func (s *AuditLogDetail) SetMetadata(val OptNilAuditLogDetailMetadata) {
+	s.Metadata = val
+}
+
+func (*AuditLogDetail) getAuditLogRes() {}
+
+type AuditLogDetailAfter map[string]jx.Raw
+
+func (s *AuditLogDetailAfter) init() AuditLogDetailAfter {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type AuditLogDetailBefore map[string]jx.Raw
+
+func (s *AuditLogDetailBefore) init() AuditLogDetailBefore {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type AuditLogDetailMetadata map[string]jx.Raw
+
+func (s *AuditLogDetailMetadata) init() AuditLogDetailMetadata {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Audit_logs 一行的精简视图，列表接口返回。.
+// Ref: #/components/schemas/AuditLogItem
+type AuditLogItem struct {
+	ID           int64     `json:"id"`
+	Ts           time.Time `json:"ts"`
+	RequestID    OptString `json:"request_id"`
+	TenantID     string    `json:"tenant_id"`
+	ActorID      string    `json:"actor_id"`
+	ActorType    string    `json:"actor_type"`
+	AppKey       OptString `json:"app_key"`
+	WorkspaceID  OptString `json:"workspace_id"`
+	Action       string    `json:"action"`
+	ResourceType OptString `json:"resource_type"`
+	ResourceID   OptString `json:"resource_id"`
+	Outcome      string    `json:"outcome"`
+	ErrorCode    OptString `json:"error_code"`
+	HTTPStatus   OptInt    `json:"http_status"`
+	IP           OptString `json:"ip"`
+	UserAgent    OptString `json:"user_agent"`
+}
+
+// GetID returns the value of ID.
+func (s *AuditLogItem) GetID() int64 {
+	return s.ID
+}
+
+// GetTs returns the value of Ts.
+func (s *AuditLogItem) GetTs() time.Time {
+	return s.Ts
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *AuditLogItem) GetRequestID() OptString {
+	return s.RequestID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *AuditLogItem) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetActorID returns the value of ActorID.
+func (s *AuditLogItem) GetActorID() string {
+	return s.ActorID
+}
+
+// GetActorType returns the value of ActorType.
+func (s *AuditLogItem) GetActorType() string {
+	return s.ActorType
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *AuditLogItem) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *AuditLogItem) GetWorkspaceID() OptString {
+	return s.WorkspaceID
+}
+
+// GetAction returns the value of Action.
+func (s *AuditLogItem) GetAction() string {
+	return s.Action
+}
+
+// GetResourceType returns the value of ResourceType.
+func (s *AuditLogItem) GetResourceType() OptString {
+	return s.ResourceType
+}
+
+// GetResourceID returns the value of ResourceID.
+func (s *AuditLogItem) GetResourceID() OptString {
+	return s.ResourceID
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *AuditLogItem) GetOutcome() string {
+	return s.Outcome
+}
+
+// GetErrorCode returns the value of ErrorCode.
+func (s *AuditLogItem) GetErrorCode() OptString {
+	return s.ErrorCode
+}
+
+// GetHTTPStatus returns the value of HTTPStatus.
+func (s *AuditLogItem) GetHTTPStatus() OptInt {
+	return s.HTTPStatus
+}
+
+// GetIP returns the value of IP.
+func (s *AuditLogItem) GetIP() OptString {
+	return s.IP
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *AuditLogItem) GetUserAgent() OptString {
+	return s.UserAgent
+}
+
+// SetID sets the value of ID.
+func (s *AuditLogItem) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTs sets the value of Ts.
+func (s *AuditLogItem) SetTs(val time.Time) {
+	s.Ts = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *AuditLogItem) SetRequestID(val OptString) {
+	s.RequestID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *AuditLogItem) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetActorID sets the value of ActorID.
+func (s *AuditLogItem) SetActorID(val string) {
+	s.ActorID = val
+}
+
+// SetActorType sets the value of ActorType.
+func (s *AuditLogItem) SetActorType(val string) {
+	s.ActorType = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *AuditLogItem) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *AuditLogItem) SetWorkspaceID(val OptString) {
+	s.WorkspaceID = val
+}
+
+// SetAction sets the value of Action.
+func (s *AuditLogItem) SetAction(val string) {
+	s.Action = val
+}
+
+// SetResourceType sets the value of ResourceType.
+func (s *AuditLogItem) SetResourceType(val OptString) {
+	s.ResourceType = val
+}
+
+// SetResourceID sets the value of ResourceID.
+func (s *AuditLogItem) SetResourceID(val OptString) {
+	s.ResourceID = val
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *AuditLogItem) SetOutcome(val string) {
+	s.Outcome = val
+}
+
+// SetErrorCode sets the value of ErrorCode.
+func (s *AuditLogItem) SetErrorCode(val OptString) {
+	s.ErrorCode = val
+}
+
+// SetHTTPStatus sets the value of HTTPStatus.
+func (s *AuditLogItem) SetHTTPStatus(val OptInt) {
+	s.HTTPStatus = val
+}
+
+// SetIP sets the value of IP.
+func (s *AuditLogItem) SetIP(val OptString) {
+	s.IP = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *AuditLogItem) SetUserAgent(val OptString) {
+	s.UserAgent = val
+}
+
+// Ref: #/components/schemas/AuditLogList
+type AuditLogList struct {
+	Records []AuditLogItem `json:"records"`
+	Total   int64          `json:"total"`
+	Current int            `json:"current"`
+	Size    int            `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *AuditLogList) GetRecords() []AuditLogItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *AuditLogList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *AuditLogList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *AuditLogList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *AuditLogList) SetRecords(val []AuditLogItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *AuditLogList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *AuditLogList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *AuditLogList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*AuditLogList) listAuditLogsRes() {}
+
+// Audit_logs 聚合统计结果。空区间 buckets 为空数组。.
+// Ref: #/components/schemas/AuditLogStats
+type AuditLogStats struct {
+	GroupBy AuditLogStatsGroupBy  `json:"group_by"`
+	Buckets []AuditLogStatsBucket `json:"buckets"`
+}
+
+// GetGroupBy returns the value of GroupBy.
+func (s *AuditLogStats) GetGroupBy() AuditLogStatsGroupBy {
+	return s.GroupBy
+}
+
+// GetBuckets returns the value of Buckets.
+func (s *AuditLogStats) GetBuckets() []AuditLogStatsBucket {
+	return s.Buckets
+}
+
+// SetGroupBy sets the value of GroupBy.
+func (s *AuditLogStats) SetGroupBy(val AuditLogStatsGroupBy) {
+	s.GroupBy = val
+}
+
+// SetBuckets sets the value of Buckets.
+func (s *AuditLogStats) SetBuckets(val []AuditLogStatsBucket) {
+	s.Buckets = val
+}
+
+func (*AuditLogStats) getAuditLogStatsRes() {}
+
+// 一行聚合桶。bucket 是维度值（action 字符串 / outcome 字符串 / ISO8601
+// 小时时间戳）。.
+// Ref: #/components/schemas/AuditLogStatsBucket
+type AuditLogStatsBucket struct {
+	Bucket string `json:"bucket"`
+	Count  int64  `json:"count"`
+}
+
+// GetBucket returns the value of Bucket.
+func (s *AuditLogStatsBucket) GetBucket() string {
+	return s.Bucket
+}
+
+// GetCount returns the value of Count.
+func (s *AuditLogStatsBucket) GetCount() int64 {
+	return s.Count
+}
+
+// SetBucket sets the value of Bucket.
+func (s *AuditLogStatsBucket) SetBucket(val string) {
+	s.Bucket = val
+}
+
+// SetCount sets the value of Count.
+func (s *AuditLogStatsBucket) SetCount(val int64) {
+	s.Count = val
+}
+
+type AuditLogStatsGroupBy string
+
+const (
+	AuditLogStatsGroupByAction  AuditLogStatsGroupBy = "action"
+	AuditLogStatsGroupByOutcome AuditLogStatsGroupBy = "outcome"
+	AuditLogStatsGroupByHour    AuditLogStatsGroupBy = "hour"
+)
+
+// AllValues returns all AuditLogStatsGroupBy values.
+func (AuditLogStatsGroupBy) AllValues() []AuditLogStatsGroupBy {
+	return []AuditLogStatsGroupBy{
+		AuditLogStatsGroupByAction,
+		AuditLogStatsGroupByOutcome,
+		AuditLogStatsGroupByHour,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AuditLogStatsGroupBy) MarshalText() ([]byte, error) {
+	switch s {
+	case AuditLogStatsGroupByAction:
+		return []byte(s), nil
+	case AuditLogStatsGroupByOutcome:
+		return []byte(s), nil
+	case AuditLogStatsGroupByHour:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AuditLogStatsGroupBy) UnmarshalText(data []byte) error {
+	switch AuditLogStatsGroupBy(data) {
+	case AuditLogStatsGroupByAction:
+		*s = AuditLogStatsGroupByAction
+		return nil
+	case AuditLogStatsGroupByOutcome:
+		*s = AuditLogStatsGroupByOutcome
+		return nil
+	case AuditLogStatsGroupByHour:
+		*s = AuditLogStatsGroupByHour
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/AuthCallbackExchangeRequest
 type AuthCallbackExchangeRequest struct {
 	Code                string    `json:"code"`
@@ -4913,6 +5498,78 @@ type GetApiEndpointOverviewUnauthorized Error
 
 func (*GetApiEndpointOverviewUnauthorized) getApiEndpointOverviewRes() {}
 
+type GetAuditLogInternalServerError Error
+
+func (*GetAuditLogInternalServerError) getAuditLogRes() {}
+
+type GetAuditLogNotFound Error
+
+func (*GetAuditLogNotFound) getAuditLogRes() {}
+
+type GetAuditLogStatsBadRequest Error
+
+func (*GetAuditLogStatsBadRequest) getAuditLogStatsRes() {}
+
+type GetAuditLogStatsGroupBy string
+
+const (
+	GetAuditLogStatsGroupByAction  GetAuditLogStatsGroupBy = "action"
+	GetAuditLogStatsGroupByOutcome GetAuditLogStatsGroupBy = "outcome"
+	GetAuditLogStatsGroupByHour    GetAuditLogStatsGroupBy = "hour"
+)
+
+// AllValues returns all GetAuditLogStatsGroupBy values.
+func (GetAuditLogStatsGroupBy) AllValues() []GetAuditLogStatsGroupBy {
+	return []GetAuditLogStatsGroupBy{
+		GetAuditLogStatsGroupByAction,
+		GetAuditLogStatsGroupByOutcome,
+		GetAuditLogStatsGroupByHour,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s GetAuditLogStatsGroupBy) MarshalText() ([]byte, error) {
+	switch s {
+	case GetAuditLogStatsGroupByAction:
+		return []byte(s), nil
+	case GetAuditLogStatsGroupByOutcome:
+		return []byte(s), nil
+	case GetAuditLogStatsGroupByHour:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *GetAuditLogStatsGroupBy) UnmarshalText(data []byte) error {
+	switch GetAuditLogStatsGroupBy(data) {
+	case GetAuditLogStatsGroupByAction:
+		*s = GetAuditLogStatsGroupByAction
+		return nil
+	case GetAuditLogStatsGroupByOutcome:
+		*s = GetAuditLogStatsGroupByOutcome
+		return nil
+	case GetAuditLogStatsGroupByHour:
+		*s = GetAuditLogStatsGroupByHour
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type GetAuditLogStatsInternalServerError Error
+
+func (*GetAuditLogStatsInternalServerError) getAuditLogStatsRes() {}
+
+type GetAuditLogStatsUnauthorized Error
+
+func (*GetAuditLogStatsUnauthorized) getAuditLogStatsRes() {}
+
+type GetAuditLogUnauthorized Error
+
+func (*GetAuditLogUnauthorized) getAuditLogRes() {}
+
 type GetLoginPageContextPageScene string
 
 const (
@@ -4960,6 +5617,26 @@ func (s *GetLoginPageContextPageScene) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type GetObservabilityTraceInternalServerError Error
+
+func (*GetObservabilityTraceInternalServerError) getObservabilityTraceRes() {}
+
+type GetObservabilityTraceUnauthorized Error
+
+func (*GetObservabilityTraceUnauthorized) getObservabilityTraceRes() {}
+
+type GetTelemetryLogInternalServerError Error
+
+func (*GetTelemetryLogInternalServerError) getTelemetryLogRes() {}
+
+type GetTelemetryLogNotFound Error
+
+func (*GetTelemetryLogNotFound) getTelemetryLogRes() {}
+
+type GetTelemetryLogUnauthorized Error
+
+func (*GetTelemetryLogUnauthorized) getTelemetryLogRes() {}
 
 type GetUserForbidden Error
 
@@ -5441,6 +6118,14 @@ func (s *InboxTodoActionRequest) SetAction(val string) {
 	s.Action = val
 }
 
+type IngestTelemetryLogsBadRequest Error
+
+func (*IngestTelemetryLogsBadRequest) ingestTelemetryLogsRes() {}
+
+type IngestTelemetryLogsRequestEntityTooLarge Error
+
+func (*IngestTelemetryLogsRequestEntityTooLarge) ingestTelemetryLogsRes() {}
+
 type ListApiEndpointCategoriesInternalServerError Error
 
 func (*ListApiEndpointCategoriesInternalServerError) listApiEndpointCategoriesRes() {}
@@ -5456,6 +6141,14 @@ func (*ListApiEndpointsInternalServerError) listApiEndpointsRes() {}
 type ListApiEndpointsUnauthorized Error
 
 func (*ListApiEndpointsUnauthorized) listApiEndpointsRes() {}
+
+type ListAuditLogsInternalServerError Error
+
+func (*ListAuditLogsInternalServerError) listAuditLogsRes() {}
+
+type ListAuditLogsUnauthorized Error
+
+func (*ListAuditLogsUnauthorized) listAuditLogsRes() {}
 
 type ListDictItemsOKApplicationJSON []DictItemSummary
 
@@ -5476,6 +6169,14 @@ func (*ListStaleApiEndpointsInternalServerError) listStaleApiEndpointsRes() {}
 type ListStaleApiEndpointsUnauthorized Error
 
 func (*ListStaleApiEndpointsUnauthorized) listStaleApiEndpointsRes() {}
+
+type ListTelemetryLogsInternalServerError Error
+
+func (*ListTelemetryLogsInternalServerError) listTelemetryLogsRes() {}
+
+type ListTelemetryLogsUnauthorized Error
+
+func (*ListTelemetryLogsUnauthorized) listTelemetryLogsRes() {}
 
 type ListUnregisteredApiEndpointsInternalServerError Error
 
@@ -7376,6 +8077,12 @@ type MessageDispatchRequest struct {
 	ActionTarget                    OptString `json:"action_target"`
 	BizType                         OptString `json:"biz_type"`
 	ExpiredAt                       OptString `json:"expired_at"`
+	// True 时进入沙箱预览：服务端完成参数/模板/收件人解析与校验，但 **不写
+	// messages 表、不入队、不触发交付**。
+	// 返回的 `dispatch_status = "preview"`，`message_id` 为零值 UUID。
+	// 面向 E2E 深测与 QA 回归，避免污染真实消息流。缺省或 false 时走常规 queued
+	// 派发。.
+	DryRun OptBool `json:"dry_run"`
 }
 
 // GetSenderID returns the value of SenderID.
@@ -7458,6 +8165,11 @@ func (s *MessageDispatchRequest) GetExpiredAt() OptString {
 	return s.ExpiredAt
 }
 
+// GetDryRun returns the value of DryRun.
+func (s *MessageDispatchRequest) GetDryRun() OptBool {
+	return s.DryRun
+}
+
 // SetSenderID sets the value of SenderID.
 func (s *MessageDispatchRequest) SetSenderID(val OptString) {
 	s.SenderID = val
@@ -7538,11 +8250,19 @@ func (s *MessageDispatchRequest) SetExpiredAt(val OptString) {
 	s.ExpiredAt = val
 }
 
+// SetDryRun sets the value of DryRun.
+func (s *MessageDispatchRequest) SetDryRun(val OptBool) {
+	s.DryRun = val
+}
+
 // Ref: #/components/schemas/MessageDispatchResult
 type MessageDispatchResult struct {
-	MessageID      uuid.UUID `json:"message_id"`
-	DeliveryCount  int       `json:"delivery_count"`
-	DispatchStatus string    `json:"dispatch_status"`
+	MessageID     uuid.UUID `json:"message_id"`
+	DeliveryCount int       `json:"delivery_count"`
+	// 'queued' — 已入队等待 worker 派发（真实投递）。
+	// 'preview' — 本次是 dry_run，未写库、未入队、未触达收件人（E2E/QA
+	// 沙箱用）。.
+	DispatchStatus string `json:"dispatch_status"`
 }
 
 // GetMessageID returns the value of MessageID.
@@ -8711,9 +9431,8 @@ func (s *MutationResult) SetSuccess(val bool) {
 	s.Success = val
 }
 
-func (*MutationResult) deleteMediaRes()      {}
-func (*MutationResult) logoutRes()           {}
-func (*MutationResult) syncApiEndpointsRes() {}
+func (*MutationResult) deleteMediaRes() {}
+func (*MutationResult) logoutRes()      {}
 
 // Ref: #/components/schemas/NavigationContext
 type NavigationContext struct {
@@ -8965,6 +9684,47 @@ func (o NilUUID) Or(d uuid.UUID) uuid.UUID {
 	}
 	return d
 }
+
+// 以 request_id 作为聚合 key，把同一次请求里产生的所有 audit_logs 与
+// telemetry_logs 折叠返回。两边都按 ts 升序排列；调用方按时间线渲染。.
+// Ref: #/components/schemas/ObservabilityTraceBundle
+type ObservabilityTraceBundle struct {
+	RequestID     string               `json:"request_id"`
+	AuditLogs     []AuditLogItem       `json:"audit_logs"`
+	TelemetryLogs []TelemetryLogRecord `json:"telemetry_logs"`
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *ObservabilityTraceBundle) GetRequestID() string {
+	return s.RequestID
+}
+
+// GetAuditLogs returns the value of AuditLogs.
+func (s *ObservabilityTraceBundle) GetAuditLogs() []AuditLogItem {
+	return s.AuditLogs
+}
+
+// GetTelemetryLogs returns the value of TelemetryLogs.
+func (s *ObservabilityTraceBundle) GetTelemetryLogs() []TelemetryLogRecord {
+	return s.TelemetryLogs
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *ObservabilityTraceBundle) SetRequestID(val string) {
+	s.RequestID = val
+}
+
+// SetAuditLogs sets the value of AuditLogs.
+func (s *ObservabilityTraceBundle) SetAuditLogs(val []AuditLogItem) {
+	s.AuditLogs = val
+}
+
+// SetTelemetryLogs sets the value of TelemetryLogs.
+func (s *ObservabilityTraceBundle) SetTelemetryLogs(val []TelemetryLogRecord) {
+	s.TelemetryLogs = val
+}
+
+func (*ObservabilityTraceBundle) getObservabilityTraceRes() {}
 
 // NewOptAuthCallbackPayload returns new OptAuthCallbackPayload with value set to v.
 func NewOptAuthCallbackPayload(v AuthCallbackPayload) OptAuthCallbackPayload {
@@ -9811,6 +10571,195 @@ func (o OptNilApiEndpointCategoryItem) Or(d ApiEndpointCategoryItem) ApiEndpoint
 	return d
 }
 
+// NewOptNilAuditLogDetailAfter returns new OptNilAuditLogDetailAfter with value set to v.
+func NewOptNilAuditLogDetailAfter(v AuditLogDetailAfter) OptNilAuditLogDetailAfter {
+	return OptNilAuditLogDetailAfter{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilAuditLogDetailAfter is optional nullable AuditLogDetailAfter.
+type OptNilAuditLogDetailAfter struct {
+	Value AuditLogDetailAfter
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilAuditLogDetailAfter was set.
+func (o OptNilAuditLogDetailAfter) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilAuditLogDetailAfter) Reset() {
+	var v AuditLogDetailAfter
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilAuditLogDetailAfter) SetTo(v AuditLogDetailAfter) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilAuditLogDetailAfter) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilAuditLogDetailAfter) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v AuditLogDetailAfter
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilAuditLogDetailAfter) Get() (v AuditLogDetailAfter, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilAuditLogDetailAfter) Or(d AuditLogDetailAfter) AuditLogDetailAfter {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilAuditLogDetailBefore returns new OptNilAuditLogDetailBefore with value set to v.
+func NewOptNilAuditLogDetailBefore(v AuditLogDetailBefore) OptNilAuditLogDetailBefore {
+	return OptNilAuditLogDetailBefore{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilAuditLogDetailBefore is optional nullable AuditLogDetailBefore.
+type OptNilAuditLogDetailBefore struct {
+	Value AuditLogDetailBefore
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilAuditLogDetailBefore was set.
+func (o OptNilAuditLogDetailBefore) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilAuditLogDetailBefore) Reset() {
+	var v AuditLogDetailBefore
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilAuditLogDetailBefore) SetTo(v AuditLogDetailBefore) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilAuditLogDetailBefore) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilAuditLogDetailBefore) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v AuditLogDetailBefore
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilAuditLogDetailBefore) Get() (v AuditLogDetailBefore, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilAuditLogDetailBefore) Or(d AuditLogDetailBefore) AuditLogDetailBefore {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilAuditLogDetailMetadata returns new OptNilAuditLogDetailMetadata with value set to v.
+func NewOptNilAuditLogDetailMetadata(v AuditLogDetailMetadata) OptNilAuditLogDetailMetadata {
+	return OptNilAuditLogDetailMetadata{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilAuditLogDetailMetadata is optional nullable AuditLogDetailMetadata.
+type OptNilAuditLogDetailMetadata struct {
+	Value AuditLogDetailMetadata
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilAuditLogDetailMetadata was set.
+func (o OptNilAuditLogDetailMetadata) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilAuditLogDetailMetadata) Reset() {
+	var v AuditLogDetailMetadata
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilAuditLogDetailMetadata) SetTo(v AuditLogDetailMetadata) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilAuditLogDetailMetadata) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilAuditLogDetailMetadata) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v AuditLogDetailMetadata
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilAuditLogDetailMetadata) Get() (v AuditLogDetailMetadata, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilAuditLogDetailMetadata) Or(d AuditLogDetailMetadata) AuditLogDetailMetadata {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilBool returns new OptNilBool with value set to v.
 func NewOptNilBool(v bool) OptNilBool {
 	return OptNilBool{
@@ -10309,6 +11258,69 @@ func (o OptNilStringArray) Get() (v []string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilStringArray) Or(d []string) []string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilTelemetryLogDetailPayload returns new OptNilTelemetryLogDetailPayload with value set to v.
+func NewOptNilTelemetryLogDetailPayload(v TelemetryLogDetailPayload) OptNilTelemetryLogDetailPayload {
+	return OptNilTelemetryLogDetailPayload{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilTelemetryLogDetailPayload is optional nullable TelemetryLogDetailPayload.
+type OptNilTelemetryLogDetailPayload struct {
+	Value TelemetryLogDetailPayload
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilTelemetryLogDetailPayload was set.
+func (o OptNilTelemetryLogDetailPayload) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilTelemetryLogDetailPayload) Reset() {
+	var v TelemetryLogDetailPayload
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilTelemetryLogDetailPayload) SetTo(v TelemetryLogDetailPayload) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilTelemetryLogDetailPayload) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilTelemetryLogDetailPayload) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v TelemetryLogDetailPayload
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilTelemetryLogDetailPayload) Get() (v TelemetryLogDetailPayload, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilTelemetryLogDetailPayload) Or(d TelemetryLogDetailPayload) TelemetryLogDetailPayload {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -11062,6 +12074,98 @@ func (o OptSystemMeta) Get() (v SystemMeta, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSystemMeta) Or(d SystemMeta) SystemMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTelemetryErrorSnapshot returns new OptTelemetryErrorSnapshot with value set to v.
+func NewOptTelemetryErrorSnapshot(v TelemetryErrorSnapshot) OptTelemetryErrorSnapshot {
+	return OptTelemetryErrorSnapshot{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTelemetryErrorSnapshot is optional TelemetryErrorSnapshot.
+type OptTelemetryErrorSnapshot struct {
+	Value TelemetryErrorSnapshot
+	Set   bool
+}
+
+// IsSet returns true if OptTelemetryErrorSnapshot was set.
+func (o OptTelemetryErrorSnapshot) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTelemetryErrorSnapshot) Reset() {
+	var v TelemetryErrorSnapshot
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTelemetryErrorSnapshot) SetTo(v TelemetryErrorSnapshot) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTelemetryErrorSnapshot) Get() (v TelemetryErrorSnapshot, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTelemetryErrorSnapshot) Or(d TelemetryErrorSnapshot) TelemetryErrorSnapshot {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTelemetryLogEntryContext returns new OptTelemetryLogEntryContext with value set to v.
+func NewOptTelemetryLogEntryContext(v TelemetryLogEntryContext) OptTelemetryLogEntryContext {
+	return OptTelemetryLogEntryContext{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTelemetryLogEntryContext is optional TelemetryLogEntryContext.
+type OptTelemetryLogEntryContext struct {
+	Value TelemetryLogEntryContext
+	Set   bool
+}
+
+// IsSet returns true if OptTelemetryLogEntryContext was set.
+func (o OptTelemetryLogEntryContext) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTelemetryLogEntryContext) Reset() {
+	var v TelemetryLogEntryContext
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTelemetryLogEntryContext) SetTo(v TelemetryLogEntryContext) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTelemetryLogEntryContext) Get() (v TelemetryLogEntryContext, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTelemetryLogEntryContext) Or(d TelemetryLogEntryContext) TelemetryLogEntryContext {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -17770,6 +18874,56 @@ type SyncApiEndpointsInternalServerError Error
 
 func (*SyncApiEndpointsInternalServerError) syncApiEndpointsRes() {}
 
+// Ref: #/components/schemas/SyncApiEndpointsResult
+type SyncApiEndpointsResult struct {
+	Processed  int64 `json:"processed"`
+	Created    int64 `json:"created"`
+	Updated    int64 `json:"updated"`
+	TotalCount int64 `json:"total_count"`
+}
+
+// GetProcessed returns the value of Processed.
+func (s *SyncApiEndpointsResult) GetProcessed() int64 {
+	return s.Processed
+}
+
+// GetCreated returns the value of Created.
+func (s *SyncApiEndpointsResult) GetCreated() int64 {
+	return s.Created
+}
+
+// GetUpdated returns the value of Updated.
+func (s *SyncApiEndpointsResult) GetUpdated() int64 {
+	return s.Updated
+}
+
+// GetTotalCount returns the value of TotalCount.
+func (s *SyncApiEndpointsResult) GetTotalCount() int64 {
+	return s.TotalCount
+}
+
+// SetProcessed sets the value of Processed.
+func (s *SyncApiEndpointsResult) SetProcessed(val int64) {
+	s.Processed = val
+}
+
+// SetCreated sets the value of Created.
+func (s *SyncApiEndpointsResult) SetCreated(val int64) {
+	s.Created = val
+}
+
+// SetUpdated sets the value of Updated.
+func (s *SyncApiEndpointsResult) SetUpdated(val int64) {
+	s.Updated = val
+}
+
+// SetTotalCount sets the value of TotalCount.
+func (s *SyncApiEndpointsResult) SetTotalCount(val int64) {
+	s.TotalCount = val
+}
+
+func (*SyncApiEndpointsResult) syncApiEndpointsRes() {}
+
 type SyncApiEndpointsUnauthorized Error
 
 func (*SyncApiEndpointsUnauthorized) syncApiEndpointsRes() {}
@@ -20247,6 +21401,708 @@ func (s *SystemMeta) init() SystemMeta {
 		*s = m
 	}
 	return m
+}
+
+// 前端序列化后的 Error 快照。字符串长度由服务端强制截断，避免整段 stack
+// 炸库。.
+// Ref: #/components/schemas/TelemetryErrorSnapshot
+type TelemetryErrorSnapshot struct {
+	Name    OptString `json:"name"`
+	Message OptString `json:"message"`
+	Stack   OptString `json:"stack"`
+}
+
+// GetName returns the value of Name.
+func (s *TelemetryErrorSnapshot) GetName() OptString {
+	return s.Name
+}
+
+// GetMessage returns the value of Message.
+func (s *TelemetryErrorSnapshot) GetMessage() OptString {
+	return s.Message
+}
+
+// GetStack returns the value of Stack.
+func (s *TelemetryErrorSnapshot) GetStack() OptString {
+	return s.Stack
+}
+
+// SetName sets the value of Name.
+func (s *TelemetryErrorSnapshot) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetMessage sets the value of Message.
+func (s *TelemetryErrorSnapshot) SetMessage(val OptString) {
+	s.Message = val
+}
+
+// SetStack sets the value of Stack.
+func (s *TelemetryErrorSnapshot) SetStack(val OptString) {
+	s.Stack = val
+}
+
+// Ref: #/components/schemas/TelemetryIngestRequest
+type TelemetryIngestRequest struct {
+	Entries []TelemetryLogEntry `json:"entries"`
+}
+
+// GetEntries returns the value of Entries.
+func (s *TelemetryIngestRequest) GetEntries() []TelemetryLogEntry {
+	return s.Entries
+}
+
+// SetEntries sets the value of Entries.
+func (s *TelemetryIngestRequest) SetEntries(val []TelemetryLogEntry) {
+	s.Entries = val
+}
+
+// Ref: #/components/schemas/TelemetryIngestResponse
+type TelemetryIngestResponse struct {
+	// 实际落库的条数。.
+	Accepted int32 `json:"accepted"`
+	// 被限流/脱敏策略丢弃的条数；服务端不会
+	// 4xx，保证客户端不因此再次重试。.
+	Dropped int32 `json:"dropped"`
+}
+
+// GetAccepted returns the value of Accepted.
+func (s *TelemetryIngestResponse) GetAccepted() int32 {
+	return s.Accepted
+}
+
+// GetDropped returns the value of Dropped.
+func (s *TelemetryIngestResponse) GetDropped() int32 {
+	return s.Dropped
+}
+
+// SetAccepted sets the value of Accepted.
+func (s *TelemetryIngestResponse) SetAccepted(val int32) {
+	s.Accepted = val
+}
+
+// SetDropped sets the value of Dropped.
+func (s *TelemetryIngestResponse) SetDropped(val int32) {
+	s.Dropped = val
+}
+
+func (*TelemetryIngestResponse) ingestTelemetryLogsRes() {}
+
+// 单条遥测日志详情，含完整 payload（前端原始上下文 + error 快照）。.
+// Ref: #/components/schemas/TelemetryLogDetail
+type TelemetryLogDetail struct {
+	ID        int64                           `json:"id"`
+	Ts        time.Time                       `json:"ts"`
+	RequestID OptString                       `json:"request_id"`
+	SessionID OptString                       `json:"session_id"`
+	TenantID  string                          `json:"tenant_id"`
+	ActorID   OptString                       `json:"actor_id"`
+	AppKey    OptString                       `json:"app_key"`
+	Level     string                          `json:"level"`
+	Event     string                          `json:"event"`
+	Message   OptString                       `json:"message"`
+	URL       OptString                       `json:"url"`
+	UserAgent OptString                       `json:"user_agent"`
+	IP        OptString                       `json:"ip"`
+	Release   OptString                       `json:"release"`
+	Payload   OptNilTelemetryLogDetailPayload `json:"payload"`
+}
+
+// GetID returns the value of ID.
+func (s *TelemetryLogDetail) GetID() int64 {
+	return s.ID
+}
+
+// GetTs returns the value of Ts.
+func (s *TelemetryLogDetail) GetTs() time.Time {
+	return s.Ts
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *TelemetryLogDetail) GetRequestID() OptString {
+	return s.RequestID
+}
+
+// GetSessionID returns the value of SessionID.
+func (s *TelemetryLogDetail) GetSessionID() OptString {
+	return s.SessionID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *TelemetryLogDetail) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetActorID returns the value of ActorID.
+func (s *TelemetryLogDetail) GetActorID() OptString {
+	return s.ActorID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *TelemetryLogDetail) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetLevel returns the value of Level.
+func (s *TelemetryLogDetail) GetLevel() string {
+	return s.Level
+}
+
+// GetEvent returns the value of Event.
+func (s *TelemetryLogDetail) GetEvent() string {
+	return s.Event
+}
+
+// GetMessage returns the value of Message.
+func (s *TelemetryLogDetail) GetMessage() OptString {
+	return s.Message
+}
+
+// GetURL returns the value of URL.
+func (s *TelemetryLogDetail) GetURL() OptString {
+	return s.URL
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *TelemetryLogDetail) GetUserAgent() OptString {
+	return s.UserAgent
+}
+
+// GetIP returns the value of IP.
+func (s *TelemetryLogDetail) GetIP() OptString {
+	return s.IP
+}
+
+// GetRelease returns the value of Release.
+func (s *TelemetryLogDetail) GetRelease() OptString {
+	return s.Release
+}
+
+// GetPayload returns the value of Payload.
+func (s *TelemetryLogDetail) GetPayload() OptNilTelemetryLogDetailPayload {
+	return s.Payload
+}
+
+// SetID sets the value of ID.
+func (s *TelemetryLogDetail) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTs sets the value of Ts.
+func (s *TelemetryLogDetail) SetTs(val time.Time) {
+	s.Ts = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *TelemetryLogDetail) SetRequestID(val OptString) {
+	s.RequestID = val
+}
+
+// SetSessionID sets the value of SessionID.
+func (s *TelemetryLogDetail) SetSessionID(val OptString) {
+	s.SessionID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *TelemetryLogDetail) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetActorID sets the value of ActorID.
+func (s *TelemetryLogDetail) SetActorID(val OptString) {
+	s.ActorID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *TelemetryLogDetail) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetLevel sets the value of Level.
+func (s *TelemetryLogDetail) SetLevel(val string) {
+	s.Level = val
+}
+
+// SetEvent sets the value of Event.
+func (s *TelemetryLogDetail) SetEvent(val string) {
+	s.Event = val
+}
+
+// SetMessage sets the value of Message.
+func (s *TelemetryLogDetail) SetMessage(val OptString) {
+	s.Message = val
+}
+
+// SetURL sets the value of URL.
+func (s *TelemetryLogDetail) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *TelemetryLogDetail) SetUserAgent(val OptString) {
+	s.UserAgent = val
+}
+
+// SetIP sets the value of IP.
+func (s *TelemetryLogDetail) SetIP(val OptString) {
+	s.IP = val
+}
+
+// SetRelease sets the value of Release.
+func (s *TelemetryLogDetail) SetRelease(val OptString) {
+	s.Release = val
+}
+
+// SetPayload sets the value of Payload.
+func (s *TelemetryLogDetail) SetPayload(val OptNilTelemetryLogDetailPayload) {
+	s.Payload = val
+}
+
+func (*TelemetryLogDetail) getTelemetryLogRes() {}
+
+type TelemetryLogDetailPayload map[string]jx.Raw
+
+func (s *TelemetryLogDetailPayload) init() TelemetryLogDetailPayload {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/TelemetryLogEntry
+type TelemetryLogEntry struct {
+	Level TelemetryLogLevel `json:"level"`
+	// 稳定事件名（dot-case），服务端按此聚合。.
+	Event string `json:"event"`
+	// 发生时间（ISO8601，UTC）。.
+	Timestamp time.Time `json:"timestamp"`
+	// 对应后端 X-Request-Id，便于和 audit/access 日志 join。.
+	RequestID OptString `json:"request_id"`
+	// 结构化字段；前端已做敏感字段脱敏，服务端会再过一次。.
+	Context OptTelemetryLogEntryContext `json:"context"`
+	Error   OptTelemetryErrorSnapshot   `json:"error"`
+	Route   OptString                   `json:"route"`
+	// 空串表示匿名会话。.
+	UserID    OptString         `json:"user_id"`
+	SessionID string            `json:"session_id"`
+	UserAgent string            `json:"user_agent"`
+	Viewport  TelemetryViewport `json:"viewport"`
+}
+
+// GetLevel returns the value of Level.
+func (s *TelemetryLogEntry) GetLevel() TelemetryLogLevel {
+	return s.Level
+}
+
+// GetEvent returns the value of Event.
+func (s *TelemetryLogEntry) GetEvent() string {
+	return s.Event
+}
+
+// GetTimestamp returns the value of Timestamp.
+func (s *TelemetryLogEntry) GetTimestamp() time.Time {
+	return s.Timestamp
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *TelemetryLogEntry) GetRequestID() OptString {
+	return s.RequestID
+}
+
+// GetContext returns the value of Context.
+func (s *TelemetryLogEntry) GetContext() OptTelemetryLogEntryContext {
+	return s.Context
+}
+
+// GetError returns the value of Error.
+func (s *TelemetryLogEntry) GetError() OptTelemetryErrorSnapshot {
+	return s.Error
+}
+
+// GetRoute returns the value of Route.
+func (s *TelemetryLogEntry) GetRoute() OptString {
+	return s.Route
+}
+
+// GetUserID returns the value of UserID.
+func (s *TelemetryLogEntry) GetUserID() OptString {
+	return s.UserID
+}
+
+// GetSessionID returns the value of SessionID.
+func (s *TelemetryLogEntry) GetSessionID() string {
+	return s.SessionID
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *TelemetryLogEntry) GetUserAgent() string {
+	return s.UserAgent
+}
+
+// GetViewport returns the value of Viewport.
+func (s *TelemetryLogEntry) GetViewport() TelemetryViewport {
+	return s.Viewport
+}
+
+// SetLevel sets the value of Level.
+func (s *TelemetryLogEntry) SetLevel(val TelemetryLogLevel) {
+	s.Level = val
+}
+
+// SetEvent sets the value of Event.
+func (s *TelemetryLogEntry) SetEvent(val string) {
+	s.Event = val
+}
+
+// SetTimestamp sets the value of Timestamp.
+func (s *TelemetryLogEntry) SetTimestamp(val time.Time) {
+	s.Timestamp = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *TelemetryLogEntry) SetRequestID(val OptString) {
+	s.RequestID = val
+}
+
+// SetContext sets the value of Context.
+func (s *TelemetryLogEntry) SetContext(val OptTelemetryLogEntryContext) {
+	s.Context = val
+}
+
+// SetError sets the value of Error.
+func (s *TelemetryLogEntry) SetError(val OptTelemetryErrorSnapshot) {
+	s.Error = val
+}
+
+// SetRoute sets the value of Route.
+func (s *TelemetryLogEntry) SetRoute(val OptString) {
+	s.Route = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *TelemetryLogEntry) SetUserID(val OptString) {
+	s.UserID = val
+}
+
+// SetSessionID sets the value of SessionID.
+func (s *TelemetryLogEntry) SetSessionID(val string) {
+	s.SessionID = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *TelemetryLogEntry) SetUserAgent(val string) {
+	s.UserAgent = val
+}
+
+// SetViewport sets the value of Viewport.
+func (s *TelemetryLogEntry) SetViewport(val TelemetryViewport) {
+	s.Viewport = val
+}
+
+// 结构化字段；前端已做敏感字段脱敏，服务端会再过一次。.
+type TelemetryLogEntryContext map[string]jx.Raw
+
+func (s *TelemetryLogEntryContext) init() TelemetryLogEntryContext {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// 日志级别；顺序与后端 zap 对齐。.
+// Ref: #/components/schemas/TelemetryLogLevel
+type TelemetryLogLevel string
+
+const (
+	TelemetryLogLevelDebug TelemetryLogLevel = "debug"
+	TelemetryLogLevelInfo  TelemetryLogLevel = "info"
+	TelemetryLogLevelWarn  TelemetryLogLevel = "warn"
+	TelemetryLogLevelError TelemetryLogLevel = "error"
+)
+
+// AllValues returns all TelemetryLogLevel values.
+func (TelemetryLogLevel) AllValues() []TelemetryLogLevel {
+	return []TelemetryLogLevel{
+		TelemetryLogLevelDebug,
+		TelemetryLogLevelInfo,
+		TelemetryLogLevelWarn,
+		TelemetryLogLevelError,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelemetryLogLevel) MarshalText() ([]byte, error) {
+	switch s {
+	case TelemetryLogLevelDebug:
+		return []byte(s), nil
+	case TelemetryLogLevelInfo:
+		return []byte(s), nil
+	case TelemetryLogLevelWarn:
+		return []byte(s), nil
+	case TelemetryLogLevelError:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelemetryLogLevel) UnmarshalText(data []byte) error {
+	switch TelemetryLogLevel(data) {
+	case TelemetryLogLevelDebug:
+		*s = TelemetryLogLevelDebug
+		return nil
+	case TelemetryLogLevelInfo:
+		*s = TelemetryLogLevelInfo
+		return nil
+	case TelemetryLogLevelWarn:
+		*s = TelemetryLogLevelWarn
+		return nil
+	case TelemetryLogLevelError:
+		*s = TelemetryLogLevelError
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/TelemetryLogList
+type TelemetryLogList struct {
+	Records []TelemetryLogRecord `json:"records"`
+	Total   int64                `json:"total"`
+	Current int                  `json:"current"`
+	Size    int                  `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *TelemetryLogList) GetRecords() []TelemetryLogRecord {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *TelemetryLogList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *TelemetryLogList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *TelemetryLogList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *TelemetryLogList) SetRecords(val []TelemetryLogRecord) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *TelemetryLogList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *TelemetryLogList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *TelemetryLogList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*TelemetryLogList) listTelemetryLogsRes() {}
+
+// Telemetry_logs 一行的精简视图（列表）。.
+// Ref: #/components/schemas/TelemetryLogRecord
+type TelemetryLogRecord struct {
+	ID        int64     `json:"id"`
+	Ts        time.Time `json:"ts"`
+	RequestID OptString `json:"request_id"`
+	SessionID OptString `json:"session_id"`
+	TenantID  string    `json:"tenant_id"`
+	ActorID   OptString `json:"actor_id"`
+	AppKey    OptString `json:"app_key"`
+	Level     string    `json:"level"`
+	Event     string    `json:"event"`
+	Message   OptString `json:"message"`
+	URL       OptString `json:"url"`
+	UserAgent OptString `json:"user_agent"`
+	IP        OptString `json:"ip"`
+	Release   OptString `json:"release"`
+}
+
+// GetID returns the value of ID.
+func (s *TelemetryLogRecord) GetID() int64 {
+	return s.ID
+}
+
+// GetTs returns the value of Ts.
+func (s *TelemetryLogRecord) GetTs() time.Time {
+	return s.Ts
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *TelemetryLogRecord) GetRequestID() OptString {
+	return s.RequestID
+}
+
+// GetSessionID returns the value of SessionID.
+func (s *TelemetryLogRecord) GetSessionID() OptString {
+	return s.SessionID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *TelemetryLogRecord) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetActorID returns the value of ActorID.
+func (s *TelemetryLogRecord) GetActorID() OptString {
+	return s.ActorID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *TelemetryLogRecord) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetLevel returns the value of Level.
+func (s *TelemetryLogRecord) GetLevel() string {
+	return s.Level
+}
+
+// GetEvent returns the value of Event.
+func (s *TelemetryLogRecord) GetEvent() string {
+	return s.Event
+}
+
+// GetMessage returns the value of Message.
+func (s *TelemetryLogRecord) GetMessage() OptString {
+	return s.Message
+}
+
+// GetURL returns the value of URL.
+func (s *TelemetryLogRecord) GetURL() OptString {
+	return s.URL
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *TelemetryLogRecord) GetUserAgent() OptString {
+	return s.UserAgent
+}
+
+// GetIP returns the value of IP.
+func (s *TelemetryLogRecord) GetIP() OptString {
+	return s.IP
+}
+
+// GetRelease returns the value of Release.
+func (s *TelemetryLogRecord) GetRelease() OptString {
+	return s.Release
+}
+
+// SetID sets the value of ID.
+func (s *TelemetryLogRecord) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTs sets the value of Ts.
+func (s *TelemetryLogRecord) SetTs(val time.Time) {
+	s.Ts = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *TelemetryLogRecord) SetRequestID(val OptString) {
+	s.RequestID = val
+}
+
+// SetSessionID sets the value of SessionID.
+func (s *TelemetryLogRecord) SetSessionID(val OptString) {
+	s.SessionID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *TelemetryLogRecord) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetActorID sets the value of ActorID.
+func (s *TelemetryLogRecord) SetActorID(val OptString) {
+	s.ActorID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *TelemetryLogRecord) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetLevel sets the value of Level.
+func (s *TelemetryLogRecord) SetLevel(val string) {
+	s.Level = val
+}
+
+// SetEvent sets the value of Event.
+func (s *TelemetryLogRecord) SetEvent(val string) {
+	s.Event = val
+}
+
+// SetMessage sets the value of Message.
+func (s *TelemetryLogRecord) SetMessage(val OptString) {
+	s.Message = val
+}
+
+// SetURL sets the value of URL.
+func (s *TelemetryLogRecord) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *TelemetryLogRecord) SetUserAgent(val OptString) {
+	s.UserAgent = val
+}
+
+// SetIP sets the value of IP.
+func (s *TelemetryLogRecord) SetIP(val OptString) {
+	s.IP = val
+}
+
+// SetRelease sets the value of Release.
+func (s *TelemetryLogRecord) SetRelease(val OptString) {
+	s.Release = val
+}
+
+// Ref: #/components/schemas/TelemetryViewport
+type TelemetryViewport struct {
+	W int `json:"w"`
+	H int `json:"h"`
+}
+
+// GetW returns the value of W.
+func (s *TelemetryViewport) GetW() int {
+	return s.W
+}
+
+// GetH returns the value of H.
+func (s *TelemetryViewport) GetH() int {
+	return s.H
+}
+
+// SetW sets the value of W.
+func (s *TelemetryViewport) SetW(val int) {
+	s.W = val
+}
+
+// SetH sets the value of H.
+func (s *TelemetryViewport) SetH(val int) {
+	s.H = val
 }
 
 // Ref: #/components/schemas/TokenResponse

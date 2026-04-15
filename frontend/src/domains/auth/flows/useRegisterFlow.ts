@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus'
 import { fetchRegister, fetchRegisterContext, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { RoutesAlias } from '@/router/routesAlias'
 import { finalizeAuthenticatedSession, gotoAfterAuth } from './shared'
+import { logger } from '@/utils/logger'
 
 export interface RegisterFormState {
   username: string
@@ -40,7 +41,7 @@ export function useRegisterFlow() {
       ctx.value = null
       contextError.value =
         '未读取到当前 URL 对应的注册入口，请先检查注册入口、策略和 account-portal 页面是否已完成配置。'
-      console.warn('[Register] 读取注册上下文失败', error)
+      logger.warn('auth.register_context_load_failed', { err: error })
     }
   }
 

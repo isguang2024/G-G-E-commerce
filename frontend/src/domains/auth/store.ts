@@ -48,6 +48,7 @@ import { getNavigationRouter } from '@/domains/navigation/runtime/router-instanc
 import { LanguageEnum } from '@/enums/appEnum'
 import { AppRouteRecord } from '@/types/router'
 import { registerHttpAuthContext } from '@/utils/http/request-context'
+import { logger } from '@/utils/logger'
 import { setPageTitle } from '@/utils/router'
 import { StorageConfig } from '@/utils/storage/storage-config'
 import { RoutesAlias } from '@/router/routesAlias'
@@ -93,6 +94,9 @@ export const useUserStore = defineStore(
 
     const setUserInfo = (newInfo: Api.Auth.UserInfo) => {
       info.value = newInfo
+      // 把 userId 同步给 logger —— 后续上报的日志都带用户身份，
+      // 方便运维侧按人聚合异常。
+      logger.setUser(`${newInfo?.userId || newInfo?.id || ''}`)
     }
 
     const setLoginStatus = (status: boolean) => {
@@ -191,6 +195,8 @@ export const useUserStore = defineStore(
       lockPassword.value = ''
       accessToken.value = ''
       refreshToken.value = ''
+      // 登出/清空会话后 logger 也要断开 userId，避免后续日志错误归属。
+      logger.setUser('')
       sessionStorage.removeItem('iframeRoutes')
       useMenuStore().setHomePath('')
       useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()

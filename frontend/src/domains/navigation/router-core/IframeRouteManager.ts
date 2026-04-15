@@ -13,6 +13,7 @@ import {
   normalizeAppScopeKey,
   readActiveAppScopeKey
 } from '@/domains/app-runtime/app-scope'
+import { logger } from '@/utils/logger'
 
 export class IframeRouteManager {
   private static instance: IframeRouteManager
@@ -102,7 +103,7 @@ export class IframeRouteManager {
       }
       this.tryMigrateLegacy(scopeKey)
     } catch (error) {
-      console.error('[IframeRouteManager] 加载 iframe 路由失败:', error)
+      logger.error('navigation.iframe_route_manager.load_failed', { err: error, scopeKey })
       this.iframeRouteBuckets[scopeKey] = []
     }
   }

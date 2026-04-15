@@ -197,8 +197,8 @@ function normalizeDispatchRecordDetail(
   }
 }
 
-export async function fetchGetInboxSummary() {
-  const res = await unwrap(v5Client.GET('/messages/inbox/summary'))
+export async function fetchGetInboxSummary(options?: { signal?: AbortSignal }) {
+  const res = await unwrap(v5Client.GET('/messages/inbox/summary', { signal: options?.signal }))
   return normalizeInboxSummary(res)
 }
 
@@ -272,7 +272,8 @@ export async function fetchDispatchMessage(
     action_type: params.action_type,
     action_target: params.action_target,
     biz_type: params.biz_type,
-    expired_at: params.expired_at
+    expired_at: params.expired_at,
+    dry_run: params.dry_run ?? undefined
   }
   const res = await unwrap(v5Client.POST('/messages/dispatch', { body }))
   return normalizeDispatchResult(res)

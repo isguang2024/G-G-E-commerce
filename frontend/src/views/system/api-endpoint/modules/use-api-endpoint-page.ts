@@ -532,16 +532,38 @@ export function useApiEndpointPage() {
   }
 
   async function handleSync() {
+    try {
+      await ElMessageBox.confirm(
+        '同步会根据当前运行时路由刷新 API 注册表，包括新增、更新与权限绑定。是否继续？',
+        '同步 API 注册表',
+        {
+          confirmButtonText: '同步',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+    } catch {
+      return
+    }
     syncing.value = true
     try {
-      await fetchSyncApiEndpoints()
-      ElMessage.success('同步成功')
+      const summary = await fetchSyncApiEndpoints()
       await loadUnregisteredCount()
       if (targetAppKey.value) {
         await Promise.all([refreshData(), loadCategorySummary()])
       } else {
         resetScopedState()
       }
+      await ElMessageBox.alert(
+        `处理 ${summary.processed} 条路由，新增 ${summary.created} 条，更新 ${summary.updated} 条；当前注册表总数 ${summary.totalCount}。`,
+        '同步完成',
+        {
+          type: 'success',
+          confirmButtonText: '知道了',
+          customClass: 'api-sync-summary-dialog',
+          dangerouslyUseHTMLString: false
+        }
+      ).catch(() => undefined)
     } catch (error: any) {
       ElMessage.error(error?.message || '同步失败')
     } finally {
@@ -600,6 +622,21 @@ export function useApiEndpointPage() {
       ElMessage.warning('请先勾选要删除的失效 API')
       return
     }
+    const targetCount = selectedStaleIds.value.length
+    try {
+      await ElMessageBox.confirm(
+        `确认删除当前勾选的 ${targetCount} 条失效 API 注册项？该操作不可撤销。`,
+        '清理失效 API',
+        {
+          confirmButtonText: '确认删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+          confirmButtonClass: 'el-button--danger'
+        }
+      )
+    } catch {
+      return
+    }
     cleaningStale.value = true
     try {
       const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value)
@@ -613,7 +650,18 @@ export function useApiEndpointPage() {
       if (shouldRefreshUnregistered.value) {
         await loadUnregisteredRoutes()
       }
-      ElMessage.success(`已清理 ${res.deletedCount || 0} 个失效 API`)
+      const deleted = Number(res.deletedCount || 0)
+      const requested = targetCount
+      await ElMessageBox.alert(
+        deleted === requested
+          ? `已清理 ${deleted} 个失效 API 注册项。`
+          : `请求清理 ${requested} 条，实际删除 ${deleted} 条（其余可能已被他人清理或不再属于失效集合）。`,
+        '清理完成',
+        {
+          type: 'success',
+          confirmButtonText: '知道了'
+        }
+      ).catch(() => undefined)
     } catch (error: any) {
       ElMessage.error(error?.message || '清理失效 API 失败')
     } finally {

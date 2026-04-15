@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	appmod "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	spacemod "github.com/gg-ecommerce/backend/internal/modules/system/space"
 )
@@ -51,8 +52,23 @@ func (h *APIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest)
 	record, err := h.appSvc.SaveApp(&body)
 	if err != nil {
 		h.logger.Error("save app failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.app.save",
+			ResourceType: "app",
+			ResourceID:   body.AppKey,
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			After:        body, // 输入快照，便于追溯失败时提交的字段
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.app.save",
+		ResourceType: "app",
+		ResourceID:   body.AppKey,
+		Outcome:      audit.OutcomeSuccess,
+		After:        record,
+	})
 	return systemAppItemFromModel(record)
 }
 
@@ -104,8 +120,23 @@ func (h *APIHandler) DeleteAppHostBinding(ctx context.Context, params gen.Delete
 	}
 	if err := h.appSvc.DeleteHostBinding(appKey, params.ID); err != nil {
 		h.logger.Error("delete app host binding failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.app_host_binding.delete",
+			ResourceType: "app_host_binding",
+			ResourceID:   params.ID,
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     map[string]any{"app_key": appKey},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.app_host_binding.delete",
+		ResourceType: "app_host_binding",
+		ResourceID:   params.ID,
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"app_key": appKey},
+	})
 	return ok(), nil
 }
 

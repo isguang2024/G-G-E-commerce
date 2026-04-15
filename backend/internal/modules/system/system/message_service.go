@@ -169,6 +169,9 @@ type dispatchRequest struct {
 	ActionTarget                    string   `json:"action_target"`
 	BizType                         string   `json:"biz_type"`
 	ExpiredAt                       string   `json:"expired_at"`
+	// DryRun 为 true 时走沙箱预览：完成校验但不写 messages 表、不入队、不触发投递。
+	// 面向 E2E 深测 / QA 回归，返回 dispatch_status="preview"。
+	DryRun bool `json:"dry_run"`
 }
 
 type dispatchResult struct {
@@ -1048,6 +1051,17 @@ func (s *messageService) DispatchMessage(userID uuid.UUID, collaborationWorkspac
 		PublishedAt:                    nil,
 		ExpiredAt:                      expiredAt,
 		Meta:                           meta,
+	}
+
+	// DryRun：校验已全部通过，但不落库、不入队、不触发投递。
+	// 用于 /system/message 与 /collaboration-workspace/message 的沙箱预览。
+	// 注意：此分支必须放在 db.Create 之前，确保零副作用。
+	if req.DryRun {
+		return dispatchResult{
+			MessageID:      uuid.Nil,
+			DeliveryCount:  0,
+			DispatchStatus: "preview",
+		}, nil
 	}
 
 	if err := s.db.Create(&message).Error; err != nil {

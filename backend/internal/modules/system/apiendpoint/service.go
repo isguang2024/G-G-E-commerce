@@ -91,7 +91,7 @@ type Service interface {
 	ListCategories() ([]user.APIEndpointCategory, error)
 	Save(endpoint *user.APIEndpoint, permissionKeys []string, currentAppKey string) (*user.APIEndpoint, error)
 	SaveCategory(item *user.APIEndpointCategory) (*user.APIEndpointCategory, error)
-	Sync() error
+	Sync() (*SyncSummary, error)
 	CleanupStale(endpointIDs []uuid.UUID, appKey string) (int, error)
 }
 
@@ -428,14 +428,21 @@ func (s *service) ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, e
 	return staleEndpoints[start:end], total, nil
 }
 
-func (s *service) Sync() error {
+func (s *service) Sync() (*SyncSummary, error) {
 	if s.router == nil {
-		return nil
+		return &SyncSummary{}, nil
 	}
-	if err := SyncRoutes(s.db, s.logger, s.router.Routes()); err != nil {
-		return err
+	summary, err := SyncRoutes(s.db, s.logger, s.router.Routes())
+	if err != nil {
+		return nil, err
 	}
-	return s.refreshRuntimeCache()
+	if err := s.refreshRuntimeCache(); err != nil {
+		return nil, err
+	}
+	if summary == nil {
+		summary = &SyncSummary{}
+	}
+	return summary, nil
 }
 
 func (s *service) CleanupStale(endpointIDs []uuid.UUID, appKey string) (int, error) {

@@ -291,12 +291,21 @@ func applyDefaultCategory(meta *RouteMeta, categoryHint string) *RouteMeta {
 }
 
 // SyncRoutes persists all annotated gin routes to the api_endpoints table.
-func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) error {
+// SyncSummary describes the aggregate effect of a single Sync() run so
+// clients can render post-action feedback ("处理 N 条，新增 X，更新 Y").
+type SyncSummary struct {
+	Processed int
+	Created   int
+	Updated   int
+	Total     int
+}
+
+func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) (*SyncSummary, error) {
 	if db == nil {
-		return errors.New("数据库连接未初始化")
+		return nil, errors.New("数据库连接未初始化")
 	}
 	if err := ensureManagedEndpointColumns(db); err != nil {
-		return err
+		return nil, err
 	}
 	return syncRoutesInternal(db, logger, routes)
 }
@@ -344,12 +353,12 @@ func syncRoutesInternal(
 	db *gorm.DB,
 	logger *zap.Logger,
 	routes []gin.RouteInfo,
-) error {
+) (*SyncSummary, error) {
 	// ── Bulk prefetch phase: 3 queries total ────────────────────────────────
 	// 1. All existing endpoints → indexed by code and by METHOD+PATH.
 	var allEndpoints []models.APIEndpoint
 	if err := db.Find(&allEndpoints).Error; err != nil {
-		return err
+		return nil, err
 	}
 	byCode := make(map[string]*models.APIEndpoint, len(allEndpoints))
 	byMethodPath := make(map[string]*models.APIEndpoint, len(allEndpoints))
@@ -365,7 +374,7 @@ func syncRoutesInternal(
 	// 2. All categories → categoryID by code (avoids repeated SELECT per route).
 	var allCategories []models.APIEndpointCategory
 	if err := db.Find(&allCategories).Error; err != nil {
-		return err
+		return nil, err
 	}
 	categoryIDByCode := make(map[string]uuid.UUID, len(allCategories))
 	for _, cat := range allCategories {
@@ -377,7 +386,7 @@ func syncRoutesInternal(
 	// 3. All permission bindings → grouped by endpoint_code.
 	var allBindings []models.APIEndpointPermissionBinding
 	if err := db.Order("endpoint_code, sort_order ASC, created_at ASC").Find(&allBindings).Error; err != nil {
-		return err
+		return nil, err
 	}
 	bindingsByCode := make(map[string][]models.APIEndpointPermissionBinding, len(allBindings)/2+1)
 	for _, b := range allBindings {
@@ -386,6 +395,8 @@ func syncRoutesInternal(
 
 	// ── Sync phase: only writes when data actually changed ──────────────────
 	count := 0
+	createdCount := 0
+	updatedCount := 0
 	for _, route := range routes {
 		if !isManagedRoute(route.Path) {
 			continue
@@ -444,22 +455,25 @@ func syncRoutesInternal(
 		case existing != nil:
 			if endpointNeedsUpdate(existing, endpoint) {
 				if err := updateManagedEndpoint(db, existing.ID, endpoint); err != nil {
-					return err
+					return nil, err
 				}
+				updatedCount++
 			}
 		case legacy != nil:
 			if shouldBackfillManagedEndpointCode(legacy) {
 				if err := backfillEndpointCode(db, legacy.ID, endpointCode); err != nil {
-					return err
+					return nil, err
 				}
 			}
 			if err := updateManagedEndpoint(db, legacy.ID, endpoint); err != nil {
-				return err
+				return nil, err
 			}
+			updatedCount++
 		default:
 			if err := insertEndpoint(db, endpoint); err != nil {
-				return err
+				return nil, err
 			}
+			createdCount++
 		}
 
 		// Only replace permission bindings when they actually changed
@@ -468,15 +482,31 @@ func syncRoutesInternal(
 		keys := normalizePermissionKeys(meta.PermissionKeys)
 		if !samePermissionBindings(existingBindings, keys) {
 			if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
-				return err
+				return nil, err
 			}
 		}
 
 		count++
 	}
 
-	logger.Info("API endpoints synced", zap.Int("count", count))
-	return nil
+	logger.Info("API endpoints synced",
+		zap.Int("count", count),
+		zap.Int("created", createdCount),
+		zap.Int("updated", updatedCount),
+	)
+
+	// Final total = count of api_endpoints rows after the sync pass.
+	var totalCount int64
+	if err := db.Model(&models.APIEndpoint{}).Count(&totalCount).Error; err != nil {
+		return nil, err
+	}
+
+	return &SyncSummary{
+		Processed: count,
+		Created:   createdCount,
+		Updated:   updatedCount,
+		Total:     int(totalCount),
+	}, nil
 }
 
 func findEndpointByCode(db *gorm.DB, code string) (*models.APIEndpoint, error) {

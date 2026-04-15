@@ -172,3 +172,11 @@ components:
       required: [deleted_count]
       properties:
         deleted_count: {type: integer, format: int64}
+    SyncApiEndpointsResult:
+      type: object
+      required: [processed, created, updated, total_count]
+      properties:
+        processed: {type: integer, format: int64}
+        created: {type: integer, format: int64}
+        updated: {type: integer, format: int64}
+        total_count: {type: integer, format: int64}

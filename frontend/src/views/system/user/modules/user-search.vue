@@ -11,6 +11,7 @@
 
 <script setup lang="ts">
   import { fetchGetRoleOptions } from '@/domains/governance/api'
+  import { logger } from '@/utils/logger'
 
   interface Props {
     modelValue: Record<string, any>
@@ -57,7 +58,7 @@
         value: role.roleId // 使用角色ID而不是角色编码
       }))
     } catch (error) {
-      console.error('加载角色列表失败:', error)
+      logger.error('system.user.load_role_options_failed', { err: error })
       roleOptions.value = []
     } finally {
       roleLoading.value = false

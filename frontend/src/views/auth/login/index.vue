@@ -103,6 +103,7 @@
   import { useLoginFlow } from '@/domains/auth/flows/useLoginFlow'
   import { type LoginFormState } from '@/domains/auth/flows/shared'
   import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
+  import { logger } from '@/utils/logger'
   import SocialLoginPanel from './components/SocialLoginPanel.vue'
 
   defineOptions({ name: 'Login' })
@@ -138,7 +139,7 @@
   // 登录
   const handleSubmit = async () => {
     if (isPreview.value) {
-      console.info('[Login] preview mode — form submission blocked')
+      logger.info('auth.login.preview_submission_blocked')
       return
     }
     if (!formRef.value) return
@@ -148,7 +149,7 @@
       if (!valid) return
       await submit(formData)
     } catch (error) {
-      console.error('[Login] 表单校验失败:', error)
+      logger.error('auth.login.form_validation_failed', { err: error })
     }
   }
 

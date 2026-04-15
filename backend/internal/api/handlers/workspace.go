@@ -15,6 +15,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
@@ -96,9 +98,25 @@ type APIHandler struct {
 	socialSvc        social.Service
 	// 数据字典
 	dictSvc *dictionary.Service
+	// 业务审计 Recorder（异步写 audit_logs 表，失败走日志而非返回错误）。
+	// 由 router.SetupRouter 注入；关闭审计时传 audit.Noop{}。
+	audit audit.Recorder
+	// 前端日志摄取器（异步写 telemetry_logs）。同样由 router 注入；
+	// 关闭时传 telemetry.Noop{}，避免 handler 判空。
+	telemetry telemetry.Ingester
 }
 
-func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator, apiEndpointSvc apiendpoint.Service) *APIHandler {
+// NewAPIHandler 构建统一的 v5 API handler。
+//
+// auditRecorder / telemetryIngester 由上层 router 注入；传入 Noop 可关闭相应能力。
+// 不允许 nil —— handler 内部直接调用，避免每个操作都判空。
+func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator, apiEndpointSvc apiendpoint.Service, auditRecorder audit.Recorder, telemetryIngester telemetry.Ingester) *APIHandler {
+	if auditRecorder == nil {
+		auditRecorder = audit.Noop{}
+	}
+	if telemetryIngester == nil {
+		telemetryIngester = telemetry.Noop{}
+	}
 	// ── repos ──────────────────────────────────────────────────────────────
 	userRepo := user.NewUserRepository(db)
 	roleRepo := user.NewRoleRepository(db)
@@ -229,6 +247,8 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		cwFeaturePkgRepo: cwFeaturePkgRepo,
 		keyRepo:          keyRepo,
 		apiEndpointSvc:   apiEndpointSvc,
+		audit:            auditRecorder,
+		telemetry:        telemetryIngester,
 	}
 	h.centralizedAuthSvc = auth.NewCentralizedAuthService(db, h.authSvc, userRepo)
 	registerResolver := register.NewResolver(register.NewRepository(db))

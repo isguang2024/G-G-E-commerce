@@ -298,6 +298,23 @@ type Invoker interface {
 	//
 	// GET /system/apps/preflight
 	GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (*SystemAppPreflightResponse, error)
+	// GetAuditLog invokes getAuditLog operation.
+	//
+	// 返回单条 audit_logs 行，含完整 before / after / metadata JSON。.
+	//
+	// GET /observability/audit-logs/{id}
+	GetAuditLog(ctx context.Context, params GetAuditLogParams) (GetAuditLogRes, error)
+	// GetAuditLogStats invokes getAuditLogStats operation.
+	//
+	// 按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。
+	// 典型用途：dashboard widget、运维仪表盘小图。
+	// - `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；
+	// - `group_by=action`：按 `action` 聚合，桶按 count 降序；
+	// - `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。
+	// 空区间返回 `buckets: []`（不是 null）。只读端点。.
+	//
+	// GET /observability/audit-logs/stats
+	GetAuditLogStats(ctx context.Context, params GetAuditLogStatsParams) (GetAuditLogStatsRes, error)
 	// GetAuthMe invokes getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -532,6 +549,15 @@ type Invoker interface {
 	//
 	// GET /runtime/navigation
 	GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error)
+	// GetObservabilityTrace invokes getObservabilityTrace operation.
+	//
+	// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
+	// 条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。
+	// 权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中
+	// telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。.
+	//
+	// GET /observability/trace/{request_id}
+	GetObservabilityTrace(ctx context.Context, params GetObservabilityTraceParams) (GetObservabilityTraceRes, error)
 	// GetPage invokes getPage operation.
 	//
 	// 获取页面详情.
@@ -604,6 +630,12 @@ type Invoker interface {
 	//
 	// GET /system/view-pages
 	GetSystemViewPages(ctx context.Context, params GetSystemViewPagesParams) (*ViewPagesResponse, error)
+	// GetTelemetryLog invokes getTelemetryLog operation.
+	//
+	// 返回单条 telemetry_logs 行，含完整 payload JSON。.
+	//
+	// GET /observability/telemetry-logs/{id}
+	GetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (GetTelemetryLogRes, error)
 	// GetUser invokes getUser operation.
 	//
 	// 获取用户详情.
@@ -652,6 +684,16 @@ type Invoker interface {
 	//
 	// POST /messages/inbox/{deliveryId}/todo-action
 	HandleInboxTodo(ctx context.Context, request *InboxTodoActionRequest, params HandleInboxTodoParams) (*MutationResult, error)
+	// IngestTelemetryLogs invokes ingestTelemetryLogs operation.
+	//
+	// 前端 logger 将缓存的日志条目批量上报。登录态会带
+	// Authorization，匿名态也允许
+	// 上报（例如登录页报错）。服务端会按 session_id + IP
+	// 做限流，超限直接丢弃并返回
+	// accepted=0，不抛 4xx 以免前端认为需要重试。.
+	//
+	// POST /telemetry/logs
+	IngestTelemetryLogs(ctx context.Context, request *TelemetryIngestRequest) (IngestTelemetryLogsRes, error)
 	// InitializeMenuSpaceFromDefault invokes initializeMenuSpaceFromDefault operation.
 	//
 	// 从默认空间初始化菜单空间.
@@ -682,6 +724,13 @@ type Invoker interface {
 	//
 	// GET /system/apps
 	ListApps(ctx context.Context) (*SystemAppListResponse, error)
+	// ListAuditLogs invokes listAuditLogs operation.
+	//
+	// 按 action / actor / outcome / resource / request_id / 时间段过滤分页查询
+	// audit_logs。只读端点，永远不触发 DB 写入。.
+	//
+	// GET /observability/audit-logs
+	ListAuditLogs(ctx context.Context, params ListAuditLogsParams) (ListAuditLogsRes, error)
 	// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
 	//
 	// 获取协作空间成员列表.
@@ -928,6 +977,13 @@ type Invoker interface {
 	//
 	// GET /api-endpoints/stale
 	ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error)
+	// ListTelemetryLogs invokes listTelemetryLogs operation.
+	//
+	// 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
+	// telemetry_logs。只读端点。.
+	//
+	// GET /observability/telemetry-logs
+	ListTelemetryLogs(ctx context.Context, params ListTelemetryLogsParams) (ListTelemetryLogsRes, error)
 	// ListUnregisteredApiEndpoints invokes listUnregisteredApiEndpoints operation.
 	//
 	// 获取未注册 API 路由.
@@ -6656,6 +6712,312 @@ func (c *Client) sendGetAppPreflight(ctx context.Context, params GetAppPreflight
 	return result, nil
 }
 
+// GetAuditLog invokes getAuditLog operation.
+//
+// 返回单条 audit_logs 行，含完整 before / after / metadata JSON。.
+//
+// GET /observability/audit-logs/{id}
+func (c *Client) GetAuditLog(ctx context.Context, params GetAuditLogParams) (GetAuditLogRes, error) {
+	res, err := c.sendGetAuditLog(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetAuditLog(ctx context.Context, params GetAuditLogParams) (res GetAuditLogRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getAuditLog"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/audit-logs/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetAuditLogOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/observability/audit-logs/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.Int64ToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetAuditLogOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetAuditLogResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetAuditLogStats invokes getAuditLogStats operation.
+//
+// 按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。
+// 典型用途：dashboard widget、运维仪表盘小图。
+// - `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；
+// - `group_by=action`：按 `action` 聚合，桶按 count 降序；
+// - `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。
+// 空区间返回 `buckets: []`（不是 null）。只读端点。.
+//
+// GET /observability/audit-logs/stats
+func (c *Client) GetAuditLogStats(ctx context.Context, params GetAuditLogStatsParams) (GetAuditLogStatsRes, error) {
+	res, err := c.sendGetAuditLogStats(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetAuditLogStats(ctx context.Context, params GetAuditLogStatsParams) (res GetAuditLogStatsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getAuditLogStats"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/audit-logs/stats"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetAuditLogStatsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/observability/audit-logs/stats"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "from" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "from",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.From.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "to",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.To.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "group_by" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "group_by",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(string(params.GroupBy)))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "limit" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Limit.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetAuditLogStatsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetAuditLogStatsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // GetAuthMe invokes getAuthMe operation.
 //
 // 获取当前登录账户信息.
@@ -11593,6 +11955,134 @@ func (c *Client) sendGetNavigation(ctx context.Context, params GetNavigationPara
 	return result, nil
 }
 
+// GetObservabilityTrace invokes getObservabilityTrace operation.
+//
+// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
+// 条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。
+// 权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中
+// telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。.
+//
+// GET /observability/trace/{request_id}
+func (c *Client) GetObservabilityTrace(ctx context.Context, params GetObservabilityTraceParams) (GetObservabilityTraceRes, error) {
+	res, err := c.sendGetObservabilityTrace(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetObservabilityTrace(ctx context.Context, params GetObservabilityTraceParams) (res GetObservabilityTraceRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getObservabilityTrace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/trace/{request_id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetObservabilityTraceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/observability/trace/"
+	{
+		// Encode "request_id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "request_id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.RequestID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetObservabilityTraceOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetObservabilityTraceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // GetPage invokes getPage operation.
 //
 // 获取页面详情.
@@ -13260,6 +13750,131 @@ func (c *Client) sendGetSystemViewPages(ctx context.Context, params GetSystemVie
 	return result, nil
 }
 
+// GetTelemetryLog invokes getTelemetryLog operation.
+//
+// 返回单条 telemetry_logs 行，含完整 payload JSON。.
+//
+// GET /observability/telemetry-logs/{id}
+func (c *Client) GetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (GetTelemetryLogRes, error) {
+	res, err := c.sendGetTelemetryLog(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (res GetTelemetryLogRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getTelemetryLog"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/telemetry-logs/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetTelemetryLogOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/observability/telemetry-logs/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.Int64ToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetTelemetryLogOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetTelemetryLogResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // GetUser invokes getUser operation.
 //
 // 获取用户详情.
@@ -14387,6 +15002,87 @@ func (c *Client) sendHandleInboxTodo(ctx context.Context, request *InboxTodoActi
 	return result, nil
 }
 
+// IngestTelemetryLogs invokes ingestTelemetryLogs operation.
+//
+// 前端 logger 将缓存的日志条目批量上报。登录态会带
+// Authorization，匿名态也允许
+// 上报（例如登录页报错）。服务端会按 session_id + IP
+// 做限流，超限直接丢弃并返回
+// accepted=0，不抛 4xx 以免前端认为需要重试。.
+//
+// POST /telemetry/logs
+func (c *Client) IngestTelemetryLogs(ctx context.Context, request *TelemetryIngestRequest) (IngestTelemetryLogsRes, error) {
+	res, err := c.sendIngestTelemetryLogs(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendIngestTelemetryLogs(ctx context.Context, request *TelemetryIngestRequest) (res IngestTelemetryLogsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("ingestTelemetryLogs"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/telemetry/logs"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, IngestTelemetryLogsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/telemetry/logs"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeIngestTelemetryLogsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeIngestTelemetryLogsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // InitializeMenuSpaceFromDefault invokes initializeMenuSpaceFromDefault operation.
 //
 // 从默认空间初始化菜单空间.
@@ -15146,6 +15842,288 @@ func (c *Client) sendListApps(ctx context.Context) (res *SystemAppListResponse, 
 
 	stage = "DecodeResponse"
 	result, err := decodeListAppsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListAuditLogs invokes listAuditLogs operation.
+//
+// 按 action / actor / outcome / resource / request_id / 时间段过滤分页查询
+// audit_logs。只读端点，永远不触发 DB 写入。.
+//
+// GET /observability/audit-logs
+func (c *Client) ListAuditLogs(ctx context.Context, params ListAuditLogsParams) (ListAuditLogsRes, error) {
+	res, err := c.sendListAuditLogs(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListAuditLogs(ctx context.Context, params ListAuditLogsParams) (res ListAuditLogsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listAuditLogs"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/audit-logs"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListAuditLogsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/observability/audit-logs"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "action" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "action",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Action.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "actor_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "actor_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ActorID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "outcome" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "outcome",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Outcome.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "resource_type" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "resource_type",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ResourceType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "resource_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "resource_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ResourceID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "request_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "request_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RequestID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "from" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "from",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.From.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "to",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.To.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, ListAuditLogsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListAuditLogsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -20696,6 +21674,271 @@ func (c *Client) sendListStaleApiEndpoints(ctx context.Context, params ListStale
 
 	stage = "DecodeResponse"
 	result, err := decodeListStaleApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListTelemetryLogs invokes listTelemetryLogs operation.
+//
+// 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
+// telemetry_logs。只读端点。.
+//
+// GET /observability/telemetry-logs
+func (c *Client) ListTelemetryLogs(ctx context.Context, params ListTelemetryLogsParams) (ListTelemetryLogsRes, error) {
+	res, err := c.sendListTelemetryLogs(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListTelemetryLogs(ctx context.Context, params ListTelemetryLogsParams) (res ListTelemetryLogsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listTelemetryLogs"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/telemetry-logs"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListTelemetryLogsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/observability/telemetry-logs"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "level" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "level",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Level.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "event" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "event",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Event.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "session_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "session_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SessionID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "actor_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "actor_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ActorID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "request_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "request_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RequestID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "from" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "from",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.From.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "to",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.To.Get(); ok {
+				return e.EncodeValue(conv.DateTimeToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, ListTelemetryLogsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListTelemetryLogsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -14,6 +14,8 @@
 | [permission-audit.md](permission-audit.md) | 权限审计 |
 | [social-oauth-github.md](social-oauth-github.md) | GitHub OAuth 社交登录配置 |
 | [social-oauth-manual-checklist.md](social-oauth-manual-checklist.md) | 社交登录手工验证清单 |
+| [frontend-observability-spec.md](frontend-observability-spec.md) | 前端 `data-testid` + 表单错误 + 后端结构化 error 规范 |
+| [high-risk-remediation-matrix.md](high-risk-remediation-matrix.md) | 高风险页面深测整改矩阵（驱动 2026-04 整改） |
 
 ### Spec 目录说明
 

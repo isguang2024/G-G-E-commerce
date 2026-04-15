@@ -5,6 +5,7 @@
  * 仅基于入参产出结果，便于单元测试与跨文件复用。
  */
 import type { AppRouteRecord } from '@/types/router'
+import { logger } from '@/utils/logger'
 
 export function isSpaceInitialized(item?: Api.SystemManage.MenuSpaceItem) {
   if (!item) return false
@@ -91,8 +92,8 @@ export function collectMenuPaths(items: AppRouteRecord[] = []): string[] {
   return result
 }
 
-export function warnDev(...args: any[]) {
+export function warnDev(event: string, context?: Record<string, unknown>) {
   if (import.meta.env.DEV) {
-    console.warn(...args)
+    logger.debug(`system.menu_space.${event}`, context)
   }
 }

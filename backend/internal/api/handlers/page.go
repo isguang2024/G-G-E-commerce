@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/modules/system/page"
 )
 
@@ -101,8 +102,26 @@ func (h *APIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) 
 	result, err := h.pageSvc.Sync(params.AppKey)
 	if err != nil {
 		h.logger.Error("sync pages failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.page.sync",
+			ResourceType: "app",
+			ResourceID:   params.AppKey,
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.page.sync",
+		ResourceType: "app",
+		ResourceID:   params.AppKey,
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"created_count": result.CreatedCount,
+			"skipped_count": result.SkippedCount,
+			"created_keys":  result.CreatedKeys,
+		},
+	})
 	return &gen.PageSyncResult{
 		CreatedCount: result.CreatedCount,
 		SkippedCount: result.SkippedCount,
@@ -208,8 +227,29 @@ func (h *APIHandler) CreatePage(ctx context.Context, req *gen.PageSaveRequest, p
 	rec, err := h.pageSvc.Create(saveReq)
 	if err != nil {
 		h.logger.Error("create page failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.page.create",
+			ResourceType: "page",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"app_key":  params.AppKey,
+				"page_key": saveReq.PageKey,
+			},
+		})
 		return nil, err
 	}
+	var resourceID string
+	if rec != nil {
+		resourceID = rec.ID.String()
+	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.page.create",
+		ResourceType: "page",
+		ResourceID:   resourceID,
+		Outcome:      audit.OutcomeSuccess,
+		After:        saveReq,
+	})
 	result := pageSaveResultFromModel(rec)
 	return &result, nil
 }
@@ -222,8 +262,22 @@ func (h *APIHandler) UpdatePage(ctx context.Context, req *gen.PageSaveRequest, p
 	rec, err := h.pageSvc.Update(params.ID, saveReq)
 	if err != nil {
 		h.logger.Error("update page failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.page.update",
+			ResourceType: "page",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.page.update",
+		ResourceType: "page",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		After:        saveReq,
+	})
 	result := pageSaveResultFromModel(rec)
 	return &result, nil
 }
@@ -231,8 +285,23 @@ func (h *APIHandler) UpdatePage(ctx context.Context, req *gen.PageSaveRequest, p
 func (h *APIHandler) DeletePage(ctx context.Context, params gen.DeletePageParams) (*gen.MutationResult, error) {
 	if err := h.pageSvc.Delete(params.ID, params.AppKey); err != nil {
 		h.logger.Error("delete page failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.page.delete",
+			ResourceType: "page",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     map[string]any{"app_key": params.AppKey},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.page.delete",
+		ResourceType: "page",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"app_key": params.AppKey},
+	})
 	return ok(), nil
 }
 

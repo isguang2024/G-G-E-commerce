@@ -278,6 +278,23 @@ type Handler interface {
 	//
 	// GET /system/apps/preflight
 	GetAppPreflight(ctx context.Context, params GetAppPreflightParams) (*SystemAppPreflightResponse, error)
+	// GetAuditLog implements getAuditLog operation.
+	//
+	// 返回单条 audit_logs 行，含完整 before / after / metadata JSON。.
+	//
+	// GET /observability/audit-logs/{id}
+	GetAuditLog(ctx context.Context, params GetAuditLogParams) (GetAuditLogRes, error)
+	// GetAuditLogStats implements getAuditLogStats operation.
+	//
+	// 按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。
+	// 典型用途：dashboard widget、运维仪表盘小图。
+	// - `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；
+	// - `group_by=action`：按 `action` 聚合，桶按 count 降序；
+	// - `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。
+	// 空区间返回 `buckets: []`（不是 null）。只读端点。.
+	//
+	// GET /observability/audit-logs/stats
+	GetAuditLogStats(ctx context.Context, params GetAuditLogStatsParams) (GetAuditLogStatsRes, error)
 	// GetAuthMe implements getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -512,6 +529,15 @@ type Handler interface {
 	//
 	// GET /runtime/navigation
 	GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error)
+	// GetObservabilityTrace implements getObservabilityTrace operation.
+	//
+	// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
+	// 条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。
+	// 权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中
+	// telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。.
+	//
+	// GET /observability/trace/{request_id}
+	GetObservabilityTrace(ctx context.Context, params GetObservabilityTraceParams) (GetObservabilityTraceRes, error)
 	// GetPage implements getPage operation.
 	//
 	// 获取页面详情.
@@ -584,6 +610,12 @@ type Handler interface {
 	//
 	// GET /system/view-pages
 	GetSystemViewPages(ctx context.Context, params GetSystemViewPagesParams) (*ViewPagesResponse, error)
+	// GetTelemetryLog implements getTelemetryLog operation.
+	//
+	// 返回单条 telemetry_logs 行，含完整 payload JSON。.
+	//
+	// GET /observability/telemetry-logs/{id}
+	GetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (GetTelemetryLogRes, error)
 	// GetUser implements getUser operation.
 	//
 	// 获取用户详情.
@@ -632,6 +664,16 @@ type Handler interface {
 	//
 	// POST /messages/inbox/{deliveryId}/todo-action
 	HandleInboxTodo(ctx context.Context, req *InboxTodoActionRequest, params HandleInboxTodoParams) (*MutationResult, error)
+	// IngestTelemetryLogs implements ingestTelemetryLogs operation.
+	//
+	// 前端 logger 将缓存的日志条目批量上报。登录态会带
+	// Authorization，匿名态也允许
+	// 上报（例如登录页报错）。服务端会按 session_id + IP
+	// 做限流，超限直接丢弃并返回
+	// accepted=0，不抛 4xx 以免前端认为需要重试。.
+	//
+	// POST /telemetry/logs
+	IngestTelemetryLogs(ctx context.Context, req *TelemetryIngestRequest) (IngestTelemetryLogsRes, error)
 	// InitializeMenuSpaceFromDefault implements initializeMenuSpaceFromDefault operation.
 	//
 	// 从默认空间初始化菜单空间.
@@ -662,6 +704,13 @@ type Handler interface {
 	//
 	// GET /system/apps
 	ListApps(ctx context.Context) (*SystemAppListResponse, error)
+	// ListAuditLogs implements listAuditLogs operation.
+	//
+	// 按 action / actor / outcome / resource / request_id / 时间段过滤分页查询
+	// audit_logs。只读端点，永远不触发 DB 写入。.
+	//
+	// GET /observability/audit-logs
+	ListAuditLogs(ctx context.Context, params ListAuditLogsParams) (ListAuditLogsRes, error)
 	// ListCollaborationWorkspaceMembers implements listCollaborationWorkspaceMembers operation.
 	//
 	// 获取协作空间成员列表.
@@ -908,6 +957,13 @@ type Handler interface {
 	//
 	// GET /api-endpoints/stale
 	ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error)
+	// ListTelemetryLogs implements listTelemetryLogs operation.
+	//
+	// 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
+	// telemetry_logs。只读端点。.
+	//
+	// GET /observability/telemetry-logs
+	ListTelemetryLogs(ctx context.Context, params ListTelemetryLogsParams) (ListTelemetryLogsRes, error)
 	// ListUnregisteredApiEndpoints implements listUnregisteredApiEndpoints operation.
 	//
 	// 获取未注册 API 路由.

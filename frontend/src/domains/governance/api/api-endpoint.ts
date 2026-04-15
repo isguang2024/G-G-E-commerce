@@ -67,10 +67,17 @@ export async function fetchGetStaleApiEndpointList(params: { current?: number; s
   } as Api.SystemManage.APIEndpointList
 }
 
-/** 同步 API 注册表 */
+/** 同步 API 注册表
+ *  返回：processed / created / updated / totalCount —— 供前端弹窗展示摘要。
+ */
 export async function fetchSyncApiEndpoints() {
-  const { error } = await v5Client.POST('/api-endpoints/sync', {})
-  if (error) throw error
+  const res = await unwrap(v5Client.POST('/api-endpoints/sync', {}))
+  return {
+    processed: Number(res.processed ?? 0),
+    created: Number(res.created ?? 0),
+    updated: Number(res.updated ?? 0),
+    totalCount: Number(res.total_count ?? 0)
+  }
 }
 
 export async function fetchCleanupStaleApiEndpoints(ids: string[]) {

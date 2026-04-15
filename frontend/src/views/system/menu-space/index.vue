@@ -62,6 +62,11 @@
             type="button"
             class="menu-space-item"
             :class="{ 'is-current': currentSpaceKey === item.spaceKey }"
+            :data-testid="'menu-space-card'"
+            :data-space-key="item.spaceKey"
+            :data-is-default="item.isDefault ? 'true' : 'false'"
+            :data-status="item.status"
+            :data-host-count="item.hostCount || 0"
             @click="currentSpaceKey = item.spaceKey"
           >
             <div class="menu-space-item__main">
@@ -227,11 +232,25 @@
     </section>
 
     <ElDrawer v-model="spaceDrawerVisible" :title="spaceDrawerTitle" size="520px" destroy-on-close>
-      <ElForm ref="spaceFormRef" :model="spaceForm" label-position="top">
-        <ElFormItem label="空间名称">
+      <ElForm ref="spaceFormRef" :model="spaceForm" :rules="spaceFormRules" label-position="top">
+        <ElFormItem
+          label="空间名称"
+          prop="name"
+          :error="spaceFieldErrors.name"
+          :data-testid="'menu-space-field-error'"
+          :data-field="'name'"
+          required
+        >
           <ElInput v-model="spaceForm.name" placeholder="例如 默认导航空间 / 平台运营空间" />
         </ElFormItem>
-        <ElFormItem label="空间标识">
+        <ElFormItem
+          label="空间标识"
+          prop="space_key"
+          :error="spaceFieldErrors.space_key"
+          :data-testid="'menu-space-field-error'"
+          :data-field="'space_key'"
+          required
+        >
           <ElInput
             v-model="spaceForm.space_key"
             :disabled="spaceForm.is_default"
@@ -302,14 +321,37 @@
     </ElDrawer>
 
     <ElDrawer v-model="hostDrawerVisible" :title="hostDrawerTitle" size="520px" destroy-on-close>
-      <ElForm ref="hostFormRef" :model="hostForm" label-position="top">
-        <ElFormItem label="Host / 子域名">
+      <ElForm ref="hostFormRef" :model="hostForm" :rules="hostFormRules" label-position="top">
+        <ElFormItem
+          label="Host / 子域名"
+          prop="host"
+          :error="hostFieldErrors.host"
+          :data-testid="'menu-space-field-error'"
+          :data-field="'host'"
+          required
+        >
           <ElInput
             v-model="hostForm.host"
             placeholder="例如 admin.example.com 或 collaboration_workspace.example.com"
           />
+          <div
+            v-if="hostFieldErrors.host"
+            data-testid="host-conflict-reason"
+            :data-field="'host'"
+            class="field-hint"
+            style="color: var(--el-color-danger)"
+          >
+            {{ hostFieldErrors.host }}
+          </div>
         </ElFormItem>
-        <ElFormItem label="导航空间">
+        <ElFormItem
+          label="导航空间"
+          prop="space_key"
+          :error="hostFieldErrors.space_key"
+          :data-testid="'menu-space-field-error'"
+          :data-field="'space_key'"
+          required
+        >
           <ElSelect v-model="hostForm.space_key" filterable style="width: 100%">
             <ElOption
               v-for="item in spaceOptions"
@@ -422,6 +464,10 @@
     spaceFormRef,
     hostFormRef,
     spaceForm,
+    spaceFormRules,
+    spaceFieldErrors,
+    hostFormRules,
+    hostFieldErrors,
     allowedRoleCodesText,
     hostForm,
     currentSpace,

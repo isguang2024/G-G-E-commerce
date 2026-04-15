@@ -14,6 +14,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 )
@@ -26,13 +28,24 @@ func main() {
 	}
 
 	// 初始化日志
-	logger, err := logger.New(cfg.Log.Level, cfg.Log.Output)
+	zlog, err := logger.NewWithOptions(logger.Options{
+		Level:  cfg.Log.Level,
+		Output: cfg.Log.Output,
+		Format: cfg.Log.Format,
+		Sampling: &logger.Sampling{
+			Initial:    cfg.Log.Sampling.Initial,
+			Thereafter: cfg.Log.Sampling.Thereafter,
+		},
+	})
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	defer logger.Sync()
+	defer zlog.Sync()
+	// 把根 logger 注册给 logger 包，使全局 logger.With(ctx) / logger.FromContext(ctx)
+	// 都能派生子 logger，保证 request_id 贯穿整条链路。
+	logger.SetBase(zlog)
 
-	logger.Info("Starting G&G E-commerce Backend Server",
+	zlog.Info("Starting G&G E-commerce Backend Server",
 		zap.String("version", "1.0.0"),
 		zap.String("env", cfg.Env),
 	)
@@ -43,13 +56,51 @@ func main() {
 		LogLevel: cfg.Log.Level,
 	})
 	if err != nil {
-		logger.Fatal("Failed to initialize database", zap.Error(err))
+		zlog.Fatal("Failed to initialize database", zap.Error(err))
 	}
 	defer database.Close()
-	logger.Info("Database connected successfully")
+	zlog.Info("Database connected successfully")
+
+	// 初始化审计 recorder（异步 channel + worker）。配置关闭时退化为 Noop。
+	auditRecorder := audit.New(db, zlog, audit.Config{
+		Enabled:      cfg.Audit.Enabled,
+		RedactFields: cfg.Audit.RedactFields,
+		QueueSize:    cfg.Audit.QueueSize,
+		Workers:      cfg.Audit.Workers,
+		AsyncMode:    cfg.Audit.AsyncMode,
+	})
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := auditRecorder.Shutdown(shutdownCtx); err != nil {
+			zlog.Warn("audit recorder shutdown error", zap.Error(err))
+		}
+	}()
+
+	// 初始化前端日志 ingester（异步 channel + worker + token bucket 限流）。
+	// 配置字段以"每秒条数"暴露，内部换算成 token bucket 的 burst/refill，
+	// 便于 ops 同学直接配置而不需要理解令牌桶细节。
+	telemetryIngester := telemetry.New(db, zlog, telemetry.Config{
+		Enabled:         cfg.Telemetry.IngestEnabled,
+		QueueSize:       2048,
+		Workers:         2,
+		RedactFields:    cfg.Audit.RedactFields,
+		PerSessionRate:  float64(cfg.Telemetry.SessionRateLimit),
+		PerSessionBurst: float64(cfg.Telemetry.SessionRateLimit) * 3,
+		PerIPRate:       float64(cfg.Telemetry.IPRateLimit),
+		PerIPBurst:      float64(cfg.Telemetry.IPRateLimit) * 3,
+		MaxMessageBytes: cfg.Telemetry.PayloadMaxBytes,
+	})
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := telemetryIngester.Shutdown(shutdownCtx); err != nil {
+			zlog.Warn("telemetry ingester shutdown error", zap.Error(err))
+		}
+	}()
 
 	// 初始化 Gin 路由
-	r := router.SetupRouter(cfg, logger, db)
+	r := router.SetupRouter(cfg, zlog, db, auditRecorder, telemetryIngester)
 
 	// 创建 HTTP 服务器
 	srv := &http.Server{
@@ -63,11 +114,11 @@ func main() {
 	// 启动服务器（goroutine）
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Failed to start server", zap.Error(err))
+			zlog.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
 
-	logger.Info("Server started",
+	zlog.Info("Server started",
 		zap.Int("port", cfg.Server.Port),
 		zap.String("env", cfg.Env),
 	)
@@ -77,16 +128,16 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("Shutting down server...")
+	zlog.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Fatal("Server forced to shutdown", zap.Error(err))
+		zlog.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Info("Server exited")
+	zlog.Info("Server exited")
 }
 
 func resolveServerTimeout(seconds int, fallback time.Duration) time.Duration {

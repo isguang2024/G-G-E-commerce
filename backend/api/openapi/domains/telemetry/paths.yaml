@@ -1,0 +1,43 @@
+# domains/telemetry/paths.yaml
+# 前端日志批量摄取端点；生产环境走 sendBeacon + 批量，服务端侧做限流+脱敏。
+# 端点对登录态/匿名态都开放（登录前的脚本错误也要能收集）。
+paths:
+  /telemetry/logs:
+    post:
+      operationId: ingestTelemetryLogs
+      summary: 前端日志批量上报
+      description: |-
+        前端 logger 将缓存的日志条目批量上报。登录态会带 Authorization，匿名态也允许
+        上报（例如登录页报错）。服务端会按 session_id + IP 做限流，超限直接丢弃并返回
+        accepted=0，不抛 4xx 以免前端认为需要重试。
+      tags:
+      - telemetry
+      x-access-mode: public
+      x-tenant-scoped: true
+      x-app-scope: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/TelemetryIngestRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/TelemetryIngestResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '413':
+          description: Payload Too Large
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'

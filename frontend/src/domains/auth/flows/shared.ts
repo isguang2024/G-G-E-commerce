@@ -11,6 +11,7 @@ import { refreshUserMenus as refreshRuntimeUserMenus } from '@/domains/navigatio
 import { ACTIVE_APP_SCOPE_STORAGE_KEY } from '@/domains/app-runtime/app-scope'
 import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
+import { logger } from '@/utils/logger'
 
 export const LOGIN_REMEMBER_KEY = 'gg-login-remember'
 
@@ -92,7 +93,7 @@ export function loadRememberedCredentials(target: LoginFormState): void {
     target.password = parsed.password || ''
     target.rememberPassword = !!parsed.rememberPassword
   } catch (error) {
-    console.warn('[Login] 读取记住密码失败，已忽略:', error)
+    logger.warn('auth.remember_load_failed', { err: error })
     localStorage.removeItem(LOGIN_REMEMBER_KEY)
   }
 }
@@ -221,7 +222,7 @@ export async function gotoAfterLogin(
       }, 900)
     }
   } catch (error) {
-    console.warn('[AuthFlow] 登录导航失败，尝试兜底跳转:', error)
+    logger.warn('auth.post_login_nav_failed', { err: error, fallbackUrl })
     window.location.assign(fallbackUrl)
   }
 }
@@ -235,7 +236,7 @@ export async function initializeLoginContext(user?: Api.Auth.UserInfo): Promise<
       forceRefresh: true
     })
   } catch (error) {
-    console.warn('[AuthFlow] 登录初始化上下文失败，仍允许进入应用:', error)
+    logger.warn('auth.init_context_failed', { err: error })
   }
 }
 

@@ -1,0 +1,115 @@
+# domains/telemetry/schemas.yaml
+# 前端日志上报契约：对齐 docs/guides/logging-spec.md §4。
+# 字段结构与 frontend/src/utils/logger.LogEntry 保持同构，后端落库写入
+# telemetry_logs 表，便于和 audit_logs / access_logs 按 request_id 打通。
+components:
+  schemas:
+    TelemetryLogLevel:
+      type: string
+      enum:
+      - debug
+      - info
+      - warn
+      - error
+      description: 日志级别；顺序与后端 zap 对齐。
+    TelemetryViewport:
+      type: object
+      required:
+      - w
+      - h
+      properties:
+        w:
+          type: integer
+          minimum: 0
+          maximum: 16384
+        h:
+          type: integer
+          minimum: 0
+          maximum: 16384
+    TelemetryErrorSnapshot:
+      type: object
+      description: 前端序列化后的 Error 快照。字符串长度由服务端强制截断，避免整段 stack 炸库。
+      properties:
+        name:
+          type: string
+          maxLength: 128
+        message:
+          type: string
+          maxLength: 2048
+        stack:
+          type: string
+          maxLength: 8192
+    TelemetryLogEntry:
+      type: object
+      required:
+      - level
+      - event
+      - timestamp
+      - session_id
+      - user_agent
+      - viewport
+      properties:
+        level:
+          $ref: '#/components/schemas/TelemetryLogLevel'
+        event:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: 稳定事件名（dot-case），服务端按此聚合。
+        timestamp:
+          type: string
+          format: date-time
+          description: 发生时间（ISO8601，UTC）。
+        request_id:
+          type: string
+          maxLength: 64
+          description: 对应后端 X-Request-Id，便于和 audit/access 日志 join。
+        context:
+          type: object
+          additionalProperties: true
+          description: 结构化字段；前端已做敏感字段脱敏，服务端会再过一次。
+        error:
+          $ref: '#/components/schemas/TelemetryErrorSnapshot'
+        route:
+          type: string
+          maxLength: 512
+        user_id:
+          type: string
+          maxLength: 64
+          description: 空串表示匿名会话。
+        session_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        user_agent:
+          type: string
+          maxLength: 512
+        viewport:
+          $ref: '#/components/schemas/TelemetryViewport'
+    TelemetryIngestRequest:
+      type: object
+      required:
+      - entries
+      properties:
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/TelemetryLogEntry'
+    TelemetryIngestResponse:
+      type: object
+      required:
+      - accepted
+      - dropped
+      properties:
+        accepted:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 实际落库的条数。
+        dropped:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 被限流/脱敏策略丢弃的条数；服务端不会 4xx，保证客户端不因此再次重试。

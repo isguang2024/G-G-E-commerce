@@ -11,6 +11,7 @@ import {
   isMenuSpaceVisible,
   normalizeMenuSpaceKey
 } from '@/domains/navigation/utils/menu-space'
+import { logger } from '@/utils/logger'
 
 type RuntimePageItem = Api.SystemManage.PageItem
 type UserInfo = Partial<Api.Auth.UserInfo> | null | undefined
@@ -818,8 +819,10 @@ export class ManagedPageProcessor {
     if (!import.meta.env.DEV) {
       return
     }
-    console.warn(
-      `[ManagedPageProcessor] 页面 ${pageKey} 的${field}(${value}) 与现有动态路由重复，已跳过注册`
-    )
+    logger.debug('navigation.managed_page_processor.duplicate_skipped', {
+      pageKey,
+      field,
+      value
+    })
   }
 }

@@ -11,6 +11,7 @@ import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/domains/governance/api'
 import { RoutesAlias } from '@/router/routesAlias'
 import { formatMenuTitle } from '@/utils/router'
+import { logger } from '@/utils/logger'
 
 export class MenuProcessor {
   /**
@@ -165,13 +166,13 @@ export class MenuProcessor {
     const menuTitle = route.meta?.title || routeName
     const suggestedPath = path.split('/').pop() || path.slice(1)
 
-    console.error(
-      `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
-        `  位置: ${parentName} > ${routeName}\n` +
-        `  问题: 当前绝对路径不在允许范围内\n` +
-        `  当前配置: path: '${path}'\n` +
-        `  建议检查是否应改为相对路径: '${suggestedPath}'`
-    )
+    logger.error('navigation.menu_processor.invalid_absolute_path', {
+      menuTitle: formatMenuTitle(menuTitle),
+      routeName,
+      path,
+      parent: parentName,
+      suggestedPath
+    })
   }
 
   /**

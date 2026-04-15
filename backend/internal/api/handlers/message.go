@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
 )
@@ -186,7 +187,7 @@ func (h *APIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispat
 	}
 	cwID := cwIDFromContext(ctx)
 
-	result, err := h.systemFacade.DispatchMessage(userID, cwID, systemmod.MessageDispatchRequest{
+	dispatchReq := systemmod.MessageDispatchRequest{
 		SenderID:                        optString(req.SenderID),
 		TemplateID:                      optString(req.TemplateID),
 		TemplateKey:                     optString(req.TemplateKey),
@@ -203,11 +204,37 @@ func (h *APIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispat
 		ActionTarget:                    optString(req.ActionTarget),
 		BizType:                         optString(req.BizType),
 		ExpiredAt:                       optString(req.ExpiredAt),
-	})
+		DryRun:                          optBool(req.DryRun),
+	}
+	// 审计元数据只记可聚合字段，Title/Summary/Content 原文落到 After，由
+	// redactor 负责剔除敏感 key。DryRun=true 也记一笔，排查误发演练需要。
+	metadata := map[string]any{
+		"message_type":  dispatchReq.MessageType,
+		"audience_type": dispatchReq.AudienceType,
+		"dry_run":       dispatchReq.DryRun,
+		"template_id":   dispatchReq.TemplateID,
+		"template_key":  dispatchReq.TemplateKey,
+	}
+	result, err := h.systemFacade.DispatchMessage(userID, cwID, dispatchReq)
 	if err != nil {
 		h.logger.Error("dispatch message failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.message.dispatch",
+			ResourceType: "message_dispatch",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     metadata,
+			After:        dispatchReq,
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.message.dispatch",
+		ResourceType: "message_dispatch",
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     metadata,
+		After:        result,
+	})
 	return mapJSON[*gen.MessageDispatchResult](result)
 }
 

@@ -36,7 +36,23 @@ tags:
 - name: media
 - name: system-register
 - name: dictionary
+- name: telemetry
+- name: observability
 paths:
+  /telemetry/logs:
+    $ref: ./domains/telemetry/paths.yaml#/paths/~1telemetry~1logs
+  /observability/audit-logs:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1audit-logs
+  /observability/audit-logs/stats:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1audit-logs~1stats
+  /observability/audit-logs/{id}:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1audit-logs~1{id}
+  /observability/telemetry-logs:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1telemetry-logs
+  /observability/telemetry-logs/{id}:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1telemetry-logs~1{id}
+  /observability/trace/{request_id}:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1trace~1{request_id}
   /system/register-entries:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
   /system/register-entries/{id}:

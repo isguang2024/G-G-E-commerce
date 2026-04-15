@@ -24,6 +24,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/handlers"
 	"github.com/gg-ecommerce/backend/internal/api/middleware"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
@@ -103,7 +105,7 @@ func (s nilAPIEndpointSvc) SaveCategory(_ *user.APIEndpointCategory) (*user.APIE
 func (s nilAPIEndpointSvc) UpdateContextScope(_ uuid.UUID, _ string) (*user.APIEndpoint, error) {
 	return nil, nil
 }
-func (s nilAPIEndpointSvc) Sync() error                                       { return nil }
+func (s nilAPIEndpointSvc) Sync() (*apiendpoint.SyncSummary, error)           { return &apiendpoint.SyncSummary{}, nil }
 func (s nilAPIEndpointSvc) CleanupStale(_ []uuid.UUID, _ string) (int, error) { return 0, nil }
 
 // testEngine builds a minimal gin engine wired to the real ogen server.
@@ -133,9 +135,9 @@ func testEngine(t *testing.T) *gin.Engine {
 	// when the routeMap is empty (no endpoints loaded from DB).
 	endpointSvc := apiendpointaccess.NewService(nil, logger)
 
-	ogenHandler := handlers.NewAPIHandler(nil, cfg, logger, eval, nilAPIEndpointSvc{})
+	ogenHandler := handlers.NewAPIHandler(nil, cfg, logger, eval, nilAPIEndpointSvc{}, audit.Noop{}, telemetry.Noop{})
 
-	permMW := middleware.OpenAPIPermission(eval, permLookup, logger)
+	permMW := middleware.OpenAPIPermission(eval, permLookup, logger, audit.Noop{})
 	ogenServer, err := apigen.NewServer(
 		ogenHandler,
 		handlers.SecurityHandler{},
@@ -376,7 +378,7 @@ func TestSmokeOgenServerBuilds(t *testing.T) {
 		JWT: config.JWTConfig{Secret: "test-secret-for-smoke-tests"},
 	}
 	logger := zap.NewNop()
-	h := handlers.NewAPIHandler(nil, cfg, logger, &noopEvaluator{}, nilAPIEndpointSvc{})
+	h := handlers.NewAPIHandler(nil, cfg, logger, &noopEvaluator{}, nilAPIEndpointSvc{}, audit.Noop{}, telemetry.Noop{})
 	_, err := apigen.NewServer(h, handlers.SecurityHandler{})
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)

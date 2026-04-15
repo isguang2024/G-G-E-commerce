@@ -4,6 +4,7 @@ import { Router } from 'vue-router'
 import NProgress from 'nprogress'
 import { loadingService } from '@/utils/ui'
 import { getPendingLoading, resetPendingLoading } from '@/domains/navigation/runtime/guard-state'
+import { logger } from '@/utils/logger'
 
 function scrollMainContainerToTop(): void {
   const scrollContainer = document.getElementById('app-main')
@@ -14,7 +15,11 @@ function scrollMainContainerToTop(): void {
 
 /** 路由全局后置守卫 */
 export function setupAfterEachGuard(router: Router) {
-  router.afterEach(() => {
+  router.afterEach((to) => {
+    // 同步当前路由给 logger —— 上报的每条日志都带 route 字段，
+    // 便于排查"某个页面下的报错"场景。
+    logger.setRoute(to.fullPath || to.path || '')
+
     scrollMainContainerToTop()
 
     // 关闭进度条

@@ -429,7 +429,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemAccount", "RegisterEntry", "RegisterLog", "LoginPageTemplate", "SystemIntegration", "ApiEndpoint", "MessageManage", "Dictionary", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemAccount", "RegisterEntry", "RegisterLog", "LoginPageTemplate", "SystemIntegration", "ApiEndpoint", "MessageManage", "Dictionary", "AuditLog", "TelemetryLog", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_log.read", "system.dictionary.view", "system.dictionary.manage"},
 		},
 		{
@@ -526,6 +526,8 @@ func DefaultMenus() []MenuSeed {
 		{Name: "ApiEndpoint", ParentName: "SystemIntegration", Path: "/system/api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "Dictionary", ParentName: "SystemIntegration", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "AuditLog", ParentName: "SystemIntegration", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "TelemetryLog", ParentName: "SystemIntegration", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterEntry", ParentName: "SystemAccount", Path: "/system/register-entry", Component: "/system/register-entry", Title: "注册入口", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterLog", ParentName: "SystemAccount", Path: "/system/register-log", Component: "/system/register-log", Title: "注册记录", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "LoginPageTemplate", ParentName: "SystemAccount", Path: "/system/login-page-template", Component: "/system/login-page-template", Title: "登录页模板", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},

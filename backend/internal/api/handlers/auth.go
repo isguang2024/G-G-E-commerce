@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
@@ -56,11 +58,34 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 	}
 
 	ip := clientIPFromCtx(ctx)
+	username := strings.TrimSpace(req.Username)
 	resp, err := h.authSvc.Login(req.Username, req.Password, ip)
 	if err != nil {
 		h.logger.Debug("login failed", zap.Error(err))
+		// 登录失败也要审计：用户名 + 失败原因（password 不会被序列化，字段已在 redact 名单）。
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.auth.login",
+			ResourceType: "user",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     map[string]any{"username": username, "prompt": optString(req.Prompt)},
+		})
 		return nil, err
 	}
+	// 登录成功：actor_id 在 Event.After 里自带，供后续离线分析（ctx 里此时还没有 actor_id）。
+	var userIDStr string
+	if userMap, ok := resp.User.(map[string]interface{}); ok {
+		if id, ok := userMap["id"].(string); ok {
+			userIDStr = id
+		}
+	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.auth.login",
+		ResourceType: "user",
+		ResourceID:   userIDStr,
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"username": username},
+	})
 	out := &gen.LoginResponse{
 		AccessToken:  gen.NewOptNilString(resp.AccessToken),
 		RefreshToken: gen.NewOptNilString(resp.RefreshToken),
@@ -132,6 +157,16 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 	})
 	if err != nil {
 		h.logger.Debug("register failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.auth.register",
+			ResourceType: "user",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"username":      strings.TrimSpace(req.Username),
+				"register_mode": optString(req.SourceAppKey),
+			},
+		})
 		if errors.Is(err, register.ErrPublicRegisterDisabled) {
 			return nil, &apperr.ParamError{Msg: "公开注册未开启"}
 		}
@@ -142,6 +177,21 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 			return nil, &apperr.ParamError{Msg: bindErr.Error()}
 		}
 	}
+	// 成功：record resource_id = 新建用户 ID，便于按 actor 反查注册事件。
+	var newUserID string
+	if result.User != nil {
+		newUserID = result.User.ID.String()
+	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.auth.register",
+		ResourceType: "user",
+		ResourceID:   newUserID,
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"username":      strings.TrimSpace(req.Username),
+			"register_mode": optString(req.SourceAppKey),
+		},
+	})
 	out := &gen.LoginResponse{}
 	if result.Login != nil {
 		out.AccessToken = gen.NewOptNilString(result.Login.AccessToken)
@@ -395,6 +445,17 @@ func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequ
 }
 
 func (h *APIHandler) Logout(ctx context.Context) (gen.LogoutRes, error) {
+	// Logout 目前是无状态操作（token 失效由前端清理），但仍落审计，方便追踪用户主动退出。
+	var actorID string
+	if id, ok := userIDFromContext(ctx); ok {
+		actorID = id.String()
+	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.auth.logout",
+		ResourceType: "user",
+		ResourceID:   actorID,
+		Outcome:      audit.OutcomeSuccess,
+	})
 	return ok(), nil
 }
 
@@ -667,3 +728,22 @@ func (h *APIHandler) SilentSSOCallback(ctx context.Context, req *gen.SilentSSORe
 }
 
 var _ = uuid.Nil // reserved for future auth handler additions
+
+// errorCodeOf 把 handler 返回的 error 翻译成审计可读的业务码字符串。
+// 约定：成功路径传 ""；错误路径统一走 apperr.Map，避免 audit 行与响应
+// 携带的 code 不一致。未命中映射（即非业务错误）时返回 CodeInternal。
+func errorCodeOf(err error) string {
+	if err == nil {
+		return ""
+	}
+	_, body := apperr.Map(err)
+	if body == nil || body.Code == 0 {
+		return strconvItoa(apperr.CodeInternal)
+	}
+	return strconvItoa(body.Code)
+}
+
+// strconvItoa 封装 strconv.Itoa —— 独立出来方便将来切换成 strconv.FormatInt 之类。
+func strconvItoa(n int) string {
+	return strconv.Itoa(n)
+}

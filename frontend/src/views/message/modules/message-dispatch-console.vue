@@ -2,14 +2,32 @@
   <div class="message-manage-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-manage-hero__actions">
+        <div
+          v-if="dryRunAvailable"
+          class="message-manage-dryrun"
+          data-testid="send-dry-run-toggle"
+          :data-enabled="dryRunEnabled ? 'true' : 'false'"
+        >
+          <ElSwitch
+            v-model="dryRunEnabled"
+            active-text="沙箱"
+            inactive-text="真实"
+            inline-prompt
+            data-testid="send-dry-run-switch"
+          />
+          <span class="message-manage-dryrun__hint">
+            {{ dryRunEnabled ? '沙箱模式：仅校验不落库' : '真实模式：确认后会入队投递' }}
+          </span>
+        </div>
         <ElButton @click="loadOptions" :loading="loading" v-ripple>刷新配置</ElButton>
         <ElButton
           type="primary"
           @click="submitDispatch"
           :loading="submitting"
           :disabled="!canDispatch"
+          :data-testid="dryRunEnabled ? 'send-button-dryrun' : 'send-button'"
           v-ripple
-          >发送消息</ElButton
+          >{{ dryRunEnabled ? '沙箱发送' : '发送消息' }}</ElButton
         >
       </div>
     </AdminWorkspaceHero>
@@ -37,7 +55,13 @@
           <ElTag type="info" effect="plain">{{ senderScopeBadge }}</ElTag>
         </header>
 
-        <ElForm ref="formRef" :model="form" label-position="top" class="message-manage-form">
+        <ElForm
+          ref="formRef"
+          :model="form"
+          :rules="formRules"
+          label-position="top"
+          class="message-manage-form"
+        >
           <section class="message-manage-block">
             <div class="message-manage-block__header">
               <h4>基础信息</h4>
@@ -68,8 +92,18 @@
                 </div>
               </ElFormItem>
 
-              <ElFormItem label="发送人" prop="sender_id">
-                <ElSelect v-model="form.sender_id" placeholder="请选择发送人">
+              <ElFormItem
+                label="发送人"
+                prop="sender_id"
+                :error="fieldErrors.sender_id"
+                :data-testid="'send-error'"
+                :data-field="'sender_id'"
+              >
+                <ElSelect
+                  v-model="form.sender_id"
+                  placeholder="请选择发送人"
+                  data-testid="send-field-sender"
+                >
                   <ElOption
                     v-for="item in options.sender_options"
                     :key="item.id"
@@ -80,8 +114,18 @@
                 <div class="field-hint">{{ activeSenderDescription }}</div>
               </ElFormItem>
 
-              <ElFormItem label="消息类型" prop="message_type">
-                <ElRadioGroup v-model="form.message_type" class="message-manage-inline-options">
+              <ElFormItem
+                label="消息类型"
+                prop="message_type"
+                :error="fieldErrors.message_type"
+                :data-testid="'send-error'"
+                :data-field="'message_type'"
+              >
+                <ElRadioGroup
+                  v-model="form.message_type"
+                  class="message-manage-inline-options"
+                  data-testid="send-field-message-type"
+                >
                   <ElRadioButton
                     v-for="item in messageTypeOptions"
                     :key="item.value"
@@ -112,8 +156,18 @@
               <p>按主流消息公告后台习惯，先选对象，再补具体协作空间、用户或接收组。</p>
             </div>
 
-            <ElFormItem label="发送对象" prop="audience_type">
-              <ElSelect v-model="form.audience_type" @change="handleAudienceChange">
+            <ElFormItem
+              label="发送对象"
+              prop="audience_type"
+              :error="fieldErrors.audience_type"
+              :data-testid="'send-error'"
+              :data-field="'audience_type'"
+            >
+              <ElSelect
+                v-model="form.audience_type"
+                data-testid="send-field-audience"
+                @change="handleAudienceChange"
+              >
                 <ElOption
                   v-for="item in options.audience_options"
                   :key="item.value"
@@ -128,6 +182,10 @@
               <ElFormItem
                 v-if="showTargetCollaborationWorkspaces"
                 :label="targetCollaborationWorkspacesLabel"
+                prop="targetCollaborationWorkspaceIds"
+                :error="fieldErrors.targetCollaborationWorkspaceIds"
+                :data-testid="'send-error'"
+                :data-field="'targetCollaborationWorkspaceIds'"
               >
                 <ElSelect
                   v-if="!isCollaborationScope"
@@ -137,6 +195,7 @@
                   collapse-tags
                   collapse-tags-tooltip
                   placeholder="选择一个或多个协作空间"
+                  data-testid="send-field-target-workspaces"
                 >
                   <ElOption
                     v-for="item in options.collaboration_workspaces"
@@ -161,7 +220,14 @@
                 </div>
               </ElFormItem>
 
-              <ElFormItem v-if="showTargetUsers" :label="targetUsersLabel">
+              <ElFormItem
+                v-if="showTargetUsers"
+                :label="targetUsersLabel"
+                prop="target_user_ids"
+                :error="fieldErrors.target_user_ids"
+                :data-testid="'send-error'"
+                :data-field="'target_user_ids'"
+              >
                 <ElSelect
                   v-model="form.target_user_ids"
                   multiple
@@ -169,6 +235,7 @@
                   collapse-tags
                   collapse-tags-tooltip
                   placeholder="选择一个或多个用户"
+                  data-testid="send-field-target-users"
                 >
                   <ElOption
                     v-for="item in options.users"
@@ -195,6 +262,10 @@
                       ? '功能包接收组'
                       : '接收组'
                 "
+                prop="target_group_ids"
+                :error="fieldErrors.target_group_ids"
+                :data-testid="'send-error'"
+                :data-field="'target_group_ids'"
               >
                 <ElSelect
                   v-model="form.target_group_ids"
@@ -203,6 +274,7 @@
                   collapse-tags
                   collapse-tags-tooltip
                   placeholder="选择一个或多个接收组"
+                  data-testid="send-field-target-groups"
                 >
                   <ElOption
                     v-for="item in options.recipient_groups"
@@ -233,16 +305,29 @@
               <h4>内容编辑</h4>
               <p>摘要使用普通文本输入，正文保留富文本，更符合公告和站内信后台的常见做法。</p>
             </div>
-            <ElFormItem label="消息标题" prop="title">
+            <ElFormItem
+              label="消息标题"
+              prop="title"
+              :error="fieldErrors.title"
+              :data-testid="'send-error'"
+              :data-field="'title'"
+            >
               <ElInput
                 v-model="form.title"
                 maxlength="120"
                 show-word-limit
                 placeholder="例如：个人空间维护通知 / 协作空间待处理提醒"
+                data-testid="send-field-title"
               />
             </ElFormItem>
 
-            <ElFormItem label="摘要">
+            <ElFormItem
+              label="摘要"
+              prop="content_or_summary"
+              :error="fieldErrors.content_or_summary"
+              :data-testid="'send-error'"
+              :data-field="'content_or_summary'"
+            >
               <ElInput
                 v-model="form.summary"
                 type="textarea"
@@ -251,6 +336,7 @@
                 show-word-limit
                 resize="vertical"
                 placeholder="顶部消息预览和消息列表优先展示这里的摘要，建议一句话说明重点。"
+                data-testid="send-field-summary"
               />
               <div class="field-hint">摘要保持纯文本，更适合列表、副标题和公告摘要展示。</div>
             </ElFormItem>
@@ -324,12 +410,105 @@
         </div>
       </aside>
     </section>
+
+    <ElDialog
+      v-model="previewDialogVisible"
+      :title="dryRunEnabled ? '沙箱发送预览（dry-run）' : '发送前确认'"
+      width="520px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="!submitting"
+      append-to-body
+      destroy-on-close
+      :before-close="handleDialogBeforeClose"
+      data-testid="send-preview-dialog"
+    >
+      <div
+        v-if="dryRunEnabled"
+        class="send-preview-dryrun-banner"
+        data-testid="send-preview-dryrun-banner"
+      >
+        <strong>沙箱模式</strong>
+        <span>后端仅完成校验，不会写入 messages 表、不入队、不触发投递。</span>
+      </div>
+      <div class="send-preview-block" data-testid="send-preview-body">
+        <div class="send-preview-row">
+          <span class="send-preview-row__label">消息类型</span>
+          <strong data-testid="send-preview-message-type" :data-value="form.message_type">{{
+            selectedMessageTypeLabel
+          }}</strong>
+        </div>
+        <div class="send-preview-row">
+          <span class="send-preview-row__label">发送对象</span>
+          <strong data-testid="send-preview-audience" :data-value="form.audience_type">{{
+            selectedAudienceLabel
+          }}</strong>
+        </div>
+        <div class="send-preview-row">
+          <span class="send-preview-row__label">收件摘要</span>
+          <strong data-testid="send-preview-recipients">{{ receiverSummary }}</strong>
+        </div>
+        <div class="send-preview-row">
+          <span class="send-preview-row__label">消息标题</span>
+          <strong data-testid="send-preview-title">{{ form.title || '（未填写）' }}</strong>
+        </div>
+        <div class="send-preview-row send-preview-row--block">
+          <span class="send-preview-row__label">摘要</span>
+          <div class="send-preview-row__text" data-testid="send-preview-summary">
+            {{ normalizeSummaryValue(form.summary) || '（未填写）' }}
+          </div>
+        </div>
+        <div class="send-preview-row send-preview-row--block">
+          <span class="send-preview-row__label">正文</span>
+          <div
+            class="send-preview-row__content rich-text-content"
+            data-testid="send-preview-content"
+            v-html="previewContentHtml"
+          ></div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="send-preview-footer">
+          <ElButton
+            data-testid="send-preview-cancel"
+            :disabled="submitting"
+            @click="cancelDispatchPreview"
+            >返回修改</ElButton
+          >
+          <ElButton
+            type="primary"
+            data-testid="send-preview-confirm"
+            :loading="submitting"
+            @click="confirmDispatch"
+            >{{ dryRunEnabled ? '确认沙箱发送' : '确认发送' }}</ElButton
+          >
+        </div>
+      </template>
+    </ElDialog>
+
+    <!-- 发送结果状态节点：供 Playwright/E2E 读取最新一次发送结果 -->
+    <div
+      class="send-status-marker"
+      aria-hidden="true"
+      data-testid="send-status"
+      :data-scope="props.scope"
+      :data-status-code="lastSendStatus.code"
+      :data-dispatch-status="lastSendStatus.dispatchStatus"
+      :data-delivery-count="lastSendStatus.deliveryCount"
+      :data-message-id="lastSendStatus.messageId"
+      :data-http-status="lastSendStatus.httpStatus"
+      :data-error-code="lastSendStatus.errorCode"
+      :data-message="lastSendStatus.message"
+      :data-dry-run="dryRunEnabled ? 'true' : 'false'"
+      :data-dry-run-available="dryRunAvailable ? 'true' : 'false'"
+    >
+      {{ lastSendStatus.message }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
@@ -338,6 +517,7 @@
   import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { handleRichTextLinkNavigation } from '@/domains/navigation/utils/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
+  import { HttpError } from '@/utils/http/error'
 
   defineOptions({ name: 'MessageDispatchConsole' })
 
@@ -350,7 +530,76 @@
   const loading = ref(false)
   const loadError = ref('')
   const submitting = ref(false)
-  const formRef = ref()
+  const previewDialogVisible = ref(false)
+  const formRef = ref<FormInstance>()
+  const fieldErrors = reactive<Record<string, string>>({})
+
+  // ── 发送沙箱(dry-run)开关 ────────────────────────────────────────────
+  // 1. 开发模式(import.meta.env.DEV) 下始终可见。
+  // 2. 生产模式下需要在 URL 加 ?__dry_run=1 隐藏入口才会出现,避免误触。
+  // 3. 开关 ON 时 fetchDispatchMessage 注入 dry_run: true,后端仅校验不落库。
+  const dryRunAvailable = computed(() => {
+    if (import.meta.env.DEV) return true
+    try {
+      const usp = new URLSearchParams(window.location.search)
+      return usp.get('__dry_run') === '1'
+    } catch {
+      return false
+    }
+  })
+  const dryRunEnabled = ref(false)
+
+  type SendStatusCode =
+    | 'idle'
+    | 'validation_failed'
+    | 'submitting'
+    | 'queued'
+    | 'sent'
+    | 'preview'
+    | 'field_error'
+    | 'http_error'
+    | 'unknown_error'
+
+  const lastSendStatus = reactive<{
+    code: SendStatusCode
+    message: string
+    dispatchStatus: string
+    deliveryCount: number
+    messageId: string
+    httpStatus: number
+    errorCode: string
+  }>({
+    code: 'idle',
+    message: '',
+    dispatchStatus: '',
+    deliveryCount: 0,
+    messageId: '',
+    httpStatus: 0,
+    errorCode: ''
+  })
+
+  const setSendStatus = (patch: Partial<typeof lastSendStatus>) => {
+    Object.assign(lastSendStatus, patch)
+  }
+
+  function clearFieldErrors() {
+    for (const k of Object.keys(fieldErrors)) delete fieldErrors[k]
+  }
+
+  function applyBackendFieldErrors(e: unknown): boolean {
+    if (!(e instanceof HttpError)) return false
+    const data = (e.data || {}) as { details?: Record<string, string> }
+    const details = data.details
+    if (!details || typeof details !== 'object') return false
+    let applied = false
+    for (const [field, reason] of Object.entries(details)) {
+      if (typeof reason === 'string') {
+        fieldErrors[field] = reason
+        applied = true
+      }
+    }
+    return applied
+  }
   const {
     collaborationWorkspaceStore,
     isCollaborationScope,
@@ -555,6 +804,108 @@
   const showRecipientGroups = computed(() =>
     ['recipient_group', 'role', 'feature_package'].includes(form.audience_type)
   )
+
+  const formRules = computed<FormRules>(() => {
+    const rules: FormRules = {
+      sender_id: [{ required: true, message: '请选择发送人', trigger: 'change' }],
+      message_type: [{ required: true, message: '请选择消息类型', trigger: 'change' }],
+      audience_type: [{ required: true, message: '请选择发送对象', trigger: 'change' }],
+      title: [
+        {
+          required: true,
+          validator: (_rule, value, callback) => {
+            const text = `${value || ''}`.trim()
+            if (!text) {
+              callback(new Error('请填写消息标题'))
+              return
+            }
+            callback()
+          },
+          trigger: 'blur'
+        }
+      ],
+      content_or_summary: [
+        {
+          required: true,
+          validator: (_rule, _value, callback) => {
+            const summary = normalizeSummaryValue(form.summary)
+            const content = plainTextFromHtml(form.content)
+            if (!summary && !content) {
+              callback(new Error('请至少填写摘要或正文'))
+              return
+            }
+            callback()
+          },
+          trigger: 'change'
+        }
+      ]
+    }
+
+    if (showTargetCollaborationWorkspaces.value) {
+      rules.targetCollaborationWorkspaceIds = [
+        {
+          required: true,
+          validator: (_rule, value, callback) => {
+            const list = Array.isArray(value) ? value : []
+            if (!list.length) {
+              callback(
+                new Error(
+                  isCollaborationScope.value
+                    ? '当前协作空间未就绪，请刷新配置后重试'
+                    : '请选择目标协作空间'
+                )
+              )
+              return
+            }
+            callback()
+          },
+          trigger: 'change'
+        }
+      ]
+    }
+
+    if (showTargetUsers.value) {
+      rules.target_user_ids = [
+        {
+          required: true,
+          validator: (_rule, value, callback) => {
+            const list = Array.isArray(value) ? value : []
+            if (!list.length) {
+              callback(new Error('请选择目标用户'))
+              return
+            }
+            callback()
+          },
+          trigger: 'change'
+        }
+      ]
+    }
+
+    if (showRecipientGroups.value) {
+      const groupMessage =
+        form.audience_type === 'role'
+          ? '请选择包含角色规则的接收组'
+          : form.audience_type === 'feature_package'
+            ? '请选择包含功能包规则的接收组'
+            : '请选择接收组'
+      rules.target_group_ids = [
+        {
+          required: true,
+          validator: (_rule, value, callback) => {
+            const list = Array.isArray(value) ? value : []
+            if (!list.length) {
+              callback(new Error(groupMessage))
+              return
+            }
+            callback()
+          },
+          trigger: 'change'
+        }
+      ]
+    }
+
+    return rules
+  })
   const targetCollaborationWorkspacesLabel = computed(() =>
     isCollaborationScope.value ? '目标协作空间' : '目标协作空间'
   )
@@ -711,6 +1062,12 @@
   }
 
   const handleAudienceChange = () => {
+    clearFieldErrors()
+    formRef.value?.clearValidate([
+      'targetCollaborationWorkspaceIds',
+      'target_user_ids',
+      'target_group_ids'
+    ])
     if (form.audience_type === 'all_users') {
       form.targetCollaborationWorkspaceIds = []
       form.target_user_ids = []
@@ -744,40 +1101,23 @@
         preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
       })
     }
-    if (!form.title.trim()) {
-      ElMessage.warning('请先填写消息标题')
-      return
-    }
-    if (!normalizeSummaryValue(form.summary) && !plainTextFromHtml(form.content)) {
-      ElMessage.warning('请至少填写摘要或正文')
-      return
-    }
-    if (
-      !isCollaborationScope.value &&
-      showTargetCollaborationWorkspaces.value &&
-      !showTargetUsers.value &&
-      !showRecipientGroups.value &&
-      !form.targetCollaborationWorkspaceIds?.length
-    ) {
-      ElMessage.warning('请选择目标协作空间')
-      return
-    }
-    if (showTargetUsers.value && !form.target_user_ids?.length) {
-      ElMessage.warning('请选择目标用户')
-      return
-    }
-    if (showRecipientGroups.value && !form.target_group_ids?.length) {
-      ElMessage.warning(
-        form.audience_type === 'role'
-          ? '请选择包含角色规则的接收组'
-          : form.audience_type === 'feature_package'
-            ? '请选择包含功能包规则的接收组'
-            : '请选择接收组'
-      )
+
+    clearFieldErrors()
+    try {
+      await formRef.value?.validate()
+    } catch {
+      setSendStatus({ code: 'validation_failed', message: '请先修复表单错误', errorCode: '' })
       return
     }
 
+    setSendStatus({ code: 'idle', message: '请确认发送信息', errorCode: '' })
+    previewDialogVisible.value = true
+  }
+
+  const confirmDispatch = async () => {
+    if (submitting.value) return
     submitting.value = true
+    setSendStatus({ code: 'submitting', message: '正在发送', errorCode: '' })
     try {
       const result = await fetchDispatchMessage(
         {
@@ -794,34 +1134,124 @@
               ? form.targetCollaborationWorkspaceIds
               : [],
           target_user_ids: showTargetUsers.value ? form.target_user_ids : [],
-          target_group_ids: showRecipientGroups.value ? form.target_group_ids : []
+          target_group_ids: showRecipientGroups.value ? form.target_group_ids : [],
+          dry_run: dryRunAvailable.value && dryRunEnabled.value ? true : undefined
         },
         {
           skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         }
       )
-      ElMessage.success(
-        result.dispatch_status === 'queued'
+      const dispatchStatus = result.dispatch_status || ''
+      const deliveryCount = Number(result.delivery_count || 0)
+      const messageId = String(result.message_id || '')
+      const statusCode: SendStatusCode =
+        dispatchStatus === 'queued' ? 'queued' : dispatchStatus === 'preview' ? 'preview' : 'sent'
+      const successMessage =
+        statusCode === 'queued'
           ? '消息已进入发送队列'
-          : `发送成功，已投递 ${result.delivery_count} 人`
-      )
-      form.title = ''
-      form.summary = ''
-      form.content = ''
-      form.biz_type = ''
-      form.expired_at = ''
-      form.template_id = ''
-      if (!isCollaborationScope.value) {
-        form.targetCollaborationWorkspaceIds = []
+          : statusCode === 'preview'
+            ? '预览模式：未真实投递'
+            : `发送成功，已投递 ${deliveryCount} 人`
+      setSendStatus({
+        code: statusCode,
+        message: successMessage,
+        dispatchStatus,
+        deliveryCount,
+        messageId,
+        httpStatus: 200,
+        errorCode: ''
+      })
+      ElMessage({
+        type: statusCode === 'preview' ? 'info' : 'success',
+        message: successMessage,
+        customClass: 'send-status-toast',
+        duration: 3200
+      })
+      previewDialogVisible.value = false
+      if (!dryRunEnabled.value) {
+        // 沙箱模式保留表单,便于反复测试;真实发送后清空。
+        form.title = ''
+        form.summary = ''
+        form.content = ''
+        form.biz_type = ''
+        form.expired_at = ''
+        form.template_id = ''
+        if (!isCollaborationScope.value) {
+          form.targetCollaborationWorkspaceIds = []
+        }
+        form.target_user_ids = []
+        form.target_group_ids = []
+        resetFormDefaults()
       }
-      form.target_user_ids = []
-      form.target_group_ids = []
-      resetFormDefaults()
-    } catch {
-      ElMessage.error('发送消息失败')
+      formRef.value?.clearValidate()
+    } catch (error) {
+      const httpStatus = error instanceof HttpError ? Number(error.code || 0) : 0
+      const errorCode =
+        error instanceof HttpError ? String((error.data as { code?: string })?.code || '') : ''
+      if (applyBackendFieldErrors(error)) {
+        setSendStatus({
+          code: 'field_error',
+          message: '后端返回字段错误，请根据提示修正后重试',
+          httpStatus,
+          errorCode,
+          dispatchStatus: '',
+          deliveryCount: 0,
+          messageId: ''
+        })
+        ElMessage({
+          type: 'error',
+          message: '请根据提示修正错误后重试',
+          customClass: 'send-status-toast',
+          duration: 3200
+        })
+      } else if (error instanceof HttpError) {
+        setSendStatus({
+          code: 'http_error',
+          message: error.message || '发送消息失败',
+          httpStatus,
+          errorCode,
+          dispatchStatus: '',
+          deliveryCount: 0,
+          messageId: ''
+        })
+        ElMessage({
+          type: 'error',
+          message: error.message || '发送消息失败',
+          customClass: 'send-status-toast',
+          duration: 3200
+        })
+      } else {
+        setSendStatus({
+          code: 'unknown_error',
+          message: '发送消息失败',
+          httpStatus: 0,
+          errorCode: '',
+          dispatchStatus: '',
+          deliveryCount: 0,
+          messageId: ''
+        })
+        ElMessage({
+          type: 'error',
+          message: '发送消息失败',
+          customClass: 'send-status-toast',
+          duration: 3200
+        })
+      }
     } finally {
       submitting.value = false
     }
+  }
+
+  const cancelDispatchPreview = () => {
+    if (submitting.value) return
+    previewDialogVisible.value = false
+    setSendStatus({ code: 'idle', message: '', errorCode: '' })
+  }
+
+  const handleDialogBeforeClose = (done: () => void) => {
+    if (submitting.value) return
+    cancelDispatchPreview()
+    done()
   }
 
   const handlePreviewRichTextClick = async (event: MouseEvent) => {
@@ -1093,5 +1523,97 @@
     .message-manage-section__header {
       flex-direction: column;
     }
+  }
+
+  .send-preview-block {
+    display: grid;
+    gap: 12px;
+  }
+
+  .send-preview-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--art-text-strong);
+  }
+
+  .send-preview-row--block {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .send-preview-row__label {
+    min-width: 80px;
+    color: var(--art-text-muted);
+  }
+
+  .send-preview-row__text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    color: var(--art-text-strong);
+  }
+
+  .send-preview-row__content {
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid var(--art-card-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgb(248 250 252 / 0.8);
+  }
+
+  .send-preview-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .send-status-marker {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .message-manage-dryrun {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgb(250 204 21 / 0.14);
+    border: 1px solid color-mix(in srgb, #d97706 40%, transparent);
+  }
+
+  .message-manage-dryrun__hint {
+    font-size: 12px;
+    color: var(--art-text-muted);
+    white-space: nowrap;
+  }
+
+  .send-preview-dryrun-banner {
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    background: rgb(250 204 21 / 0.18);
+    border: 1px dashed color-mix(in srgb, #d97706 55%, transparent);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--art-text-strong);
+  }
+
+  .send-preview-dryrun-banner strong {
+    font-size: 13px;
+    color: #b45309;
   }
 </style>

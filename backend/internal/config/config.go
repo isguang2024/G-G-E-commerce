@@ -10,14 +10,16 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Env    string       `mapstructure:"env"`
-	Server ServerConfig `mapstructure:"server"`
-	DB     DBConfig     `mapstructure:"db"`
-	Redis  RedisConfig  `mapstructure:"redis"`
-	ES     ESConfig     `mapstructure:"elasticsearch"`
-	MinIO  MinIOConfig  `mapstructure:"minio"`
-	JWT    JWTConfig    `mapstructure:"jwt"`
-	Log    LogConfig    `mapstructure:"log"`
+	Env       string          `mapstructure:"env"`
+	Server    ServerConfig    `mapstructure:"server"`
+	DB        DBConfig        `mapstructure:"db"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	ES        ESConfig        `mapstructure:"elasticsearch"`
+	MinIO     MinIOConfig     `mapstructure:"minio"`
+	JWT       JWTConfig       `mapstructure:"jwt"`
+	Log       LogConfig       `mapstructure:"log"`
+	Audit     AuditConfig     `mapstructure:"audit"`
+	Telemetry TelemetryConfig `mapstructure:"telemetry"`
 }
 
 // ServerConfig 服务器配置
@@ -72,9 +74,56 @@ type JWTConfig struct {
 }
 
 // LogConfig 日志配置
+//
+// 字段说明：
+//   - Level：zap 级别（debug/info/warn/error）；env 覆盖 `GG_LOG_LEVEL`；
+//   - Output：stdout 或文件路径（例如 "/var/log/gge/app.log"）；
+//   - Format：json（默认）或 console；生产环境强制 json；
+//   - Sampling：打爆日志的保护阈值；Initial 为前 N 条按级别全写，Thereafter
+//     为每个采样窗口额外放行 1/N 条。不需要采样时两者都设 0。
 type LogConfig struct {
-	Level  string `mapstructure:"level"`
-	Output string `mapstructure:"output"`
+	Level    string            `mapstructure:"level"`
+	Output   string            `mapstructure:"output"`
+	Format   string            `mapstructure:"format"`
+	Sampling LogSamplingConfig `mapstructure:"sampling"`
+}
+
+// LogSamplingConfig 是 zap.SamplingConfig 的用户态镜像。
+type LogSamplingConfig struct {
+	Initial    int `mapstructure:"initial"`
+	Thereafter int `mapstructure:"thereafter"`
+}
+
+// AuditConfig 控制业务审计日志的持久化行为。
+//
+// 字段说明：
+//   - Enabled：总开关；关闭后 recorder 退化为 Noop，不写库；
+//   - RedactFields：顶层 redact 白名单之外，额外需要脱敏的字段名；
+//   - QueueSize：异步 channel 缓冲；满了按 drop-newest 丢弃并 Warn；
+//   - Workers：消费 goroutine 数量；
+//   - AsyncMode：true=channel+worker；false=同步写（测试/低流量场景）。
+type AuditConfig struct {
+	Enabled      bool     `mapstructure:"enabled"`
+	RedactFields []string `mapstructure:"redact_fields"`
+	QueueSize    int      `mapstructure:"queue_size"`
+	Workers      int      `mapstructure:"workers"`
+	AsyncMode    bool     `mapstructure:"async"`
+}
+
+// TelemetryConfig 控制前端日志上报端点 /telemetry/logs 的 ingest 行为。
+//
+// 字段说明：
+//   - IngestEnabled：总开关；关闭时端点返回 204 但不落库；
+//   - MaxBatchSize：单次 POST 最多接收的条数；超额返回 400；
+//   - SessionRateLimit：单 session 每秒最多条数；超限静默丢弃 + 返回 429；
+//   - IPRateLimit：单 IP 每秒最多条数；同上；
+//   - PayloadMaxBytes：单条 telemetry payload JSON 的最大字节数。
+type TelemetryConfig struct {
+	IngestEnabled    bool `mapstructure:"ingest_enabled"`
+	MaxBatchSize     int  `mapstructure:"max_batch_size"`
+	SessionRateLimit int  `mapstructure:"session_rate_limit"`
+	IPRateLimit      int  `mapstructure:"ip_rate_limit"`
+	PayloadMaxBytes  int  `mapstructure:"payload_max_bytes"`
 }
 
 // Load 加载配置
@@ -129,6 +178,20 @@ func setDefaults() {
 	viper.SetDefault("redis.db", 0)
 	viper.SetDefault("log.level", "info")
 	viper.SetDefault("log.output", "stdout")
+	viper.SetDefault("log.format", "json")
+	viper.SetDefault("log.sampling.initial", 100)
+	viper.SetDefault("log.sampling.thereafter", 100)
+
+	viper.SetDefault("audit.enabled", true)
+	viper.SetDefault("audit.queue_size", 1024)
+	viper.SetDefault("audit.workers", 2)
+	viper.SetDefault("audit.async", true)
+
+	viper.SetDefault("telemetry.ingest_enabled", true)
+	viper.SetDefault("telemetry.max_batch_size", 100)
+	viper.SetDefault("telemetry.session_rate_limit", 60)
+	viper.SetDefault("telemetry.ip_rate_limit", 600)
+	viper.SetDefault("telemetry.payload_max_bytes", 8192)
 }
 
 func (c *Config) Validate() error {

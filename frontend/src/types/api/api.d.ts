@@ -1850,12 +1850,14 @@ declare namespace Api {
       action_target?: string
       biz_type?: string
       expired_at?: string
+      /** 沙箱模式：后端完成参数/模板/收件人校验,但不写入 messages 表、不入队、不触发交付。 */
+      dry_run?: boolean
     }
 
     interface DispatchResult {
       message_id: string
       delivery_count: number
-      dispatch_status: 'queued' | 'processing' | 'published' | 'failed' | string
+      dispatch_status: 'queued' | 'preview' | 'processing' | 'published' | 'failed' | string
     }
 
     interface MessageTemplateQuery extends Partial<Api.Common.CommonSearchParams> {

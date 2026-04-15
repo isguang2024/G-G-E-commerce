@@ -1,5 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { fetchDictsByCodes, type DictItemSummary } from '@/api/system-manage/dictionary'
+import { logger } from '@/utils/logger'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ function scheduleBatchFetch() {
         cache.set(code, (result as Record<string, DictItemSummary[]>)[code] ?? [])
       }
     } catch (err) {
-      console.warn('[useDictionary] 批量加载字典失败:', codes, err)
+      logger.warn('dictionary.batch_fetch_failed', { err, codes })
       // Set empty arrays so failed codes don't block future calls.
       // Use invalidateDict(code) to clear and allow retry.
       for (const code of codes) {

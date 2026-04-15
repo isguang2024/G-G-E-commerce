@@ -265,7 +265,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+                $ref: './schemas.yaml#/components/schemas/SyncApiEndpointsResult'
         '401':
           description: Unauthorized
           content:

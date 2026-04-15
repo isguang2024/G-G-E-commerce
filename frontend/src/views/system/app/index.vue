@@ -46,6 +46,10 @@
             type="button"
             class="app-manage-item"
             :class="{ 'is-current': selectedAppKey === item.appKey }"
+            :data-testid="'app-card'"
+            :data-app-key="item.appKey"
+            :data-status="item.status"
+            :data-is-default="item.isDefault ? 'true' : 'false'"
             @click="selectApp(item.appKey)"
           >
             <div class="app-manage-item__main">
@@ -311,7 +315,7 @@
     </section>
 
     <ElDrawer v-model="appDrawerVisible" :title="appDrawerTitle" size="50%" destroy-on-close>
-      <ElForm :model="appForm" label-position="top" class="app-drawer-form">
+      <ElForm ref="appFormRef" :model="appForm" :rules="appFormRules" label-position="top" class="app-drawer-form">
 
         <!-- ① 基础标识 -->
         <div class="app-form-card">
@@ -322,10 +326,24 @@
             </span>
           </div>
           <div class="app-drawer-grid">
-            <ElFormItem label="应用名称">
+            <ElFormItem
+              label="应用名称"
+              prop="name"
+              :error="appFieldErrors.name"
+              :data-testid="'app-field-error'"
+              :data-field="'name'"
+              required
+            >
               <ElInput v-model="appForm.name" placeholder="例如 平台管理后台" />
             </ElFormItem>
-            <ElFormItem label="应用标识（app_key）">
+            <ElFormItem
+              label="应用标识（app_key）"
+              prop="app_key"
+              :error="appFieldErrors.app_key"
+              :data-testid="'app-field-error'"
+              :data-field="'app_key'"
+              required
+            >
               <ElInput
                 v-model="appForm.app_key"
                 :disabled="Boolean(editingAppKey)"
@@ -611,8 +629,8 @@
       destroy-on-close
       append-to-body
     >
-      <ElForm :model="entryForm" label-position="top">
-        <ElFormItem label="匹配类型">
+      <ElForm ref="entryFormRef" :model="entryForm" label-position="top">
+        <ElFormItem label="匹配类型" prop="match_type">
           <ElRadioGroup v-model="entryForm.match_type">
             <ElRadioButton value="host_exact">精确域名</ElRadioButton>
             <ElRadioButton value="host_suffix">子域名通配</ElRadioButton>
@@ -620,10 +638,33 @@
             <ElRadioButton value="host_and_path">域名+路径</ElRadioButton>
           </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem v-if="entryNeedsHost" label="Host">
+        <ElFormItem
+          v-if="entryNeedsHost"
+          label="Host"
+          prop="host"
+          :error="entryFieldErrors.host"
+          :data-testid="'app-field-error'"
+          :data-field="'host'"
+        >
           <ElInput v-model="entryForm.host" :placeholder="entryHostPlaceholder" />
+          <div
+            v-if="entryFieldErrors.host"
+            data-testid="host-conflict-reason"
+            :data-field="'host'"
+            class="app-form-hint"
+            style="color: var(--el-color-danger)"
+          >
+            {{ entryFieldErrors.host }}
+          </div>
         </ElFormItem>
-        <ElFormItem v-if="entryNeedsPath" label="路径模式">
+        <ElFormItem
+          v-if="entryNeedsPath"
+          label="路径模式"
+          prop="path_pattern"
+          :error="entryFieldErrors.path_pattern"
+          :data-testid="'app-field-error'"
+          :data-field="'path_pattern'"
+        >
           <ElInput v-model="entryForm.path_pattern" placeholder="例如 /admin/** 或 /shop/:id/**" />
           <div class="app-form-hint">
             支持
@@ -684,8 +725,11 @@
       destroy-on-close
       append-to-body
     >
-      <ElForm :model="spaceEntryForm" label-position="top">
-        <ElFormItem label="目标菜单空间">
+      <ElForm ref="spaceEntryFormRef" :model="spaceEntryForm" label-position="top">
+        <ElFormItem label="目标菜单空间" prop="space_key"
+          :error="spaceEntryFieldErrors.space_key"
+          :data-testid="'app-field-error'"
+          :data-field="'space_key'">
           <ElSelect v-model="spaceEntryForm.space_key" filterable style="width: 100%">
             <ElOption
               v-for="item in spaces"
@@ -703,10 +747,33 @@
             <ElRadioButton value="host_and_path">域名+路径</ElRadioButton>
           </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem v-if="spaceEntryNeedsHost" label="Host">
+        <ElFormItem
+          v-if="spaceEntryNeedsHost"
+          label="Host"
+          prop="host"
+          :error="spaceEntryFieldErrors.host"
+          :data-testid="'app-field-error'"
+          :data-field="'host'"
+        >
           <ElInput v-model="spaceEntryForm.host" :placeholder="spaceEntryHostPlaceholder" />
+          <div
+            v-if="spaceEntryFieldErrors.host"
+            data-testid="host-conflict-reason"
+            :data-field="'host'"
+            class="app-form-hint"
+            style="color: var(--el-color-danger)"
+          >
+            {{ spaceEntryFieldErrors.host }}
+          </div>
         </ElFormItem>
-        <ElFormItem v-if="spaceEntryNeedsPath" label="路径模式">
+        <ElFormItem
+          v-if="spaceEntryNeedsPath"
+          label="路径模式"
+          prop="path_pattern"
+          :error="spaceEntryFieldErrors.path_pattern"
+          :data-testid="'app-field-error'"
+          :data-field="'path_pattern'"
+        >
           <ElInput v-model="spaceEntryForm.path_pattern" placeholder="例如 /a/** 或 /shop/:id" />
           <div class="app-form-hint">
             支持 <code>*</code> / <code>**</code> / <code>:name</code>，且必须落在 APP
@@ -751,7 +818,9 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
+  import { HttpError } from '@/utils/http/error'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import {
@@ -805,6 +874,42 @@
   const editingAppKey = ref('')
   const editingEntryId = ref('')
   const editingSpaceEntryId = ref('')
+
+  // ── 字段级错误回显：三个表单独立维护 fieldErrors；后端 Error.details.<field> 打进对应表
+  // 规范：docs/guides/frontend-observability-spec.md §2.4。
+  const appFormRef = ref<FormInstance>()
+  const appFieldErrors = reactive<Record<string, string>>({})
+  const entryFormRef = ref<FormInstance>()
+  const entryFieldErrors = reactive<Record<string, string>>({})
+  const spaceEntryFormRef = ref<FormInstance>()
+  const spaceEntryFieldErrors = reactive<Record<string, string>>({})
+
+  const appFormRules: FormRules = {
+    app_key: [
+      { required: true, message: '请输入应用标识', trigger: 'blur' },
+      { pattern: /^[a-z0-9][a-z0-9-]*$/, message: '仅允许小写字母数字和短横线', trigger: 'blur' }
+    ],
+    name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }]
+  }
+
+  function clearFieldErrors(target: Record<string, string>) {
+    for (const k of Object.keys(target)) delete target[k]
+  }
+
+  function applyBackendFieldErrors(target: Record<string, string>, e: unknown): boolean {
+    if (!(e instanceof HttpError)) return false
+    const data = (e.data || {}) as { details?: Record<string, string> }
+    const details = data.details
+    if (!details || typeof details !== 'object') return false
+    let applied = false
+    for (const [field, reason] of Object.entries(details)) {
+      if (typeof reason === 'string') {
+        target[field] = reason
+        applied = true
+      }
+    }
+    return applied
+  }
   const appForm = reactive<Api.SystemManage.AppSaveParams>({
     app_key: '',
     name: '',
@@ -1431,12 +1536,15 @@
   }
 
   async function saveApp() {
+    clearFieldErrors(appFieldErrors)
+    const valid = await appFormRef.value?.validate().catch(() => false)
+    if (!valid) return
     if (!appForm.app_key.trim()) {
-      ElMessage.warning('请输入应用标识')
+      appFieldErrors.app_key = '请输入应用标识'
       return
     }
     if (!appForm.name.trim()) {
-      ElMessage.warning('请输入应用名称')
+      appFieldErrors.name = '请输入应用名称'
       return
     }
     let capabilities: Record<string, any>
@@ -1490,6 +1598,7 @@
       selectedAppKey.value = saved.appKey
       await loadData()
     } catch (error: any) {
+      if (applyBackendFieldErrors(appFieldErrors, error)) return
       ElMessage.error(error?.message || '应用保存失败')
     } finally {
       savingApp.value = false
@@ -1513,17 +1622,24 @@
   }
 
   async function saveEntryBinding() {
+    clearFieldErrors(entryFieldErrors)
     if (!selectedAppKey.value) {
       ElMessage.warning('请先选择应用')
       return
     }
     const err = validateEntryForm(entryForm)
     if (err) {
-      ElMessage.warning(err)
+      // 按字段精准标注，而不是整体 toast
+      if (err.startsWith('Host')) entryFieldErrors.host = err
+      else if (err.startsWith('路径模式')) entryFieldErrors.path_pattern = err
+      else {
+        entryFieldErrors.host = err
+        entryFieldErrors.path_pattern = err
+      }
       return
     }
     if (!resolveSpaceKey(entryForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey)) {
-      ElMessage.warning('请选择或填写默认空间')
+      entryFieldErrors.default_space_key = '请选择或填写默认空间'
       return
     }
     savingHost.value = true
@@ -1543,6 +1659,7 @@
       entryDialogVisible.value = false
       await loadSelectedAppContext(selectedAppKey.value)
     } catch (error: any) {
+      if (applyBackendFieldErrors(entryFieldErrors, error)) return
       ElMessage.error(error?.message || '入口绑定保存失败')
     } finally {
       savingHost.value = false
@@ -1561,17 +1678,23 @@
   }
 
   async function saveSpaceEntryBinding() {
+    clearFieldErrors(spaceEntryFieldErrors)
     if (!selectedAppKey.value) {
       ElMessage.warning('请先选择应用')
       return
     }
     if (!spaceEntryForm.space_key) {
-      ElMessage.warning('请选择目标菜单空间')
+      spaceEntryFieldErrors.space_key = '请选择目标菜单空间'
       return
     }
     const err = validateEntryForm(spaceEntryForm)
     if (err) {
-      ElMessage.warning(err)
+      if (err.startsWith('Host')) spaceEntryFieldErrors.host = err
+      else if (err.startsWith('路径模式')) spaceEntryFieldErrors.path_pattern = err
+      else {
+        spaceEntryFieldErrors.host = err
+        spaceEntryFieldErrors.path_pattern = err
+      }
       return
     }
     savingSpaceEntry.value = true
@@ -1587,6 +1710,7 @@
       spaceEntryDialogVisible.value = false
       await loadSelectedAppContext(selectedAppKey.value)
     } catch (error: any) {
+      if (applyBackendFieldErrors(spaceEntryFieldErrors, error)) return
       ElMessage.error(error?.message || '菜单空间入口绑定保存失败')
     } finally {
       savingSpaceEntry.value = false

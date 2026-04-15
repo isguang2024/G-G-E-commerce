@@ -22,6 +22,7 @@ import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse } from '@/types'
+import { setLastRequestId } from '@/utils/logger'
 import {
   isUnauthorizedBusinessCode,
   retryAxiosRequestWithRefresh,
@@ -143,6 +144,8 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   async (response: AxiosResponse<BaseResponse>) => {
+    // 把后端回传的 X-Request-Id 记到 logger —— 供后续前端日志 join 后端审计。
+    captureRequestIdFromHeaders(response.headers)
     const { code, message, msg } = response.data
     // 后端返回 code: 0 表示成功，其他值表示错误
     if (code === 0) return response
@@ -167,6 +170,8 @@ axiosInstance.interceptors.response.use(
     throw createHttpError(errorMsg, code, { data: response.data.data })
   },
   async (error) => {
+    // 错误响应也尝试抓 request_id（超时/4xx/5xx 都有头部）
+    captureRequestIdFromHeaders(error.response?.headers)
     // HTTP 状态码错误处理
     if (error.response?.status === ApiStatus.unauthorized) {
       if (shouldBypassUnauthorizedLogout(error.config?.url)) {
@@ -284,6 +289,26 @@ async function doRequest<T = any>(config: ExtendedAxiosRequestConfig): Promise<T
     }
     return Promise.reject(error)
   }
+}
+
+/**
+ * captureRequestIdFromHeaders 从响应头里抓 X-Request-Id 并推给 logger。
+ * axios 的 headers 取值对大小写不敏感，但 .get 方法名会随版本变化；
+ * 这里做一次宽松读取，防止因 header 大小写或 getter 缺失导致静默丢失。
+ */
+function captureRequestIdFromHeaders(headers: any): void {
+  if (!headers) return
+  let rid = ''
+  try {
+    if (typeof headers.get === 'function') {
+      rid = headers.get('x-request-id') || headers.get('X-Request-Id') || ''
+    } else {
+      rid = headers['x-request-id'] || headers['X-Request-Id'] || ''
+    }
+  } catch {
+    /* 静默：抓不到 request_id 不影响主链路 */
+  }
+  if (rid) setLastRequestId(String(rid))
 }
 
 /** API方法集合 */

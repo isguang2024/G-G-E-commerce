@@ -155,6 +155,21 @@
 
     <!-- 结果区 -->
     <template v-if="result">
+      <!-- 观测点：结果总览元数据 -->
+      <div
+        data-testid="trace-summary"
+        :data-authenticated="result.authenticated ? '1' : '0'"
+        :data-super-admin="result.superAdmin ? '1' : '0'"
+        :data-action-key-count="result.actionKeyCount ?? 0"
+        :data-visible-menu-count="visibleMenuCount"
+        :data-visible-page-count="visiblePageCount"
+        :data-total-page-count="pageRows.length"
+        :data-space-key="result.spaceKey || ''"
+        :data-collaboration-workspace-id="result.collaborationWorkspaceId || ''"
+        :data-user-id="result.userId || ''"
+        hidden
+      ></div>
+
       <!-- 概览统计卡 -->
       <div class="trace-stats">
         <div class="stat-card">
@@ -242,7 +257,15 @@
         >
           <ElTableColumn prop="roleCode" label="角色编码" min-width="180">
             <template #default="{ row }">
-              <span class="mono">{{ row.roleCode || '-' }}</span>
+              <span
+                class="mono"
+                data-testid="trace-node"
+                data-node-type="role"
+                :data-role-code="row.roleCode || ''"
+                :data-role-id="row.roleId || ''"
+                :data-status="row.status || ''"
+                >{{ row.roleCode || '-' }}</span
+              >
             </template>
           </ElTableColumn>
           <ElTableColumn prop="roleName" label="角色名称" min-width="180" />
@@ -252,6 +275,8 @@
                 :type="row.status === 'normal' ? 'success' : 'info'"
                 effect="plain"
                 size="small"
+                :data-testid="'trace-node-status'"
+                :data-status="row.status || ''"
               >
                 {{ row.status || '-' }}
               </ElTag>
@@ -313,7 +338,19 @@
           class="menu-tree"
         >
           <template #default="{ node, data }">
-            <div class="menu-node" :class="{ 'menu-node-hidden': !data.visible }">
+            <div
+              class="menu-node"
+              :class="{ 'menu-node-hidden': !data.visible }"
+              data-testid="trace-node"
+              data-node-type="menu"
+              :data-menu-id="data.id"
+              :data-parent-id="data.parentId || ''"
+              :data-visible="data.visible ? '1' : '0'"
+              :data-status="data.visible ? 'visible' : 'denied'"
+              :data-kind="data.kind || ''"
+              :data-full-path="data.fullPath || ''"
+              :data-hidden="data.hidden ? '1' : '0'"
+            >
               <ElTag
                 size="small"
                 :type="data.visible ? 'success' : 'danger'"
@@ -381,7 +418,20 @@
           </ElTableColumn>
           <ElTableColumn label="页面" min-width="260">
             <template #default="{ row }">
-              <div class="page-cell">
+              <div
+                class="page-cell"
+                data-testid="trace-node"
+                data-node-type="page"
+                :data-page-key="row.pageKey || ''"
+                :data-page-name="row.pageName || ''"
+                :data-visible="row.visible ? '1' : '0'"
+                :data-status="row.visible ? 'visible' : 'denied'"
+                :data-reason="row.reason || ''"
+                :data-access-mode="row.accessMode || ''"
+                :data-permission-key="row.permissionKey || ''"
+                :data-matched-action-key="row.matchedActionKey || ''"
+                :data-route-path="row.routePath || ''"
+              >
                 <div class="page-cell-name">{{ row.pageName || '-' }}</div>
                 <div class="page-cell-key mono">{{ row.pageKey }}</div>
               </div>
@@ -406,7 +456,14 @@
           </ElTableColumn>
           <ElTableColumn label="判定" min-width="160">
             <template #default="{ row }">
-              <ElTag size="small" effect="plain" :type="row.visible ? 'success' : 'danger'">
+              <ElTag
+                size="small"
+                effect="plain"
+                :type="row.visible ? 'success' : 'danger'"
+                :data-testid="row.visible ? 'trace-node-reason' : 'trace-node-error'"
+                :data-reason-code="row.reason || ''"
+                :data-visible="row.visible ? '1' : '0'"
+              >
                 {{ formatReason(row.reason) }}
               </ElTag>
             </template>

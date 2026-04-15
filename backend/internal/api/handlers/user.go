@@ -15,6 +15,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
@@ -139,14 +140,42 @@ func (h *APIHandler) CreateUser(ctx context.Context, req *gen.UserCreateRequest)
 	created, err := h.userSvc.Create(dtoReq)
 	if err != nil {
 		if errors.Is(err, user.ErrUserExists) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.create",
+				ResourceType: "user",
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "user_exists",
+				Metadata:     map[string]any{"username": req.Username},
+			})
 			return &gen.CreateUserBadRequest{Code: 400, Message: "用户名已存在"}, nil
 		}
 		if errors.Is(err, user.ErrEmailExists) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.create",
+				ResourceType: "user",
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "email_exists",
+				Metadata:     map[string]any{"username": req.Username},
+			})
 			return &gen.CreateUserBadRequest{Code: 400, Message: "邮箱已存在"}, nil
 		}
 		h.logger.Error("create user failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.user.create",
+			ResourceType: "user",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     map[string]any{"username": req.Username},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.user.create",
+		ResourceType: "user",
+		ResourceID:   created.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"username": req.Username},
+	})
 	return &gen.UserCreateResult{ID: created.ID}, nil
 }
 
@@ -160,14 +189,42 @@ func (h *APIHandler) UpdateUser(ctx context.Context, req *gen.UserUpdateRequest,
 	dtoReq := userUpdateRequestFromGen(req)
 	if err := h.userSvc.Update(params.ID, dtoReq); err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.update",
+				ResourceType: "user",
+				ResourceID:   params.ID.String(),
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "not_found",
+			})
 			return &gen.UpdateUserNotFound{Code: 404, Message: "用户不存在"}, nil
 		}
 		if errors.Is(err, user.ErrEmailExists) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.update",
+				ResourceType: "user",
+				ResourceID:   params.ID.String(),
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "email_exists",
+			})
 			return &gen.UpdateUserBadRequest{Code: 400, Message: "邮箱已存在"}, nil
 		}
 		h.logger.Error("update user failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.user.update",
+			ResourceType: "user",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.user.update",
+		ResourceType: "user",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		After:        dtoReq,
+	})
 	return &gen.UserMutationResult{Success: true}, nil
 }
 
@@ -177,11 +234,31 @@ func (h *APIHandler) DeleteUser(ctx context.Context, params gen.DeleteUserParams
 	}
 	if err := h.userSvc.Delete(params.ID); err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.delete",
+				ResourceType: "user",
+				ResourceID:   params.ID.String(),
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "not_found",
+			})
 			return &gen.DeleteUserNotFound{Code: 404, Message: "用户不存在"}, nil
 		}
 		h.logger.Error("delete user failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.user.delete",
+			ResourceType: "user",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.user.delete",
+		ResourceType: "user",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+	})
 	return &gen.UserMutationResult{Success: true}, nil
 }
 
@@ -194,11 +271,34 @@ func (h *APIHandler) AssignUserRoles(ctx context.Context, req *gen.UserAssignRol
 	}
 	if err := h.userSvc.AssignRoles(params.ID, req.RoleIds); err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
+			h.audit.Record(ctx, audit.Event{
+				Action:       "system.user.assign_roles",
+				ResourceType: "user",
+				ResourceID:   params.ID.String(),
+				Outcome:      audit.OutcomeError,
+				ErrorCode:    "not_found",
+				Metadata:     map[string]any{"role_ids": req.RoleIds},
+			})
 			return &gen.AssignUserRolesNotFound{Code: 404, Message: "用户不存在"}, nil
 		}
 		h.logger.Error("assign user roles failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.user.assign_roles",
+			ResourceType: "user",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata:     map[string]any{"role_ids": req.RoleIds},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.user.assign_roles",
+		ResourceType: "user",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"role_ids": req.RoleIds},
+	})
 	return &gen.UserMutationResult{Success: true}, nil
 }
 

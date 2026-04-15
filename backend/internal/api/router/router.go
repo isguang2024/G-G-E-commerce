@@ -13,24 +13,47 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/handlers"
 	"github.com/gg-ecommerce/backend/internal/api/middleware"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 	"github.com/gg-ecommerce/backend/internal/modules/system/social"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
+	pkgLogger "github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 )
 
-func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engine {
+// SetupRouter 构建主 HTTP 路由。
+//
+// 参数顺序：cfg → logger → db → auditRecorder → telemetryIngester。
+// 两个 observability 组件都不允许为 nil —— 关闭时请分别传 audit.Noop{} /
+// telemetry.Noop{}，避免下游 handler 判空遗漏。
+//
+// 中间件挂载顺序的约定（从上到下严格）：
+//  1. RequestID：产生/回显 X-Request-Id，并把它写进 gin.Context 与 request.Context；
+//     必须是 #1，因为后续 Logger / Recovery / 审计都依赖这个字段做 join key。
+//  2. Logger：access log，读 request_id + app/space/auth 标签，链路级打点。
+//  3. Recovery：兜底 panic，出错也能带上 request_id 写进日志便于回溯。
+//  4. AppContext → DynamicAppSecurity：解析 app_key / space_key / auth_mode。
+func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecorder audit.Recorder, telemetryIngester telemetry.Ingester) *gin.Engine {
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
+	}
+	if auditRecorder == nil {
+		auditRecorder = audit.Noop{}
+	}
+	if telemetryIngester == nil {
+		telemetryIngester = telemetry.Noop{}
 	}
 
 	r := gin.New()
 
+	// 约定：RequestID 必须挂在第一条，后续中间件的日志字段 / ctx 都依赖它。
+	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.Recovery(logger))
 	r.Use(middleware.AppContext(db))
@@ -83,9 +106,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	// Build the ogen server once. It handles all OpenAPI-first operations
 	// (both public and authenticated). The Gin layer routes the public ones
 	// outside the JWT middleware and the rest inside.
-	permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger)
+	permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger, auditRecorder)
 	ogenServer, err := apigen.NewServer(
-		handlers.NewAPIHandler(db, cfg, logger, permEvaluator, apiEndpointSvc),
+		handlers.NewAPIHandler(db, cfg, logger, permEvaluator, apiEndpointSvc, auditRecorder, telemetryIngester),
 		handlers.SecurityHandler{},
 		apigen.WithMiddleware(permMW),
 		apigen.WithErrorHandler(apperr.ErrorHandler(logger)),
@@ -93,16 +116,24 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	if err != nil {
 		logger.Fatal("failed to build ogen server", zap.Error(err))
 	}
+	// ogenServeWith 把 gin.Context 上已经落位的字段透出到 request.Context，
+	// 同时往 pkgLogger 的类型化 ctx 里注入 request_id / actor / tenant / app /
+	// workspace / client 信息 —— 下游任何 handler 拿到 ctx 都可以：
+	//   - logger.With(ctx).Info(...) 得到带全链路字段的结构化日志；
+	//   - auditRecorder.Record(ctx, ...) 自动补齐 audit 行上的身份/租户列。
 	ogenServeWith := func(c *gin.Context, withUser bool) {
 		ctx := c.Request.Context()
 		if withUser {
-			ctx = context.WithValue(ctx, handlers.CtxUserID, c.GetString("user_id"))
+			userID := c.GetString("user_id")
+			ctx = context.WithValue(ctx, handlers.CtxUserID, userID)
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
 			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
 			if authTime, exists := c.Get("auth_time"); exists {
 				ctx = context.WithValue(ctx, handlers.CtxAuthTime, authTime)
 			}
+			ctx = pkgLogger.WithActor(ctx, userID, "user")
+			ctx = pkgLogger.WithWorkspace(ctx, c.GetString("collaboration_workspace_id"))
 		}
 		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
 		requestHost := strings.TrimSpace(c.GetString("request_host"))
@@ -112,6 +143,17 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		ctx = context.WithValue(ctx, handlers.CtxRequestHost, requestHost)
 		ctx = context.WithValue(ctx, handlers.CtxRequestPath, c.Request.URL.Path)
 		ctx = context.WithValue(ctx, handlers.CtxUserAgent, c.Request.UserAgent())
+
+		// pkgLogger 类型化 ctx：租户目前固定 default；app_key 来自 AppContext；
+		// IP / UA 放到独立键，审计 row 直接读即可。
+		if tenant := strings.TrimSpace(c.GetString("tenant_id")); tenant != "" {
+			ctx = pkgLogger.WithTenant(ctx, tenant)
+		} else {
+			ctx = pkgLogger.WithTenant(ctx, "default")
+		}
+		ctx = pkgLogger.WithApp(ctx, c.GetString("app_key"))
+		ctx = pkgLogger.WithClient(ctx, c.ClientIP(), c.Request.UserAgent())
+
 		req := c.Request.Clone(ctx)
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
 		ogenServer.ServeHTTP(c.Writer, req)
@@ -142,6 +184,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		v1.GET("/auth/register-context", publicBridge)
 		v1.GET("/auth/login-page-context", publicBridge)
 		v1.GET("/pages/runtime/public", publicBridge)
+		// telemetry 走 public bridge：登录前的脚本错误/资源错误也要能上报。
+		v1.POST("/telemetry/logs", publicBridge)
 
 		authenticated := v1.Group("")
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
@@ -393,6 +437,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/media/upload", ogenBridge)
 			authenticated.GET("/media", ogenBridge)
 			authenticated.DELETE("/media/:id", ogenBridge)
+
+			// ── observability (audit / telemetry read-only queries) ────────
+			// 写入链路走异步 recorder/ingester；这里只暴露登录后的后台查询页用。
+			authenticated.GET("/observability/audit-logs", ogenBridge)
+			// /stats 必须在 /:id 之前，避免 "stats" 被当作 id 捕获
+			authenticated.GET("/observability/audit-logs/stats", ogenBridge)
+			authenticated.GET("/observability/audit-logs/:id", ogenBridge)
+			authenticated.GET("/observability/telemetry-logs", ogenBridge)
+			authenticated.GET("/observability/telemetry-logs/:id", ogenBridge)
+			authenticated.GET("/observability/trace/:request_id", ogenBridge)
 		}
 
 		open := r.Group("/open/v1")
@@ -401,7 +455,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 	}
 
-	if err := apiendpoint.SyncRoutes(db, logger, r.Routes()); err != nil {
+	if _, err := apiendpoint.SyncRoutes(db, logger, r.Routes()); err != nil {
 		logger.Error("Failed to sync API registry", zap.Error(err))
 	}
 	if err := endpointAccessService.Refresh(); err != nil {

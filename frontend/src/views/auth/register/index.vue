@@ -223,6 +223,7 @@
   import { RoutesAlias } from '@/router/routesAlias'
   import { useRegisterFlow, type RegisterFormState } from '@/domains/auth/flows/useRegisterFlow'
   import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
+  import { logger } from '@/utils/logger'
   import SocialLoginPanel from '../login/components/SocialLoginPanel.vue'
 
   defineOptions({ name: 'Register' })
@@ -410,7 +411,7 @@
       await formRef.value.validate()
       await register(formData)
     } catch (error) {
-      console.error('[Register] 表单验证失败:', error)
+      logger.error('auth.register.form_validation_failed', { err: error })
     }
   }
 

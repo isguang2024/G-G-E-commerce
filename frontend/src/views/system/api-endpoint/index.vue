@@ -68,6 +68,8 @@
                     v-action="'system.api_registry.sync'"
                     plain
                     :loading="syncing"
+                    data-testid="api-endpoint-sync-button"
+                    :data-loading="syncing ? '1' : '0'"
                     @click="handleSync"
                     v-ripple
                   >
@@ -79,6 +81,8 @@
                   <ElButton
                     v-action="'system.api_registry.view'"
                     plain
+                    data-testid="api-endpoint-unregistered-button"
+                    :data-count="unregisteredCount"
                     @click="openUnregisteredDialog"
                     v-ripple
                   >
@@ -92,6 +96,9 @@
                     plain
                     type="danger"
                     :loading="cleaningStale"
+                    data-testid="api-endpoint-cleanup-stale-button"
+                    :data-loading="cleaningStale ? '1' : '0'"
+                    :data-count="staleCount"
                     @click="handleCleanupStale"
                     v-ripple
                   >
@@ -353,9 +360,15 @@
       </div>
     </ElDrawer>
 
-    <ElDialog v-model="staleDialogVisible" title="清理失效 API" width="980px" destroy-on-close>
+    <ElDialog
+      v-model="staleDialogVisible"
+      title="清理失效 API"
+      width="980px"
+      destroy-on-close
+      data-testid="api-endpoint-stale-dialog"
+    >
       <div class="stale-dialog-tip">
-        仅会删除“来源为自动同步、且源码中已不存在”的失效 API，请勾选后执行删除。
+        仅会删除"来源为自动同步、且源码中已不存在"的失效 API，请勾选后执行删除。
       </div>
 
       <ElTable
@@ -364,6 +377,7 @@
         border
         height="420px"
         row-key="id"
+        data-testid="api-endpoint-stale-table"
         @selection-change="handleStaleSelectionChange"
       >
         <ElTableColumn type="selection" width="52" reserve-selection />
@@ -411,7 +425,13 @@
           </div>
           <div class="stale-dialog-footer-actions">
             <ElButton @click="closeStaleDialog">取消</ElButton>
-            <ElButton type="danger" :loading="cleaningStale" @click="submitCleanupStale">
+            <ElButton
+              type="danger"
+              :loading="cleaningStale"
+              data-testid="api-endpoint-stale-confirm-button"
+              :data-selected="selectedStaleIds.length"
+              @click="submitCleanupStale"
+            >
               删除选中
             </ElButton>
           </div>

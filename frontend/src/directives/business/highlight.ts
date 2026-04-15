@@ -41,6 +41,8 @@
 import { App, Directive } from 'vue'
 import hljs from 'highlight.js'
 
+import { logger } from '@/utils/logger'
+
 type HighlightHostElement = HTMLElement & {
   _highlightObserver?: MutationObserver
 }
@@ -118,7 +120,7 @@ function processBlock(block: HTMLElement) {
     addCopyButton(block)
     markBlockAsProcessed(block)
   } catch (error) {
-    console.warn('处理代码块时出错:', error)
+    logger.debug('directives.highlight.process_block_failed', { err: error })
   }
 }
 

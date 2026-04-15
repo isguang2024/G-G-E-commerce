@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchLogin, fetchSocialTokenExchange } from '@/domains/auth/api'
 import { HttpError } from '@/utils/http/error'
+import { logger } from '@/utils/logger'
 import {
   buildLandingFromQuery,
   finalizeAuthenticatedSession,
@@ -96,7 +97,7 @@ export function useLoginFlow() {
       if (message) {
         submitError.value = message
       } else {
-        console.error('[Login] Unexpected error:', error)
+        logger.error('auth.login_unexpected_error', { err: error })
       }
     } finally {
       loading.value = false

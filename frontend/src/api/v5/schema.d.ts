@@ -4,6 +4,158 @@
  */
 
 export interface paths {
+    "/telemetry/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 前端日志批量上报
+         * @description 前端 logger 将缓存的日志条目批量上报。登录态会带 Authorization，匿名态也允许
+         *     上报（例如登录页报错）。服务端会按 session_id + IP 做限流，超限直接丢弃并返回
+         *     accepted=0，不抛 4xx 以免前端认为需要重试。
+         */
+        post: operations["ingestTelemetryLogs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询审计日志
+         * @description 按 action / actor / outcome / resource / request_id / 时间段过滤分页查询
+         *     audit_logs。只读端点，永远不触发 DB 写入。
+         */
+        get: operations["listAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/audit-logs/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 审计日志聚合统计
+         * @description 按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。
+         *     典型用途：dashboard widget、运维仪表盘小图。
+         *     - `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；
+         *     - `group_by=action`：按 `action` 聚合，桶按 count 降序；
+         *     - `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。
+         *     空区间返回 `buckets: []`（不是 null）。只读端点。
+         */
+        get: operations["getAuditLogStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/audit-logs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 审计日志详情
+         * @description 返回单条 audit_logs 行，含完整 before / after / metadata JSON。
+         */
+        get: operations["getAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/telemetry-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询前端遥测日志
+         * @description 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
+         *     telemetry_logs。只读端点。
+         */
+        get: operations["listTelemetryLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/telemetry-logs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 遥测日志详情
+         * @description 返回单条 telemetry_logs 行，含完整 payload JSON。
+         */
+        get: operations["getTelemetryLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/trace/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按 request_id 拉取审计 + 遥测全链路
+         * @description 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
+         *     条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。
+         *     权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中
+         *     telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。
+         */
+        get: operations["getObservabilityTrace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/register-entries": {
         parameters: {
             query?: never;
@@ -3184,6 +3336,186 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /**
+         * @description 日志级别；顺序与后端 zap 对齐。
+         * @enum {string}
+         */
+        TelemetryLogLevel: "debug" | "info" | "warn" | "error";
+        /** @description 前端序列化后的 Error 快照。字符串长度由服务端强制截断，避免整段 stack 炸库。 */
+        TelemetryErrorSnapshot: {
+            name?: string;
+            message?: string;
+            stack?: string;
+        };
+        TelemetryViewport: {
+            w: number;
+            h: number;
+        };
+        TelemetryLogEntry: {
+            level: components["schemas"]["TelemetryLogLevel"];
+            /** @description 稳定事件名（dot-case），服务端按此聚合。 */
+            event: string;
+            /**
+             * Format: date-time
+             * @description 发生时间（ISO8601，UTC）。
+             */
+            timestamp: string;
+            /** @description 对应后端 X-Request-Id，便于和 audit/access 日志 join。 */
+            request_id?: string;
+            /** @description 结构化字段；前端已做敏感字段脱敏，服务端会再过一次。 */
+            context?: {
+                [key: string]: unknown;
+            };
+            error?: components["schemas"]["TelemetryErrorSnapshot"];
+            route?: string;
+            /** @description 空串表示匿名会话。 */
+            user_id?: string;
+            session_id: string;
+            user_agent: string;
+            viewport: components["schemas"]["TelemetryViewport"];
+        };
+        TelemetryIngestRequest: {
+            entries: components["schemas"]["TelemetryLogEntry"][];
+        };
+        TelemetryIngestResponse: {
+            /**
+             * Format: int32
+             * @description 实际落库的条数。
+             */
+            accepted: number;
+            /**
+             * Format: int32
+             * @description 被限流/脱敏策略丢弃的条数；服务端不会 4xx，保证客户端不因此再次重试。
+             */
+            dropped: number;
+        };
+        /** @description audit_logs 一行的精简视图，列表接口返回。 */
+        AuditLogItem: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            ts: string;
+            request_id?: string;
+            tenant_id: string;
+            actor_id: string;
+            actor_type: string;
+            app_key?: string;
+            workspace_id?: string;
+            action: string;
+            resource_type?: string;
+            resource_id?: string;
+            outcome: string;
+            error_code?: string;
+            http_status?: number;
+            ip?: string;
+            user_agent?: string;
+        };
+        AuditLogList: {
+            records: components["schemas"]["AuditLogItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        /** @description 一行聚合桶。bucket 是维度值（action 字符串 / outcome 字符串 / ISO8601 小时时间戳）。 */
+        AuditLogStatsBucket: {
+            bucket: string;
+            /** Format: int64 */
+            count: number;
+        };
+        /** @description audit_logs 聚合统计结果。空区间 buckets 为空数组。 */
+        AuditLogStats: {
+            /** @enum {string} */
+            group_by: "action" | "outcome" | "hour";
+            buckets: components["schemas"]["AuditLogStatsBucket"][];
+        };
+        /** @description 单条审计日志详情，含脱敏后的 before / after / metadata JSON。 */
+        AuditLogDetail: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            ts: string;
+            request_id?: string;
+            tenant_id: string;
+            actor_id: string;
+            actor_type: string;
+            app_key?: string;
+            workspace_id?: string;
+            action: string;
+            resource_type?: string;
+            resource_id?: string;
+            outcome: string;
+            error_code?: string;
+            http_status?: number;
+            ip?: string;
+            user_agent?: string;
+            before?: {
+                [key: string]: unknown;
+            } | null;
+            after?: {
+                [key: string]: unknown;
+            } | null;
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** @description telemetry_logs 一行的精简视图（列表）。 */
+        TelemetryLogRecord: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            ts: string;
+            request_id?: string;
+            session_id?: string;
+            tenant_id: string;
+            actor_id?: string;
+            app_key?: string;
+            level: string;
+            event: string;
+            message?: string;
+            url?: string;
+            user_agent?: string;
+            ip?: string;
+            release?: string;
+        };
+        TelemetryLogList: {
+            records: components["schemas"]["TelemetryLogRecord"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        /** @description 单条遥测日志详情，含完整 payload（前端原始上下文 + error 快照）。 */
+        TelemetryLogDetail: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            ts: string;
+            request_id?: string;
+            session_id?: string;
+            tenant_id: string;
+            actor_id?: string;
+            app_key?: string;
+            level: string;
+            event: string;
+            message?: string;
+            url?: string;
+            user_agent?: string;
+            ip?: string;
+            release?: string;
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * @description 以 request_id 作为聚合 key，把同一次请求里产生的所有 audit_logs 与
+         *     telemetry_logs 折叠返回。两边都按 ts 升序排列；调用方按时间线渲染。
+         */
+        ObservabilityTraceBundle: {
+            request_id: string;
+            audit_logs: components["schemas"]["AuditLogItem"][];
+            telemetry_logs: components["schemas"]["TelemetryLogRecord"][];
+        };
         RegisterEntryItem: {
             /** Format: uuid */
             id: string;
@@ -4759,11 +5091,21 @@ export interface components {
             action_target?: string;
             biz_type?: string;
             expired_at?: string;
+            /**
+             * @description true 时进入沙箱预览：服务端完成参数/模板/收件人解析与校验，但 **不写 messages 表、不入队、不触发交付**。
+             *     返回的 `dispatch_status = "preview"`，`message_id` 为零值 UUID。
+             *     面向 E2E 深测与 QA 回归，避免污染真实消息流。缺省或 false 时走常规 queued 派发。
+             */
+            dry_run?: boolean;
         };
         MessageDispatchResult: {
             /** Format: uuid */
             message_id: string;
             delivery_count: number;
+            /**
+             * @description 'queued' — 已入队等待 worker 派发（真实投递）。
+             *     'preview' — 本次是 dry_run，未写库、未入队、未触达收件人（E2E/QA 沙箱用）。
+             */
             dispatch_status: string;
         };
         MessageTemplateMeta: Record<string, never>;
@@ -5069,6 +5411,16 @@ export interface components {
             sort_order: number;
             status: string;
         };
+        SyncApiEndpointsResult: {
+            /** Format: int64 */
+            processed: number;
+            /** Format: int64 */
+            created: number;
+            /** Format: int64 */
+            updated: number;
+            /** Format: int64 */
+            total_count: number;
+        };
         CleanupStaleRequest: {
             ids: string[];
         };
@@ -5166,7 +5518,7 @@ export interface components {
             records: components["schemas"]["MediaItem"][];
             total: number;
         };
-        "schemas-Error": {
+        "Error-2": {
             /**
              * @description 业务码（与 HTTP 状态码分离）。
              *     1xxxx 参数/请求 · 2xxxx 认证/授权 · 3xxxx 业务/资源 · 5xxxx 服务端
@@ -5191,7 +5543,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
         /** @description 未认证或凭证无效 */
@@ -5200,7 +5552,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
         /** @description 无权限 */
@@ -5209,7 +5561,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
         /** @description 资源不存在 */
@@ -5218,7 +5570,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
         /** @description 业务冲突（如资源已存在） */
@@ -5227,7 +5579,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
         /** @description 服务端内部错误 */
@@ -5236,7 +5588,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["schemas-Error"];
+                "application/json": components["schemas"]["Error-2"];
             };
         };
     };
@@ -5247,6 +5599,336 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ingestTelemetryLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryIngestRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryIngestResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAuditLogs: {
+        parameters: {
+            query?: {
+                current?: number;
+                size?: number;
+                action?: string;
+                actor_id?: string;
+                outcome?: string;
+                resource_type?: string;
+                resource_id?: string;
+                request_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAuditLogStats: {
+        parameters: {
+            query: {
+                from?: string;
+                to?: string;
+                group_by: "action" | "outcome" | "hour";
+                /** @description 非时间维度返回桶上限，默认 20，最大 100 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogStats"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAuditLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listTelemetryLogs: {
+        parameters: {
+            query?: {
+                current?: number;
+                size?: number;
+                level?: string;
+                event?: string;
+                session_id?: string;
+                actor_id?: string;
+                request_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryLogList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getTelemetryLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryLogDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getObservabilityTrace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservabilityTraceBundle"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listRegisterEntries: {
         parameters: {
             query?: never;
@@ -10474,7 +11156,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MutationResult"];
+                    "application/json": components["schemas"]["SyncApiEndpointsResult"];
                 };
             };
             /** @description Unauthorized */

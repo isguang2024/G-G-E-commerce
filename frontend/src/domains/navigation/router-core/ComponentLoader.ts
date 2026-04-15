@@ -8,6 +8,7 @@
  */
 
 import { h } from 'vue'
+import { logger } from '@/utils/logger'
 
 export class ComponentLoader {
   private modules: Record<string, () => Promise<any>>
@@ -35,9 +36,12 @@ export class ComponentLoader {
 
     if (!module) {
       if (import.meta.env.DEV && !this.missingPathCache.has(resolvedPath)) {
-        console.warn(
-          `[ComponentLoader] 未找到组件: ${componentPath}（解析后: ${resolvedPath}），尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
-        )
+        logger.debug('navigation.component_loader.missing_component', {
+          componentPath,
+          resolvedPath,
+          fullPath,
+          fullPathWithIndex
+        })
         this.missingPathCache.add(resolvedPath)
       }
       return this.createErrorComponent(componentPath)

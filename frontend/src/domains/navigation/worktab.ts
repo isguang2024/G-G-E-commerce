@@ -48,6 +48,7 @@ import { useAppContextStore } from '@/domains/app-runtime/context'
 import { APP_SCOPE_GLOBAL, normalizeAppScopeKey } from '@/domains/app-runtime/app-scope'
 import { useMenuStore } from '@/domains/navigation/menu'
 import { getNavigationRouter } from '@/domains/navigation/runtime/router-instance'
+import { logger } from '@/utils/logger'
 
 interface WorktabState {
   current: Partial<WorkTab>
@@ -61,9 +62,10 @@ interface WorktabState {
 export const useWorktabStore = defineStore(
   'worktabStore',
   () => {
-    const warnDev = (...args: any[]) => {
+    const warnDev = (message: string, context?: Record<string, unknown>) => {
+      // DEV-only 提示：logger.debug 在生产自动丢弃，不产生上报。
       if (import.meta.env.DEV) {
-        console.warn(...args)
+        logger.debug(`navigation.worktab.${message}`, context)
       }
     }
     const resolveHomePath = (): string => useMenuStore().getHomePath()
@@ -166,7 +168,7 @@ export const useWorktabStore = defineStore(
           query: tab.query as LocationQueryRaw
         })
       } catch (error) {
-        console.error('路由跳转失败:', error)
+        logger.error('navigation.worktab.route_push_failed', { err: error, path: tab.path })
       }
     }
 
@@ -531,7 +533,7 @@ export const useWorktabStore = defineStore(
           current.value = {}
         }
       } catch (error) {
-        console.error('验证工作台标签页失败:', error)
+        logger.error('navigation.worktab.validate_failed', { err: error })
       }
     }
 

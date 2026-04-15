@@ -15,6 +15,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/register"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
@@ -249,9 +250,46 @@ func (h *APIHandler) ListRegisterEntries(ctx context.Context) (gen.ListRegisterE
 	return &gen.RegisterEntryList{Records: records, Total: len(records)}, nil
 }
 
+// checkEntryCodeUnique 验证 entry_code 唯一性。若 excludeID 非空，则排除自身（编辑场景）。
+// 冲突时返回 FieldError，mapper 会翻译为 400 + details.entry_code = Reason。
+func (h *APIHandler) checkEntryCodeUnique(ctx context.Context, code string, excludeID *uuid.UUID) error {
+	if code == "" {
+		return nil
+	}
+	q := h.db.WithContext(ctx).Model(&systemmodels.RegisterEntry{}).Where("entry_code = ?", code)
+	if excludeID != nil {
+		q = q.Where("id <> ?", *excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return &apperr.FieldError{
+			Field:  "entry_code",
+			Reason: "入口 Code 已存在",
+			Msg:    "入口 Code 已存在，请更换",
+			Code:   apperr.CodeConflict,
+		}
+	}
+	return nil
+}
+
 func (h *APIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterEntryUpsertRequest) (gen.CreateRegisterEntryRes, error) {
 	if req == nil {
 		return nil, errors.New("请求体为空")
+	}
+	if strings.TrimSpace(req.EntryCode) == "" {
+		return nil, &apperr.FieldError{Field: "entry_code", Reason: "不能为空", Msg: "请填写入口 Code"}
+	}
+	if strings.TrimSpace(req.Name) == "" {
+		return nil, &apperr.FieldError{Field: "name", Reason: "不能为空", Msg: "请填写名称"}
+	}
+	if strings.TrimSpace(req.AppKey) == "" {
+		return nil, &apperr.FieldError{Field: "app_key", Reason: "不能为空", Msg: "请选择所属 App"}
+	}
+	if err := h.checkEntryCodeUnique(ctx, req.EntryCode, nil); err != nil {
+		return nil, err
 	}
 	var entry systemmodels.RegisterEntry
 	if err := applyEntryUpsert(&entry, req); err != nil {
@@ -259,8 +297,28 @@ func (h *APIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterE
 	}
 	if err := h.db.WithContext(ctx).Create(&entry).Error; err != nil {
 		h.logger.Error("create register entry failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.entry.create",
+			ResourceType: "register_entry",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"entry_code": req.EntryCode,
+				"app_key":    req.AppKey,
+			},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.entry.create",
+		ResourceType: "register_entry",
+		ResourceID:   entry.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"entry_code": entry.EntryCode,
+			"app_key":    req.AppKey,
+		},
+	})
 	return entryToDTO(&entry), nil
 }
 
@@ -278,18 +336,44 @@ func (h *APIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterE
 	// 系统保留入口：不允许修改 entry_code 和 is_system_reserved
 	if entry.IsSystemReserved {
 		if req.EntryCode != entry.EntryCode {
-			return nil, &apperr.ParamError{Msg: "系统保留入口不可修改 entry_code"}
+			return nil, &apperr.FieldError{Field: "entry_code", Reason: "系统保留入口不可修改", Msg: "系统保留入口不可修改 entry_code"}
 		}
 		if req.IsSystemReserved.Set && !req.IsSystemReserved.Value {
-			return nil, &apperr.ParamError{Msg: "系统保留入口不可取消保留标记"}
+			return nil, &apperr.FieldError{Field: "is_system_reserved", Reason: "系统保留入口不可取消保留标记", Msg: "系统保留入口不可取消保留标记"}
 		}
+	}
+	if strings.TrimSpace(req.EntryCode) == "" {
+		return nil, &apperr.FieldError{Field: "entry_code", Reason: "不能为空", Msg: "请填写入口 Code"}
+	}
+	if strings.TrimSpace(req.Name) == "" {
+		return nil, &apperr.FieldError{Field: "name", Reason: "不能为空", Msg: "请填写名称"}
+	}
+	if strings.TrimSpace(req.AppKey) == "" {
+		return nil, &apperr.FieldError{Field: "app_key", Reason: "不能为空", Msg: "请选择所属 App"}
+	}
+	if err := h.checkEntryCodeUnique(ctx, req.EntryCode, &entry.ID); err != nil {
+		return nil, err
 	}
 	if err := applyEntryUpsert(&entry, req); err != nil {
 		return nil, &apperr.ParamError{Msg: err.Error()}
 	}
 	if err := h.db.WithContext(ctx).Save(&entry).Error; err != nil {
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.entry.update",
+			ResourceType: "register_entry",
+			ResourceID:   entry.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.entry.update",
+		ResourceType: "register_entry",
+		ResourceID:   entry.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"entry_code": entry.EntryCode},
+	})
 	return entryToDTO(&entry), nil
 }
 
@@ -302,11 +386,32 @@ func (h *APIHandler) DeleteRegisterEntry(ctx context.Context, params gen.DeleteR
 		return nil, err
 	}
 	if entry.IsSystemReserved {
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.entry.delete",
+			ResourceType: "register_entry",
+			ResourceID:   entry.ID.String(),
+			Outcome:      audit.OutcomeDenied,
+			ErrorCode:    "system_reserved",
+		})
 		return nil, &apperr.ParamError{Msg: "系统保留入口不可删除"}
 	}
 	if err := h.db.WithContext(ctx).Delete(&entry).Error; err != nil {
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.entry.delete",
+			ResourceType: "register_entry",
+			ResourceID:   entry.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.entry.delete",
+		ResourceType: "register_entry",
+		ResourceID:   entry.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata:     map[string]any{"entry_code": entry.EntryCode},
+	})
 	return &gen.DeleteRegisterEntryNoContent{}, nil
 }
 
@@ -346,8 +451,29 @@ func (h *APIHandler) CreateLoginPageTemplate(
 		}
 		return tx.Create(&item).Error
 	}); err != nil {
+		h.logger.Error("create login page template failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.template.create",
+			ResourceType: "login_page_template",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"template_key": req.TemplateKey,
+				"scene":        item.Scene,
+			},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.template.create",
+		ResourceType: "login_page_template",
+		ResourceID:   item.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"template_key": item.TemplateKey,
+			"scene":        item.Scene,
+		},
+	})
 	return loginPageTemplateToDTO(&item), nil
 }
 
@@ -379,8 +505,29 @@ func (h *APIHandler) UpdateLoginPageTemplate(
 		}
 		return tx.Save(&item).Error
 	}); err != nil {
+		h.logger.Error("update login page template failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.template.update",
+			ResourceType: "login_page_template",
+			ResourceID:   item.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"template_key": item.TemplateKey,
+			},
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.template.update",
+		ResourceType: "login_page_template",
+		ResourceID:   item.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"template_key": item.TemplateKey,
+			"scene":        item.Scene,
+		},
+	})
 	return loginPageTemplateToDTO(&item), nil
 }
 
@@ -392,11 +539,38 @@ func (h *APIHandler) DeleteLoginPageTemplate(
 		Where("tenant_id = ? AND template_key = ?", "default", params.TemplateKey).
 		Delete(&systemmodels.LoginPageTemplate{})
 	if res.Error != nil {
+		h.logger.Error("delete login page template failed", zap.Error(res.Error))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.template.delete",
+			ResourceType: "login_page_template",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(res.Error),
+			Metadata: map[string]any{
+				"template_key": params.TemplateKey,
+			},
+		})
 		return nil, res.Error
 	}
 	if res.RowsAffected == 0 {
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.register.template.delete",
+			ResourceType: "login_page_template",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    "not_found",
+			Metadata: map[string]any{
+				"template_key": params.TemplateKey,
+			},
+		})
 		return nil, gorm.ErrRecordNotFound
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.register.template.delete",
+		ResourceType: "login_page_template",
+		Outcome:      audit.OutcomeSuccess,
+		Metadata: map[string]any{
+			"template_key": params.TemplateKey,
+		},
+	})
 	return &gen.DeleteLoginPageTemplateNoContent{}, nil
 }
 

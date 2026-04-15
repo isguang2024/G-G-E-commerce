@@ -85,6 +85,7 @@
   } from '@/api/collaboration-workspace'
   import { ElMessage } from 'element-plus'
   import { ref, computed, reactive } from 'vue'
+  import { logger } from '@/utils/logger'
 
   interface Props {
     visible: boolean
@@ -134,7 +135,7 @@
         .map((r: any) => r.roleCode || r.roleName)
         .filter(Boolean)
     } catch (e) {
-      console.error('获取协作空间角色失败:', e)
+      logger.error('collaboration_workspace.load_my_roles_failed', { err: e })
     }
   }
 

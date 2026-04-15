@@ -210,6 +210,24 @@
   const showNotice = ref(false)
   const notice = ref(null)
 
+  // 首屏 Layout 可能因动态路由再导航而重挂载，onMounted 发出的 summary 请求
+  // 若没有显式 AbortController，浏览器会以 ERR_ABORTED 兜底取消，产生 console 噪音。
+  // 详见 docs/guides/dashboard-request-abort-rootcause.md
+  let summaryController: AbortController | null = null
+  const fireLoadSummary = (force = false) => {
+    summaryController?.abort('load-summary-refresh')
+    const controller = new AbortController()
+    summaryController = controller
+    messageStore
+      .loadSummary(force, { signal: controller.signal })
+      .catch(() => undefined)
+      .finally(() => {
+        if (summaryController === controller) {
+          summaryController = null
+        }
+      })
+  }
+
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
   const isDualMenu = computed(() => menuType.value === MenuTypeEnum.DUAL_MENU)
@@ -221,7 +239,7 @@
   onMounted(() => {
     initLanguage()
     if (isLogin.value) {
-      messageStore.loadSummary().catch(() => undefined)
+      fireLoadSummary(false)
     } else {
       messageStore.resetState()
     }
@@ -232,13 +250,18 @@
     isLogin,
     (loggedIn) => {
       if (loggedIn) {
-        void messageStore.loadSummary(true).catch(() => undefined)
+        fireLoadSummary(true)
         return
       }
       messageStore.resetState()
     },
     { flush: 'post' }
   )
+
+  onBeforeUnmount(() => {
+    summaryController?.abort('component-unmount')
+    summaryController = null
+  })
 
   onUnmounted(() => {
     document.removeEventListener('click', bodyCloseNotice)

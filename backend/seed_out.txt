@@ -1,0 +1,2 @@
+gen-permissions: wrote 222 operations -> internal\pkg\permissionseed\openapi_seed.json
+gen-permissions: wrote 34 error codes -> ..\frontend\src\api\v5\error-codes.ts

@@ -44,6 +44,10 @@
 
   const loading = ref(false)
   const apps = ref<Api.SystemManage.AppItem[]>([])
+  // 首屏 Layout 重挂载会导致 onMounted 发起的 /system/apps 被浏览器兜底 abort，
+  // 这里用 AbortController + onBeforeUnmount 把取消收敛为已知事件，
+  // 详见 docs/guides/dashboard-request-abort-rootcause.md
+  let loadAppsController: AbortController | null = null
 
   const readLastVisitedMap = () => {
     if (typeof window === 'undefined') {
@@ -113,8 +117,13 @@
     if (loading.value) return
     if (apps.value.length > 0 && !force) return
     loading.value = true
+    // 复用 controller：如果上一次请求还没回来，重新 fire 时先取消旧的
+    loadAppsController?.abort('app-switcher-refresh')
+    const controller = new AbortController()
+    loadAppsController = controller
     try {
-      const res = await fetchGetApps()
+      const res = await fetchGetApps({ signal: controller.signal })
+      if (controller.signal.aborted) return
       apps.value = res.records || []
       for (const item of apps.value) {
         appContextStore.setAppProfile({
@@ -124,7 +133,13 @@
           meta: item.meta || {}
         })
       }
+    } catch (error) {
+      if (controller.signal.aborted) return
+      throw error
     } finally {
+      if (loadAppsController === controller) {
+        loadAppsController = null
+      }
       loading.value = false
     }
   }
@@ -162,6 +177,11 @@
 
   onMounted(() => {
     void loadApps()
+  })
+
+  onBeforeUnmount(() => {
+    loadAppsController?.abort('component-unmount')
+    loadAppsController = null
   })
 
   watch(

@@ -87,8 +87,8 @@ export async function fetchUpdateMenuSpaceMode(appKey: string, mode: string) {
   return { mode: `${res?.mode || mode || 'single'}`.trim() || 'single' }
 }
 
-export async function fetchGetApps() {
-  const res = await unwrap(v5Client.GET('/system/apps'))
+export async function fetchGetApps(options?: { signal?: AbortSignal }) {
+  const res = await unwrap(v5Client.GET('/system/apps', { signal: options?.signal }))
   return {
     records: (res.records || []).map(normalizeApp),
     total: Number(res.total || 0)

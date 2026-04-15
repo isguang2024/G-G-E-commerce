@@ -26,6 +26,7 @@ import { ElMessage } from 'element-plus'
 import { ErrorCodes } from '@/api/v5/error-codes'
 import { ApiStatus } from './status'
 import { $t } from '@/locales'
+import { logger } from '@/utils/logger'
 
 // 错误响应接口
 export interface ErrorResponse {
@@ -124,8 +125,15 @@ const getErrorMessage = (status: number): string => {
  */
 export function handleError(error: AxiosError<ErrorResponse>): never {
   // 处理取消的请求
+  // 详见 docs/guides/dashboard-request-abort-rootcause.md：
+  // 首屏 Layout 重挂载会引发一批 ERR_CANCELED，这是预期行为、非真实故障。
+  // 生产/回归环境不再输出 console 噪音，仅在 DEV 以 debug 级别保留线索。
   if (error.code === 'ERR_CANCELED') {
-    console.warn('Request cancelled:', error.message)
+    // 取消的请求属于预期行为，走 debug 级：DEV 打 console、生产不上报。
+    logger.debug('http.request_cancelled', {
+      url: error.config?.url,
+      message: error.message,
+    })
     throw new HttpError($t('httpMsg.requestCancelled'), ApiStatus.error)
   }
 
@@ -173,8 +181,11 @@ export function showError(error: HttpError, showMessage: boolean = true): void {
   }
 
   ElMessage.error(error.message)
-  // 记录错误日志
-  console.error('[HTTP Error]', error.toLogData())
+  // 统一由 logger 记录：开发环境打 console，生产走批量上报到 /telemetry/logs。
+  logger.error('http.error', {
+    ...error.toLogData(),
+    err: error,
+  })
 }
 
 /**

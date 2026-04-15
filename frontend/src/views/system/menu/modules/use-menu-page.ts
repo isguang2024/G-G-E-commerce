@@ -38,6 +38,7 @@ import {
   isEntryMenuRow,
   normalizeKeyword
 } from './helpers'
+import { logger } from '@/utils/logger'
 
 type MenuDeleteMode = 'single' | 'cascade' | 'promote_children'
 
@@ -71,9 +72,9 @@ export function useMenuPage() {
   const selectedAppKey = ref('')
   const dataFromBackend = ref(false)
 
-  const warnDev = (...args: any[]) => {
+  const warnDev = (event: string, context?: Record<string, unknown>) => {
     if (import.meta.env.DEV) {
-      console.info(...args)
+      logger.debug(`system.menu.${event}`, context)
     }
   }
 
@@ -258,7 +259,7 @@ export function useMenuPage() {
       rawPages.value = Array.isArray(pagesResult) ? pagesResult : []
       dataFromBackend.value = true
     } catch (error) {
-      warnDev('[Menus] 获取菜单数据失败，已回退为空列表', error)
+      warnDev('load_menu_data_failed', { err: error })
       rawMenuTree.value = []
       rawPages.value = []
       loadError.value = '菜单数据暂时不可用，稍后重试或刷新状态。'
@@ -625,7 +626,7 @@ export function useMenuPage() {
     try {
       deletePreview.value = await fetchGetMenuDeletePreview(String(row.id), { mode: 'cascade' })
     } catch (e: any) {
-      console.error('[Menus] get delete preview failed', e)
+      logger.error('system.menu.get_delete_preview_failed', { err: e })
       ElMessage.error(e?.message || '获取删除预览失败')
       deleteDialogVisible.value = false
       deleteTargetRow.value = null
@@ -651,7 +652,7 @@ export function useMenuPage() {
       deletePreview.value = null
       await getMenuList()
     } catch (e: any) {
-      console.error('[Menus] delete menu failed', e)
+      logger.error('system.menu.delete_menu_failed', { err: e })
       ElMessage.error(e?.message || '删除失败')
     } finally {
       deleteLoading.value = false
@@ -676,7 +677,7 @@ export function useMenuPage() {
       ElMessage.success('保存成功')
       getMenuList()
     } catch (e: any) {
-      console.error('[Menus] save menu failed', e)
+      logger.error('system.menu.save_menu_failed', { err: e })
       ElMessage.error(e?.message || '保存失败')
     }
   }
@@ -719,7 +720,7 @@ export function useMenuPage() {
       actionRequirementData.value = null
       getMenuList()
     } catch (e: any) {
-      console.error('[Menus] save action requirement failed', e)
+      logger.error('system.menu.save_action_requirement_failed', { err: e })
       ElMessage.error(e?.message || '功能权限保存失败')
     }
   }
@@ -741,7 +742,7 @@ export function useMenuPage() {
   onMounted(() => {
     selectedAppKey.value = targetAppKey.value
     loadAppOptions().catch((error) => {
-      warnDev('[Menus] 加载 App 列表失败', error)
+      warnDev('load_app_list_failed', { err: error })
       appList.value = []
     })
     if (!targetAppKey.value) {

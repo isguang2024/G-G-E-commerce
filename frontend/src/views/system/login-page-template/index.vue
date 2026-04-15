@@ -32,18 +32,32 @@
     >
       <div class="drawer-shell">
         <div class="dialog-layout">
-          <ElForm :model="form" label-width="120px" class="dialog-form">
+          <ElForm ref="formRef" :model="form" :rules="formRules" label-width="120px" class="dialog-form">
             <ElCollapse v-model="editorPanels" class="template-editor-collapse">
               <ElCollapseItem name="basic" title="基础信息">
                 <div class="panel-content">
-                  <ElFormItem label="模板 Key" required>
+                  <ElFormItem
+                    label="模板 Key"
+                    prop="template_key"
+                    :error="fieldErrors.template_key"
+                    :data-testid="'login-template-field-error'"
+                    :data-field="'template_key'"
+                    required
+                  >
                     <ElInput
                       v-model="form.template_key"
                       :disabled="!!editing"
                       placeholder="如 default / aurora"
                     />
                   </ElFormItem>
-                  <ElFormItem label="名称" required>
+                  <ElFormItem
+                    label="名称"
+                    prop="name"
+                    :error="fieldErrors.name"
+                    :data-testid="'login-template-field-error'"
+                    :data-field="'name'"
+                    required
+                  >
                     <ElInput v-model="form.name" placeholder="给运营可读的模板名称" />
                   </ElFormItem>
                   <ElFormItem label="场景">
@@ -285,8 +299,10 @@
 
 <script setup lang="ts">
   import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+  import type { FormInstance, FormRules } from 'element-plus'
   import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { ColumnOption } from '@/types/component'
+  import { HttpError } from '@/utils/http/error'
   import {
     fetchCreateLoginPageTemplate,
     fetchDeleteLoginPageTemplate,
@@ -346,6 +362,34 @@
     status: 'normal',
     is_default: false
   })
+
+  // fieldErrors: 后端 Error.details.<field> 回显容器；规范见 docs/guides/frontend-observability-spec.md §2.4
+  const formRef = ref<FormInstance>()
+  const fieldErrors = reactive<Record<string, string>>({})
+  const formRules: FormRules = {
+    template_key: [
+      { required: true, message: '请输入模板 Key', trigger: 'blur' },
+      { pattern: /^[a-z0-9][a-z0-9._-]*$/, message: '仅允许小写字母数字和 . _ -', trigger: 'blur' }
+    ],
+    name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }]
+  }
+  function clearFieldErrors() {
+    for (const k of Object.keys(fieldErrors)) delete fieldErrors[k]
+  }
+  function applyBackendFieldErrors(e: unknown): boolean {
+    if (!(e instanceof HttpError)) return false
+    const data = (e.data || {}) as { details?: Record<string, string> }
+    const details = data.details
+    if (!details || typeof details !== 'object') return false
+    let applied = false
+    for (const [field, reason] of Object.entries(details)) {
+      if (typeof reason === 'string') {
+        fieldErrors[field] = reason
+        applied = true
+      }
+    }
+    return applied
+  }
 
   const configTheme = reactive<any>({
     primaryColor: '',
@@ -536,7 +580,23 @@
   })
   const columns = computed<ColumnOption[]>(() => [
     { type: 'index', label: '序号', width: 70 },
-    { prop: 'template_key', label: '模板 Key', minWidth: 180, showOverflowTooltip: true },
+    {
+      prop: 'template_key',
+      label: '模板 Key',
+      minWidth: 180,
+      showOverflowTooltip: true,
+      formatter: (row) =>
+        h(
+          'span',
+          {
+            'data-testid': 'login-template-row',
+            'data-template-key': row.template_key,
+            'data-is-default': row.is_default ? 'true' : 'false',
+            'data-status': row.status
+          },
+          row.template_key
+        )
+    },
     { prop: 'name', label: '名称', minWidth: 180, showOverflowTooltip: true },
     { prop: 'scene', label: '场景', width: 120 },
     { prop: 'app_scope', label: '作用域', width: 120 },
@@ -793,10 +853,17 @@
   }
 
   const submit = async () => {
+    clearFieldErrors()
+    const valid = await formRef.value?.validate().catch(() => false)
+    if (!valid) return
     const templateKey = `${form.template_key || ''}`.trim()
     const name = `${form.name || ''}`.trim()
-    if (!templateKey || !name) {
-      ElMessage.warning('请填写模板 Key 和名称')
+    if (!templateKey) {
+      fieldErrors.template_key = '请填写模板 Key'
+      return
+    }
+    if (!name) {
+      fieldErrors.name = '请填写模板名称'
       return
     }
     const invalidSocialUrls = socialItems.value
@@ -834,6 +901,7 @@
       dialogVisible.value = false
       await load()
     } catch (e: any) {
+      if (applyBackendFieldErrors(e)) return
       ElMessage.error(e?.message || '模板保存失败')
     }
   }

@@ -66,18 +66,39 @@
             description="此入口为系统保留，不可删除，不可修改 entry_code。"
           />
 
-          <ElForm :model="form" label-width="150px" class="entry-form">
+          <ElForm ref="formRef" :model="form" :rules="formRules" label-width="150px" class="entry-form">
             <!-- 基础信息 -->
             <div class="form-section">
               <div class="section-title">基础信息</div>
               <div class="section-tip">定义入口标识和匹配规则。当用户访问的 Host + Path 命中此规则时，使用该入口的注册配置。</div>
-              <ElFormItem label="入口 Code" required>
+              <ElFormItem
+                label="入口 Code"
+                prop="entry_code"
+                :error="fieldErrors.entry_code"
+                :data-testid="'register-entry-field-error'"
+                :data-field="'entry_code'"
+                required
+              >
                 <ElInput v-model="form.entry_code" :disabled="isSystemReserved || !!editing" placeholder="如 default / invite-only" />
               </ElFormItem>
-              <ElFormItem label="名称" required>
+              <ElFormItem
+                label="名称"
+                prop="name"
+                :error="fieldErrors.name"
+                :data-testid="'register-entry-field-error'"
+                :data-field="'name'"
+                required
+              >
                 <ElInput v-model="form.name" placeholder="给运营可读的入口名称" />
               </ElFormItem>
-              <ElFormItem label="App Key" required>
+              <ElFormItem
+                label="App Key"
+                prop="app_key"
+                :error="fieldErrors.app_key"
+                :data-testid="'register-entry-field-error'"
+                :data-field="'app_key'"
+                required
+              >
                 <ElInput v-model="form.app_key" placeholder="如 account-portal" />
               </ElFormItem>
               <div class="field-row">
@@ -216,8 +237,10 @@
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref, watch } from 'vue'
   import { ArrowDown } from '@element-plus/icons-vue'
+  import type { FormInstance, FormRules } from 'element-plus'
   import { ElButton, ElIcon, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { ColumnOption } from '@/types/component'
+  import { HttpError } from '@/utils/http/error'
   import {
     fetchCreateRegisterEntry,
     fetchDeleteRegisterEntry,
@@ -326,7 +349,38 @@
   const pagination = reactive({ current: 1, size: 10, total: 0 })
 
   const form = reactive<EntryForm>({ ...DEFAULT_FORM })
+  const formRef = ref<FormInstance>()
+  // fieldErrors: 后端 Error.details.<field> 回显容器；规范见 docs/guides/frontend-observability-spec.md §2.4
+  const fieldErrors = reactive<Record<string, string>>({})
   const filterAppKey = ref('')
+
+  const formRules: FormRules = {
+    entry_code: [
+      { required: true, message: '请输入入口 Code', trigger: 'blur' },
+      { pattern: /^[a-z0-9][a-z0-9-]*$/, message: '仅允许小写字母数字和短横线', trigger: 'blur' }
+    ],
+    name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
+    app_key: [{ required: true, message: '请输入 App Key', trigger: 'blur' }]
+  }
+
+  function clearFieldErrors() {
+    for (const k of Object.keys(fieldErrors)) delete fieldErrors[k]
+  }
+
+  function applyBackendFieldErrors(e: unknown): boolean {
+    if (!(e instanceof HttpError)) return false
+    const data = (e.data || {}) as { details?: Record<string, string> }
+    const details = data.details
+    if (!details || typeof details !== 'object') return false
+    let applied = false
+    for (const [field, reason] of Object.entries(details)) {
+      if (typeof reason === 'string') {
+        fieldErrors[field] = reason
+        applied = true
+      }
+    }
+    return applied
+  }
 
   const isSystemReserved = computed(() => editing.value?.is_system_reserved === true)
   const drawerTitle = computed(() => {
@@ -354,12 +408,20 @@
       minWidth: 160,
       showOverflowTooltip: true,
       formatter: (row) =>
-        h('span', {}, [
-          row.entry_code,
-          row.is_system_reserved
-            ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain', class: 'ml-1' }, () => '保留')
-            : null
-        ])
+        h(
+          'span',
+          {
+            'data-testid': 'register-entry-row',
+            'data-code': row.entry_code,
+            'data-app-key': row.app_key
+          },
+          [
+            row.entry_code,
+            row.is_system_reserved
+              ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain', class: 'ml-1' }, () => '保留')
+              : null
+          ]
+        )
     },
     { prop: 'name', label: '名称', minWidth: 180, showOverflowTooltip: true },
     { prop: 'app_key', label: 'App', width: 140 },
@@ -452,6 +514,9 @@
   }
 
   const submit = async () => {
+    clearFieldErrors()
+    const valid = await formRef.value?.validate().catch(() => false)
+    if (!valid) return
     try {
       const payload: any = { ...form }
       payload.login_page_key = `${payload.login_page_key || ''}`.trim() || 'default'
@@ -465,6 +530,9 @@
       drawerVisible.value = false
       await load()
     } catch (e: any) {
+      // 后端 FieldError(details.field) 优先回显到具体 el-form-item；
+      // 否则退化为通用 toast（与 utils/http/error.ts 语义一致）。
+      if (applyBackendFieldErrors(e)) return
       ElMessage.error(e?.message || '保存失败')
     }
   }

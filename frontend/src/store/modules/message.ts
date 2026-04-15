@@ -48,12 +48,12 @@ export const useMessageStore = defineStore('messageStore', () => {
 
   const hasUnread = computed(() => summary.value.unread_total > 0)
 
-  const loadSummary = async (force = false) => {
+  const loadSummary = async (force = false, options?: { signal?: AbortSignal }) => {
     if (summaryLoading.value) return summary.value
     if (summaryLoaded.value && !force) return summary.value
     summaryLoading.value = true
     try {
-      summary.value = await fetchGetInboxSummary()
+      summary.value = await fetchGetInboxSummary({ signal: options?.signal })
       summaryLoaded.value = true
       return summary.value
     } finally {

@@ -369,11 +369,20 @@ func (h *APIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApi
 // ─── syncApiEndpoints ─────────────────────────────────────────────────────────
 
 func (h *APIHandler) SyncApiEndpoints(ctx context.Context) (gen.SyncApiEndpointsRes, error) {
-	if err := h.apiEndpointSvc.Sync(); err != nil {
+	summary, err := h.apiEndpointSvc.Sync()
+	if err != nil {
 		h.logger.Error("sync api endpoints failed", zap.Error(err))
 		return nil, err
 	}
-	return ok(), nil
+	if summary == nil {
+		summary = &apiendpoint.SyncSummary{}
+	}
+	return &gen.SyncApiEndpointsResult{
+		Processed:  int64(summary.Processed),
+		Created:    int64(summary.Created),
+		Updated:    int64(summary.Updated),
+		TotalCount: int64(summary.Total),
+	}, nil
 }
 
 // ─── cleanupStaleApiEndpoints ─────────────────────────────────────────────────

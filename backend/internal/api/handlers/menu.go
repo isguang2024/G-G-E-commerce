@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
@@ -44,10 +45,33 @@ func (h *APIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveRequest) (
 		Icon:      optString(req.Icon),
 		SortOrder: optInt(req.SortOrder, 0),
 	}
-	if _, err := h.menuSvc.Create(dtoReq); err != nil {
+	created, err := h.menuSvc.Create(dtoReq)
+	if err != nil {
 		h.logger.Error("create menu failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.menu.create",
+			ResourceType: "menu",
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+			Metadata: map[string]any{
+				"app_key":   dtoReq.AppKey,
+				"space_key": dtoReq.SpaceKey,
+				"name":      dtoReq.Name,
+			},
+		})
 		return nil, err
 	}
+	var resourceID string
+	if created != nil {
+		resourceID = created.ID.String()
+	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.menu.create",
+		ResourceType: "menu",
+		ResourceID:   resourceID,
+		Outcome:      audit.OutcomeSuccess,
+		After:        dtoReq,
+	})
 	return ok(), nil
 }
 
@@ -79,16 +103,43 @@ func (h *APIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, p
 	}
 	if err := h.menuSvc.Update(params.ID, dtoReq); err != nil {
 		h.logger.Error("update menu failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.menu.update",
+			ResourceType: "menu",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.menu.update",
+		ResourceType: "menu",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+		After:        dtoReq,
+	})
 	return ok(), nil
 }
 
 func (h *APIHandler) DeleteMenu(ctx context.Context, params gen.DeleteMenuParams) (*gen.MutationResult, error) {
 	if err := h.menuSvc.Delete(params.ID, "", nil); err != nil {
 		h.logger.Error("delete menu failed", zap.Error(err))
+		h.audit.Record(ctx, audit.Event{
+			Action:       "system.menu.delete",
+			ResourceType: "menu",
+			ResourceID:   params.ID.String(),
+			Outcome:      audit.OutcomeError,
+			ErrorCode:    errorCodeOf(err),
+		})
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Event{
+		Action:       "system.menu.delete",
+		ResourceType: "menu",
+		ResourceID:   params.ID.String(),
+		Outcome:      audit.OutcomeSuccess,
+	})
 	return ok(), nil
 }
 

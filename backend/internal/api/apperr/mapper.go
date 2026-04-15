@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/go-faster/jx"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -32,6 +34,32 @@ func (e *ParamError) Error() string { return e.Msg }
 type UnauthError struct{ Msg string }
 
 func (e *UnauthError) Error() string { return e.Msg }
+
+// FieldError 表达"单个字段级"校验失败。
+//
+// mapper 翻译为：HTTP 400 + Error{Code: CodeParamInvalid, Message: Msg|Reason,
+// Details: {Field: Reason}}。Frontend 读取 `error.details.field` 并映射到
+// `el-form-item` 的 `error` 属性实现定位回显。
+//
+// 规范文档：`docs/guides/frontend-observability-spec.md` §2.3。
+//
+// 用法：
+//
+//	return nil, &apperr.FieldError{Field: "code", Reason: "已存在", Msg: "入口 Code 已存在"}
+type FieldError struct {
+	Field  string
+	Reason string
+	Msg    string // 面向用户的整体提示；留空则使用 Reason
+	// Code 可选：业务场景需要特定业务码（如 3013 Conflict）时覆写；默认 CodeParamInvalid。
+	Code int
+}
+
+func (e *FieldError) Error() string {
+	if e.Msg != "" {
+		return e.Msg
+	}
+	return e.Reason
+}
 
 // ── 内部 ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +96,26 @@ func doMap(err error) mapped {
 		return mapped{http.StatusUnauthorized, &gen.Error{
 			Code:    CodeUnauthorized,
 			Message: ue.Msg,
+		}}
+	}
+
+	// 字段级校验失败（哨兵位置必须在 ParamError 之后，CodeConflict 冲突之前）
+	var fe *FieldError
+	if errors.As(err, &fe) {
+		code := fe.Code
+		if code == 0 {
+			code = CodeParamInvalid
+		}
+		msg := fe.Msg
+		if msg == "" {
+			msg = fe.Reason
+		}
+		return mapped{http.StatusBadRequest, &gen.Error{
+			Code:    code,
+			Message: msg,
+			Details: gen.NewOptNilErrorDetails(gen.ErrorDetails{
+				fe.Field: jx.Raw(strconv.Quote(fe.Reason)),
+			}),
 		}}
 	}
 

@@ -17,6 +17,7 @@ import (
 	apigen "github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	"github.com/gg-ecommerce/backend/internal/api/handlers"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 )
 
@@ -26,7 +27,14 @@ var ErrPermissionDenied = apperr.ErrPermissionDenied
 
 // OpenAPIPermission builds an ogen middleware that auto-enforces
 // x-permission-key on every operation by calling evaluator.Can.
-func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logger *zap.Logger) apigen.Middleware {
+//
+// auditRecorder 不可为 nil；关闭审计时显式传 audit.Noop{}。拒绝事件以统一的
+// "system.permission.denied" action 写入 audit_logs，运维可按此 action
+// 一条 SQL 查出所有越权尝试。
+func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logger *zap.Logger, auditRecorder audit.Recorder) apigen.Middleware {
+	if auditRecorder == nil {
+		auditRecorder = audit.Noop{}
+	}
 	return func(req ogenmw.Request, next ogenmw.Next) (ogenmw.Response, error) {
 		key, ok := lookup[req.OperationID]
 		if !ok || key == "" {
@@ -62,6 +70,17 @@ func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logge
 				zap.String("key", key),
 				zap.String("user", userID.String()),
 				zap.String("workspace", workspaceID.String()))
+			// 把"越权尝试"单独记一条审计，便于按 permission_key / actor 聚合。
+			auditRecorder.Record(req.Context, audit.Event{
+				Action:       "system.permission.denied",
+				ResourceType: "operation",
+				ResourceID:   req.OperationID,
+				Outcome:      audit.OutcomeDenied,
+				Metadata: map[string]any{
+					"permission_key": key,
+					"workspace_id":   workspaceID.String(),
+				},
+			})
 			return ogenmw.Response{}, ErrPermissionDenied
 		}
 		return next(req)

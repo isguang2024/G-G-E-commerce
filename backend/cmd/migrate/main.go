@@ -15,6 +15,8 @@ import (
 
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
@@ -1854,7 +1856,9 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 }
 
 func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {
-	router := apirouter.SetupRouter(cfg, logger, database.DB)
+	// 迁移 CLI 只需要路由定义来生成 permission seed，不涉及请求处理；
+	// 显式传 Noop 跳过审计/遥测的异步 worker + channel。
+	router := apirouter.SetupRouter(cfg, logger, database.DB, audit.Noop{}, telemetry.Noop{})
 	builder := permissionseed.NewDeploymentBuilder(database.DB, logger, router).
 		WithCoreDefaults()
 	builder.LogSummary()

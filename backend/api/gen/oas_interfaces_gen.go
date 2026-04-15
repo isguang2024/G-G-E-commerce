@@ -61,6 +61,14 @@ type GetApiEndpointOverviewRes interface {
 	getApiEndpointOverviewRes()
 }
 
+type GetAuditLogRes interface {
+	getAuditLogRes()
+}
+
+type GetAuditLogStatsRes interface {
+	getAuditLogStatsRes()
+}
+
 type GetAuthMeRes interface {
 	getAuthMeRes()
 }
@@ -81,12 +89,20 @@ type GetLoginPageContextRes interface {
 	getLoginPageContextRes()
 }
 
+type GetObservabilityTraceRes interface {
+	getObservabilityTraceRes()
+}
+
 type GetRegisterContextRes interface {
 	getRegisterContextRes()
 }
 
 type GetRoleRes interface {
 	getRoleRes()
+}
+
+type GetTelemetryLogRes interface {
+	getTelemetryLogRes()
 }
 
 type GetUserRes interface {
@@ -97,12 +113,20 @@ type GetWorkspaceRes interface {
 	getWorkspaceRes()
 }
 
+type IngestTelemetryLogsRes interface {
+	ingestTelemetryLogsRes()
+}
+
 type ListApiEndpointCategoriesRes interface {
 	listApiEndpointCategoriesRes()
 }
 
 type ListApiEndpointsRes interface {
 	listApiEndpointsRes()
+}
+
+type ListAuditLogsRes interface {
+	listAuditLogsRes()
 }
 
 type ListDictItemsRes interface {
@@ -131,6 +155,10 @@ type ListRegisterLogsRes interface {
 
 type ListStaleApiEndpointsRes interface {
 	listStaleApiEndpointsRes()
+}
+
+type ListTelemetryLogsRes interface {
+	listTelemetryLogsRes()
 }
 
 type ListUnregisteredApiEndpointsRes interface {

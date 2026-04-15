@@ -1192,6 +1192,72 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "listAuditLogs",
+      "method": "get",
+      "path": "/observability/audit-logs",
+      "permission_key": "observability.audit.read",
+      "summary": "查询审计日志",
+      "description": "按 action / actor / outcome / resource / request_id / 时间段过滤分页查询\naudit_logs。只读端点，永远不触发 DB 写入。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getAuditLogStats",
+      "method": "get",
+      "path": "/observability/audit-logs/stats",
+      "permission_key": "observability.audit.read",
+      "summary": "审计日志聚合统计",
+      "description": "按指定维度（action / outcome / hour）聚合 audit_logs，返回 `bucket + count`。\n典型用途：dashboard widget、运维仪表盘小图。\n- `group_by=hour`：按 `date_trunc('hour', ts)` 聚合，桶按时间升序；\n- `group_by=action`：按 `action` 聚合，桶按 count 降序；\n- `group_by=outcome`：按 `outcome` 聚合，桶按 count 降序。\n空区间返回 `buckets: []`（不是 null）。只读端点。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getAuditLog",
+      "method": "get",
+      "path": "/observability/audit-logs/{id}",
+      "permission_key": "observability.audit.read",
+      "summary": "审计日志详情",
+      "description": "返回单条 audit_logs 行，含完整 before / after / metadata JSON。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listTelemetryLogs",
+      "method": "get",
+      "path": "/observability/telemetry-logs",
+      "permission_key": "observability.telemetry.read",
+      "summary": "查询前端遥测日志",
+      "description": "按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询\ntelemetry_logs。只读端点。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getTelemetryLog",
+      "method": "get",
+      "path": "/observability/telemetry-logs/{id}",
+      "permission_key": "observability.telemetry.read",
+      "summary": "遥测日志详情",
+      "description": "返回单条 telemetry_logs 行，含完整 payload JSON。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getObservabilityTrace",
+      "method": "get",
+      "path": "/observability/trace/{request_id}",
+      "permission_key": "observability.audit.read",
+      "summary": "按 request_id 拉取审计 + 遥测全链路",
+      "description": "给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs\n条目（按 ts asc 排序）。用于详情抽屉「跳到这条请求的整条轨迹」按钮。\n权限按 audit.read 控制；调用方对 telemetry.read 没有权限时，结果中\ntelemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listPages",
       "method": "get",
       "path": "/pages",
@@ -1980,6 +2046,17 @@
       "tags": "system",
       "api_category": "system",
       "access_mode": "permission"
+    },
+    {
+      "operation_id": "ingestTelemetryLogs",
+      "method": "post",
+      "path": "/telemetry/logs",
+      "permission_key": "",
+      "summary": "前端日志批量上报",
+      "description": "前端 logger 将缓存的日志条目批量上报。登录态会带 Authorization，匿名态也允许\n上报（例如登录页报错）。服务端会按 session_id + IP 做限流，超限直接丢弃并返回\naccepted=0，不抛 4xx 以免前端认为需要重试。",
+      "tags": "telemetry",
+      "api_category": "telemetry",
+      "access_mode": "public"
     },
     {
       "operation_id": "listUsers",

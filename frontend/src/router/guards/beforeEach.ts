@@ -81,6 +81,7 @@ import {
   setRouteInitFailed,
   setRouteInitInProgress
 } from '@/domains/navigation/runtime/guard-state'
+import { logger } from '@/utils/logger'
 
 /**
  * 设置路由全局前置守卫
@@ -97,7 +98,7 @@ export function setupBeforeEachGuard(router: Router): void {
       try {
         await handleRouteGuard(to, from, next, router)
       } catch (error) {
-        console.error('[RouteGuard] 路由守卫处理失败:', error)
+        logger.error('navigation.route_guard.handle_failed', { err: error, path: to.fullPath })
         void closeLoading()
         next({ name: 'Exception500' })
       }
@@ -423,7 +424,10 @@ async function resolveCentralizedLoginPolicy(
         meta: response?.app?.meta || {}
       })
     } catch (error) {
-      console.warn('[RouteGuard] 预热 app 认证策略失败，回退本地上下文', error)
+      logger.warn('navigation.route_guard.prewarm_app_auth_failed', {
+        err: error,
+        appKey: normalizedAppKey
+      })
     }
   }
 
@@ -573,7 +577,7 @@ async function handleDynamicRoutes(
       replace: true
     })
   } catch (error) {
-    console.error('[RouteGuard] 动态路由注册失败:', error)
+    logger.error('navigation.route_guard.register_failed', { err: error, path: to.fullPath })
 
     void closeLoading()
 
@@ -585,7 +589,10 @@ async function handleDynamicRoutes(
     setRouteInitFailed(true)
 
     if (isHttpError(error)) {
-      console.error(`[RouteGuard] 错误码: ${error.code}, 消息: ${error.message}`)
+      logger.error('navigation.route_guard.register_http_error', {
+        code: error.code,
+        message: error.message
+      })
     }
 
     next({ name: 'Exception500', replace: true })
@@ -665,7 +672,10 @@ async function tryRefreshMissingDynamicRoute(
     })
     return true
   } catch (error) {
-    console.error('[RouteGuard] 动态路由缺失自动刷新失败:', error)
+    logger.error('navigation.route_guard.refresh_missing_failed', {
+      err: error,
+      path: to.fullPath
+    })
     clearRouteRefreshAttempted(to.fullPath)
     return false
   }

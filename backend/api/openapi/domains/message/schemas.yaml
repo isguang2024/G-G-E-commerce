@@ -265,7 +265,11 @@ components:
       properties:
         message_id: {type: string, format: uuid}
         delivery_count: {type: integer}
-        dispatch_status: {type: string}
+        dispatch_status:
+          type: string
+          description: |
+            'queued' — 已入队等待 worker 派发（真实投递）。
+            'preview' — 本次是 dry_run，未写库、未入队、未触达收件人（E2E/QA 沙箱用）。
     MessageDispatchRequest:
       type: object
       properties:
@@ -291,6 +295,12 @@ components:
         action_target: {type: string}
         biz_type: {type: string}
         expired_at: {type: string}
+        dry_run:
+          type: boolean
+          description: |
+            true 时进入沙箱预览：服务端完成参数/模板/收件人解析与校验，但 **不写 messages 表、不入队、不触发交付**。
+            返回的 `dispatch_status = "preview"`，`message_id` 为零值 UUID。
+            面向 E2E 深测与 QA 回归，避免污染真实消息流。缺省或 false 时走常规 queued 派发。
     MessageTemplateItem:
       type: object
       required: [id, template_key, name, message_type, owner_scope, audience_type, status, editable]

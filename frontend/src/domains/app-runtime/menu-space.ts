@@ -20,10 +20,12 @@ import {
   resolveMenuSpaceKeyByHost,
   shouldUseFullMenuSpaceNavigation
 } from '@/domains/navigation/utils/menu-space'
+import { logger } from '@/utils/logger'
 
-const warnDev = (...args: any[]) => {
+const warnDev = (event: string, context?: Record<string, unknown>) => {
+  // DEV-only 提示：logger.debug 生产端不上报。
   if (import.meta.env.DEV) {
-    console.warn(...args)
+    logger.debug(`menu-space.${event}`, context)
   }
 }
 
@@ -247,7 +249,7 @@ export const useMenuSpaceStore = defineStore(
           appKey
         )
       } catch (error) {
-        warnDev('[menu-space] 同步后端菜单空间配置失败，已回退静态配置', error)
+        warnDev('sync_failed_fallback_static', { err: error })
         setMenuSpaceConfig(
           createFallbackMenuSpaceConfig() || createFallbackMenuSpaceConfig(),
           appKey
@@ -282,7 +284,7 @@ export const useMenuSpaceStore = defineStore(
         }
         return response
       } catch (error) {
-        warnDev('[menu-space] 同步当前空间解析失败，已保留本地结果', error)
+        warnDev('sync_current_failed_local_kept', { err: error })
         return null
       }
     }
@@ -422,7 +424,7 @@ export const useMenuSpaceStore = defineStore(
           target: routerTarget
         }
       }
-      warnDev('[menu-space] 使用整页导航切换菜单空间', {
+      warnDev('full_page_nav_switch', {
         targetPath: normalizedPath,
         targetUrl,
         host: binding.host,

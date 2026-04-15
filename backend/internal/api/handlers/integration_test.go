@@ -36,6 +36,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
 )
@@ -77,7 +79,7 @@ func TestMain(m *testing.M) {
 	// Build the full production-equivalent router.
 	cfg := integConfig()
 	logger := zap.NewNop()
-	integRouter = router.SetupRouter(cfg, logger, db)
+	integRouter = router.SetupRouter(cfg, logger, db, audit.Noop{}, telemetry.Noop{})
 
 	code := m.Run()
 
@@ -535,6 +537,439 @@ func TestIntegrationAuthWorkspaceHeaderForgery(t *testing.T) {
 		}
 		if cur, _ := me["current_auth_workspace_id"].(string); cur == forged {
 			t.Errorf("CRITICAL: forged header propagated to /auth/me current_auth_workspace_id")
+		}
+	}
+}
+
+// TestIntegrationRequestIDRoundtrip 验证 logging-spec §1 关键不变量：
+// 同一个 request_id 必须在请求/响应之间往返。
+//
+// 场景一：客户端显式传 X-Request-Id → 响应头原样回显；
+// 场景二：客户端不传 → 服务端必须生成一个非空值并写入响应头（UUID 格式）。
+//
+// 这个测试刻意绕开 DB 断言（integration router 注入的是 audit.Noop{} / telemetry.Noop{}），
+// 只验证 middleware.RequestID 的契约 —— 这是日志/审计/遥测三条管道的 join key 基础。
+func TestIntegrationRequestIDRoundtrip(t *testing.T) {
+	const header = "X-Request-Id"
+
+	// 场景一：透传客户端传入值
+	clientID := "req-roundtrip-test-0001"
+	w := integDo(http.MethodGet, "/api/v1/auth/me", nil, map[string]string{
+		"Authorization": "Bearer " + integToken,
+		header:          clientID,
+	})
+	got := w.Header().Get(header)
+	if got != clientID {
+		t.Errorf("expected response X-Request-Id == %q (echoed), got %q", clientID, got)
+	}
+
+	// 场景二：服务端生成
+	w2 := integDo(http.MethodGet, "/api/v1/auth/me", nil, integBearerHeader(integToken))
+	generated := w2.Header().Get(header)
+	if generated == "" {
+		t.Fatal("expected server-generated X-Request-Id on response, got empty")
+	}
+	// UUID v7/v4 固定 36 字符（含连字符）；宽松断言长度即可
+	if len(generated) < 16 {
+		t.Errorf("server-generated X-Request-Id looks malformed: %q", generated)
+	}
+
+	// 场景三：脏输入（含控制字符）应该被拒绝，服务端重新生成
+	w3 := integDo(http.MethodGet, "/api/v1/auth/me", nil, map[string]string{
+		"Authorization": "Bearer " + integToken,
+		header:          "bad\x00id",
+	})
+	regenerated := w3.Header().Get(header)
+	if regenerated == "bad\x00id" {
+		t.Error("expected malformed X-Request-Id to be rejected; header was echoed back")
+	}
+	if regenerated == "" {
+		t.Error("expected regenerated X-Request-Id, got empty")
+	}
+}
+
+// TestIntegrationTelemetryIngest 验证 /api/v1/telemetry/logs 端点的基本契约：
+// 1) 它是 public（未登录也能 POST）；
+// 2) 返回 200 + {accepted, dropped}（integration router 注入 telemetry.Noop{}，accepted == 条数）；
+// 3) 永远不返回 4xx 表示业务拒绝（超限/重复由 service 静默丢弃）。
+func TestIntegrationTelemetryIngest(t *testing.T) {
+	body := []byte(`{
+        "entries": [
+            {
+                "level": "info",
+                "event": "page.view",
+                "timestamp": "2026-04-14T10:00:00Z",
+                "session_id": "sess-int-test-1",
+                "user_agent": "go-integration-test/1.0",
+                "viewport": {"w": 1920, "h": 1080}
+            },
+            {
+                "level": "error",
+                "event": "http.error",
+                "timestamp": "2026-04-14T10:00:01Z",
+                "session_id": "sess-int-test-1",
+                "user_agent": "go-integration-test/1.0",
+                "viewport": {"w": 1920, "h": 1080},
+                "error": {"name": "Error", "message": "mock failure"}
+            }
+        ]
+    }`)
+
+	// 不带 Authorization 头：端点必须是 public
+	w := integDo(http.MethodPost, "/api/v1/telemetry/logs", body, nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("telemetry ingest: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("telemetry ingest: invalid JSON: %v — body: %s", err, w.Body.String())
+	}
+	// Noop ingester 把所有条目视作 accepted
+	accepted, _ := resp["accepted"].(float64)
+	if int(accepted) != 2 {
+		t.Errorf("expected accepted=2, got %v", resp["accepted"])
+	}
+}
+
+// ── observability read-path smoke tests ──────────────────────────────────────
+//
+// 这四个测试直连 integDB 插入 audit_logs / telemetry_logs 真实行，再走 HTTP
+// 路径读回，验证 handler 的 list/get/404/401 基本契约。不依赖 Recorder/Ingester
+// 写入（它们在 integration 环境下注入为 Noop）。
+//
+// 每个测试生成自己唯一的 request_id 作为过滤锚点，避免和其它遗留数据串扰。
+// 清理走 t.Cleanup + Unscoped().Delete；models 是 append-only，但测试人为产
+// 生的脏行手动 hard delete 更清爽。
+
+func insertAuditFixture(t *testing.T, tenant, reqID string) *audit.AuditLog {
+	t.Helper()
+	row := &audit.AuditLog{
+		Ts:         time.Now().UTC(),
+		RequestID:  reqID,
+		TenantID:   tenant,
+		ActorID:    integUserID.String(),
+		ActorType:  audit.ActorTypeUser,
+		AppKey:     "platform-admin",
+		Action:     "integration.test.read",
+		Outcome:    audit.OutcomeSuccess,
+		HTTPStatus: 200,
+		BeforeJSON: []byte("null"),
+		AfterJSON:  []byte("null"),
+		Metadata:   []byte(`{}`),
+		CreatedAt:  time.Now().UTC(),
+	}
+	if err := integDB.Create(row).Error; err != nil {
+		t.Fatalf("seed audit_logs row: %v", err)
+	}
+	id := row.ID
+	t.Cleanup(func() {
+		integDB.Unscoped().Where("id = ?", id).Delete(&audit.AuditLog{})
+	})
+	return row
+}
+
+func insertTelemetryFixture(t *testing.T, tenant, reqID string) *telemetry.TelemetryLog {
+	t.Helper()
+	row := &telemetry.TelemetryLog{
+		Ts:        time.Now().UTC(),
+		RequestID: reqID,
+		SessionID: "sess-" + reqID,
+		TenantID:  tenant,
+		ActorID:   integUserID.String(),
+		AppKey:    "platform-admin",
+		Level:     telemetry.LevelInfo,
+		Event:     "integration.test.read",
+		Message:   "integration smoke",
+		URL:       "/int-test",
+		Payload:   []byte(`{"context":null}`),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := integDB.Create(row).Error; err != nil {
+		t.Fatalf("seed telemetry_logs row: %v", err)
+	}
+	id := row.ID
+	t.Cleanup(func() {
+		integDB.Unscoped().Where("id = ?", id).Delete(&telemetry.TelemetryLog{})
+	})
+	return row
+}
+
+// TestIntegrationListAuditLogs 验证 GET /observability/audit-logs：
+//  1) 未登录 401；
+//  2) 登录后按 request_id 过滤可以取到刚插入的种子行；
+//  3) 返回体形状包含 records / total。
+func TestIntegrationListAuditLogs(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// no-token path
+	w := integDo(http.MethodGet, "/api/v1/observability/audit-logs", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("audit-logs no token: expected 401, got %d", w.Code)
+	}
+
+	reqID := "it-audit-" + uuid.New().String()[:8]
+	seed := insertAuditFixture(t, "default", reqID)
+
+	path := "/api/v1/observability/audit-logs?request_id=" + reqID
+	w = integDo(http.MethodGet, path, nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("list audit-logs: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("list audit-logs: invalid JSON: %v — body: %s", err, w.Body.String())
+	}
+	records, _ := resp["records"].([]interface{})
+	if len(records) == 0 {
+		t.Fatalf("list audit-logs: expected at least one record for request_id=%s, got: %s", reqID, w.Body.String())
+	}
+	first, _ := records[0].(map[string]interface{})
+	gotID, _ := first["id"].(float64)
+	if uint64(gotID) != seed.ID {
+		t.Errorf("list audit-logs: expected first id=%d, got %v", seed.ID, first["id"])
+	}
+	if first["action"] != "integration.test.read" {
+		t.Errorf("list audit-logs: expected action=integration.test.read, got %v", first["action"])
+	}
+}
+
+// TestIntegrationGetAuditLog 覆盖 GET /observability/audit-logs/{id}：
+//  1) 用已知 id 取回种子行，字段对齐；
+//  2) 用一个几乎不可能存在的 id 触发 404。
+func TestIntegrationGetAuditLog(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+	reqID := "it-audit-get-" + uuid.New().String()[:8]
+	seed := insertAuditFixture(t, "default", reqID)
+
+	// happy path
+	path := fmt.Sprintf("/api/v1/observability/audit-logs/%d", seed.ID)
+	w := integDo(http.MethodGet, path, nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("get audit-log: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("get audit-log: invalid JSON: %v", err)
+	}
+	if gotID, _ := resp["id"].(float64); uint64(gotID) != seed.ID {
+		t.Errorf("get audit-log: expected id=%d, got %v", seed.ID, resp["id"])
+	}
+	if resp["request_id"] != reqID {
+		t.Errorf("get audit-log: expected request_id=%s, got %v", reqID, resp["request_id"])
+	}
+
+	// not-found path: use a very large id unlikely to exist
+	w = integDo(http.MethodGet, "/api/v1/observability/audit-logs/9223372036854775000", nil, integBearerHeader(integToken))
+	if w.Code != http.StatusNotFound {
+		t.Errorf("get audit-log missing: expected 404, got %d — body: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestIntegrationListTelemetryLogs 对称于 TestIntegrationListAuditLogs。
+func TestIntegrationListTelemetryLogs(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// no-token path
+	w := integDo(http.MethodGet, "/api/v1/observability/telemetry-logs", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("telemetry-logs no token: expected 401, got %d", w.Code)
+	}
+
+	reqID := "it-tel-" + uuid.New().String()[:8]
+	seed := insertTelemetryFixture(t, "default", reqID)
+
+	path := "/api/v1/observability/telemetry-logs?request_id=" + reqID
+	w = integDo(http.MethodGet, path, nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("list telemetry-logs: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("list telemetry-logs: invalid JSON: %v — body: %s", err, w.Body.String())
+	}
+	records, _ := resp["records"].([]interface{})
+	if len(records) == 0 {
+		t.Fatalf("list telemetry-logs: expected at least one record for request_id=%s, got: %s", reqID, w.Body.String())
+	}
+	first, _ := records[0].(map[string]interface{})
+	if gotID, _ := first["id"].(float64); uint64(gotID) != seed.ID {
+		t.Errorf("list telemetry-logs: expected first id=%d, got %v", seed.ID, first["id"])
+	}
+	if first["event"] != "integration.test.read" {
+		t.Errorf("list telemetry-logs: expected event=integration.test.read, got %v", first["event"])
+	}
+}
+
+// TestIntegrationGetTelemetryLog 覆盖 GET /observability/telemetry-logs/{id}。
+func TestIntegrationGetTelemetryLog(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+	reqID := "it-tel-get-" + uuid.New().String()[:8]
+	seed := insertTelemetryFixture(t, "default", reqID)
+
+	path := fmt.Sprintf("/api/v1/observability/telemetry-logs/%d", seed.ID)
+	w := integDo(http.MethodGet, path, nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("get telemetry-log: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("get telemetry-log: invalid JSON: %v", err)
+	}
+	if gotID, _ := resp["id"].(float64); uint64(gotID) != seed.ID {
+		t.Errorf("get telemetry-log: expected id=%d, got %v", seed.ID, resp["id"])
+	}
+	if resp["session_id"] != "sess-"+reqID {
+		t.Errorf("get telemetry-log: expected session_id=sess-%s, got %v", reqID, resp["session_id"])
+	}
+
+	// not-found
+	w = integDo(http.MethodGet, "/api/v1/observability/telemetry-logs/9223372036854775000", nil, integBearerHeader(integToken))
+	if w.Code != http.StatusNotFound {
+		t.Errorf("get telemetry-log missing: expected 404, got %d — body: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestIntegrationObservabilityTrace 覆盖 GET /observability/trace/{request_id}：
+//  1) 未登录 401；
+//  2) 登录后、同一 request_id 同时落 audit + telemetry 各一行，端点必须把两侧
+//     都返回，且 records 字段就是 request_id 对应的 id；
+//  3) 不存在的 request_id 返回 200 + 空数组（不走 404，保持"聚合视图永远不空"）。
+func TestIntegrationObservabilityTrace(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// no-token path
+	w := integDo(http.MethodGet, "/api/v1/observability/trace/whatever", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("trace no token: expected 401, got %d", w.Code)
+	}
+
+	reqID := "it-trace-" + uuid.New().String()[:8]
+	auditSeed := insertAuditFixture(t, "default", reqID)
+	telSeed := insertTelemetryFixture(t, "default", reqID)
+
+	path := "/api/v1/observability/trace/" + reqID
+	w = integDo(http.MethodGet, path, nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("trace: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("trace: invalid JSON: %v — body: %s", err, w.Body.String())
+	}
+	if resp["request_id"] != reqID {
+		t.Errorf("trace: expected request_id=%s, got %v", reqID, resp["request_id"])
+	}
+	audits, _ := resp["audit_logs"].([]interface{})
+	if len(audits) != 1 {
+		t.Fatalf("trace: expected 1 audit row, got %d — body: %s", len(audits), w.Body.String())
+	}
+	if first, _ := audits[0].(map[string]interface{}); first != nil {
+		if gotID, _ := first["id"].(float64); uint64(gotID) != auditSeed.ID {
+			t.Errorf("trace: expected audit id=%d, got %v", auditSeed.ID, first["id"])
+		}
+	}
+	tels, _ := resp["telemetry_logs"].([]interface{})
+	if len(tels) != 1 {
+		t.Fatalf("trace: expected 1 telemetry row, got %d — body: %s", len(tels), w.Body.String())
+	}
+	if first, _ := tels[0].(map[string]interface{}); first != nil {
+		if gotID, _ := first["id"].(float64); uint64(gotID) != telSeed.ID {
+			t.Errorf("trace: expected telemetry id=%d, got %v", telSeed.ID, first["id"])
+		}
+	}
+
+	// unknown request_id → 200 + 空数组
+	w = integDo(http.MethodGet, "/api/v1/observability/trace/it-trace-nope-"+uuid.New().String()[:8], nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("trace unknown: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var empty map[string]interface{}
+	_ = json.Unmarshal(w.Body.Bytes(), &empty)
+	if a, _ := empty["audit_logs"].([]interface{}); len(a) != 0 {
+		t.Errorf("trace unknown: expected empty audit_logs, got %d", len(a))
+	}
+	if ts, _ := empty["telemetry_logs"].([]interface{}); len(ts) != 0 {
+		t.Errorf("trace unknown: expected empty telemetry_logs, got %d", len(ts))
+	}
+}
+
+// TestIntegrationAuditLogStats 验证 GET /observability/audit-logs/stats：
+//  1) 未登录 401；
+//  2) group_by=action/outcome/hour 三种分别返回 group_by + buckets，且 buckets
+//     是数组（空也非 null）；
+//  3) 缺失 / 非法 group_by 400；
+//  4) 插入两行同 action 的种子后，action 维度 bucket 中能找到这个 action 的 count>=2。
+func TestIntegrationAuditLogStats(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// 401
+	w := integDo(http.MethodGet, "/api/v1/observability/audit-logs/stats?group_by=action", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("stats no token: expected 401, got %d", w.Code)
+	}
+
+	// 400 — 非法 group_by
+	w = integDo(http.MethodGet, "/api/v1/observability/audit-logs/stats?group_by=bogus", nil, integBearerHeader(integToken))
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("stats bad group_by: expected 400, got %d — body: %s", w.Code, w.Body.String())
+	}
+
+	// 种 2 行同 action 以便能检出 count
+	reqA := "it-stats-a-" + uuid.New().String()[:8]
+	reqB := "it-stats-b-" + uuid.New().String()[:8]
+	insertAuditFixture(t, "default", reqA) // action=integration.test.read
+	insertAuditFixture(t, "default", reqB)
+
+	for _, gb := range []string{"action", "outcome", "hour"} {
+		w = integDo(http.MethodGet, "/api/v1/observability/audit-logs/stats?group_by="+gb, nil, integBearerHeader(integToken))
+		if w.Code != http.StatusOK {
+			t.Fatalf("stats group_by=%s: expected 200, got %d — body: %s", gb, w.Code, w.Body.String())
+		}
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("stats group_by=%s: invalid JSON: %v", gb, err)
+		}
+		if resp["group_by"] != gb {
+			t.Errorf("stats group_by=%s: expected group_by=%s, got %v", gb, gb, resp["group_by"])
+		}
+		buckets, ok := resp["buckets"].([]interface{})
+		if !ok {
+			t.Errorf("stats group_by=%s: expected buckets array, got %T", gb, resp["buckets"])
+			continue
+		}
+
+		if gb == "action" {
+			// 至少有一个 bucket.bucket == "integration.test.read" 且 count >= 2
+			found := false
+			for _, b := range buckets {
+				m, _ := b.(map[string]interface{})
+				if m == nil {
+					continue
+				}
+				if m["bucket"] == "integration.test.read" {
+					if cnt, _ := m["count"].(float64); cnt < 2 {
+						t.Errorf("stats action: expected count >= 2 for integration.test.read, got %v", cnt)
+					}
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("stats action: expected bucket integration.test.read in response, got: %s", w.Body.String())
+			}
 		}
 	}
 }
