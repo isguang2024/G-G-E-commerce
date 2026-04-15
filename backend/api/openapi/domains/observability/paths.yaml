@@ -337,6 +337,52 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/metrics/prometheus:
+    get:
+      operationId: getObservabilityMetricsPrometheus
+      summary: 观察性指标的 Prometheus / openmetrics 文本导出
+      description: |-
+        以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供
+        Prometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与
+        `GET /observability/metrics` 一致，差异仅在呈现格式。
+
+        字段映射：
+        - `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；
+        - `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；
+        - `audit_events_accepted_total` (counter) — 入队累计；
+        - `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。
+
+        Noop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中
+        区分「暂未启用」与「启用后异常」。
+      tags:
+      - observability
+      x-permission-key: observability.audit.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  # HELP audit_queue_depth audit recorder queue length (len(chan))
+                  # TYPE audit_queue_depth gauge
+                  audit_queue_depth 0
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /observability/trace/{request_id}:
     get:
       operationId: getObservabilityTrace

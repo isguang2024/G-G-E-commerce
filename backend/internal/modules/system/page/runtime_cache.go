@@ -587,19 +587,42 @@ func (s *service) buildRuntimeAccessContext(
 	// permission_key intersect：若菜单自身声明了 PermissionKey 且当前用户不具备，
 	// 则从可见集合中剔除。SuperAdmin 已在上方 short-circuit 不走这里；
 	// PermissionKey='' 的菜单不受影响，保持 feature_package 决定的现有行为。
-	for _, menuID := range visibleMenuIDs {
-		node, ok := menuMap[menuID]
-		if ok {
-			requiredKey := strings.TrimSpace(node.Menu.PermissionKey)
-			if requiredKey != "" {
-				if _, granted := ctx.ActionKeys[permissionkey.Normalize(requiredKey)]; !granted {
-					continue
-				}
-			}
-		}
+	for _, menuID := range intersectVisibleMenusByPermissionKey(menuMap, visibleMenuIDs, ctx.ActionKeys) {
 		ctx.VisibleMenuIDs[menuID] = struct{}{}
 	}
 	return ctx, nil
+}
+
+// intersectVisibleMenusByPermissionKey 在已经由 feature_package 计算出的可见菜单集合
+// 之上，再用菜单自身声明的 MenuDefinition.PermissionKey 兜底裁剪：
+//   - menu.PermissionKey == ''   -> 保留（保持向后兼容，行为由 feature_package 决定）
+//   - menu.PermissionKey != '' 且 actionKeys 未授予该 key -> 剔除
+//   - menu.PermissionKey != '' 且 actionKeys 授予该 key  -> 保留
+//
+// 注意：SuperAdmin 分支在 buildRuntimeAccessContext 中已 short-circuit，不会走到这里。
+func intersectVisibleMenusByPermissionKey(
+	menuMap map[uuid.UUID]runtimeMenuNode,
+	visibleMenuIDs []uuid.UUID,
+	actionKeys map[string]struct{},
+) []uuid.UUID {
+	result := make([]uuid.UUID, 0, len(visibleMenuIDs))
+	for _, menuID := range visibleMenuIDs {
+		node, ok := menuMap[menuID]
+		if !ok {
+			// menuMap 里找不到的 id 按现有行为保留（可能是已被裁掉的空间外菜单）
+			result = append(result, menuID)
+			continue
+		}
+		requiredKey := strings.TrimSpace(node.Menu.PermissionKey)
+		if requiredKey == "" {
+			result = append(result, menuID)
+			continue
+		}
+		if _, granted := actionKeys[permissionkey.Normalize(requiredKey)]; granted {
+			result = append(result, menuID)
+		}
+	}
+	return result
 }
 
 func (ctx *runtimeAccessContext) hasAction(permissionKey string) bool {

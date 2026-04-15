@@ -93,6 +93,7 @@ const (
 	GetMessageDispatchRecordOperation                             OperationName = "GetMessageDispatchRecord"
 	GetNavigationOperation                                        OperationName = "GetNavigation"
 	GetObservabilityMetricsOperation                              OperationName = "GetObservabilityMetrics"
+	GetObservabilityMetricsPrometheusOperation                    OperationName = "GetObservabilityMetricsPrometheus"
 	GetObservabilityTraceOperation                                OperationName = "GetObservabilityTrace"
 	GetPageOperation                                              OperationName = "GetPage"
 	GetPageAccessTraceOperation                                   OperationName = "GetPageAccessTrace"

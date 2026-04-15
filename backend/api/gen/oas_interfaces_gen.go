@@ -89,6 +89,10 @@ type GetLoginPageContextRes interface {
 	getLoginPageContextRes()
 }
 
+type GetObservabilityMetricsPrometheusRes interface {
+	getObservabilityMetricsPrometheusRes()
+}
+
 type GetObservabilityMetricsRes interface {
 	getObservabilityMetricsRes()
 }

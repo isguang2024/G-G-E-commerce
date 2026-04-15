@@ -585,6 +585,97 @@ ingester 的异步通道仍是唯一的写入者。
 > 注意：`/metrics` 本身是 Observer，不会反向写 audit（否则会和被观测系统耦合）。
 > 不要在 recorder 内部调 `/metrics`——走进程变量直接拿 `Stats()` 就够。
 
+#### 7.5.1 Prometheus scrape 接入（`/observability/metrics/prometheus`）
+
+`GET /observability/metrics` 返回 JSON，面向前端 dashboard 与 `/healthz` 增强；
+`GET /observability/metrics/prometheus` 返回 openmetrics-text v1.0.0，面向
+Prometheus / Alertmanager 等通用监控系统 **直接 scrape**。两者底层共享
+`audit.Recorder.Stats()`，差异仅在呈现格式。text 端点当前只导出 audit 四项
+（telemetry 不纳入——外部 SRE 最关注的是观测主链路是否堵塞；需要时可在
+paths.yaml + handler 扩展，不破坏既有契约）。
+
+字段映射（严格按 openmetrics `# HELP` / `# TYPE` 输出）：
+
+| 指标名                         | 类型      | 含义                                               |
+|-------------------------------|-----------|----------------------------------------------------|
+| `audit_queue_depth`           | `gauge`   | 瞬时队列深度 `len(chan)`                            |
+| `audit_queue_capacity`        | `gauge`   | 队列容量 `cap(chan)`，`0` 表示同步 / Noop             |
+| `audit_events_accepted_total` | `counter` | 成功入队累计（进程重启归零，单调递增）              |
+| `audit_events_dropped_total`  | `counter` | 丢弃累计（drop-newest；稳态应贴近 0）                |
+
+示例响应体（Noop 或空闲进程）：
+
+```text
+# HELP audit_queue_depth audit recorder queue length (len(chan))
+# TYPE audit_queue_depth gauge
+audit_queue_depth 0
+# HELP audit_queue_capacity audit recorder queue capacity (cap(chan))
+# TYPE audit_queue_capacity gauge
+audit_queue_capacity 0
+# HELP audit_events_accepted_total cumulative audit events enqueued since process start
+# TYPE audit_events_accepted_total counter
+audit_events_accepted_total 0
+# HELP audit_events_dropped_total cumulative audit events dropped (queue full, drop-newest)
+# TYPE audit_events_dropped_total counter
+audit_events_dropped_total 0
+```
+
+**`prometheus.yml` 配置样例**（与 `observability.audit.read` 一致的 bearer 授权）：
+
+```yaml
+scrape_configs:
+  - job_name: gge-backend-observability
+    scheme: https                 # 生产走 https;dev 直接 http 也可以
+    metrics_path: /api/v1/observability/metrics/prometheus
+    scrape_interval: 30s          # 与 runbook 建议的采集周期保持一致
+    scrape_timeout: 10s
+    authorization:
+      type: Bearer
+      # credentials_file 指向 K8s secret 挂载的 token 文件(也可走 credentials: <literal>)。
+      # token 必须绑定 observability.audit.read 权限;建议单独发一个只读服务账号。
+      credentials_file: /etc/prometheus/secrets/gge-metrics-token
+    static_configs:
+      - targets:
+          - backend-0.gge.internal:443
+          - backend-1.gge.internal:443
+        labels:
+          service: gge-backend
+          tier: observability
+    # 多副本时按 __address__ 或 pod relabel,避免把不同进程的 counter 合并。
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+```
+
+配套告警（Prometheus rule 片段）：
+
+```yaml
+groups:
+  - name: gge-observability
+    rules:
+      - alert: GGEAuditDroppingEvents
+        expr: increase(audit_events_dropped_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "audit recorder dropping events ({{ $labels.instance }})"
+          runbook: "docs/guides/logging-spec.md#7-5"
+      - alert: GGEAuditQueueDeepWater
+        # 乘法而不是除法避免 queue_capacity=0 时 DIV/0
+        expr: avg_over_time(audit_queue_depth[5m]) > 0.8 * audit_queue_capacity
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "audit queue stays > 80% for 5m ({{ $labels.instance }})"
+```
+
+> 注意：本端点与 JSON `/observability/metrics` 共享 `observability.audit.read`
+> 权限，不单独设计 prom 专属 key。Noop 模式下抓取返回 200 + 全零样本（不是
+> 空响应或 404），便于在 Alertmanager 侧用同一套规则区分「暂未启用」与
+> 「启用后出异常」两种状态。
+
 ---
 
 ## 8. 自查清单（新 handler / 整改 PR 提交前）

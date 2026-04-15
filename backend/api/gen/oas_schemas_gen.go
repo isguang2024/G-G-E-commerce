@@ -3,6 +3,7 @@
 package gen
 
 import (
+	"io"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -5621,6 +5622,30 @@ func (s *GetLoginPageContextPageScene) UnmarshalText(data []byte) error {
 type GetObservabilityMetricsInternalServerError Error
 
 func (*GetObservabilityMetricsInternalServerError) getObservabilityMetricsRes() {}
+
+type GetObservabilityMetricsPrometheusInternalServerError Error
+
+func (*GetObservabilityMetricsPrometheusInternalServerError) getObservabilityMetricsPrometheusRes() {}
+
+type GetObservabilityMetricsPrometheusOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s GetObservabilityMetricsPrometheusOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+func (*GetObservabilityMetricsPrometheusOK) getObservabilityMetricsPrometheusRes() {}
+
+type GetObservabilityMetricsPrometheusUnauthorized Error
+
+func (*GetObservabilityMetricsPrometheusUnauthorized) getObservabilityMetricsPrometheusRes() {}
 
 type GetObservabilityMetricsUnauthorized Error
 

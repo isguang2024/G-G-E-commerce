@@ -808,6 +808,24 @@ func (UnimplementedHandler) GetObservabilityMetrics(ctx context.Context) (r GetO
 	return r, ht.ErrNotImplemented
 }
 
+// GetObservabilityMetricsPrometheus implements getObservabilityMetricsPrometheus operation.
+//
+// 以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供
+// Prometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与
+// `GET /observability/metrics` 一致，差异仅在呈现格式。
+// 字段映射：
+// - `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；
+// - `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；
+// - `audit_events_accepted_total` (counter) — 入队累计；
+// - `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。
+// Noop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中
+// 区分「暂未启用」与「启用后异常」。.
+//
+// GET /observability/metrics/prometheus
+func (UnimplementedHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (r GetObservabilityMetricsPrometheusRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetObservabilityTrace implements getObservabilityTrace operation.
 //
 // 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs

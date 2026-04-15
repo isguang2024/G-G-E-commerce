@@ -562,6 +562,21 @@ type Invoker interface {
 	//
 	// GET /observability/metrics
 	GetObservabilityMetrics(ctx context.Context) (GetObservabilityMetricsRes, error)
+	// GetObservabilityMetricsPrometheus invokes getObservabilityMetricsPrometheus operation.
+	//
+	// 以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供
+	// Prometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与
+	// `GET /observability/metrics` 一致，差异仅在呈现格式。
+	// 字段映射：
+	// - `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；
+	// - `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；
+	// - `audit_events_accepted_total` (counter) — 入队累计；
+	// - `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。
+	// Noop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中
+	// 区分「暂未启用」与「启用后异常」。.
+	//
+	// GET /observability/metrics/prometheus
+	GetObservabilityMetricsPrometheus(ctx context.Context) (GetObservabilityMetricsPrometheusRes, error)
 	// GetObservabilityTrace invokes getObservabilityTrace operation.
 	//
 	// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
@@ -12075,6 +12090,122 @@ func (c *Client) sendGetObservabilityMetrics(ctx context.Context) (res GetObserv
 
 	stage = "DecodeResponse"
 	result, err := decodeGetObservabilityMetricsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetObservabilityMetricsPrometheus invokes getObservabilityMetricsPrometheus operation.
+//
+// 以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供
+// Prometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与
+// `GET /observability/metrics` 一致，差异仅在呈现格式。
+// 字段映射：
+// - `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；
+// - `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；
+// - `audit_events_accepted_total` (counter) — 入队累计；
+// - `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。
+// Noop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中
+// 区分「暂未启用」与「启用后异常」。.
+//
+// GET /observability/metrics/prometheus
+func (c *Client) GetObservabilityMetricsPrometheus(ctx context.Context) (GetObservabilityMetricsPrometheusRes, error) {
+	res, err := c.sendGetObservabilityMetricsPrometheus(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetObservabilityMetricsPrometheus(ctx context.Context) (res GetObservabilityMetricsPrometheusRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getObservabilityMetricsPrometheus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/metrics/prometheus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetObservabilityMetricsPrometheusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/observability/metrics/prometheus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetObservabilityMetricsPrometheusOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetObservabilityMetricsPrometheusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

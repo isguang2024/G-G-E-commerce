@@ -12,6 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-faster/jx"
@@ -358,6 +360,50 @@ func (h *APIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObserv
 		},
 		CollectedAt: time.Now().UTC(),
 	}, nil
+}
+
+// GetObservabilityMetricsPrometheus 以 openmetrics-text v1.0.0 格式导出 audit.Recorder
+// 的四项核心指标，供 Prometheus / Alertmanager 等通用监控系统直接 scrape。
+//
+// 设计说明：
+//  1. 数据内容与 GetObservabilityMetrics 一致，差异仅在呈现格式——Prometheus 系列
+//     工具链读 text，前端 dashboard 读 JSON，各取所需；
+//  2. 只导出 audit 四项（queue_depth / queue_capacity / accepted_total / dropped_total），
+//     telemetry 不纳入：外部 SRE 关注的是可观测主链路是否堵塞 / 丢数据，telemetry
+//     的统计可以在需要时扩展，避免一次把指标面铺得太大；
+//  3. 所有样本用单一硬编码 label（job="gge-backend"）保持 cardinality=1，符合
+//     openmetrics 「metric name + labels 唯一确定时间序列」约束；
+//  4. Noop 模式下 Stats() 返回全零，抓取仍然是 200 + 完整样本（不是空响应），
+//     便于告警区分「暂未启用」与「启用后异常」。
+//
+// Content-Type 受 ogen 生成码约束为 text/plain; charset=utf-8——Prometheus 抓取
+// 端默认兼容 text/plain 0.0.4 / openmetrics 1.0.0，内容格式本身符合 openmetrics
+// 即可，不依赖 Content-Type 的 version 参数。
+func (h *APIHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (gen.GetObservabilityMetricsPrometheusRes, error) {
+	if _, ok := userIDFromContext(ctx); !ok {
+		return &gen.GetObservabilityMetricsPrometheusUnauthorized{Code: 401, Message: "未认证"}, nil
+	}
+	stats := h.audit.Stats()
+
+	var b strings.Builder
+	// gauge: 队列瞬时深度
+	fmt.Fprintln(&b, "# HELP audit_queue_depth audit recorder queue length (len(chan))")
+	fmt.Fprintln(&b, "# TYPE audit_queue_depth gauge")
+	fmt.Fprintf(&b, "audit_queue_depth %d\n", stats.QueueDepth)
+	// gauge: 队列容量
+	fmt.Fprintln(&b, "# HELP audit_queue_capacity audit recorder queue capacity (cap(chan))")
+	fmt.Fprintln(&b, "# TYPE audit_queue_capacity gauge")
+	fmt.Fprintf(&b, "audit_queue_capacity %d\n", stats.QueueCap)
+	// counter: 接收累计
+	fmt.Fprintln(&b, "# HELP audit_events_accepted_total cumulative audit events enqueued since process start")
+	fmt.Fprintln(&b, "# TYPE audit_events_accepted_total counter")
+	fmt.Fprintf(&b, "audit_events_accepted_total %d\n", stats.AcceptedTotal)
+	// counter: 丢弃累计
+	fmt.Fprintln(&b, "# HELP audit_events_dropped_total cumulative audit events dropped (queue full, drop-newest)")
+	fmt.Fprintln(&b, "# TYPE audit_events_dropped_total counter")
+	fmt.Fprintf(&b, "audit_events_dropped_total %d\n", stats.DroppedTotal)
+
+	return &gen.GetObservabilityMetricsPrometheusOK{Data: strings.NewReader(b.String())}, nil
 }
 
 func (h *APIHandler) GetTelemetryLog(ctx context.Context, params gen.GetTelemetryLogParams) (gen.GetTelemetryLogRes, error) {

@@ -118,6 +118,7 @@ var operationRolesBearerAuth = map[string][]string{
 	GetMessageDispatchRecordOperation:                             []string{},
 	GetNavigationOperation:                                        []string{},
 	GetObservabilityMetricsOperation:                              []string{},
+	GetObservabilityMetricsPrometheusOperation:                    []string{},
 	GetObservabilityTraceOperation:                                []string{},
 	GetPageOperation:                                              []string{},
 	GetPageAccessTraceOperation:                                   []string{},

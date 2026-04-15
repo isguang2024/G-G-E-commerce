@@ -1236,6 +1236,17 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "getObservabilityMetricsPrometheus",
+      "method": "get",
+      "path": "/observability/metrics/prometheus",
+      "permission_key": "observability.audit.read",
+      "summary": "观察性指标的 Prometheus / openmetrics 文本导出",
+      "description": "以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供\nPrometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与\n`GET /observability/metrics` 一致，差异仅在呈现格式。\n\n字段映射：\n- `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；\n- `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；\n- `audit_events_accepted_total` (counter) — 入队累计；\n- `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。\n\nNoop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中\n区分「暂未启用」与「启用后异常」。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listTelemetryLogs",
       "method": "get",
       "path": "/observability/telemetry-logs",

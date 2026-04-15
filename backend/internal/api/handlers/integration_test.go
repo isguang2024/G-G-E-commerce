@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -1084,6 +1085,58 @@ func TestIntegrationObservabilityMetrics(t *testing.T) {
 	}
 	if dropped, _ := auditDrop["dropped_total"].(float64); dropped < 1 {
 		t.Errorf("metrics drops: expected audit.dropped_total >= 1 after flooding 200 records at QueueSize=1, got %v — body: %s", dropped, w2.Body.String())
+	}
+}
+
+// TestIntegrationObservabilityMetricsPrometheus 覆盖 GET /observability/metrics/prometheus。
+// 两段式覆盖：
+//  1. 未登录 → 401（与 /metrics 行为一致）；
+//  2. 登录 + Noop 注入 → 200 + text/plain，body 含 4 条 openmetrics 指标
+//     （audit_queue_depth / audit_queue_capacity / audit_events_accepted_total /
+//      audit_events_dropped_total），每条都有 `# HELP` 和 `# TYPE` 头。
+//
+// 不做 dropped_total 的灌流验证——那部分已由 TestIntegrationObservabilityMetrics
+// 覆盖（底层 Stats() 共享一份实现，text 导出只是渲染层差异）。
+func TestIntegrationObservabilityMetricsPrometheus(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// ── (1) 未登录 401 ─────────────────────────────────────────────
+	w := integDo(http.MethodGet, "/api/v1/observability/metrics/prometheus", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("prom no token: expected 401, got %d", w.Code)
+	}
+
+	// ── (2) Noop 注入下的 200 + openmetrics 文本 ───────────────────
+	w = integDo(http.MethodGet, "/api/v1/observability/metrics/prometheus", nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("prom Noop: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	ct := w.Header().Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/plain") {
+		t.Errorf("prom Noop: expected text/plain Content-Type, got %q", ct)
+	}
+	body := w.Body.String()
+	// 四项指标必须俱全。
+	wants := []string{
+		"# HELP audit_queue_depth",
+		"# TYPE audit_queue_depth gauge",
+		"audit_queue_depth 0",
+		"# HELP audit_queue_capacity",
+		"# TYPE audit_queue_capacity gauge",
+		"audit_queue_capacity 0",
+		"# HELP audit_events_accepted_total",
+		"# TYPE audit_events_accepted_total counter",
+		"audit_events_accepted_total 0",
+		"# HELP audit_events_dropped_total",
+		"# TYPE audit_events_dropped_total counter",
+		"audit_events_dropped_total 0",
+	}
+	for _, w := range wants {
+		if !strings.Contains(body, w) {
+			t.Errorf("prom Noop: body missing %q — got:\n%s", w, body)
+		}
 	}
 }
 

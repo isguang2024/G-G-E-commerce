@@ -55,6 +55,8 @@ paths:
     $ref: ./domains/observability/paths.yaml#/paths/~1observability~1trace~1{request_id}
   /observability/metrics:
     $ref: ./domains/observability/paths.yaml#/paths/~1observability~1metrics
+  /observability/metrics/prometheus:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1metrics~1prometheus
   /system/register-entries:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
   /system/register-entries/{id}:
