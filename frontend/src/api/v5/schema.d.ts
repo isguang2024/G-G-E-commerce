@@ -156,6 +156,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/observability/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 观察性子系统运行时指标
+         * @description 返回当前进程内 audit.Recorder 与 telemetry.Ingester 的队列深度、累计
+         *     accepted / dropped 计数。供 dashboard widget、/healthz 增强、SRE
+         *     仪表盘读取。基础设施指标，不按 tenant 分桶；请求仍需认证，复用
+         *     `observability.audit.read` 权限（能看审计的人能看队列健康）。
+         *
+         *     语义注意：
+         *     - `queue_depth` 是 len(chan)，瞬时弱一致，允许与 accepted/dropped 微量错位；
+         *     - `accepted_total` / `dropped_total` 单调递增，进程重启归零；
+         *     - Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。
+         */
+        get: operations["getObservabilityMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/metrics/prometheus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 观察性指标的 Prometheus / openmetrics 文本导出
+         * @description 以 openmetrics-text v1.0.0 格式返回 audit.Recorder 的四项指标，供
+         *     Prometheus / Alertmanager 等常规监控系统直接 scrape。数据内容与
+         *     `GET /observability/metrics` 一致，差异仅在呈现格式。
+         *
+         *     字段映射：
+         *     - `audit_queue_depth` (gauge) — 瞬时队列深度 len(chan)；
+         *     - `audit_queue_capacity` (gauge) — 队列容量 cap(chan)；
+         *     - `audit_events_accepted_total` (counter) — 入队累计；
+         *     - `audit_events_dropped_total` (counter) — 丢弃累计（drop-newest）。
+         *
+         *     Noop 模式下所有指标为 0，抓取返回仍然是 200 + 完整样本，便于在告警中
+         *     区分「暂未启用」与「启用后异常」。
+         */
+        get: operations["getObservabilityMetricsPrometheus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/log-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询日志策略
+         * @description 分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。
+         */
+        get: operations["listLogPolicies"];
+        put?: never;
+        /** 创建日志策略 */
+        post: operations["createLogPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observability/log-policies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除日志策略 */
+        delete: operations["deleteLogPolicy"];
+        options?: never;
+        head?: never;
+        /** 更新日志策略 */
+        patch: operations["updateLogPolicy"];
+        trace?: never;
+    };
+    "/observability/log-policies/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 预览日志策略命中结果
+         * @description 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。
+         */
+        post: operations["previewLogPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/register-entries": {
         parameters: {
             query?: never;
@@ -3516,6 +3634,118 @@ export interface components {
             audit_logs: components["schemas"]["AuditLogItem"][];
             telemetry_logs: components["schemas"]["TelemetryLogRecord"][];
         };
+        /** @description 单个观察性子服务（audit / telemetry）的运行时指标快照。 */
+        ObservabilityServiceStats: {
+            /** @description 当前异步 channel 里待消费的事件数；同步模式恒为 0。 */
+            queue_depth: number;
+            /** @description 异步 channel 容量；0 表示同步模式或未启用异步。 */
+            queue_cap: number;
+            /**
+             * Format: int64
+             * @description 进程启动以来成功入队 / 同步写入的事件累计。
+             */
+            accepted_total: number;
+            /**
+             * Format: int64
+             * @description 进程启动以来因限流或队列满被丢弃的事件累计。
+             */
+            dropped_total: number;
+            /**
+             * Format: int64
+             * @description 进程启动以来因 log policy 拒绝或采样丢弃的事件累计。
+             */
+            policy_dropped_total: number;
+            /** @description 是否处于降级模式（仅 audit 有意义，telemetry 固定为 false）。 */
+            degraded: boolean;
+            /**
+             * Format: int64
+             * @description 降级模式下写入 degraded sink 的累计条数（仅 audit 有意义）。
+             */
+            degraded_appended_total: number;
+        };
+        /**
+         * @description 整个 observability 子系统的运行时观测指标。不按 tenant 分桶（基础设施
+         *     指标）；返回的数值仅对当前进程有效，多副本部署需由调用方 scrape 后聚合。
+         */
+        ObservabilityMetrics: {
+            audit: components["schemas"]["ObservabilityServiceStats"];
+            telemetry: components["schemas"]["ObservabilityServiceStats"];
+            /**
+             * Format: date-time
+             * @description 本次采集时刻（服务端 UTC）。
+             */
+            collected_at: string;
+        };
+        LogPolicyItem: {
+            /** Format: uuid */
+            id: string;
+            tenant_id: string;
+            /** @enum {string} */
+            pipeline: "audit" | "telemetry";
+            /** @enum {string} */
+            match_field: "action" | "outcome" | "resource_type" | "level" | "event" | "route";
+            pattern: string;
+            /** @enum {string} */
+            decision: "allow" | "deny" | "sample";
+            sample_rate?: number | null;
+            priority: number;
+            enabled: boolean;
+            note?: string;
+            compliance_locked: boolean;
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        LogPolicyList: {
+            records: components["schemas"]["LogPolicyItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        LogPolicyCreateRequest: {
+            /** @enum {string} */
+            pipeline: "audit" | "telemetry";
+            /** @enum {string} */
+            match_field: "action" | "outcome" | "resource_type" | "level" | "event" | "route";
+            pattern: string;
+            /** @enum {string} */
+            decision: "allow" | "deny" | "sample";
+            sample_rate?: number;
+            /** @default 0 */
+            priority: number;
+            /** @default true */
+            enabled: boolean;
+            note?: string;
+        };
+        LogPolicyUpdateRequest: {
+            /** @enum {string} */
+            match_field?: "action" | "outcome" | "resource_type" | "level" | "event" | "route";
+            pattern?: string;
+            /** @enum {string} */
+            decision?: "allow" | "deny" | "sample";
+            sample_rate?: number | null;
+            priority?: number;
+            enabled?: boolean;
+            note?: string | null;
+        };
+        LogPolicyPreviewRequest: {
+            /** @enum {string} */
+            pipeline: "audit" | "telemetry";
+            fields: {
+                [key: string]: string;
+            };
+        };
+        LogPolicyPreviewResponse: {
+            /** @enum {string} */
+            decision: "allow" | "deny" | "sample";
+            sample_rate?: number | null;
+            matched: boolean;
+            policy?: components["schemas"]["LogPolicyItem"];
+        };
         RegisterEntryItem: {
             /** Format: uuid */
             id: string;
@@ -5907,6 +6137,365 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ObservabilityTraceBundle"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getObservabilityMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservabilityMetrics"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getObservabilityMetricsPrometheus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listLogPolicies: {
+        parameters: {
+            query?: {
+                current?: number;
+                size?: number;
+                pipeline?: "audit" | "telemetry";
+                enabled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogPolicyList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createLogPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogPolicyCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogPolicyItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteLogPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateLogPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogPolicyUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogPolicyItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    previewLogPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogPolicyPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogPolicyPreviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
             /** @description Unauthorized */

@@ -2543,6 +2543,22 @@ type CreateApiEndpointCategoryUnauthorized Error
 
 func (*CreateApiEndpointCategoryUnauthorized) createApiEndpointCategoryRes() {}
 
+type CreateLogPolicyBadRequest Error
+
+func (*CreateLogPolicyBadRequest) createLogPolicyRes() {}
+
+type CreateLogPolicyConflict Error
+
+func (*CreateLogPolicyConflict) createLogPolicyRes() {}
+
+type CreateLogPolicyInternalServerError Error
+
+func (*CreateLogPolicyInternalServerError) createLogPolicyRes() {}
+
+type CreateLogPolicyUnauthorized Error
+
+func (*CreateLogPolicyUnauthorized) createLogPolicyRes() {}
+
 type CreateUserBadRequest Error
 
 func (*CreateUserBadRequest) createUserRes() {}
@@ -2644,6 +2660,22 @@ func (*DeleteDictTypeNotFound) deleteDictTypeRes() {}
 type DeleteDictTypeOK Error
 
 func (*DeleteDictTypeOK) deleteDictTypeRes() {}
+
+type DeleteLogPolicyConflict Error
+
+func (*DeleteLogPolicyConflict) deleteLogPolicyRes() {}
+
+type DeleteLogPolicyInternalServerError Error
+
+func (*DeleteLogPolicyInternalServerError) deleteLogPolicyRes() {}
+
+type DeleteLogPolicyNotFound Error
+
+func (*DeleteLogPolicyNotFound) deleteLogPolicyRes() {}
+
+type DeleteLogPolicyUnauthorized Error
+
+func (*DeleteLogPolicyUnauthorized) deleteLogPolicyRes() {}
 
 // DeleteLoginPageTemplateNoContent is response for DeleteLoginPageTemplate operation.
 type DeleteLoginPageTemplateNoContent struct{}
@@ -6187,6 +6219,55 @@ type ListDictItemsOKApplicationJSON []DictItemSummary
 
 func (*ListDictItemsOKApplicationJSON) listDictItemsRes() {}
 
+type ListLogPoliciesInternalServerError Error
+
+func (*ListLogPoliciesInternalServerError) listLogPoliciesRes() {}
+
+type ListLogPoliciesPipeline string
+
+const (
+	ListLogPoliciesPipelineAudit     ListLogPoliciesPipeline = "audit"
+	ListLogPoliciesPipelineTelemetry ListLogPoliciesPipeline = "telemetry"
+)
+
+// AllValues returns all ListLogPoliciesPipeline values.
+func (ListLogPoliciesPipeline) AllValues() []ListLogPoliciesPipeline {
+	return []ListLogPoliciesPipeline{
+		ListLogPoliciesPipelineAudit,
+		ListLogPoliciesPipelineTelemetry,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ListLogPoliciesPipeline) MarshalText() ([]byte, error) {
+	switch s {
+	case ListLogPoliciesPipelineAudit:
+		return []byte(s), nil
+	case ListLogPoliciesPipelineTelemetry:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ListLogPoliciesPipeline) UnmarshalText(data []byte) error {
+	switch ListLogPoliciesPipeline(data) {
+	case ListLogPoliciesPipelineAudit:
+		*s = ListLogPoliciesPipelineAudit
+		return nil
+	case ListLogPoliciesPipelineTelemetry:
+		*s = ListLogPoliciesPipelineTelemetry
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ListLogPoliciesUnauthorized Error
+
+func (*ListLogPoliciesUnauthorized) listLogPoliciesRes() {}
+
 type ListMediaInternalServerError Error
 
 func (*ListMediaInternalServerError) listMediaRes() {}
@@ -6226,6 +6307,999 @@ func (*ListUsersForbidden) listUsersRes() {}
 type ListUsersUnauthorized Error
 
 func (*ListUsersUnauthorized) listUsersRes() {}
+
+// Ref: #/components/schemas/LogPolicyCreateRequest
+type LogPolicyCreateRequest struct {
+	Pipeline   LogPolicyCreateRequestPipeline   `json:"pipeline"`
+	MatchField LogPolicyCreateRequestMatchField `json:"match_field"`
+	Pattern    string                           `json:"pattern"`
+	Decision   LogPolicyCreateRequestDecision   `json:"decision"`
+	SampleRate OptInt                           `json:"sample_rate"`
+	Priority   OptInt                           `json:"priority"`
+	Enabled    OptBool                          `json:"enabled"`
+	Note       OptString                        `json:"note"`
+}
+
+// GetPipeline returns the value of Pipeline.
+func (s *LogPolicyCreateRequest) GetPipeline() LogPolicyCreateRequestPipeline {
+	return s.Pipeline
+}
+
+// GetMatchField returns the value of MatchField.
+func (s *LogPolicyCreateRequest) GetMatchField() LogPolicyCreateRequestMatchField {
+	return s.MatchField
+}
+
+// GetPattern returns the value of Pattern.
+func (s *LogPolicyCreateRequest) GetPattern() string {
+	return s.Pattern
+}
+
+// GetDecision returns the value of Decision.
+func (s *LogPolicyCreateRequest) GetDecision() LogPolicyCreateRequestDecision {
+	return s.Decision
+}
+
+// GetSampleRate returns the value of SampleRate.
+func (s *LogPolicyCreateRequest) GetSampleRate() OptInt {
+	return s.SampleRate
+}
+
+// GetPriority returns the value of Priority.
+func (s *LogPolicyCreateRequest) GetPriority() OptInt {
+	return s.Priority
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *LogPolicyCreateRequest) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// GetNote returns the value of Note.
+func (s *LogPolicyCreateRequest) GetNote() OptString {
+	return s.Note
+}
+
+// SetPipeline sets the value of Pipeline.
+func (s *LogPolicyCreateRequest) SetPipeline(val LogPolicyCreateRequestPipeline) {
+	s.Pipeline = val
+}
+
+// SetMatchField sets the value of MatchField.
+func (s *LogPolicyCreateRequest) SetMatchField(val LogPolicyCreateRequestMatchField) {
+	s.MatchField = val
+}
+
+// SetPattern sets the value of Pattern.
+func (s *LogPolicyCreateRequest) SetPattern(val string) {
+	s.Pattern = val
+}
+
+// SetDecision sets the value of Decision.
+func (s *LogPolicyCreateRequest) SetDecision(val LogPolicyCreateRequestDecision) {
+	s.Decision = val
+}
+
+// SetSampleRate sets the value of SampleRate.
+func (s *LogPolicyCreateRequest) SetSampleRate(val OptInt) {
+	s.SampleRate = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *LogPolicyCreateRequest) SetPriority(val OptInt) {
+	s.Priority = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *LogPolicyCreateRequest) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
+
+// SetNote sets the value of Note.
+func (s *LogPolicyCreateRequest) SetNote(val OptString) {
+	s.Note = val
+}
+
+type LogPolicyCreateRequestDecision string
+
+const (
+	LogPolicyCreateRequestDecisionAllow  LogPolicyCreateRequestDecision = "allow"
+	LogPolicyCreateRequestDecisionDeny   LogPolicyCreateRequestDecision = "deny"
+	LogPolicyCreateRequestDecisionSample LogPolicyCreateRequestDecision = "sample"
+)
+
+// AllValues returns all LogPolicyCreateRequestDecision values.
+func (LogPolicyCreateRequestDecision) AllValues() []LogPolicyCreateRequestDecision {
+	return []LogPolicyCreateRequestDecision{
+		LogPolicyCreateRequestDecisionAllow,
+		LogPolicyCreateRequestDecisionDeny,
+		LogPolicyCreateRequestDecisionSample,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyCreateRequestDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyCreateRequestDecisionAllow:
+		return []byte(s), nil
+	case LogPolicyCreateRequestDecisionDeny:
+		return []byte(s), nil
+	case LogPolicyCreateRequestDecisionSample:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyCreateRequestDecision) UnmarshalText(data []byte) error {
+	switch LogPolicyCreateRequestDecision(data) {
+	case LogPolicyCreateRequestDecisionAllow:
+		*s = LogPolicyCreateRequestDecisionAllow
+		return nil
+	case LogPolicyCreateRequestDecisionDeny:
+		*s = LogPolicyCreateRequestDecisionDeny
+		return nil
+	case LogPolicyCreateRequestDecisionSample:
+		*s = LogPolicyCreateRequestDecisionSample
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LogPolicyCreateRequestMatchField string
+
+const (
+	LogPolicyCreateRequestMatchFieldAction       LogPolicyCreateRequestMatchField = "action"
+	LogPolicyCreateRequestMatchFieldOutcome      LogPolicyCreateRequestMatchField = "outcome"
+	LogPolicyCreateRequestMatchFieldResourceType LogPolicyCreateRequestMatchField = "resource_type"
+	LogPolicyCreateRequestMatchFieldLevel        LogPolicyCreateRequestMatchField = "level"
+	LogPolicyCreateRequestMatchFieldEvent        LogPolicyCreateRequestMatchField = "event"
+	LogPolicyCreateRequestMatchFieldRoute        LogPolicyCreateRequestMatchField = "route"
+)
+
+// AllValues returns all LogPolicyCreateRequestMatchField values.
+func (LogPolicyCreateRequestMatchField) AllValues() []LogPolicyCreateRequestMatchField {
+	return []LogPolicyCreateRequestMatchField{
+		LogPolicyCreateRequestMatchFieldAction,
+		LogPolicyCreateRequestMatchFieldOutcome,
+		LogPolicyCreateRequestMatchFieldResourceType,
+		LogPolicyCreateRequestMatchFieldLevel,
+		LogPolicyCreateRequestMatchFieldEvent,
+		LogPolicyCreateRequestMatchFieldRoute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyCreateRequestMatchField) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyCreateRequestMatchFieldAction:
+		return []byte(s), nil
+	case LogPolicyCreateRequestMatchFieldOutcome:
+		return []byte(s), nil
+	case LogPolicyCreateRequestMatchFieldResourceType:
+		return []byte(s), nil
+	case LogPolicyCreateRequestMatchFieldLevel:
+		return []byte(s), nil
+	case LogPolicyCreateRequestMatchFieldEvent:
+		return []byte(s), nil
+	case LogPolicyCreateRequestMatchFieldRoute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyCreateRequestMatchField) UnmarshalText(data []byte) error {
+	switch LogPolicyCreateRequestMatchField(data) {
+	case LogPolicyCreateRequestMatchFieldAction:
+		*s = LogPolicyCreateRequestMatchFieldAction
+		return nil
+	case LogPolicyCreateRequestMatchFieldOutcome:
+		*s = LogPolicyCreateRequestMatchFieldOutcome
+		return nil
+	case LogPolicyCreateRequestMatchFieldResourceType:
+		*s = LogPolicyCreateRequestMatchFieldResourceType
+		return nil
+	case LogPolicyCreateRequestMatchFieldLevel:
+		*s = LogPolicyCreateRequestMatchFieldLevel
+		return nil
+	case LogPolicyCreateRequestMatchFieldEvent:
+		*s = LogPolicyCreateRequestMatchFieldEvent
+		return nil
+	case LogPolicyCreateRequestMatchFieldRoute:
+		*s = LogPolicyCreateRequestMatchFieldRoute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LogPolicyCreateRequestPipeline string
+
+const (
+	LogPolicyCreateRequestPipelineAudit     LogPolicyCreateRequestPipeline = "audit"
+	LogPolicyCreateRequestPipelineTelemetry LogPolicyCreateRequestPipeline = "telemetry"
+)
+
+// AllValues returns all LogPolicyCreateRequestPipeline values.
+func (LogPolicyCreateRequestPipeline) AllValues() []LogPolicyCreateRequestPipeline {
+	return []LogPolicyCreateRequestPipeline{
+		LogPolicyCreateRequestPipelineAudit,
+		LogPolicyCreateRequestPipelineTelemetry,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyCreateRequestPipeline) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyCreateRequestPipelineAudit:
+		return []byte(s), nil
+	case LogPolicyCreateRequestPipelineTelemetry:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyCreateRequestPipeline) UnmarshalText(data []byte) error {
+	switch LogPolicyCreateRequestPipeline(data) {
+	case LogPolicyCreateRequestPipelineAudit:
+		*s = LogPolicyCreateRequestPipelineAudit
+		return nil
+	case LogPolicyCreateRequestPipelineTelemetry:
+		*s = LogPolicyCreateRequestPipelineTelemetry
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/LogPolicyItem
+type LogPolicyItem struct {
+	ID               uuid.UUID               `json:"id"`
+	TenantID         string                  `json:"tenant_id"`
+	Pipeline         LogPolicyItemPipeline   `json:"pipeline"`
+	MatchField       LogPolicyItemMatchField `json:"match_field"`
+	Pattern          string                  `json:"pattern"`
+	Decision         LogPolicyItemDecision   `json:"decision"`
+	SampleRate       OptNilInt               `json:"sample_rate"`
+	Priority         int                     `json:"priority"`
+	Enabled          bool                    `json:"enabled"`
+	Note             OptString               `json:"note"`
+	ComplianceLocked bool                    `json:"compliance_locked"`
+	CreatedBy        OptNilUUID              `json:"created_by"`
+	CreatedAt        time.Time               `json:"created_at"`
+	UpdatedAt        time.Time               `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *LogPolicyItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *LogPolicyItem) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetPipeline returns the value of Pipeline.
+func (s *LogPolicyItem) GetPipeline() LogPolicyItemPipeline {
+	return s.Pipeline
+}
+
+// GetMatchField returns the value of MatchField.
+func (s *LogPolicyItem) GetMatchField() LogPolicyItemMatchField {
+	return s.MatchField
+}
+
+// GetPattern returns the value of Pattern.
+func (s *LogPolicyItem) GetPattern() string {
+	return s.Pattern
+}
+
+// GetDecision returns the value of Decision.
+func (s *LogPolicyItem) GetDecision() LogPolicyItemDecision {
+	return s.Decision
+}
+
+// GetSampleRate returns the value of SampleRate.
+func (s *LogPolicyItem) GetSampleRate() OptNilInt {
+	return s.SampleRate
+}
+
+// GetPriority returns the value of Priority.
+func (s *LogPolicyItem) GetPriority() int {
+	return s.Priority
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *LogPolicyItem) GetEnabled() bool {
+	return s.Enabled
+}
+
+// GetNote returns the value of Note.
+func (s *LogPolicyItem) GetNote() OptString {
+	return s.Note
+}
+
+// GetComplianceLocked returns the value of ComplianceLocked.
+func (s *LogPolicyItem) GetComplianceLocked() bool {
+	return s.ComplianceLocked
+}
+
+// GetCreatedBy returns the value of CreatedBy.
+func (s *LogPolicyItem) GetCreatedBy() OptNilUUID {
+	return s.CreatedBy
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *LogPolicyItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *LogPolicyItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *LogPolicyItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *LogPolicyItem) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetPipeline sets the value of Pipeline.
+func (s *LogPolicyItem) SetPipeline(val LogPolicyItemPipeline) {
+	s.Pipeline = val
+}
+
+// SetMatchField sets the value of MatchField.
+func (s *LogPolicyItem) SetMatchField(val LogPolicyItemMatchField) {
+	s.MatchField = val
+}
+
+// SetPattern sets the value of Pattern.
+func (s *LogPolicyItem) SetPattern(val string) {
+	s.Pattern = val
+}
+
+// SetDecision sets the value of Decision.
+func (s *LogPolicyItem) SetDecision(val LogPolicyItemDecision) {
+	s.Decision = val
+}
+
+// SetSampleRate sets the value of SampleRate.
+func (s *LogPolicyItem) SetSampleRate(val OptNilInt) {
+	s.SampleRate = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *LogPolicyItem) SetPriority(val int) {
+	s.Priority = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *LogPolicyItem) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// SetNote sets the value of Note.
+func (s *LogPolicyItem) SetNote(val OptString) {
+	s.Note = val
+}
+
+// SetComplianceLocked sets the value of ComplianceLocked.
+func (s *LogPolicyItem) SetComplianceLocked(val bool) {
+	s.ComplianceLocked = val
+}
+
+// SetCreatedBy sets the value of CreatedBy.
+func (s *LogPolicyItem) SetCreatedBy(val OptNilUUID) {
+	s.CreatedBy = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *LogPolicyItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *LogPolicyItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+func (*LogPolicyItem) createLogPolicyRes() {}
+func (*LogPolicyItem) updateLogPolicyRes() {}
+
+type LogPolicyItemDecision string
+
+const (
+	LogPolicyItemDecisionAllow  LogPolicyItemDecision = "allow"
+	LogPolicyItemDecisionDeny   LogPolicyItemDecision = "deny"
+	LogPolicyItemDecisionSample LogPolicyItemDecision = "sample"
+)
+
+// AllValues returns all LogPolicyItemDecision values.
+func (LogPolicyItemDecision) AllValues() []LogPolicyItemDecision {
+	return []LogPolicyItemDecision{
+		LogPolicyItemDecisionAllow,
+		LogPolicyItemDecisionDeny,
+		LogPolicyItemDecisionSample,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyItemDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyItemDecisionAllow:
+		return []byte(s), nil
+	case LogPolicyItemDecisionDeny:
+		return []byte(s), nil
+	case LogPolicyItemDecisionSample:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyItemDecision) UnmarshalText(data []byte) error {
+	switch LogPolicyItemDecision(data) {
+	case LogPolicyItemDecisionAllow:
+		*s = LogPolicyItemDecisionAllow
+		return nil
+	case LogPolicyItemDecisionDeny:
+		*s = LogPolicyItemDecisionDeny
+		return nil
+	case LogPolicyItemDecisionSample:
+		*s = LogPolicyItemDecisionSample
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LogPolicyItemMatchField string
+
+const (
+	LogPolicyItemMatchFieldAction       LogPolicyItemMatchField = "action"
+	LogPolicyItemMatchFieldOutcome      LogPolicyItemMatchField = "outcome"
+	LogPolicyItemMatchFieldResourceType LogPolicyItemMatchField = "resource_type"
+	LogPolicyItemMatchFieldLevel        LogPolicyItemMatchField = "level"
+	LogPolicyItemMatchFieldEvent        LogPolicyItemMatchField = "event"
+	LogPolicyItemMatchFieldRoute        LogPolicyItemMatchField = "route"
+)
+
+// AllValues returns all LogPolicyItemMatchField values.
+func (LogPolicyItemMatchField) AllValues() []LogPolicyItemMatchField {
+	return []LogPolicyItemMatchField{
+		LogPolicyItemMatchFieldAction,
+		LogPolicyItemMatchFieldOutcome,
+		LogPolicyItemMatchFieldResourceType,
+		LogPolicyItemMatchFieldLevel,
+		LogPolicyItemMatchFieldEvent,
+		LogPolicyItemMatchFieldRoute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyItemMatchField) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyItemMatchFieldAction:
+		return []byte(s), nil
+	case LogPolicyItemMatchFieldOutcome:
+		return []byte(s), nil
+	case LogPolicyItemMatchFieldResourceType:
+		return []byte(s), nil
+	case LogPolicyItemMatchFieldLevel:
+		return []byte(s), nil
+	case LogPolicyItemMatchFieldEvent:
+		return []byte(s), nil
+	case LogPolicyItemMatchFieldRoute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyItemMatchField) UnmarshalText(data []byte) error {
+	switch LogPolicyItemMatchField(data) {
+	case LogPolicyItemMatchFieldAction:
+		*s = LogPolicyItemMatchFieldAction
+		return nil
+	case LogPolicyItemMatchFieldOutcome:
+		*s = LogPolicyItemMatchFieldOutcome
+		return nil
+	case LogPolicyItemMatchFieldResourceType:
+		*s = LogPolicyItemMatchFieldResourceType
+		return nil
+	case LogPolicyItemMatchFieldLevel:
+		*s = LogPolicyItemMatchFieldLevel
+		return nil
+	case LogPolicyItemMatchFieldEvent:
+		*s = LogPolicyItemMatchFieldEvent
+		return nil
+	case LogPolicyItemMatchFieldRoute:
+		*s = LogPolicyItemMatchFieldRoute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LogPolicyItemPipeline string
+
+const (
+	LogPolicyItemPipelineAudit     LogPolicyItemPipeline = "audit"
+	LogPolicyItemPipelineTelemetry LogPolicyItemPipeline = "telemetry"
+)
+
+// AllValues returns all LogPolicyItemPipeline values.
+func (LogPolicyItemPipeline) AllValues() []LogPolicyItemPipeline {
+	return []LogPolicyItemPipeline{
+		LogPolicyItemPipelineAudit,
+		LogPolicyItemPipelineTelemetry,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyItemPipeline) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyItemPipelineAudit:
+		return []byte(s), nil
+	case LogPolicyItemPipelineTelemetry:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyItemPipeline) UnmarshalText(data []byte) error {
+	switch LogPolicyItemPipeline(data) {
+	case LogPolicyItemPipelineAudit:
+		*s = LogPolicyItemPipelineAudit
+		return nil
+	case LogPolicyItemPipelineTelemetry:
+		*s = LogPolicyItemPipelineTelemetry
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/LogPolicyList
+type LogPolicyList struct {
+	Records []LogPolicyItem `json:"records"`
+	Total   int64           `json:"total"`
+	Current int             `json:"current"`
+	Size    int             `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *LogPolicyList) GetRecords() []LogPolicyItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *LogPolicyList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *LogPolicyList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *LogPolicyList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *LogPolicyList) SetRecords(val []LogPolicyItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *LogPolicyList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *LogPolicyList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *LogPolicyList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*LogPolicyList) listLogPoliciesRes() {}
+
+// Ref: #/components/schemas/LogPolicyPreviewRequest
+type LogPolicyPreviewRequest struct {
+	Pipeline LogPolicyPreviewRequestPipeline `json:"pipeline"`
+	Fields   LogPolicyPreviewRequestFields   `json:"fields"`
+}
+
+// GetPipeline returns the value of Pipeline.
+func (s *LogPolicyPreviewRequest) GetPipeline() LogPolicyPreviewRequestPipeline {
+	return s.Pipeline
+}
+
+// GetFields returns the value of Fields.
+func (s *LogPolicyPreviewRequest) GetFields() LogPolicyPreviewRequestFields {
+	return s.Fields
+}
+
+// SetPipeline sets the value of Pipeline.
+func (s *LogPolicyPreviewRequest) SetPipeline(val LogPolicyPreviewRequestPipeline) {
+	s.Pipeline = val
+}
+
+// SetFields sets the value of Fields.
+func (s *LogPolicyPreviewRequest) SetFields(val LogPolicyPreviewRequestFields) {
+	s.Fields = val
+}
+
+type LogPolicyPreviewRequestFields map[string]string
+
+func (s *LogPolicyPreviewRequestFields) init() LogPolicyPreviewRequestFields {
+	m := *s
+	if m == nil {
+		m = map[string]string{}
+		*s = m
+	}
+	return m
+}
+
+type LogPolicyPreviewRequestPipeline string
+
+const (
+	LogPolicyPreviewRequestPipelineAudit     LogPolicyPreviewRequestPipeline = "audit"
+	LogPolicyPreviewRequestPipelineTelemetry LogPolicyPreviewRequestPipeline = "telemetry"
+)
+
+// AllValues returns all LogPolicyPreviewRequestPipeline values.
+func (LogPolicyPreviewRequestPipeline) AllValues() []LogPolicyPreviewRequestPipeline {
+	return []LogPolicyPreviewRequestPipeline{
+		LogPolicyPreviewRequestPipelineAudit,
+		LogPolicyPreviewRequestPipelineTelemetry,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyPreviewRequestPipeline) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyPreviewRequestPipelineAudit:
+		return []byte(s), nil
+	case LogPolicyPreviewRequestPipelineTelemetry:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyPreviewRequestPipeline) UnmarshalText(data []byte) error {
+	switch LogPolicyPreviewRequestPipeline(data) {
+	case LogPolicyPreviewRequestPipelineAudit:
+		*s = LogPolicyPreviewRequestPipelineAudit
+		return nil
+	case LogPolicyPreviewRequestPipelineTelemetry:
+		*s = LogPolicyPreviewRequestPipelineTelemetry
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/LogPolicyPreviewResponse
+type LogPolicyPreviewResponse struct {
+	Decision   LogPolicyPreviewResponseDecision `json:"decision"`
+	SampleRate OptNilInt                        `json:"sample_rate"`
+	Matched    bool                             `json:"matched"`
+	Policy     OptLogPolicyItem                 `json:"policy"`
+}
+
+// GetDecision returns the value of Decision.
+func (s *LogPolicyPreviewResponse) GetDecision() LogPolicyPreviewResponseDecision {
+	return s.Decision
+}
+
+// GetSampleRate returns the value of SampleRate.
+func (s *LogPolicyPreviewResponse) GetSampleRate() OptNilInt {
+	return s.SampleRate
+}
+
+// GetMatched returns the value of Matched.
+func (s *LogPolicyPreviewResponse) GetMatched() bool {
+	return s.Matched
+}
+
+// GetPolicy returns the value of Policy.
+func (s *LogPolicyPreviewResponse) GetPolicy() OptLogPolicyItem {
+	return s.Policy
+}
+
+// SetDecision sets the value of Decision.
+func (s *LogPolicyPreviewResponse) SetDecision(val LogPolicyPreviewResponseDecision) {
+	s.Decision = val
+}
+
+// SetSampleRate sets the value of SampleRate.
+func (s *LogPolicyPreviewResponse) SetSampleRate(val OptNilInt) {
+	s.SampleRate = val
+}
+
+// SetMatched sets the value of Matched.
+func (s *LogPolicyPreviewResponse) SetMatched(val bool) {
+	s.Matched = val
+}
+
+// SetPolicy sets the value of Policy.
+func (s *LogPolicyPreviewResponse) SetPolicy(val OptLogPolicyItem) {
+	s.Policy = val
+}
+
+func (*LogPolicyPreviewResponse) previewLogPolicyRes() {}
+
+type LogPolicyPreviewResponseDecision string
+
+const (
+	LogPolicyPreviewResponseDecisionAllow  LogPolicyPreviewResponseDecision = "allow"
+	LogPolicyPreviewResponseDecisionDeny   LogPolicyPreviewResponseDecision = "deny"
+	LogPolicyPreviewResponseDecisionSample LogPolicyPreviewResponseDecision = "sample"
+)
+
+// AllValues returns all LogPolicyPreviewResponseDecision values.
+func (LogPolicyPreviewResponseDecision) AllValues() []LogPolicyPreviewResponseDecision {
+	return []LogPolicyPreviewResponseDecision{
+		LogPolicyPreviewResponseDecisionAllow,
+		LogPolicyPreviewResponseDecisionDeny,
+		LogPolicyPreviewResponseDecisionSample,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyPreviewResponseDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyPreviewResponseDecisionAllow:
+		return []byte(s), nil
+	case LogPolicyPreviewResponseDecisionDeny:
+		return []byte(s), nil
+	case LogPolicyPreviewResponseDecisionSample:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyPreviewResponseDecision) UnmarshalText(data []byte) error {
+	switch LogPolicyPreviewResponseDecision(data) {
+	case LogPolicyPreviewResponseDecisionAllow:
+		*s = LogPolicyPreviewResponseDecisionAllow
+		return nil
+	case LogPolicyPreviewResponseDecisionDeny:
+		*s = LogPolicyPreviewResponseDecisionDeny
+		return nil
+	case LogPolicyPreviewResponseDecisionSample:
+		*s = LogPolicyPreviewResponseDecisionSample
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/LogPolicyUpdateRequest
+type LogPolicyUpdateRequest struct {
+	MatchField OptLogPolicyUpdateRequestMatchField `json:"match_field"`
+	Pattern    OptString                           `json:"pattern"`
+	Decision   OptLogPolicyUpdateRequestDecision   `json:"decision"`
+	SampleRate OptNilInt                           `json:"sample_rate"`
+	Priority   OptInt                              `json:"priority"`
+	Enabled    OptBool                             `json:"enabled"`
+	Note       OptNilString                        `json:"note"`
+}
+
+// GetMatchField returns the value of MatchField.
+func (s *LogPolicyUpdateRequest) GetMatchField() OptLogPolicyUpdateRequestMatchField {
+	return s.MatchField
+}
+
+// GetPattern returns the value of Pattern.
+func (s *LogPolicyUpdateRequest) GetPattern() OptString {
+	return s.Pattern
+}
+
+// GetDecision returns the value of Decision.
+func (s *LogPolicyUpdateRequest) GetDecision() OptLogPolicyUpdateRequestDecision {
+	return s.Decision
+}
+
+// GetSampleRate returns the value of SampleRate.
+func (s *LogPolicyUpdateRequest) GetSampleRate() OptNilInt {
+	return s.SampleRate
+}
+
+// GetPriority returns the value of Priority.
+func (s *LogPolicyUpdateRequest) GetPriority() OptInt {
+	return s.Priority
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *LogPolicyUpdateRequest) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// GetNote returns the value of Note.
+func (s *LogPolicyUpdateRequest) GetNote() OptNilString {
+	return s.Note
+}
+
+// SetMatchField sets the value of MatchField.
+func (s *LogPolicyUpdateRequest) SetMatchField(val OptLogPolicyUpdateRequestMatchField) {
+	s.MatchField = val
+}
+
+// SetPattern sets the value of Pattern.
+func (s *LogPolicyUpdateRequest) SetPattern(val OptString) {
+	s.Pattern = val
+}
+
+// SetDecision sets the value of Decision.
+func (s *LogPolicyUpdateRequest) SetDecision(val OptLogPolicyUpdateRequestDecision) {
+	s.Decision = val
+}
+
+// SetSampleRate sets the value of SampleRate.
+func (s *LogPolicyUpdateRequest) SetSampleRate(val OptNilInt) {
+	s.SampleRate = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *LogPolicyUpdateRequest) SetPriority(val OptInt) {
+	s.Priority = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *LogPolicyUpdateRequest) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
+
+// SetNote sets the value of Note.
+func (s *LogPolicyUpdateRequest) SetNote(val OptNilString) {
+	s.Note = val
+}
+
+type LogPolicyUpdateRequestDecision string
+
+const (
+	LogPolicyUpdateRequestDecisionAllow  LogPolicyUpdateRequestDecision = "allow"
+	LogPolicyUpdateRequestDecisionDeny   LogPolicyUpdateRequestDecision = "deny"
+	LogPolicyUpdateRequestDecisionSample LogPolicyUpdateRequestDecision = "sample"
+)
+
+// AllValues returns all LogPolicyUpdateRequestDecision values.
+func (LogPolicyUpdateRequestDecision) AllValues() []LogPolicyUpdateRequestDecision {
+	return []LogPolicyUpdateRequestDecision{
+		LogPolicyUpdateRequestDecisionAllow,
+		LogPolicyUpdateRequestDecisionDeny,
+		LogPolicyUpdateRequestDecisionSample,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyUpdateRequestDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyUpdateRequestDecisionAllow:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestDecisionDeny:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestDecisionSample:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyUpdateRequestDecision) UnmarshalText(data []byte) error {
+	switch LogPolicyUpdateRequestDecision(data) {
+	case LogPolicyUpdateRequestDecisionAllow:
+		*s = LogPolicyUpdateRequestDecisionAllow
+		return nil
+	case LogPolicyUpdateRequestDecisionDeny:
+		*s = LogPolicyUpdateRequestDecisionDeny
+		return nil
+	case LogPolicyUpdateRequestDecisionSample:
+		*s = LogPolicyUpdateRequestDecisionSample
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LogPolicyUpdateRequestMatchField string
+
+const (
+	LogPolicyUpdateRequestMatchFieldAction       LogPolicyUpdateRequestMatchField = "action"
+	LogPolicyUpdateRequestMatchFieldOutcome      LogPolicyUpdateRequestMatchField = "outcome"
+	LogPolicyUpdateRequestMatchFieldResourceType LogPolicyUpdateRequestMatchField = "resource_type"
+	LogPolicyUpdateRequestMatchFieldLevel        LogPolicyUpdateRequestMatchField = "level"
+	LogPolicyUpdateRequestMatchFieldEvent        LogPolicyUpdateRequestMatchField = "event"
+	LogPolicyUpdateRequestMatchFieldRoute        LogPolicyUpdateRequestMatchField = "route"
+)
+
+// AllValues returns all LogPolicyUpdateRequestMatchField values.
+func (LogPolicyUpdateRequestMatchField) AllValues() []LogPolicyUpdateRequestMatchField {
+	return []LogPolicyUpdateRequestMatchField{
+		LogPolicyUpdateRequestMatchFieldAction,
+		LogPolicyUpdateRequestMatchFieldOutcome,
+		LogPolicyUpdateRequestMatchFieldResourceType,
+		LogPolicyUpdateRequestMatchFieldLevel,
+		LogPolicyUpdateRequestMatchFieldEvent,
+		LogPolicyUpdateRequestMatchFieldRoute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LogPolicyUpdateRequestMatchField) MarshalText() ([]byte, error) {
+	switch s {
+	case LogPolicyUpdateRequestMatchFieldAction:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestMatchFieldOutcome:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestMatchFieldResourceType:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestMatchFieldLevel:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestMatchFieldEvent:
+		return []byte(s), nil
+	case LogPolicyUpdateRequestMatchFieldRoute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LogPolicyUpdateRequestMatchField) UnmarshalText(data []byte) error {
+	switch LogPolicyUpdateRequestMatchField(data) {
+	case LogPolicyUpdateRequestMatchFieldAction:
+		*s = LogPolicyUpdateRequestMatchFieldAction
+		return nil
+	case LogPolicyUpdateRequestMatchFieldOutcome:
+		*s = LogPolicyUpdateRequestMatchFieldOutcome
+		return nil
+	case LogPolicyUpdateRequestMatchFieldResourceType:
+		*s = LogPolicyUpdateRequestMatchFieldResourceType
+		return nil
+	case LogPolicyUpdateRequestMatchFieldLevel:
+		*s = LogPolicyUpdateRequestMatchFieldLevel
+		return nil
+	case LogPolicyUpdateRequestMatchFieldEvent:
+		*s = LogPolicyUpdateRequestMatchFieldEvent
+		return nil
+	case LogPolicyUpdateRequestMatchFieldRoute:
+		*s = LogPolicyUpdateRequestMatchFieldRoute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type LoginBadRequest Error
 
@@ -9464,8 +10538,9 @@ func (s *MutationResult) SetSuccess(val bool) {
 	s.Success = val
 }
 
-func (*MutationResult) deleteMediaRes() {}
-func (*MutationResult) logoutRes()      {}
+func (*MutationResult) deleteLogPolicyRes() {}
+func (*MutationResult) deleteMediaRes()     {}
+func (*MutationResult) logoutRes()          {}
 
 // Ref: #/components/schemas/NavigationContext
 type NavigationContext struct {
@@ -9772,6 +10847,12 @@ type ObservabilityServiceStats struct {
 	AcceptedTotal int64 `json:"accepted_total"`
 	// 进程启动以来因限流或队列满被丢弃的事件累计。.
 	DroppedTotal int64 `json:"dropped_total"`
+	// 进程启动以来因 log policy 拒绝或采样丢弃的事件累计。.
+	PolicyDroppedTotal int64 `json:"policy_dropped_total"`
+	// 是否处于降级模式（仅 audit 有意义，telemetry 固定为 false）。.
+	Degraded bool `json:"degraded"`
+	// 降级模式下写入 degraded sink 的累计条数（仅 audit 有意义）。.
+	DegradedAppendedTotal int64 `json:"degraded_appended_total"`
 }
 
 // GetQueueDepth returns the value of QueueDepth.
@@ -9794,6 +10875,21 @@ func (s *ObservabilityServiceStats) GetDroppedTotal() int64 {
 	return s.DroppedTotal
 }
 
+// GetPolicyDroppedTotal returns the value of PolicyDroppedTotal.
+func (s *ObservabilityServiceStats) GetPolicyDroppedTotal() int64 {
+	return s.PolicyDroppedTotal
+}
+
+// GetDegraded returns the value of Degraded.
+func (s *ObservabilityServiceStats) GetDegraded() bool {
+	return s.Degraded
+}
+
+// GetDegradedAppendedTotal returns the value of DegradedAppendedTotal.
+func (s *ObservabilityServiceStats) GetDegradedAppendedTotal() int64 {
+	return s.DegradedAppendedTotal
+}
+
 // SetQueueDepth sets the value of QueueDepth.
 func (s *ObservabilityServiceStats) SetQueueDepth(val int) {
 	s.QueueDepth = val
@@ -9812,6 +10908,21 @@ func (s *ObservabilityServiceStats) SetAcceptedTotal(val int64) {
 // SetDroppedTotal sets the value of DroppedTotal.
 func (s *ObservabilityServiceStats) SetDroppedTotal(val int64) {
 	s.DroppedTotal = val
+}
+
+// SetPolicyDroppedTotal sets the value of PolicyDroppedTotal.
+func (s *ObservabilityServiceStats) SetPolicyDroppedTotal(val int64) {
+	s.PolicyDroppedTotal = val
+}
+
+// SetDegraded sets the value of Degraded.
+func (s *ObservabilityServiceStats) SetDegraded(val bool) {
+	s.Degraded = val
+}
+
+// SetDegradedAppendedTotal sets the value of DegradedAppendedTotal.
+func (s *ObservabilityServiceStats) SetDegradedAppendedTotal(val int64) {
+	s.DegradedAppendedTotal = val
 }
 
 // 以 request_id 作为聚合 key，把同一次请求里产生的所有 audit_logs 与
@@ -10217,6 +11328,190 @@ func (o OptInt64) Get() (v int64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt64) Or(d int64) int64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptListLogPoliciesPipeline returns new OptListLogPoliciesPipeline with value set to v.
+func NewOptListLogPoliciesPipeline(v ListLogPoliciesPipeline) OptListLogPoliciesPipeline {
+	return OptListLogPoliciesPipeline{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptListLogPoliciesPipeline is optional ListLogPoliciesPipeline.
+type OptListLogPoliciesPipeline struct {
+	Value ListLogPoliciesPipeline
+	Set   bool
+}
+
+// IsSet returns true if OptListLogPoliciesPipeline was set.
+func (o OptListLogPoliciesPipeline) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptListLogPoliciesPipeline) Reset() {
+	var v ListLogPoliciesPipeline
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptListLogPoliciesPipeline) SetTo(v ListLogPoliciesPipeline) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptListLogPoliciesPipeline) Get() (v ListLogPoliciesPipeline, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptListLogPoliciesPipeline) Or(d ListLogPoliciesPipeline) ListLogPoliciesPipeline {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLogPolicyItem returns new OptLogPolicyItem with value set to v.
+func NewOptLogPolicyItem(v LogPolicyItem) OptLogPolicyItem {
+	return OptLogPolicyItem{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLogPolicyItem is optional LogPolicyItem.
+type OptLogPolicyItem struct {
+	Value LogPolicyItem
+	Set   bool
+}
+
+// IsSet returns true if OptLogPolicyItem was set.
+func (o OptLogPolicyItem) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLogPolicyItem) Reset() {
+	var v LogPolicyItem
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLogPolicyItem) SetTo(v LogPolicyItem) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLogPolicyItem) Get() (v LogPolicyItem, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLogPolicyItem) Or(d LogPolicyItem) LogPolicyItem {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLogPolicyUpdateRequestDecision returns new OptLogPolicyUpdateRequestDecision with value set to v.
+func NewOptLogPolicyUpdateRequestDecision(v LogPolicyUpdateRequestDecision) OptLogPolicyUpdateRequestDecision {
+	return OptLogPolicyUpdateRequestDecision{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLogPolicyUpdateRequestDecision is optional LogPolicyUpdateRequestDecision.
+type OptLogPolicyUpdateRequestDecision struct {
+	Value LogPolicyUpdateRequestDecision
+	Set   bool
+}
+
+// IsSet returns true if OptLogPolicyUpdateRequestDecision was set.
+func (o OptLogPolicyUpdateRequestDecision) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLogPolicyUpdateRequestDecision) Reset() {
+	var v LogPolicyUpdateRequestDecision
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLogPolicyUpdateRequestDecision) SetTo(v LogPolicyUpdateRequestDecision) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLogPolicyUpdateRequestDecision) Get() (v LogPolicyUpdateRequestDecision, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLogPolicyUpdateRequestDecision) Or(d LogPolicyUpdateRequestDecision) LogPolicyUpdateRequestDecision {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLogPolicyUpdateRequestMatchField returns new OptLogPolicyUpdateRequestMatchField with value set to v.
+func NewOptLogPolicyUpdateRequestMatchField(v LogPolicyUpdateRequestMatchField) OptLogPolicyUpdateRequestMatchField {
+	return OptLogPolicyUpdateRequestMatchField{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLogPolicyUpdateRequestMatchField is optional LogPolicyUpdateRequestMatchField.
+type OptLogPolicyUpdateRequestMatchField struct {
+	Value LogPolicyUpdateRequestMatchField
+	Set   bool
+}
+
+// IsSet returns true if OptLogPolicyUpdateRequestMatchField was set.
+func (o OptLogPolicyUpdateRequestMatchField) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLogPolicyUpdateRequestMatchField) Reset() {
+	var v LogPolicyUpdateRequestMatchField
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLogPolicyUpdateRequestMatchField) SetTo(v LogPolicyUpdateRequestMatchField) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLogPolicyUpdateRequestMatchField) Get() (v LogPolicyUpdateRequestMatchField, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLogPolicyUpdateRequestMatchField) Or(d LogPolicyUpdateRequestMatchField) LogPolicyUpdateRequestMatchField {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -16569,6 +17864,18 @@ func (s *PermissionGroupItem) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
+type PreviewLogPolicyBadRequest Error
+
+func (*PreviewLogPolicyBadRequest) previewLogPolicyRes() {}
+
+type PreviewLogPolicyInternalServerError Error
+
+func (*PreviewLogPolicyInternalServerError) previewLogPolicyRes() {}
+
+type PreviewLogPolicyUnauthorized Error
+
+func (*PreviewLogPolicyUnauthorized) previewLogPolicyRes() {}
+
 // Ref: #/components/schemas/RefreshStats
 type RefreshStats struct {
 	RequestedPackageCount       int64     `json:"requested_package_count"`
@@ -22498,6 +23805,26 @@ func (*UpdateDictTypeBadRequest) updateDictTypeRes() {}
 type UpdateDictTypeNotFound Error
 
 func (*UpdateDictTypeNotFound) updateDictTypeRes() {}
+
+type UpdateLogPolicyBadRequest Error
+
+func (*UpdateLogPolicyBadRequest) updateLogPolicyRes() {}
+
+type UpdateLogPolicyConflict Error
+
+func (*UpdateLogPolicyConflict) updateLogPolicyRes() {}
+
+type UpdateLogPolicyInternalServerError Error
+
+func (*UpdateLogPolicyInternalServerError) updateLogPolicyRes() {}
+
+type UpdateLogPolicyNotFound Error
+
+func (*UpdateLogPolicyNotFound) updateLogPolicyRes() {}
+
+type UpdateLogPolicyUnauthorized Error
+
+func (*UpdateLogPolicyUnauthorized) updateLogPolicyRes() {}
 
 type UpdateUserBadRequest Error
 

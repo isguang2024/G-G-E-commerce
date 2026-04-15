@@ -16,6 +16,7 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/app"
@@ -104,6 +105,9 @@ type APIHandler struct {
 	// 前端日志摄取器（异步写 telemetry_logs）。同样由 router 注入；
 	// 关闭时传 telemetry.Noop{}，避免 handler 判空。
 	telemetry telemetry.Ingester
+	// 日志策略仓储与决策引擎（用于 observability/log-policies 控制面）。
+	policyRepo   logpolicy.Repository
+	policyEngine logpolicy.Engine
 }
 
 // NewAPIHandler 构建统一的 v5 API handler。
@@ -116,6 +120,16 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 	}
 	if telemetryIngester == nil {
 		telemetryIngester = telemetry.Noop{}
+	}
+	var policyRepo logpolicy.Repository
+	var policyEngine logpolicy.Engine
+	if db != nil {
+		repo := logpolicy.NewRepository(db)
+		policyRepo = repo
+		policyEngine = logpolicy.NewEngine(repo, logger)
+		if err := policyEngine.Refresh(context.Background()); err != nil {
+			logger.Warn("logpolicy.initial_refresh_failed", zap.Error(err))
+		}
 	}
 	// ── repos ──────────────────────────────────────────────────────────────
 	userRepo := user.NewUserRepository(db)
@@ -249,6 +263,8 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		apiEndpointSvc:   apiEndpointSvc,
 		audit:            auditRecorder,
 		telemetry:        telemetryIngester,
+		policyRepo:       policyRepo,
+		policyEngine:     policyEngine,
 	}
 	h.centralizedAuthSvc = auth.NewCentralizedAuthService(db, h.authSvc, userRepo)
 	registerResolver := register.NewResolver(register.NewRepository(db))

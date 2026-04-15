@@ -16,6 +16,7 @@ import (
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
@@ -78,6 +79,12 @@ func main() {
 
 	if err := ensureFeaturePackageAppKeysColumn(); err != nil {
 		logger.Fatal("Failed to ensure feature_packages app_keys column", zap.Error(err))
+	}
+	if err := ensureAuditLogMonthlyPartitions(logger); err != nil {
+		logger.Fatal("Failed to ensure audit_logs monthly partitions", zap.Error(err))
+	}
+	if err := logpolicy.EnsureCompliancePolicies(context.Background(), logpolicy.NewRepository(database.DB)); err != nil {
+		logger.Fatal("Failed to ensure log policy compliance seeds", zap.Error(err))
 	}
 
 	logger.Info("Database migration completed successfully!")
@@ -406,6 +413,72 @@ func ensureFeaturePackageAppKeysColumn() error {
 		END
 		WHERE app_keys IS NULL OR jsonb_typeof(app_keys) <> 'array' OR jsonb_array_length(app_keys) = 0
 	`).Error
+}
+
+func ensureAuditLogMonthlyPartitions(logger *zap.Logger) error {
+	exists, err := hasTable("audit_logs")
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	partitioned, err := isAuditLogsRangePartitioned()
+	if err != nil {
+		return err
+	}
+	if !partitioned {
+		logger.Warn("audit_logs is not range-partitioned, skip monthly partition ensure")
+		return nil
+	}
+
+	now := time.Now().UTC()
+	current := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	next := current.AddDate(0, 1, 0)
+	for _, start := range []time.Time{current, next} {
+		if err := createAuditMonthlyPartition(start); err != nil {
+			return err
+		}
+	}
+	if err := database.DB.Exec(`CREATE TABLE IF NOT EXISTS audit_logs_default PARTITION OF audit_logs DEFAULT`).Error; err != nil {
+		return err
+	}
+	logger.Info("audit_logs monthly partitions ensured",
+		zap.String("current_month", current.Format("2006-01")),
+		zap.String("next_month", next.Format("2006-01")),
+	)
+	return nil
+}
+
+func isAuditLogsRangePartitioned() (bool, error) {
+	var count int64
+	err := database.DB.Raw(`
+		SELECT COUNT(*)
+		  FROM pg_partitioned_table pt
+		  JOIN pg_class c ON c.oid = pt.partrelid
+		  JOIN pg_namespace n ON n.oid = c.relnamespace
+		 WHERE n.nspname = CURRENT_SCHEMA()
+		   AND c.relname = 'audit_logs'
+		   AND pt.partstrat = 'r'
+	`).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func createAuditMonthlyPartition(monthStart time.Time) error {
+	start := monthStart.UTC()
+	end := start.AddDate(0, 1, 0)
+	tableName := fmt.Sprintf("audit_logs_%04d_%02d", start.Year(), int(start.Month()))
+	sql := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s PARTITION OF audit_logs FOR VALUES FROM ('%s') TO ('%s')",
+		tableName,
+		start.Format("2006-01-02 15:04:05Z07:00"),
+		end.Format("2006-01-02 15:04:05Z07:00"),
+	)
+	return database.DB.Exec(sql).Error
 }
 
 func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {

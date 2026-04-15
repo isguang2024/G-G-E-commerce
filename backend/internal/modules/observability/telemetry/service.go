@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 )
 
@@ -83,10 +85,11 @@ type Result struct {
 //
 // 单调递增，进程重启后归 0。
 type Stats struct {
-	QueueDepth    int    `json:"queue_depth"`
-	QueueCap      int    `json:"queue_cap"`
-	AcceptedTotal uint64 `json:"accepted_total"`
-	DroppedTotal  uint64 `json:"dropped_total"`
+	QueueDepth         int    `json:"queue_depth"`
+	QueueCap           int    `json:"queue_cap"`
+	AcceptedTotal      uint64 `json:"accepted_total"`
+	DroppedTotal       uint64 `json:"dropped_total"`
+	PolicyDroppedTotal uint64 `json:"policy_dropped_total"`
 }
 
 // Config 控制 telemetry 服务的运行参数。
@@ -102,6 +105,7 @@ type Config struct {
 	PerIPBurst      float64 // IP token bucket 容量
 	BucketIdleTTL   time.Duration
 	MaxMessageBytes int // 单条 entry 序列化后最大字节数；超限截断
+	PolicyEngine    logpolicy.Engine
 }
 
 // DefaultConfig 提供生产默认值。
@@ -135,6 +139,8 @@ type service struct {
 	shutdown bool
 	dropped  uint64
 	accepted uint64
+	policyDropped uint64
+	policyEngine  logpolicy.Engine
 }
 
 // redactorLike 复用 audit 的 redactor，避免重复实现。
@@ -194,6 +200,7 @@ func New(db *gorm.DB, log *zap.Logger, cfg Config) Ingester {
 		sessionLimiter: newRateLimiter(cfg.PerSessionBurst, cfg.PerSessionRate, cfg.BucketIdleTTL),
 		ipLimiter:      newRateLimiter(cfg.PerIPBurst, cfg.PerIPRate, cfg.BucketIdleTTL),
 		stopCh:         make(chan struct{}),
+		policyEngine:   cfg.PolicyEngine,
 	}
 	if cfg.QueueSize > 0 {
 		s.queue = make(chan *TelemetryLog, cfg.QueueSize)
@@ -236,6 +243,14 @@ func (s *service) Ingest(ctx context.Context, entries []Entry, sessionKey, ipKey
 	accepted := int32(0)
 	dropped := int32(0)
 	for i := range entries {
+		if !s.shouldPersistByPolicy(&entries[i]) {
+			dropped++
+			s.mu.Lock()
+			s.dropped++
+			s.policyDropped++
+			s.mu.Unlock()
+			continue
+		}
 		row := s.build(tenant, appKey, actorID, ipKey, &entries[i])
 		if row == nil {
 			dropped++
@@ -271,6 +286,7 @@ func (s *service) Stats() Stats {
 	s.mu.Lock()
 	accepted := s.accepted
 	dropped := s.dropped
+	policyDropped := s.policyDropped
 	s.mu.Unlock()
 	depth, queueCap := 0, 0
 	if s.queue != nil {
@@ -278,10 +294,11 @@ func (s *service) Stats() Stats {
 		queueCap = cap(s.queue)
 	}
 	return Stats{
-		QueueDepth:    depth,
-		QueueCap:      queueCap,
-		AcceptedTotal: accepted,
-		DroppedTotal:  dropped,
+		QueueDepth:         depth,
+		QueueCap:           queueCap,
+		AcceptedTotal:      accepted,
+		DroppedTotal:       dropped,
+		PolicyDroppedTotal: policyDropped,
 	}
 }
 
@@ -468,4 +485,24 @@ func nilBytesToNull(b []byte) []byte {
 		return []byte("null")
 	}
 	return b
+}
+
+func (s *service) shouldPersistByPolicy(entry *Entry) bool {
+	if s.policyEngine == nil || entry == nil {
+		return true
+	}
+	decision := s.policyEngine.Decide(logpolicy.PipelineTelemetry, map[string]string{
+		logpolicy.MatchFieldLevel: entry.Level,
+		logpolicy.MatchFieldEvent: entry.Event,
+		logpolicy.MatchFieldRoute: entry.Route,
+	})
+	switch decision.Decision {
+	case logpolicy.DecisionDeny:
+		return false
+	case logpolicy.DecisionSample:
+		key := fmt.Sprintf("%s|%s|%s|%s", entry.SessionID, entry.Event, entry.Route, entry.Timestamp.UTC().Format(time.RFC3339Nano))
+		return logpolicy.ShouldKeepBySample(decision.SampleRate, key)
+	default:
+		return true
+	}
 }

@@ -182,6 +182,20 @@ func encodeCreateFeaturePackageRequest(
 	return nil
 }
 
+func encodeCreateLogPolicyRequest(
+	req *LogPolicyCreateRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateLoginPageTemplateRequest(
 	req *LoginPageTemplateUpsertRequest,
 	r *http.Request,
@@ -408,6 +422,20 @@ func encodeIngestTelemetryLogsRequest(
 
 func encodeLoginRequest(
 	req *LoginRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodePreviewLogPolicyRequest(
+	req *LogPolicyPreviewRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -968,6 +996,20 @@ func encodeUpdateFastEnterConfigRequest(
 
 func encodeUpdateFeaturePackageRequest(
 	req *FeaturePackageSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateLogPolicyRequest(
+	req *LogPolicyUpdateRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

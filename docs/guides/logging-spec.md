@@ -6,6 +6,9 @@
 > **约束范围**：任何新 handler / service / Vue 页面必须按本规范落地。整改老代码时遵循
 > 同一套命名与契约，不要另起炉灶。
 >
+> **当前性能画像（2026-04）**：单实例审计/遥测链路目标持续吞吐提升到 `5k~10k events/s`
+>（依赖 batch flush、Info/Debug 采样、审计月分区与降级写盘策略共同生效）。
+>
 > **真源**：
 > - 后端上下文 logger：`backend/internal/pkg/logger/`
 > - Request ID 中间件：`backend/internal/api/middleware/request_id.go`
@@ -361,6 +364,44 @@ Handler.IngestTelemetryLogs
 索引：`(tenant_id, ts)`、`(tenant_id, actor_id, ts)`、`(tenant_id, resource_type, resource_id, ts)`、
 `(tenant_id, action, ts)`、`request_id`（partial）、`(tenant_id, outcome, ts) WHERE outcome <> 'success'`。
 
+#### 6.1.1 月分区与归档（`audit_logs`）
+
+从 `00028_audit_logs_monthly_partition.sql` 开始，`audit_logs` 调整为声明式分区主表：
+
+- 分区键：`PARTITION BY RANGE (ts)`；
+- 主键：`(id, ts)` 复合主键（满足 PG 分区唯一约束）；
+- 保底分区：`audit_logs_default`（兜住越界历史数据）；
+- 月分区：`audit_logs_YYYY_MM`；
+- `cmd/migrate` 每次启动都会幂等创建「当前月 + 下月」两个分区，避免跨月首写失败。
+
+归档建议（按月执行）：
+
+```sql
+-- 1) 从主表摘分区（不再接收新写入）
+ALTER TABLE audit_logs DETACH PARTITION audit_logs_2025_12;
+
+-- 2) 可选：先备份该分区
+-- pg_dump -t audit_logs_2025_12 <db_name> > audit_logs_2025_12.sql
+
+-- 3) 归档完成后删除老分区
+DROP TABLE IF EXISTS audit_logs_2025_12;
+```
+
+> 生产建议保留最近 N 个月热分区（例如 6~12 个月），更久数据走对象存储或冷库。
+
+#### 6.1.2 存量迁移说明（生产）
+
+`00028` 迁移可以把旧 `audit_logs` 表改造成分区主表，但对已有大量写入流量的生产环境，
+仍建议按下面步骤执行，避免长事务期间写入抖动：
+
+1. 申请短暂停写窗口（至少覆盖 DDL + 数据搬迁时间）。
+2. 迁移前先做 `audit_logs` 全量备份（`pg_dump -t audit_logs ...`）。
+3. 在维护窗口执行 migrate，让 `00028` 完成结构改造与历史数据导入。
+4. 验证分区路由是否正确（插入几条不同月份 `ts`，检查落表）。
+5. 恢复写流量，观察 `audit_queue_depth`、`audit_events_dropped_total`、`audit_degraded` 指标。
+
+对于超大表（亿级行），推荐离线 `dump/restore` 到新分区结构后切换，避免在线迁移时间过长。
+
 ### 6.2 `telemetry_logs`
 
 | 列              | 类型           | 说明                            |
@@ -590,9 +631,9 @@ ingester 的异步通道仍是唯一的写入者。
 `GET /observability/metrics` 返回 JSON，面向前端 dashboard 与 `/healthz` 增强；
 `GET /observability/metrics/prometheus` 返回 openmetrics-text v1.0.0，面向
 Prometheus / Alertmanager 等通用监控系统 **直接 scrape**。两者底层共享
-`audit.Recorder.Stats()`，差异仅在呈现格式。text 端点当前只导出 audit 四项
-（telemetry 不纳入——外部 SRE 最关注的是观测主链路是否堵塞；需要时可在
-paths.yaml + handler 扩展，不破坏既有契约）。
+`audit.Recorder.Stats()` + `telemetry.Ingester.Stats()`，差异仅在呈现格式。
+text 端点现在同时导出 audit 与 telemetry 两组指标，便于外部监控统一对比
+后端审计写入链路与前端日志摄取链路。
 
 字段映射（严格按 openmetrics `# HELP` / `# TYPE` 输出）：
 
@@ -600,8 +641,12 @@ paths.yaml + handler 扩展，不破坏既有契约）。
 |-------------------------------|-----------|----------------------------------------------------|
 | `audit_queue_depth`           | `gauge`   | 瞬时队列深度 `len(chan)`                            |
 | `audit_queue_capacity`        | `gauge`   | 队列容量 `cap(chan)`，`0` 表示同步 / Noop             |
-| `audit_events_accepted_total` | `counter` | 成功入队累计（进程重启归零，单调递增）              |
+| `audit_events_accepted_total` | `counter` | 成功落库累计（进程重启归零，单调递增）              |
 | `audit_events_dropped_total`  | `counter` | 丢弃累计（drop-newest；稳态应贴近 0）                |
+| `telemetry_queue_depth`       | `gauge`   | telemetry ingest 队列瞬时深度 `len(chan)`            |
+| `telemetry_queue_capacity`    | `gauge`   | telemetry ingest 队列容量 `cap(chan)`，`0` 表示同步 / Noop |
+| `telemetry_events_accepted_total` | `counter` | telemetry 接收累计（进程重启归零，单调递增）      |
+| `telemetry_events_dropped_total`  | `counter` | telemetry 丢弃累计（限流或队列满）                 |
 
 示例响应体（Noop 或空闲进程）：
 
@@ -612,12 +657,24 @@ audit_queue_depth 0
 # HELP audit_queue_capacity audit recorder queue capacity (cap(chan))
 # TYPE audit_queue_capacity gauge
 audit_queue_capacity 0
-# HELP audit_events_accepted_total cumulative audit events enqueued since process start
+# HELP audit_events_accepted_total cumulative audit events persisted since process start
 # TYPE audit_events_accepted_total counter
 audit_events_accepted_total 0
 # HELP audit_events_dropped_total cumulative audit events dropped (queue full, drop-newest)
 # TYPE audit_events_dropped_total counter
 audit_events_dropped_total 0
+# HELP telemetry_queue_depth telemetry ingester queue length (len(chan))
+# TYPE telemetry_queue_depth gauge
+telemetry_queue_depth 0
+# HELP telemetry_queue_capacity telemetry ingester queue capacity (cap(chan))
+# TYPE telemetry_queue_capacity gauge
+telemetry_queue_capacity 0
+# HELP telemetry_events_accepted_total cumulative telemetry events accepted since process start
+# TYPE telemetry_events_accepted_total counter
+telemetry_events_accepted_total 0
+# HELP telemetry_events_dropped_total cumulative telemetry events dropped (rate limit or queue full)
+# TYPE telemetry_events_dropped_total counter
+telemetry_events_dropped_total 0
 ```
 
 **`prometheus.yml` 配置样例**（与 `observability.audit.read` 一致的 bearer 授权）：

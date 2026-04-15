@@ -1,3 +1,16 @@
+## 2026-04-16 backend 子目录文档按目录重构
+
+### 本次改动
+- 重写 `backend/internal/modules/README.md`，将上层说明收口为领域实现层总览，只保留 `system/` 与 `observability/` 两个当前主域入口。
+- 重写 `backend/internal/modules/system/README.md`，按真实子目录重新列出 `apiendpoint`、`app`、`auth`、`workspace`、`space`、`register`、`social` 等当前有效模块，并补充目录间关系说明。
+- 重写 `backend/internal/modules/system/collaborationworkspace/README.md` 与 `backend/internal/modules/system/permission/README.md`，删除旧的作用域叙事，改为“负责什么 / 不负责什么 / 相关目录”的目录级说明。
+- 新增 `backend/internal/modules/observability/README.md`，为 `audit/` 和 `telemetry/` 补齐可观测性目录入口文档。
+- 重写 `backend/api/openapi/README.md`，保留契约真相源、目录职责和生成链，删除与上层流程文档重复的长篇历史说明。
+
+### 下次方向
+- 若后续继续给 `backend/internal/modules/system/` 下的高频目录补 README，优先补 `workspace/`、`space/`、`page/`、`register/`，保持“就近写目录职责”的原则。
+- 若 OpenAPI 目录中的 `paths/` 已彻底无消费，可在确认生成链和引用后再清理历史兼容目录，避免 README 长期保留“兼容结构”说明。
+
 ## 2026-04-16 文档导航收束与去重
 
 ### 本次改动

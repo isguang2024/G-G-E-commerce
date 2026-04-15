@@ -130,6 +130,15 @@ func (UnimplementedHandler) CreateFeaturePackage(ctx context.Context, req *Featu
 	return r, ht.ErrNotImplemented
 }
 
+// CreateLogPolicy implements createLogPolicy operation.
+//
+// 创建日志策略.
+//
+// POST /observability/log-policies
+func (UnimplementedHandler) CreateLogPolicy(ctx context.Context, req *LogPolicyCreateRequest) (r CreateLogPolicyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateLoginPageTemplate implements createLoginPageTemplate operation.
 //
 // 创建登录页模板.
@@ -271,6 +280,15 @@ func (UnimplementedHandler) DeleteDictType(ctx context.Context, params DeleteDic
 //
 // DELETE /feature-packages/{id}
 func (UnimplementedHandler) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteLogPolicy implements deleteLogPolicy operation.
+//
+// 删除日志策略.
+//
+// DELETE /observability/log-policies/{id}
+func (UnimplementedHandler) DeleteLogPolicy(ctx context.Context, params DeleteLogPolicyParams) (r DeleteLogPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1221,6 +1239,15 @@ func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParam
 	return r, ht.ErrNotImplemented
 }
 
+// ListLogPolicies implements listLogPolicies operation.
+//
+// 分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。.
+//
+// GET /observability/log-policies
+func (UnimplementedHandler) ListLogPolicies(ctx context.Context, params ListLogPoliciesParams) (r ListLogPoliciesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListLoginPageTemplates implements listLoginPageTemplates operation.
 //
 // 登录页模板列表.
@@ -1534,6 +1561,15 @@ func (UnimplementedHandler) MarkInboxRead(ctx context.Context, params MarkInboxR
 //
 // POST /messages/inbox/read-all
 func (UnimplementedHandler) MarkInboxReadAll(ctx context.Context) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// PreviewLogPolicy implements previewLogPolicy operation.
+//
+// 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。.
+//
+// POST /observability/log-policies/preview
+func (UnimplementedHandler) PreviewLogPolicy(ctx context.Context, req *LogPolicyPreviewRequest) (r PreviewLogPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1957,6 +1993,15 @@ func (UnimplementedHandler) UpdateFastEnterConfig(ctx context.Context, req *Syst
 //
 // PUT /feature-packages/{id}
 func (UnimplementedHandler) UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (r *FeaturePackageMutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateLogPolicy implements updateLogPolicy operation.
+//
+// 更新日志策略.
+//
+// PATCH /observability/log-policies/{id}
+func (UnimplementedHandler) UpdateLogPolicy(ctx context.Context, req *LogPolicyUpdateRequest, params UpdateLogPolicyParams) (r UpdateLogPolicyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

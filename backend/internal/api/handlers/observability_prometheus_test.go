@@ -14,12 +14,13 @@ import (
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 )
 
 // TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401 —— 未登录上下文应返回 401。
 // 验证 handler 不依赖 ogen 中间件独立兜底 auth。
 func TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401(t *testing.T) {
-	h := &APIHandler{audit: audit.Noop{}}
+	h := &APIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}
 	res, err := h.GetObservabilityMetricsPrometheus(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -36,7 +37,7 @@ func TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401(t *testing.
 // TestGetObservabilityMetricsPrometheus_NoopAllZeros —— Noop 模式 4 项指标全 0,
 // 且 openmetrics 格式完整（每个指标有 # HELP + # TYPE + 数值行）。
 func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
-	h := &APIHandler{audit: audit.Noop{}}
+	h := &APIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}
 	ctx := context.WithValue(context.Background(), CtxUserID, uuid.New().String())
 
 	res, err := h.GetObservabilityMetricsPrometheus(ctx)
@@ -56,7 +57,7 @@ func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
 	}
 	body := string(b)
 
-	// 4 项指标必须全部出现,且 HELP/TYPE/样本三行齐备。
+	// 12 项指标必须全部出现,且 HELP/TYPE/样本三行齐备。
 	expected := []string{
 		"# HELP audit_queue_depth",
 		"# TYPE audit_queue_depth gauge",
@@ -70,6 +71,30 @@ func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
 		"# HELP audit_events_dropped_total",
 		"# TYPE audit_events_dropped_total counter",
 		"audit_events_dropped_total 0",
+		"# HELP audit_policy_dropped_total",
+		"# TYPE audit_policy_dropped_total counter",
+		"audit_policy_dropped_total 0",
+		"# HELP audit_degraded_mode",
+		"# TYPE audit_degraded_mode gauge",
+		"audit_degraded_mode 0",
+		"# HELP audit_degraded_appended_total",
+		"# TYPE audit_degraded_appended_total counter",
+		"audit_degraded_appended_total 0",
+		"# HELP telemetry_queue_depth",
+		"# TYPE telemetry_queue_depth gauge",
+		"telemetry_queue_depth 0",
+		"# HELP telemetry_queue_capacity",
+		"# TYPE telemetry_queue_capacity gauge",
+		"telemetry_queue_capacity 0",
+		"# HELP telemetry_events_accepted_total",
+		"# TYPE telemetry_events_accepted_total counter",
+		"telemetry_events_accepted_total 0",
+		"# HELP telemetry_events_dropped_total",
+		"# TYPE telemetry_events_dropped_total counter",
+		"telemetry_events_dropped_total 0",
+		"# HELP telemetry_policy_dropped_total",
+		"# TYPE telemetry_policy_dropped_total counter",
+		"telemetry_policy_dropped_total 0",
 	}
 	for _, needle := range expected {
 		if !strings.Contains(body, needle) {
@@ -77,10 +102,10 @@ func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
 		}
 	}
 
-	// openmetrics 要求每一行以 \n 结束 —— 粗略校验至少 12 行（4 指标 × 3）。
+	// openmetrics 要求每一行以 \n 结束 —— 粗略校验至少 36 行（12 指标 × 3）。
 	lines := strings.Split(strings.TrimRight(body, "\n"), "\n")
-	if len(lines) < 12 {
-		t.Fatalf("expected >= 12 lines, got %d: %v", len(lines), lines)
+	if len(lines) < 36 {
+		t.Fatalf("expected >= 36 lines, got %d: %v", len(lines), lines)
 	}
 	for i, ln := range lines {
 		if strings.HasSuffix(ln, " ") {

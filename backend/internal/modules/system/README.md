@@ -1,33 +1,39 @@
-﻿# System 模块说明
+# backend/internal/modules/system
 
-## 定位
+`system/` 是当前后端的基础业务域，聚合“身份、权限、导航、页面、空间、注册”这几类通用能力。
 
-`system` 模块是项目基础内核，负责认证、用户、角色、菜单、页面、功能权限、API 注册、作用域与协作空间上下文。
+## 子目录
 
-## 当前划分
+| 目录 | 说明 |
+| --- | --- |
+| `apiendpoint/` | API 注册表、权限绑定检查、权限审计补偿 |
+| `app/` | 应用实体与应用级配置 |
+| `auth/` | 登录、会话、当前用户上下文、中间件 |
+| `collaborationworkspace/` | 协作空间与成员管理、协作空间角色切换 |
+| `dictionary/` | 字典查询与基础枚举读取 |
+| `featurepackage/` | 功能包、功能包版本、分配与审计 |
+| `menu/` | 菜单定义、菜单树、菜单序列化 |
+| `models/` | system 域集中模型定义 |
+| `navigation/` | 导航编译与运行时导航结果 |
+| `page/` | 页面定义、页面运行时、缓存与同步 |
+| `permission/` | 权限键、权限分组、消费者分析与风险审计 |
+| `register/` | 注册入口解析、注册页配置与仓储读写 |
+| `role/` | 角色、角色权限与角色生效结果 |
+| `social/` | 社交登录 HTTP 入口、OAuth 流程与状态存储 |
+| `space/` | 菜单空间、空间访问模式、Host 绑定和初始化 |
+| `system/` | 系统聚合 facade、系统消息能力 |
+| `user/` | 用户、用户仓储、用户侧权限视图 |
+| `workspace/` | 个人空间与协作空间对应的统一工作区模型 |
 
-- `auth/`：登录、用户信息、当前权限集合
-- `user/`：用户管理与用户覆盖
-- `role/`：角色、菜单权限、角色功能权限、角色数据权限
-- `menu/`：菜单树、管理与运行时返回
-- `permission/`：功能权限注册表
-- `apiendpoint/`：API 注册表与元数据同步
-- `scope/`：作用域定义
-- `collaborationworkspace/`：协作空间、当前协作空间、协作空间边界、协作空间成员
+## 关系说明
 
-## 统一判断顺序
+- `workspace/` 负责统一工作区模型；`collaborationworkspace/` 负责协作空间实体和成员关系；`space/` 负责菜单空间与访问入口，不是同一层概念。
+- `permission/`、`role/`、`featurepackage/`、`apiendpoint/` 一起构成权限主链；权限判断仍以 `internal/pkg/permission/evaluator` 为准。
+- `menu/`、`navigation/`、`page/` 一起负责运行时导航和页面暴露。
+- `models/` 是 system 域共享模型层，新字段或新表优先先落模型和迁移，再回到 service 接入。
 
-1. 用户状态
-2. 协作空间成员状态
-3. 当前上下文
-4. 协作空间功能边界
-5. 用户个人覆盖
-6. 角色权限
-7. 默认拒绝
+## 修改原则
 
-## 边界
-
-- 业务模块尽量复用 `system` 的认证、空间权限上下文和 API 注册能力
-- 不要重新设计一套权限模型
-- 数据权限默认不作为新增业务接入的第一优先级
-
+- 先按目录找职责，不要在相邻目录重复造一层 service。
+- 目录下没有 `handler.go` 并不代表模块无效；HTTP 入口已经逐步收束到 `internal/api/handlers/`。
+- 需要新增 README 时，优先写局部边界、关键文件和上下游关系，不重复写全局规则。

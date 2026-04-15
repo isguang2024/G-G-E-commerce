@@ -347,30 +347,34 @@ func (h *APIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObserv
 	telemetryStats := h.telemetry.Stats()
 	return &gen.ObservabilityMetrics{
 		Audit: gen.ObservabilityServiceStats{
-			QueueDepth:    auditStats.QueueDepth,
-			QueueCap:      auditStats.QueueCap,
-			AcceptedTotal: int64(auditStats.AcceptedTotal),
-			DroppedTotal:  int64(auditStats.DroppedTotal),
+			QueueDepth:           auditStats.QueueDepth,
+			QueueCap:             auditStats.QueueCap,
+			AcceptedTotal:        int64(auditStats.AcceptedTotal),
+			DroppedTotal:         int64(auditStats.DroppedTotal),
+			PolicyDroppedTotal:   int64(auditStats.PolicyDroppedTotal),
+			Degraded:             auditStats.Degraded,
+			DegradedAppendedTotal: int64(auditStats.DegradedAppendedTotal),
 		},
 		Telemetry: gen.ObservabilityServiceStats{
-			QueueDepth:    telemetryStats.QueueDepth,
-			QueueCap:      telemetryStats.QueueCap,
-			AcceptedTotal: int64(telemetryStats.AcceptedTotal),
-			DroppedTotal:  int64(telemetryStats.DroppedTotal),
+			QueueDepth:         telemetryStats.QueueDepth,
+			QueueCap:           telemetryStats.QueueCap,
+			AcceptedTotal:      int64(telemetryStats.AcceptedTotal),
+			DroppedTotal:       int64(telemetryStats.DroppedTotal),
+			PolicyDroppedTotal: int64(telemetryStats.PolicyDroppedTotal),
 		},
 		CollectedAt: time.Now().UTC(),
 	}, nil
 }
 
-// GetObservabilityMetricsPrometheus 以 openmetrics-text v1.0.0 格式导出 audit.Recorder
-// 的四项核心指标，供 Prometheus / Alertmanager 等通用监控系统直接 scrape。
+// GetObservabilityMetricsPrometheus 以 openmetrics-text v1.0.0 格式导出
+// audit.Recorder + telemetry.Ingester 的核心指标，供 Prometheus / Alertmanager
+// 等通用监控系统直接 scrape。
 //
 // 设计说明：
 //  1. 数据内容与 GetObservabilityMetrics 一致，差异仅在呈现格式——Prometheus 系列
 //     工具链读 text，前端 dashboard 读 JSON，各取所需；
-//  2. 只导出 audit 四项（queue_depth / queue_capacity / accepted_total / dropped_total），
-//     telemetry 不纳入：外部 SRE 关注的是可观测主链路是否堵塞 / 丢数据，telemetry
-//     的统计可以在需要时扩展，避免一次把指标面铺得太大；
+//  2. 导出 audit + telemetry 两组指标：便于外部监控统一观测后端审计链路与前端日志
+//     摄取链路；
 //  3. 所有样本用单一硬编码 label（job="gge-backend"）保持 cardinality=1，符合
 //     openmetrics 「metric name + labels 唯一确定时间序列」约束；
 //  4. Noop 模式下 Stats() 返回全零，抓取仍然是 200 + 完整样本（不是空响应），
@@ -383,25 +387,63 @@ func (h *APIHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (gen
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetObservabilityMetricsPrometheusUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
-	stats := h.audit.Stats()
+	auditStats := h.audit.Stats()
+	telemetryStats := h.telemetry.Stats()
 
 	var b strings.Builder
 	// gauge: 队列瞬时深度
 	fmt.Fprintln(&b, "# HELP audit_queue_depth audit recorder queue length (len(chan))")
 	fmt.Fprintln(&b, "# TYPE audit_queue_depth gauge")
-	fmt.Fprintf(&b, "audit_queue_depth %d\n", stats.QueueDepth)
+	fmt.Fprintf(&b, "audit_queue_depth %d\n", auditStats.QueueDepth)
 	// gauge: 队列容量
 	fmt.Fprintln(&b, "# HELP audit_queue_capacity audit recorder queue capacity (cap(chan))")
 	fmt.Fprintln(&b, "# TYPE audit_queue_capacity gauge")
-	fmt.Fprintf(&b, "audit_queue_capacity %d\n", stats.QueueCap)
+	fmt.Fprintf(&b, "audit_queue_capacity %d\n", auditStats.QueueCap)
 	// counter: 接收累计
-	fmt.Fprintln(&b, "# HELP audit_events_accepted_total cumulative audit events enqueued since process start")
+	fmt.Fprintln(&b, "# HELP audit_events_accepted_total cumulative audit events persisted since process start")
 	fmt.Fprintln(&b, "# TYPE audit_events_accepted_total counter")
-	fmt.Fprintf(&b, "audit_events_accepted_total %d\n", stats.AcceptedTotal)
+	fmt.Fprintf(&b, "audit_events_accepted_total %d\n", auditStats.AcceptedTotal)
 	// counter: 丢弃累计
 	fmt.Fprintln(&b, "# HELP audit_events_dropped_total cumulative audit events dropped (queue full, drop-newest)")
 	fmt.Fprintln(&b, "# TYPE audit_events_dropped_total counter")
-	fmt.Fprintf(&b, "audit_events_dropped_total %d\n", stats.DroppedTotal)
+	fmt.Fprintf(&b, "audit_events_dropped_total %d\n", auditStats.DroppedTotal)
+	// counter: 策略丢弃累计
+	fmt.Fprintln(&b, "# HELP audit_policy_dropped_total cumulative audit events dropped by log policy")
+	fmt.Fprintln(&b, "# TYPE audit_policy_dropped_total counter")
+	fmt.Fprintf(&b, "audit_policy_dropped_total %d\n", auditStats.PolicyDroppedTotal)
+	// gauge: 是否降级模式（断路器非 closed）
+	fmt.Fprintln(&b, "# HELP audit_degraded_mode audit recorder circuit breaker degraded state (1=open/half_open, 0=closed)")
+	fmt.Fprintln(&b, "# TYPE audit_degraded_mode gauge")
+	if auditStats.Degraded {
+		fmt.Fprintln(&b, "audit_degraded_mode 1")
+	} else {
+		fmt.Fprintln(&b, "audit_degraded_mode 0")
+	}
+	// counter: 降级文件累计追加条数
+	fmt.Fprintln(&b, "# HELP audit_degraded_appended_total cumulative audit events appended to degraded sink")
+	fmt.Fprintln(&b, "# TYPE audit_degraded_appended_total counter")
+	fmt.Fprintf(&b, "audit_degraded_appended_total %d\n", auditStats.DegradedAppendedTotal)
+
+	// gauge: telemetry 队列瞬时深度
+	fmt.Fprintln(&b, "# HELP telemetry_queue_depth telemetry ingester queue length (len(chan))")
+	fmt.Fprintln(&b, "# TYPE telemetry_queue_depth gauge")
+	fmt.Fprintf(&b, "telemetry_queue_depth %d\n", telemetryStats.QueueDepth)
+	// gauge: telemetry 队列容量
+	fmt.Fprintln(&b, "# HELP telemetry_queue_capacity telemetry ingester queue capacity (cap(chan))")
+	fmt.Fprintln(&b, "# TYPE telemetry_queue_capacity gauge")
+	fmt.Fprintf(&b, "telemetry_queue_capacity %d\n", telemetryStats.QueueCap)
+	// counter: telemetry 接收累计
+	fmt.Fprintln(&b, "# HELP telemetry_events_accepted_total cumulative telemetry events accepted since process start")
+	fmt.Fprintln(&b, "# TYPE telemetry_events_accepted_total counter")
+	fmt.Fprintf(&b, "telemetry_events_accepted_total %d\n", telemetryStats.AcceptedTotal)
+	// counter: telemetry 丢弃累计
+	fmt.Fprintln(&b, "# HELP telemetry_events_dropped_total cumulative telemetry events dropped (rate limit or queue full)")
+	fmt.Fprintln(&b, "# TYPE telemetry_events_dropped_total counter")
+	fmt.Fprintf(&b, "telemetry_events_dropped_total %d\n", telemetryStats.DroppedTotal)
+	// counter: telemetry 策略丢弃累计
+	fmt.Fprintln(&b, "# HELP telemetry_policy_dropped_total cumulative telemetry events dropped by log policy")
+	fmt.Fprintln(&b, "# TYPE telemetry_policy_dropped_total counter")
+	fmt.Fprintf(&b, "telemetry_policy_dropped_total %d\n", telemetryStats.PolicyDroppedTotal)
 
 	return &gen.GetObservabilityMetricsPrometheusOK{Data: strings.NewReader(b.String())}, nil
 }

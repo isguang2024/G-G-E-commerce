@@ -383,6 +383,249 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/log-policies:
+    get:
+      operationId: listLogPolicies
+      summary: 查询日志策略
+      description: 分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。
+      tags:
+      - observability
+      x-permission-key: observability.policy.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      - name: pipeline
+        in: query
+        schema:
+          type: string
+          enum: [audit, telemetry]
+      - name: enabled
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/LogPolicyList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+    post:
+      operationId: createLogPolicy
+      summary: 创建日志策略
+      tags:
+      - observability
+      x-permission-key: observability.policy.write
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/LogPolicyCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/LogPolicyItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/log-policies/{id}:
+    patch:
+      operationId: updateLogPolicy
+      summary: 更新日志策略
+      tags:
+      - observability
+      x-permission-key: observability.policy.write
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/LogPolicyUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/LogPolicyItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+    delete:
+      operationId: deleteLogPolicy
+      summary: 删除日志策略
+      tags:
+      - observability
+      x-permission-key: observability.policy.write
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /observability/log-policies/preview:
+    post:
+      operationId: previewLogPolicy
+      summary: 预览日志策略命中结果
+      description: 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。
+      tags:
+      - observability
+      x-permission-key: observability.policy.read
+      x-access-mode: permission
+      x-tenant-scoped: true
+      x-app-scope: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/LogPolicyPreviewRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/LogPolicyPreviewResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /observability/trace/{request_id}:
     get:
       operationId: getObservabilityTrace

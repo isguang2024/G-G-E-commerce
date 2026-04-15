@@ -1,8 +1,12 @@
-import { v5Client, unwrap, type V5Query } from './_shared'
+import { v5Client, unwrap, type V5Query, type V5RequestBody } from './_shared'
 
 export type AuditLogListQuery = V5Query<'/observability/audit-logs', 'get'>
 export type TelemetryLogListQuery = V5Query<'/observability/telemetry-logs', 'get'>
 export type AuditLogStatsQuery = V5Query<'/observability/audit-logs/stats', 'get'>
+export type LogPolicyListQuery = V5Query<'/observability/log-policies', 'get'>
+export type LogPolicyCreateBody = V5RequestBody<'/observability/log-policies', 'post'>
+export type LogPolicyUpdateBody = V5RequestBody<'/observability/log-policies/{id}', 'patch'>
+export type LogPolicyPreviewBody = V5RequestBody<'/observability/log-policies/preview', 'post'>
 
 export async function fetchListAuditLogs(query: AuditLogListQuery) {
   return unwrap(v5Client.GET('/observability/audit-logs', { params: { query } }))
@@ -34,4 +38,33 @@ export async function fetchObservabilityTrace(requestID: string) {
       params: { path: { request_id: requestID } }
     })
   )
+}
+
+export async function fetchListLogPolicies(query: LogPolicyListQuery) {
+  return unwrap(v5Client.GET('/observability/log-policies', { params: { query } }))
+}
+
+export async function fetchCreateLogPolicy(body: LogPolicyCreateBody) {
+  return unwrap(v5Client.POST('/observability/log-policies', { body }))
+}
+
+export async function fetchUpdateLogPolicy(id: string, body: LogPolicyUpdateBody) {
+  return unwrap(
+    v5Client.PATCH('/observability/log-policies/{id}', {
+      params: { path: { id } },
+      body
+    })
+  )
+}
+
+export async function fetchDeleteLogPolicy(id: string) {
+  return unwrap(
+    v5Client.DELETE('/observability/log-policies/{id}', {
+      params: { path: { id } }
+    })
+  )
+}
+
+export async function fetchPreviewLogPolicy(body: LogPolicyPreviewBody) {
+  return unwrap(v5Client.POST('/observability/log-policies/preview', { body }))
 }

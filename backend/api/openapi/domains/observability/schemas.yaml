@@ -262,6 +262,9 @@ components:
       - queue_cap
       - accepted_total
       - dropped_total
+      - policy_dropped_total
+      - degraded
+      - degraded_appended_total
       properties:
         queue_depth:
           type: integer
@@ -277,6 +280,17 @@ components:
           type: integer
           format: int64
           description: 进程启动以来因限流或队列满被丢弃的事件累计。
+        policy_dropped_total:
+          type: integer
+          format: int64
+          description: 进程启动以来因 log policy 拒绝或采样丢弃的事件累计。
+        degraded:
+          type: boolean
+          description: 是否处于降级模式（仅 audit 有意义，telemetry 固定为 false）。
+        degraded_appended_total:
+          type: integer
+          format: int64
+          description: 降级模式下写入 degraded sink 的累计条数（仅 audit 有意义）。
     ObservabilityMetrics:
       type: object
       description: |-
@@ -295,6 +309,157 @@ components:
           type: string
           format: date-time
           description: 本次采集时刻（服务端 UTC）。
+    LogPolicyItem:
+      type: object
+      required:
+      - id
+      - tenant_id
+      - pipeline
+      - match_field
+      - pattern
+      - decision
+      - priority
+      - enabled
+      - compliance_locked
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        pipeline:
+          type: string
+          enum: [audit, telemetry]
+        match_field:
+          type: string
+          enum: [action, outcome, resource_type, level, event, route]
+        pattern:
+          type: string
+        decision:
+          type: string
+          enum: [allow, deny, sample]
+        sample_rate:
+          type: integer
+          nullable: true
+        priority:
+          type: integer
+        enabled:
+          type: boolean
+        note:
+          type: string
+        compliance_locked:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    LogPolicyList:
+      type: object
+      required:
+      - records
+      - total
+      - current
+      - size
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogPolicyItem'
+        total:
+          type: integer
+          format: int64
+        current:
+          type: integer
+        size:
+          type: integer
+    LogPolicyCreateRequest:
+      type: object
+      required:
+      - pipeline
+      - match_field
+      - pattern
+      - decision
+      properties:
+        pipeline:
+          type: string
+          enum: [audit, telemetry]
+        match_field:
+          type: string
+          enum: [action, outcome, resource_type, level, event, route]
+        pattern:
+          type: string
+        decision:
+          type: string
+          enum: [allow, deny, sample]
+        sample_rate:
+          type: integer
+        priority:
+          type: integer
+          default: 0
+        enabled:
+          type: boolean
+          default: true
+        note:
+          type: string
+    LogPolicyUpdateRequest:
+      type: object
+      properties:
+        match_field:
+          type: string
+          enum: [action, outcome, resource_type, level, event, route]
+        pattern:
+          type: string
+        decision:
+          type: string
+          enum: [allow, deny, sample]
+        sample_rate:
+          type: integer
+          nullable: true
+        priority:
+          type: integer
+        enabled:
+          type: boolean
+        note:
+          type: string
+          nullable: true
+    LogPolicyPreviewRequest:
+      type: object
+      required:
+      - pipeline
+      - fields
+      properties:
+        pipeline:
+          type: string
+          enum: [audit, telemetry]
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+    LogPolicyPreviewResponse:
+      type: object
+      required:
+      - decision
+      - matched
+      properties:
+        decision:
+          type: string
+          enum: [allow, deny, sample]
+        sample_rate:
+          type: integer
+          nullable: true
+        matched:
+          type: boolean
+        policy:
+          $ref: '#/components/schemas/LogPolicyItem'
+          nullable: true
     ObservabilityTraceBundle:
       type: object
       description: |-

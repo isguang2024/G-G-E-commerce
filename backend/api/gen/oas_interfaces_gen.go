@@ -17,6 +17,10 @@ type CreateDictTypeRes interface {
 	createDictTypeRes()
 }
 
+type CreateLogPolicyRes interface {
+	createLogPolicyRes()
+}
+
 type CreateRegisterEntryRes interface {
 	createRegisterEntryRes()
 }
@@ -27,6 +31,10 @@ type CreateUserRes interface {
 
 type DeleteDictTypeRes interface {
 	deleteDictTypeRes()
+}
+
+type DeleteLogPolicyRes interface {
+	deleteLogPolicyRes()
 }
 
 type DeleteLoginPageTemplateRes interface {
@@ -145,6 +153,10 @@ type ListDictTypesRes interface {
 	listDictTypesRes()
 }
 
+type ListLogPoliciesRes interface {
+	listLogPoliciesRes()
+}
+
 type ListMediaRes interface {
 	listMediaRes()
 }
@@ -185,6 +197,10 @@ type LogoutRes interface {
 	logoutRes()
 }
 
+type PreviewLogPolicyRes interface {
+	previewLogPolicyRes()
+}
+
 type RefreshTokenRes interface {
 	refreshTokenRes()
 }
@@ -223,6 +239,10 @@ type UpdateApiEndpointRes interface {
 
 type UpdateDictTypeRes interface {
 	updateDictTypeRes()
+}
+
+type UpdateLogPolicyRes interface {
+	updateLogPolicyRes()
 }
 
 type UpdateRegisterEntryRes interface {

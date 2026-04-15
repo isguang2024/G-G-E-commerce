@@ -15,6 +15,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
+	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
 	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
@@ -29,9 +30,11 @@ func main() {
 
 	// 初始化日志
 	zlog, err := logger.NewWithOptions(logger.Options{
-		Level:  cfg.Log.Level,
-		Output: cfg.Log.Output,
-		Format: cfg.Log.Format,
+		Level:              cfg.Log.Level,
+		Output:             cfg.Log.Output,
+		Format:             cfg.Log.Format,
+		SamplingInitial:    cfg.Log.Sampling.Initial,
+		SamplingThereafter: cfg.Log.Sampling.Thereafter,
 		Sampling: &logger.Sampling{
 			Initial:    cfg.Log.Sampling.Initial,
 			Thereafter: cfg.Log.Sampling.Thereafter,
@@ -61,13 +64,26 @@ func main() {
 	defer database.Close()
 	zlog.Info("Database connected successfully")
 
+	policyRepo := logpolicy.NewRepository(db)
+	policyEngine := logpolicy.NewEngine(policyRepo, zlog)
+	policyCtx, policyCancel := context.WithCancel(context.Background())
+	policyEngine.Start(policyCtx)
+	defer policyCancel()
+
 	// 初始化审计 recorder（异步 channel + worker）。配置关闭时退化为 Noop。
 	auditRecorder := audit.New(db, zlog, audit.Config{
 		Enabled:      cfg.Audit.Enabled,
 		RedactFields: cfg.Audit.RedactFields,
 		QueueSize:    cfg.Audit.QueueSize,
 		Workers:      cfg.Audit.Workers,
+		BatchSize:    cfg.Audit.BatchSize,
+		FlushInterval: resolveServerTimeout(
+			cfg.Audit.FlushIntervalSeconds,
+			time.Second,
+		),
 		AsyncMode:    cfg.Audit.AsyncMode,
+		DegradedFile: cfg.Audit.DegradedFile,
+		PolicyEngine: policyEngine,
 	})
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -90,6 +106,7 @@ func main() {
 		PerIPRate:       float64(cfg.Telemetry.IPRateLimit),
 		PerIPBurst:      float64(cfg.Telemetry.IPRateLimit) * 3,
 		MaxMessageBytes: cfg.Telemetry.PayloadMaxBytes,
+		PolicyEngine:    policyEngine,
 	})
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

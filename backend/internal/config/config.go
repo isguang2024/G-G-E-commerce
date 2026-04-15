@@ -101,13 +101,19 @@ type LogSamplingConfig struct {
 //   - RedactFields：顶层 redact 白名单之外，额外需要脱敏的字段名；
 //   - QueueSize：异步 channel 缓冲；满了按 drop-newest 丢弃并 Warn；
 //   - Workers：消费 goroutine 数量；
-//   - AsyncMode：true=channel+worker；false=同步写（测试/低流量场景）。
+//   - BatchSize：单次批量落库阈值；
+//   - FlushIntervalSeconds：批量最大等待秒数（即使没到 BatchSize 也会刷盘）；
+//   - AsyncMode：true=channel+worker；false=同步写（测试/低流量场景）；
+//   - DegradedFile：断路器打开时降级写入的 JSONL 文件路径。
 type AuditConfig struct {
-	Enabled      bool     `mapstructure:"enabled"`
-	RedactFields []string `mapstructure:"redact_fields"`
-	QueueSize    int      `mapstructure:"queue_size"`
-	Workers      int      `mapstructure:"workers"`
-	AsyncMode    bool     `mapstructure:"async"`
+	Enabled              bool     `mapstructure:"enabled"`
+	RedactFields         []string `mapstructure:"redact_fields"`
+	QueueSize            int      `mapstructure:"queue_size"`
+	Workers              int      `mapstructure:"workers"`
+	BatchSize            int      `mapstructure:"batch_size"`
+	FlushIntervalSeconds int      `mapstructure:"flush_interval_seconds"`
+	AsyncMode            bool     `mapstructure:"async"`
+	DegradedFile         string   `mapstructure:"degraded_file"`
 }
 
 // TelemetryConfig 控制前端日志上报端点 /telemetry/logs 的 ingest 行为。
@@ -180,12 +186,15 @@ func setDefaults() {
 	viper.SetDefault("log.output", "stdout")
 	viper.SetDefault("log.format", "json")
 	viper.SetDefault("log.sampling.initial", 100)
-	viper.SetDefault("log.sampling.thereafter", 100)
+	viper.SetDefault("log.sampling.thereafter", 10)
 
 	viper.SetDefault("audit.enabled", true)
 	viper.SetDefault("audit.queue_size", 1024)
 	viper.SetDefault("audit.workers", 2)
+	viper.SetDefault("audit.batch_size", 100)
+	viper.SetDefault("audit.flush_interval_seconds", 1)
 	viper.SetDefault("audit.async", true)
+	viper.SetDefault("audit.degraded_file", "./data/audit_degraded.jsonl")
 
 	viper.SetDefault("telemetry.ingest_enabled", true)
 	viper.SetDefault("telemetry.max_batch_size", 100)

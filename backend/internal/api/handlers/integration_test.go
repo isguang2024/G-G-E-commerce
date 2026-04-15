@@ -104,7 +104,7 @@ func openIntegDB() (*gorm.DB, error) {
 		host, user, pass, name, port,
 	)
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Silent),
+		Logger:  gormlogger.Default.LogMode(gormlogger.Silent),
 		NowFunc: func() time.Time { return time.Now().Local() },
 	})
 }
@@ -697,9 +697,9 @@ func insertTelemetryFixture(t *testing.T, tenant, reqID string) *telemetry.Telem
 }
 
 // TestIntegrationListAuditLogs 验证 GET /observability/audit-logs：
-//  1) 未登录 401；
-//  2) 登录后按 request_id 过滤可以取到刚插入的种子行；
-//  3) 返回体形状包含 records / total。
+//  1. 未登录 401；
+//  2. 登录后按 request_id 过滤可以取到刚插入的种子行；
+//  3. 返回体形状包含 records / total。
 func TestIntegrationListAuditLogs(t *testing.T) {
 	if integToken == "" {
 		t.Skip("integToken not set — TestIntegrationLogin must run first")
@@ -738,8 +738,8 @@ func TestIntegrationListAuditLogs(t *testing.T) {
 }
 
 // TestIntegrationGetAuditLog 覆盖 GET /observability/audit-logs/{id}：
-//  1) 用已知 id 取回种子行，字段对齐；
-//  2) 用一个几乎不可能存在的 id 触发 404。
+//  1. 用已知 id 取回种子行，字段对齐；
+//  2. 用一个几乎不可能存在的 id 触发 404。
 func TestIntegrationGetAuditLog(t *testing.T) {
 	if integToken == "" {
 		t.Skip("integToken not set — TestIntegrationLogin must run first")
@@ -840,10 +840,10 @@ func TestIntegrationGetTelemetryLog(t *testing.T) {
 }
 
 // TestIntegrationObservabilityTrace 覆盖 GET /observability/trace/{request_id}：
-//  1) 未登录 401；
-//  2) 登录后、同一 request_id 同时落 audit + telemetry 各一行，端点必须把两侧
+//  1. 未登录 401；
+//  2. 登录后、同一 request_id 同时落 audit + telemetry 各一行，端点必须把两侧
 //     都返回，且 records 字段就是 request_id 对应的 id；
-//  3) 不存在的 request_id 返回 200 + 空数组（不走 404，保持"聚合视图永远不空"）。
+//  3. 不存在的 request_id 返回 200 + 空数组（不走 404，保持"聚合视图永远不空"）。
 func TestIntegrationObservabilityTrace(t *testing.T) {
 	if integToken == "" {
 		t.Skip("integToken not set — TestIntegrationLogin must run first")
@@ -906,11 +906,11 @@ func TestIntegrationObservabilityTrace(t *testing.T) {
 }
 
 // TestIntegrationAuditLogStats 验证 GET /observability/audit-logs/stats：
-//  1) 未登录 401；
-//  2) group_by=action/outcome/hour 三种分别返回 group_by + buckets，且 buckets
+//  1. 未登录 401；
+//  2. group_by=action/outcome/hour 三种分别返回 group_by + buckets，且 buckets
 //     是数组（空也非 null）；
-//  3) 缺失 / 非法 group_by 400；
-//  4) 插入两行同 action 的种子后，action 维度 bucket 中能找到这个 action 的 count>=2。
+//  3. 缺失 / 非法 group_by 400；
+//  4. 插入两行同 action 的种子后，action 维度 bucket 中能找到这个 action 的 count>=2。
 func TestIntegrationAuditLogStats(t *testing.T) {
 	if integToken == "" {
 		t.Skip("integToken not set — TestIntegrationLogin must run first")
@@ -1093,7 +1093,7 @@ func TestIntegrationObservabilityMetrics(t *testing.T) {
 //  1. 未登录 → 401（与 /metrics 行为一致）；
 //  2. 登录 + Noop 注入 → 200 + text/plain，body 含 4 条 openmetrics 指标
 //     （audit_queue_depth / audit_queue_capacity / audit_events_accepted_total /
-//      audit_events_dropped_total），每条都有 `# HELP` 和 `# TYPE` 头。
+//     audit_events_dropped_total），每条都有 `# HELP` 和 `# TYPE` 头。
 //
 // 不做 dropped_total 的灌流验证——那部分已由 TestIntegrationObservabilityMetrics
 // 覆盖（底层 Stats() 共享一份实现，text 导出只是渲染层差异）。
@@ -1132,6 +1132,18 @@ func TestIntegrationObservabilityMetricsPrometheus(t *testing.T) {
 		"# HELP audit_events_dropped_total",
 		"# TYPE audit_events_dropped_total counter",
 		"audit_events_dropped_total 0",
+		"# HELP telemetry_queue_depth",
+		"# TYPE telemetry_queue_depth gauge",
+		"telemetry_queue_depth 0",
+		"# HELP telemetry_queue_capacity",
+		"# TYPE telemetry_queue_capacity gauge",
+		"telemetry_queue_capacity 0",
+		"# HELP telemetry_events_accepted_total",
+		"# TYPE telemetry_events_accepted_total counter",
+		"telemetry_events_accepted_total 0",
+		"# HELP telemetry_events_dropped_total",
+		"# TYPE telemetry_events_dropped_total counter",
+		"telemetry_events_dropped_total 0",
 	}
 	for _, w := range wants {
 		if !strings.Contains(body, w) {

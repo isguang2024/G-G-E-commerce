@@ -86,6 +86,12 @@ type Handler interface {
 	//
 	// POST /feature-packages
 	CreateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest) (*IDResult, error)
+	// CreateLogPolicy implements createLogPolicy operation.
+	//
+	// 创建日志策略.
+	//
+	// POST /observability/log-policies
+	CreateLogPolicy(ctx context.Context, req *LogPolicyCreateRequest) (CreateLogPolicyRes, error)
 	// CreateLoginPageTemplate implements createLoginPageTemplate operation.
 	//
 	// 创建登录页模板.
@@ -182,6 +188,12 @@ type Handler interface {
 	//
 	// DELETE /feature-packages/{id}
 	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// DeleteLogPolicy implements deleteLogPolicy operation.
+	//
+	// 删除日志策略.
+	//
+	// DELETE /observability/log-policies/{id}
+	DeleteLogPolicy(ctx context.Context, params DeleteLogPolicyParams) (DeleteLogPolicyRes, error)
 	// DeleteLoginPageTemplate implements deleteLoginPageTemplate operation.
 	//
 	// 删除登录页模板.
@@ -823,6 +835,12 @@ type Handler interface {
 	//
 	// GET /messages/inbox
 	ListInbox(ctx context.Context, params ListInboxParams) (*InboxListResponse, error)
+	// ListLogPolicies implements listLogPolicies operation.
+	//
+	// 分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。.
+	//
+	// GET /observability/log-policies
+	ListLogPolicies(ctx context.Context, params ListLogPoliciesParams) (ListLogPoliciesRes, error)
 	// ListLoginPageTemplates implements listLoginPageTemplates operation.
 	//
 	// 登录页模板列表.
@@ -1034,6 +1052,12 @@ type Handler interface {
 	//
 	// POST /messages/inbox/read-all
 	MarkInboxReadAll(ctx context.Context) (*MutationResult, error)
+	// PreviewLogPolicy implements previewLogPolicy operation.
+	//
+	// 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。.
+	//
+	// POST /observability/log-policies/preview
+	PreviewLogPolicy(ctx context.Context, req *LogPolicyPreviewRequest) (PreviewLogPolicyRes, error)
 	// PreviewPageBreadcrumb implements previewPageBreadcrumb operation.
 	//
 	// 预览页面面包屑.
@@ -1316,6 +1340,12 @@ type Handler interface {
 	//
 	// PUT /feature-packages/{id}
 	UpdateFeaturePackage(ctx context.Context, req *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*FeaturePackageMutationResult, error)
+	// UpdateLogPolicy implements updateLogPolicy operation.
+	//
+	// 更新日志策略.
+	//
+	// PATCH /observability/log-policies/{id}
+	UpdateLogPolicy(ctx context.Context, req *LogPolicyUpdateRequest, params UpdateLogPolicyParams) (UpdateLogPolicyRes, error)
 	// UpdateLoginPageTemplate implements updateLoginPageTemplate operation.
 	//
 	// 更新登录页模板.

@@ -1396,6 +1396,401 @@ func (s ListDictItemsOKApplicationJSON) Validate() error {
 	return nil
 }
 
+func (s ListLogPoliciesPipeline) Validate() error {
+	switch s {
+	case "audit":
+		return nil
+	case "telemetry":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *LogPolicyCreateRequest) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Pipeline.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "pipeline",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.MatchField.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "match_field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Decision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "decision",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s LogPolicyCreateRequestDecision) Validate() error {
+	switch s {
+	case "allow":
+		return nil
+	case "deny":
+		return nil
+	case "sample":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s LogPolicyCreateRequestMatchField) Validate() error {
+	switch s {
+	case "action":
+		return nil
+	case "outcome":
+		return nil
+	case "resource_type":
+		return nil
+	case "level":
+		return nil
+	case "event":
+		return nil
+	case "route":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s LogPolicyCreateRequestPipeline) Validate() error {
+	switch s {
+	case "audit":
+		return nil
+	case "telemetry":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *LogPolicyItem) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Pipeline.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "pipeline",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.MatchField.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "match_field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Decision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "decision",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s LogPolicyItemDecision) Validate() error {
+	switch s {
+	case "allow":
+		return nil
+	case "deny":
+		return nil
+	case "sample":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s LogPolicyItemMatchField) Validate() error {
+	switch s {
+	case "action":
+		return nil
+	case "outcome":
+		return nil
+	case "resource_type":
+		return nil
+	case "level":
+		return nil
+	case "event":
+		return nil
+	case "route":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s LogPolicyItemPipeline) Validate() error {
+	switch s {
+	case "audit":
+		return nil
+	case "telemetry":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *LogPolicyList) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Records == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Records {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "records",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *LogPolicyPreviewRequest) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Pipeline.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "pipeline",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s LogPolicyPreviewRequestPipeline) Validate() error {
+	switch s {
+	case "audit":
+		return nil
+	case "telemetry":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *LogPolicyPreviewResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Decision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "decision",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Policy.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "policy",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s LogPolicyPreviewResponseDecision) Validate() error {
+	switch s {
+	case "allow":
+		return nil
+	case "deny":
+		return nil
+	case "sample":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *LogPolicyUpdateRequest) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.MatchField.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "match_field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Decision.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "decision",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s LogPolicyUpdateRequestDecision) Validate() error {
+	switch s {
+	case "allow":
+		return nil
+	case "deny":
+		return nil
+	case "sample":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s LogPolicyUpdateRequestMatchField) Validate() error {
+	switch s {
+	case "action":
+		return nil
+	case "outcome":
+		return nil
+	case "resource_type":
+		return nil
+	case "level":
+		return nil
+	case "event":
+		return nil
+	case "route":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *LoginPageTemplateList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

@@ -10,11 +10,13 @@ import (
 
 // Options 精细化控制 zap 初始化。Level/Output 必填，其余可选。
 type Options struct {
-	Level      string
-	Output     string
-	Format     string // "json"（默认） | "console"
-	Sampling   *Sampling
-	Production bool // 为 true 时强制 json + 禁 DPanic 直接 panic
+	Level              string
+	Output             string
+	Format             string // "json"（默认） | "console"
+	SamplingInitial    int    // <=0 且 SamplingThereafter<=0 表示关闭采样
+	SamplingThereafter int
+	Sampling           *Sampling // 兼容旧调用方，优先级低于显式字段
+	Production         bool      // 为 true 时强制 json + 禁 DPanic 直接 panic
 }
 
 // Sampling 对应 zap.SamplingConfig。Initial / Thereafter 都 <=0 时表示关闭采样。
@@ -54,17 +56,37 @@ func NewWithOptions(opts Options) (*zap.Logger, error) {
 
 	core := zapcore.NewCore(encoder, writeSyncer, zapLevel)
 
-	// 采样：一旦给 Initial/Thereafter，就用 zapcore.NewSamplerWithOptions 包一层。
-	if opts.Sampling != nil && (opts.Sampling.Initial > 0 || opts.Sampling.Thereafter > 0) {
-		initial := opts.Sampling.Initial
+	initial := opts.SamplingInitial
+	thereafter := opts.SamplingThereafter
+	if opts.Sampling != nil {
+		if initial <= 0 {
+			initial = opts.Sampling.Initial
+		}
+		if thereafter <= 0 {
+			thereafter = opts.Sampling.Thereafter
+		}
+	}
+
+	// 采样只作用于 Info/Debug，Warn/Error 永远全量保留。
+	// initial/thereafter 都 <= 0 时禁用采样。
+	if initial > 0 || thereafter > 0 {
 		if initial <= 0 {
 			initial = 100
 		}
-		thereafter := opts.Sampling.Thereafter
 		if thereafter <= 0 {
-			thereafter = 100
+			thereafter = 10
 		}
-		core = zapcore.NewSamplerWithOptions(core, samplingTick, initial, thereafter)
+		lowLevelEnabler := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+			return lvl <= zapcore.InfoLevel && lvl >= zapLevel
+		})
+		highLevelEnabler := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+			return lvl >= zapcore.WarnLevel && lvl >= zapLevel
+		})
+
+		lowCore := zapcore.NewCore(encoder, writeSyncer, lowLevelEnabler)
+		highCore := zapcore.NewCore(encoder, writeSyncer, highLevelEnabler)
+		sampledLowCore := zapcore.NewSamplerWithOptions(lowCore, samplingTick, initial, thereafter)
+		core = zapcore.NewTee(sampledLowCore, highCore)
 	}
 
 	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)), nil

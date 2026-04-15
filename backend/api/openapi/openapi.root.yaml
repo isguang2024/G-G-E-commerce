@@ -57,6 +57,12 @@ paths:
     $ref: ./domains/observability/paths.yaml#/paths/~1observability~1metrics
   /observability/metrics/prometheus:
     $ref: ./domains/observability/paths.yaml#/paths/~1observability~1metrics~1prometheus
+  /observability/log-policies:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1log-policies
+  /observability/log-policies/{id}:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1log-policies~1{id}
+  /observability/log-policies/preview:
+    $ref: ./domains/observability/paths.yaml#/paths/~1observability~1log-policies~1preview
   /system/register-entries:
     $ref: ./domains/system-register/paths.yaml#/paths/~1system~1register-entries
   /system/register-entries/{id}:

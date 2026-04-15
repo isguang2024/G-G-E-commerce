@@ -645,6 +645,71 @@ func decodeDeleteFeaturePackageParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
+// DeleteLogPolicyParams is parameters of deleteLogPolicy operation.
+type DeleteLogPolicyParams struct {
+	ID uuid.UUID
+}
+
+func unpackDeleteLogPolicyParams(packed middleware.Parameters) (params DeleteLogPolicyParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteLogPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteLogPolicyParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteLoginPageTemplateParams is parameters of deleteLoginPageTemplate operation.
 type DeleteLoginPageTemplateParams struct {
 	TemplateKey string
@@ -9359,6 +9424,238 @@ func decodeListInboxParams(args [0]string, argsEscaped bool, r *http.Request) (p
 	return params, nil
 }
 
+// ListLogPoliciesParams is parameters of listLogPolicies operation.
+type ListLogPoliciesParams struct {
+	Current  OptInt                     `json:",omitempty,omitzero"`
+	Size     OptInt                     `json:",omitempty,omitzero"`
+	Pipeline OptListLogPoliciesPipeline `json:",omitempty,omitzero"`
+	Enabled  OptBool                    `json:",omitempty,omitzero"`
+}
+
+func unpackListLogPoliciesParams(packed middleware.Parameters) (params ListLogPoliciesParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "current",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Current = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "size",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Size = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "pipeline",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Pipeline = v.(OptListLogPoliciesPipeline)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "enabled",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Enabled = v.(OptBool)
+		}
+	}
+	return params
+}
+
+func decodeListLogPoliciesParams(args [0]string, argsEscaped bool, r *http.Request) (params ListLogPoliciesParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: current.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCurrentVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCurrentVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Current.SetTo(paramsDotCurrentVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "current",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: size.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSizeVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSizeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Size.SetTo(paramsDotSizeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: pipeline.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "pipeline",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPipelineVal ListLogPoliciesPipeline
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPipelineVal = ListLogPoliciesPipeline(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Pipeline.SetTo(paramsDotPipelineVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Pipeline.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "pipeline",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: enabled.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "enabled",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotEnabledVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotEnabledVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Enabled.SetTo(paramsDotEnabledVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "enabled",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListMenuSpaceEntryBindingsParams is parameters of listMenuSpaceEntryBindings operation.
 type ListMenuSpaceEntryBindingsParams struct {
 	AppKey OptString `json:",omitempty,omitzero"`
@@ -15896,6 +16193,71 @@ func unpackUpdateFeaturePackageParams(packed middleware.Parameters) (params Upda
 }
 
 func decodeUpdateFeaturePackageParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateFeaturePackageParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateLogPolicyParams is parameters of updateLogPolicy operation.
+type UpdateLogPolicyParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateLogPolicyParams(packed middleware.Parameters) (params UpdateLogPolicyParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateLogPolicyParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateLogPolicyParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

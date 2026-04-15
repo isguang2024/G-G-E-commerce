@@ -1225,6 +1225,58 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "listLogPolicies",
+      "method": "get",
+      "path": "/observability/log-policies",
+      "permission_key": "observability.policy.read",
+      "summary": "查询日志策略",
+      "description": "分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createLogPolicy",
+      "method": "post",
+      "path": "/observability/log-policies",
+      "permission_key": "observability.policy.write",
+      "summary": "创建日志策略",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "previewLogPolicy",
+      "method": "post",
+      "path": "/observability/log-policies/preview",
+      "permission_key": "observability.policy.read",
+      "summary": "预览日志策略命中结果",
+      "description": "输入 pipeline 与字段集合，返回最终决策与命中的规则快照。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteLogPolicy",
+      "method": "delete",
+      "path": "/observability/log-policies/{id}",
+      "permission_key": "observability.policy.write",
+      "summary": "删除日志策略",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateLogPolicy",
+      "method": "patch",
+      "path": "/observability/log-policies/{id}",
+      "permission_key": "observability.policy.write",
+      "summary": "更新日志策略",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "getObservabilityMetrics",
       "method": "get",
       "path": "/observability/metrics",

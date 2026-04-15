@@ -47,13 +47,16 @@ log:
   format: "json"        # json | console；生产环境固定 json
   sampling:
     initial: 100        # 每个日志级别 + message 的前 N 条全放行
-    thereafter: 100     # 之后每 N 条采样 1 条；0 表示关闭采样
+    thereafter: 10      # 之后每 N 条采样 1 条；0 表示关闭采样
 
 audit:
   enabled: true
   async: true            # true=channel+worker；false=同步写，调试/低流量可用
   queue_size: 1024       # 异步 channel 缓冲容量；满了按 drop-newest 策略
   workers: 2             # 异步消费 goroutine 数量
+  batch_size: 100        # 到达该条数立即批量刷盘
+  flush_interval_seconds: 1 # 未达到 batch_size 时，最长等待秒数
+  degraded_file: "./data/audit_degraded.jsonl" # 断路器打开后降级写入的 JSONL 文件
   redact_fields:         # 顶层默认脱敏字段之外的项目私有字段
     - "x_custom_secret"
 

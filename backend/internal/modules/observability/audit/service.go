@@ -15,12 +15,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 )
 
@@ -63,25 +66,31 @@ type Recorder interface {
 // 语义约定：
 //   - QueueDepth: 当前 buffered channel 里待消费的事件数（同步模式恒为 0）；
 //   - QueueCap:   channel 容量（同步模式恒为 0），0 可用于判断「是否启用了异步缓冲」；
-//   - AcceptedTotal: 进程启动以来成功入队 / 同步写入 DB 的事件累计；
+//   - AcceptedTotal: 进程启动以来成功写入 DB 的事件累计；
 //   - DroppedTotal:  进程启动以来因 channel 满被丢弃的事件累计（其他失败路径归类到日志而非 dropped）。
 //
 // 这些字段单调递增，不会因 Shutdown 或重启自动清零；进程重启后计数归 0。
 type Stats struct {
-	QueueDepth    int    `json:"queue_depth"`
-	QueueCap      int    `json:"queue_cap"`
-	AcceptedTotal uint64 `json:"accepted_total"`
-	DroppedTotal  uint64 `json:"dropped_total"`
+	QueueDepth            int    `json:"queue_depth"`
+	QueueCap              int    `json:"queue_cap"`
+	AcceptedTotal         uint64 `json:"accepted_total"`
+	DroppedTotal          uint64 `json:"dropped_total"`
+	PolicyDroppedTotal    uint64 `json:"policy_dropped_total"`
+	Degraded              bool   `json:"degraded"`
+	DegradedAppendedTotal uint64 `json:"degraded_appended_total"`
 }
 
 // Config 控制 audit service 的运行参数。通过 config.AuditConfig 加载。
 type Config struct {
 	Enabled       bool
 	RedactFields  []string
-	QueueSize     int // 异步 channel 缓冲，默认 1024
-	Workers       int // 消费 goroutine 数量，默认 2
-	FlushInterval time.Duration
-	AsyncMode     bool // false = 同步写入（测试友好）；true = channel+worker
+	QueueSize     int           // 异步 channel 缓冲，默认 1024
+	Workers       int           // 消费 goroutine 数量，默认 2
+	BatchSize     int           // 批量落库阈值，默认 100
+	FlushInterval time.Duration // 批量最大等待时间，默认 1s
+	AsyncMode     bool          // false = 同步写入（测试友好）；true = channel+worker
+	DegradedFile  string        // 断路器打开时降级写入的 JSONL 文件路径
+	PolicyEngine  logpolicy.Engine
 }
 
 // DefaultConfig 提供生产默认值。对应 config.example.yaml 里的 audit 默认。
@@ -91,10 +100,26 @@ func DefaultConfig() Config {
 		RedactFields:  DefaultRedactFields,
 		QueueSize:     1024,
 		Workers:       2,
+		BatchSize:     100,
 		FlushInterval: time.Second,
 		AsyncMode:     true,
+		DegradedFile:  "./data/audit_degraded.jsonl",
 	}
 }
+
+type circuitState string
+
+const (
+	circuitClosed   circuitState = "closed"
+	circuitOpen     circuitState = "open"
+	circuitHalfOpen circuitState = "half_open"
+)
+
+const (
+	circuitFailureThreshold = 5
+	circuitFailureWindow    = 10 * time.Second
+	circuitHalfOpenAfter    = 30 * time.Second
+)
 
 // service 是 Recorder 的默认实现。
 type service struct {
@@ -109,7 +134,21 @@ type service struct {
 	stopCh   chan struct{}
 	shutdown bool
 	dropped  uint64 // 累计丢弃数量（channel 满时）
-	accepted uint64 // 累计 accepted 数量（成功入队 / 同步写 DB）
+	accepted uint64 // 累计 accepted 数量（成功写 DB）
+	policyDropped uint64
+	degradedTotal uint64
+
+	// 测试替身：为空时走真实 DB，非空时由测试接管写入行为。
+	writeBatchFn func(context.Context, []*AuditLog) error
+	writeRowFn   func(context.Context, *AuditLog) error
+
+	cbMu            sync.Mutex
+	cbState         circuitState
+	cbOpenedAt      time.Time
+	cbProbeInFlight bool
+	cbFailures      []time.Time
+	sink            degradedSink
+	policyEngine    logpolicy.Engine
 }
 
 // New 构建一个 Recorder。
@@ -127,6 +166,15 @@ func New(db *gorm.DB, log *zap.Logger, cfg Config) Recorder {
 	if cfg.Workers <= 0 {
 		cfg.Workers = 2
 	}
+	if cfg.BatchSize <= 0 {
+		cfg.BatchSize = 100
+	}
+	if cfg.FlushInterval <= 0 {
+		cfg.FlushInterval = time.Second
+	}
+	if cfg.DegradedFile == "" {
+		cfg.DegradedFile = "./data/audit_degraded.jsonl"
+	}
 	if log == nil {
 		log = zap.NewNop()
 	}
@@ -142,6 +190,14 @@ func New(db *gorm.DB, log *zap.Logger, cfg Config) Recorder {
 		cfg:      cfg,
 		redactor: newRedactor(fields),
 		stopCh:   make(chan struct{}),
+		cbState:  circuitClosed,
+		policyEngine: cfg.PolicyEngine,
+	}
+	sink, err := newJSONLDegradedSink(cfg.DegradedFile)
+	if err != nil {
+		s.log.Warn("audit.degraded_sink_disabled", zap.Error(err))
+	} else {
+		s.sink = sink
 	}
 	if cfg.AsyncMode {
 		s.queue = make(chan *AuditLog, cfg.QueueSize)
@@ -155,6 +211,10 @@ func New(db *gorm.DB, log *zap.Logger, cfg Config) Recorder {
 
 // Record 实现 Recorder 接口。ctx / event 组合成 *AuditLog 并入队 / 同步写入。
 func (s *service) Record(ctx context.Context, e Event) {
+	if !s.shouldPersistByPolicy(ctx, e) {
+		s.addPolicyDropped(1)
+		return
+	}
 	row, err := s.build(ctx, e)
 	if err != nil {
 		s.log.Warn("audit.build_failed",
@@ -165,22 +225,15 @@ func (s *service) Record(ctx context.Context, e Event) {
 		return
 	}
 	if !s.cfg.AsyncMode {
-		s.writeRow(ctx, row)
-		s.mu.Lock()
-		s.accepted++
-		s.mu.Unlock()
+		if s.persistRow(ctx, row) {
+			s.addAccepted(1)
+		}
 		return
 	}
 	select {
 	case s.queue <- row:
-		s.mu.Lock()
-		s.accepted++
-		s.mu.Unlock()
 	default:
-		s.mu.Lock()
-		s.dropped++
-		dropped := s.dropped
-		s.mu.Unlock()
+		dropped := s.addDropped(1)
 		s.log.Warn("audit.queue_full_drop",
 			zap.String("action", row.Action),
 			zap.Uint64("dropped_total", dropped),
@@ -194,17 +247,23 @@ func (s *service) Stats() Stats {
 	s.mu.Lock()
 	accepted := s.accepted
 	dropped := s.dropped
+	policyDropped := s.policyDropped
+	degradedTotal := s.degradedTotal
 	s.mu.Unlock()
+	degraded := s.isDegradedMode()
 	depth, queueCap := 0, 0
 	if s.queue != nil {
 		depth = len(s.queue)
 		queueCap = cap(s.queue)
 	}
 	return Stats{
-		QueueDepth:    depth,
-		QueueCap:      queueCap,
-		AcceptedTotal: accepted,
-		DroppedTotal:  dropped,
+		QueueDepth:            depth,
+		QueueCap:              queueCap,
+		AcceptedTotal:         accepted,
+		DroppedTotal:          dropped,
+		PolicyDroppedTotal:    policyDropped,
+		Degraded:              degraded,
+		DegradedAppendedTotal: degradedTotal,
 	}
 }
 
@@ -231,33 +290,361 @@ func (s *service) Shutdown(ctx context.Context) error {
 	}()
 	select {
 	case <-done:
-		return nil
+		return s.closeSink()
 	case <-ctx.Done():
+		_ = s.closeSink()
 		return errors.New("audit: shutdown timeout; some events may be lost")
 	}
 }
 
 func (s *service) runWorker() {
 	defer s.wg.Done()
-	for row := range s.queue {
-		if row == nil {
-			continue
+	batchSize := s.cfg.BatchSize
+	flushInterval := s.cfg.FlushInterval
+	ticker := time.NewTicker(flushInterval)
+	defer ticker.Stop()
+
+	batch := make([]*AuditLog, 0, batchSize)
+	flush := func() {
+		if len(batch) == 0 {
+			return
 		}
-		// 用独立 ctx 写 DB，避免 request ctx 提前被取消导致丢审计。
-		writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		s.writeRow(writeCtx, row)
-		cancel()
+		flushed := s.flushBatch(batch)
+		s.addAccepted(uint64(flushed))
+		batch = batch[:0]
+	}
+
+	for {
+		select {
+		case row, ok := <-s.queue:
+			if !ok {
+				flush()
+				return
+			}
+			if row == nil {
+				continue
+			}
+			batch = append(batch, row)
+			if len(batch) >= batchSize {
+				flush()
+			}
+		case <-ticker.C:
+			flush()
+		}
 	}
 }
 
-func (s *service) writeRow(ctx context.Context, row *AuditLog) {
-	if err := s.db.WithContext(ctx).Create(row).Error; err != nil {
+func (s *service) flushBatch(rows []*AuditLog) int {
+	if len(rows) == 0 {
+		return 0
+	}
+	now := time.Now().UTC()
+	writeToDegraded, halfOpenProbe := s.beforeBatchWrite(now)
+	if writeToDegraded {
+		return s.appendToDegraded(rows, "circuit_open")
+	}
+
+	writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	err := s.writeBatch(writeCtx, rows)
+	cancel()
+	if err == nil {
+		s.onBatchWriteSuccess(now, halfOpenProbe)
+		if halfOpenProbe {
+			if replayErr := s.replayDegraded(); replayErr != nil {
+				s.log.Warn("audit.degraded_replay_failed_reopen", zap.Error(replayErr))
+				return len(rows)
+			}
+		}
+		return len(rows)
+	}
+
+	s.log.Warn("audit.batch_write_failed_fallback_single",
+		zap.Error(err),
+		zap.Int("batch_size", len(rows)),
+	)
+	if halfOpenProbe {
+		s.onHalfOpenFailure(now, err)
+		return s.appendToDegraded(rows, "half_open_failed")
+	}
+	if s.onClosedBatchFailure(now) {
+		return s.appendToDegraded(rows, "circuit_opened")
+	}
+
+	return s.persistRowsOneByOne(rows)
+}
+
+func (s *service) persistRow(ctx context.Context, row *AuditLog) bool {
+	if err := s.writeRow(ctx, row); err != nil {
 		s.log.Error("audit.write_failed",
 			zap.Error(err),
 			zap.String("action", row.Action),
 			zap.String("request_id", row.RequestID),
 		)
+		return false
 	}
+	return true
+}
+
+func (s *service) writeBatch(ctx context.Context, rows []*AuditLog) error {
+	if s.writeBatchFn != nil {
+		return s.writeBatchFn(ctx, rows)
+	}
+	return s.db.WithContext(ctx).CreateInBatches(rows, s.cfg.BatchSize).Error
+}
+
+func (s *service) writeRow(ctx context.Context, row *AuditLog) error {
+	if s.writeRowFn != nil {
+		return s.writeRowFn(ctx, row)
+	}
+	return s.db.WithContext(ctx).Create(row).Error
+}
+
+func (s *service) persistRowsOneByOne(rows []*AuditLog) int {
+	okCount := 0
+	for _, row := range rows {
+		if row == nil {
+			continue
+		}
+		writeRowCtx, rowCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if s.persistRow(writeRowCtx, row) {
+			okCount++
+		}
+		rowCancel()
+	}
+	return okCount
+}
+
+func (s *service) addDropped(n uint64) uint64 {
+	s.mu.Lock()
+	s.dropped += n
+	total := s.dropped
+	s.mu.Unlock()
+	return total
+}
+
+func (s *service) addAccepted(n uint64) {
+	if n == 0 {
+		return
+	}
+	s.mu.Lock()
+	s.accepted += n
+	s.mu.Unlock()
+}
+
+func (s *service) addPolicyDropped(n uint64) {
+	if n == 0 {
+		return
+	}
+	s.mu.Lock()
+	s.policyDropped += n
+	s.mu.Unlock()
+}
+
+func (s *service) addDegradedAppended(n uint64) uint64 {
+	if n == 0 {
+		return 0
+	}
+	s.mu.Lock()
+	s.degradedTotal += n
+	total := s.degradedTotal
+	s.mu.Unlock()
+	return total
+}
+
+func (s *service) appendToDegraded(rows []*AuditLog, reason string) int {
+	if len(rows) == 0 {
+		return 0
+	}
+	if s.sink == nil {
+		s.log.Error("audit.degraded_sink_unavailable",
+			zap.String("reason", reason),
+			zap.Int("batch_size", len(rows)),
+		)
+		return s.persistRowsOneByOne(rows)
+	}
+
+	appended := 0
+	for idx, row := range rows {
+		if row == nil {
+			continue
+		}
+		if err := s.sink.Append(row); err != nil {
+			s.log.Error("audit.degraded_append_failed",
+				zap.Error(err),
+				zap.String("reason", reason),
+				zap.String("action", row.Action),
+				zap.String("request_id", row.RequestID),
+			)
+			return s.persistRowsOneByOne(rows[idx:])
+		}
+		appended++
+	}
+	total := s.addDegradedAppended(uint64(appended))
+	s.log.Warn("audit.degraded_appended",
+		zap.String("reason", reason),
+		zap.Int("batch_size", len(rows)),
+		zap.Int("appended", appended),
+		zap.Uint64("degraded_appended_total", total),
+	)
+	return 0
+}
+
+func (s *service) replayDegraded() error {
+	if s.sink == nil {
+		return nil
+	}
+	replayed := 0
+	err := s.sink.Replay(func(row *AuditLog) error {
+		if row == nil {
+			return nil
+		}
+		writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := s.writeRow(writeCtx, row); err != nil {
+			return fmt.Errorf("replay write row failed: %w", err)
+		}
+		replayed++
+		return nil
+	})
+	if err != nil {
+		s.forceOpen(time.Now().UTC(), err)
+		return err
+	}
+	if replayed > 0 {
+		s.addAccepted(uint64(replayed))
+		s.log.Info("audit.degraded_replayed", zap.Int("rows", replayed))
+	}
+	return nil
+}
+
+func (s *service) beforeBatchWrite(now time.Time) (writeToDegraded bool, halfOpenProbe bool) {
+	s.cbMu.Lock()
+	defer s.cbMu.Unlock()
+
+	switch s.cbState {
+	case circuitOpen:
+		if now.Sub(s.cbOpenedAt) >= circuitHalfOpenAfter && !s.cbProbeInFlight {
+			s.cbState = circuitHalfOpen
+			s.cbProbeInFlight = true
+			s.log.Info("audit.circuit_half_open_probe")
+			return false, true
+		}
+		return true, false
+	case circuitHalfOpen:
+		if s.cbProbeInFlight {
+			return true, false
+		}
+		s.cbProbeInFlight = true
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func (s *service) onBatchWriteSuccess(now time.Time, halfOpenProbe bool) {
+	s.cbMu.Lock()
+	defer s.cbMu.Unlock()
+	if halfOpenProbe {
+		s.cbState = circuitClosed
+		s.cbOpenedAt = time.Time{}
+		s.cbProbeInFlight = false
+		s.cbFailures = s.cbFailures[:0]
+		s.log.Info("audit.circuit_closed_after_half_open")
+		return
+	}
+	if s.cbState == circuitClosed && len(s.cbFailures) > 0 {
+		s.cbFailures = s.cbFailures[:0]
+	}
+}
+
+func (s *service) onHalfOpenFailure(now time.Time, err error) {
+	s.cbMu.Lock()
+	defer s.cbMu.Unlock()
+	s.cbState = circuitOpen
+	s.cbOpenedAt = now
+	s.cbProbeInFlight = false
+	s.cbFailures = s.cbFailures[:0]
+	s.log.Warn("audit.circuit_reopen_after_half_open_failure", zap.Error(err))
+}
+
+func (s *service) onClosedBatchFailure(now time.Time) (opened bool) {
+	s.cbMu.Lock()
+	defer s.cbMu.Unlock()
+	if s.cbState != circuitClosed {
+		return false
+	}
+	pruned := s.cbFailures[:0]
+	for _, ts := range s.cbFailures {
+		if now.Sub(ts) <= circuitFailureWindow {
+			pruned = append(pruned, ts)
+		}
+	}
+	s.cbFailures = append(pruned, now)
+	if len(s.cbFailures) >= circuitFailureThreshold {
+		s.cbState = circuitOpen
+		s.cbOpenedAt = now
+		s.cbProbeInFlight = false
+		s.cbFailures = s.cbFailures[:0]
+		s.log.Warn("audit.circuit_opened",
+			zap.Int("failure_threshold", circuitFailureThreshold),
+			zap.Duration("failure_window", circuitFailureWindow),
+		)
+		return true
+	}
+	return false
+}
+
+func (s *service) forceOpen(now time.Time, cause error) {
+	s.cbMu.Lock()
+	s.cbState = circuitOpen
+	s.cbOpenedAt = now
+	s.cbProbeInFlight = false
+	s.cbFailures = s.cbFailures[:0]
+	s.cbMu.Unlock()
+	if cause != nil {
+		s.log.Warn("audit.circuit_forced_open", zap.Error(cause))
+	}
+}
+
+func (s *service) isDegradedMode() bool {
+	s.cbMu.Lock()
+	defer s.cbMu.Unlock()
+	return s.cbState != circuitClosed
+}
+
+func (s *service) shouldPersistByPolicy(ctx context.Context, e Event) bool {
+	if s.policyEngine == nil {
+		return true
+	}
+	decision := s.policyEngine.Decide(logpolicy.PipelineAudit, map[string]string{
+		logpolicy.MatchFieldAction:       strings.TrimSpace(e.Action),
+		logpolicy.MatchFieldOutcome:      strings.TrimSpace(e.Outcome),
+		logpolicy.MatchFieldResourceType: strings.TrimSpace(e.ResourceType),
+	})
+	switch decision.Decision {
+	case logpolicy.DecisionDeny:
+		return false
+	case logpolicy.DecisionSample:
+		key := strings.Join([]string{
+			logger.RequestIDFromContext(ctx),
+			e.Action,
+			e.ResourceType,
+			e.ResourceID,
+		}, "|")
+		return logpolicy.ShouldKeepBySample(decision.SampleRate, key)
+	default:
+		return true
+	}
+}
+
+func (s *service) closeSink() error {
+	if s.sink == nil {
+		return nil
+	}
+	if err := s.sink.Close(); err != nil {
+		return fmt.Errorf("audit degraded sink close failed: %w", err)
+	}
+	return nil
 }
 
 // build 将 Event + ctx 合成一条 AuditLog，完成：
