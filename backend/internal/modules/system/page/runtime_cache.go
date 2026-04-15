@@ -584,7 +584,19 @@ func (s *service) buildRuntimeAccessContext(
 	if err != nil {
 		return nil, err
 	}
+	// permission_key intersect：若菜单自身声明了 PermissionKey 且当前用户不具备，
+	// 则从可见集合中剔除。SuperAdmin 已在上方 short-circuit 不走这里；
+	// PermissionKey='' 的菜单不受影响，保持 feature_package 决定的现有行为。
 	for _, menuID := range visibleMenuIDs {
+		node, ok := menuMap[menuID]
+		if ok {
+			requiredKey := strings.TrimSpace(node.Menu.PermissionKey)
+			if requiredKey != "" {
+				if _, granted := ctx.ActionKeys[permissionkey.Normalize(requiredKey)]; !granted {
+					continue
+				}
+			}
+		}
 		ctx.VisibleMenuIDs[menuID] = struct{}{}
 	}
 	return ctx, nil

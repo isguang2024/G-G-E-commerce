@@ -254,6 +254,47 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditLogStatsBucket'
+    ObservabilityServiceStats:
+      type: object
+      description: 单个观察性子服务（audit / telemetry）的运行时指标快照。
+      required:
+      - queue_depth
+      - queue_cap
+      - accepted_total
+      - dropped_total
+      properties:
+        queue_depth:
+          type: integer
+          description: 当前异步 channel 里待消费的事件数；同步模式恒为 0。
+        queue_cap:
+          type: integer
+          description: 异步 channel 容量；0 表示同步模式或未启用异步。
+        accepted_total:
+          type: integer
+          format: int64
+          description: 进程启动以来成功入队 / 同步写入的事件累计。
+        dropped_total:
+          type: integer
+          format: int64
+          description: 进程启动以来因限流或队列满被丢弃的事件累计。
+    ObservabilityMetrics:
+      type: object
+      description: |-
+        整个 observability 子系统的运行时观测指标。不按 tenant 分桶（基础设施
+        指标）；返回的数值仅对当前进程有效，多副本部署需由调用方 scrape 后聚合。
+      required:
+      - audit
+      - telemetry
+      - collected_at
+      properties:
+        audit:
+          $ref: '#/components/schemas/ObservabilityServiceStats'
+        telemetry:
+          $ref: '#/components/schemas/ObservabilityServiceStats'
+        collected_at:
+          type: string
+          format: date-time
+          description: 本次采集时刻（服务端 UTC）。
     ObservabilityTraceBundle:
       type: object
       description: |-

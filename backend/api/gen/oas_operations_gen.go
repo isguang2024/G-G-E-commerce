@@ -92,6 +92,7 @@ const (
 	GetMessageDispatchOptionsOperation                            OperationName = "GetMessageDispatchOptions"
 	GetMessageDispatchRecordOperation                             OperationName = "GetMessageDispatchRecord"
 	GetNavigationOperation                                        OperationName = "GetNavigation"
+	GetObservabilityMetricsOperation                              OperationName = "GetObservabilityMetrics"
 	GetObservabilityTraceOperation                                OperationName = "GetObservabilityTrace"
 	GetPageOperation                                              OperationName = "GetPage"
 	GetPageAccessTraceOperation                                   OperationName = "GetPageAccessTrace"

@@ -1225,6 +1225,17 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "getObservabilityMetrics",
+      "method": "get",
+      "path": "/observability/metrics",
+      "permission_key": "observability.audit.read",
+      "summary": "观察性子系统运行时指标",
+      "description": "返回当前进程内 audit.Recorder 与 telemetry.Ingester 的队列深度、累计\naccepted / dropped 计数。供 dashboard widget、/healthz 增强、SRE\n仪表盘读取。基础设施指标，不按 tenant 分桶；请求仍需认证，复用\n`observability.audit.read` 权限（能看审计的人能看队列健康）。\n\n语义注意：\n- `queue_depth` 是 len(chan)，瞬时弱一致，允许与 accepted/dropped 微量错位；\n- `accepted_total` / `dropped_total` 单调递增，进程重启归零；\n- Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。",
+      "tags": "observability",
+      "api_category": "observability",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listTelemetryLogs",
       "method": "get",
       "path": "/observability/telemetry-logs",

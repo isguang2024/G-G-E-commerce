@@ -1,13 +1,13 @@
-# Frontend 目录说明（V5）
+# Frontend 入口
 
-`frontend/` 是前端主工程目录，负责管理端页面、状态、路由与 API 调用集成。
+`frontend/` 是唯一有效的管理端前端工程目录。
 
-## 目录入口
+## 先看什么
 
-- `src/`：主源码目录（详见 `src/README.md`）
-- `package.json`：前端依赖与脚本入口
-- `vite.config.ts`：构建配置
-- `tsconfig.json`：TypeScript 与路径别名配置
+- 前端实现规范：[../docs/frontend-guideline.md](../docs/frontend-guideline.md)
+- `src/` 目录说明：[src/README.md](src/README.md)
+- 项目结构：[../docs/project-structure.md](../docs/project-structure.md)
+- API 流程：[../docs/API_OPENAPI_FIXED_FLOW.md](../docs/API_OPENAPI_FIXED_FLOW.md)
 
 ## 常用命令
 
@@ -15,10 +15,4 @@
 - 本地开发：`pnpm dev`
 - 类型检查：`pnpm exec vue-tsc --noEmit`
 - 构建：`pnpm build`
-- 刷新 API 生成物：`pnpm run gen:api`
-
-## 维护约定
-
-- `src/api/v5/` 属于生成产物，不手改生成文件本体。
-- API 契约变更需先更新后端 OpenAPI，再执行 `pnpm run gen:api`。
-- 页面与业务逻辑开发优先遵循 `FRONTEND_GUIDELINE.md`。
+- 刷新接口生成物：`pnpm run gen:api`

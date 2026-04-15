@@ -1,6 +1,0 @@
-INFO	convenient	Convenient errors are not available	{"reason": "operation has no \"default\" response", "at": "openapi.yaml:5240:9"}
-INFO	schemagen	Type is not defined, using any	{"at": "openapi.yaml:6125:33", "name": "LoginResponseUserItem"}
-INFO	schemagen	Type is not defined, using any	{"at": "openapi.yaml:11819:29", "name": "MessageRecipientGroupMetaItem"}
-INFO	schemagen	Type is not defined, using any	{"at": "openapi.yaml:11823:29", "name": "MessageRecipientGroupTargetMetaItem"}
-INFO	schemagen	Type is not defined, using any	{"at": "openapi.yaml:11752:29", "name": "MessageSenderMetaItem"}
-INFO	schemagen	Type is not defined, using any	{"at": "openapi.yaml:7979:33", "name": "RegisterLogItemPolicySnapshotItem"}

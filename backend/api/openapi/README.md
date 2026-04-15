@@ -104,7 +104,7 @@ make api-lint
 
 ## 添加新接口（完整流程）
 
-详见 [`docs/guides/add-endpoint.md`](../../docs/guides/add-endpoint.md)。
+详见 [`docs/API_OPENAPI_FIXED_FLOW.md`](../../docs/API_OPENAPI_FIXED_FLOW.md)。
 
 快速参考：
 

@@ -973,3 +973,160 @@ func TestIntegrationAuditLogStats(t *testing.T) {
 		}
 	}
 }
+
+// TestIntegrationObservabilityMetrics 覆盖 GET /observability/metrics。
+// 三段式覆盖：
+//  1. 未登录 → 401（走默认 integRouter，注入 Noop）；
+//  2. 登录 + Noop 注入 → 200，accepted_total / dropped_total / queue_cap 全为 0，
+//     collected_at 是 RFC3339 字符串；
+//  3. 构造第二个 router 挂载真实 audit.Recorder（QueueSize=1 Workers=1），
+//     同一 goroutine 快速 Record 200 次，响应里 audit.dropped_total 必须 >= 1。
+//     这是 dropped 计数暴露正确的关键断言。
+//
+// 清理：t.Cleanup 里调 Shutdown 等 worker goroutine 退出 + 清掉测试期间落库的
+// 审计行（action = "integration.metrics.drop.test"）。
+func TestIntegrationObservabilityMetrics(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// ── (1) 未登录 401 ─────────────────────────────────────────────
+	w := integDo(http.MethodGet, "/api/v1/observability/metrics", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("metrics no token: expected 401, got %d", w.Code)
+	}
+
+	// ── (2) Noop 注入下的 200 + 零值形状 ───────────────────────────
+	w = integDo(http.MethodGet, "/api/v1/observability/metrics", nil, integBearerHeader(integToken))
+	if w.Code != http.StatusOK {
+		t.Fatalf("metrics Noop: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("metrics Noop: invalid JSON: %v — body: %s", err, w.Body.String())
+	}
+	auditNoop, _ := resp["audit"].(map[string]interface{})
+	if auditNoop == nil {
+		t.Fatalf("metrics Noop: missing audit field — body: %s", w.Body.String())
+	}
+	if v, _ := auditNoop["accepted_total"].(float64); v != 0 {
+		t.Errorf("metrics Noop: expected audit.accepted_total=0, got %v", v)
+	}
+	if v, _ := auditNoop["dropped_total"].(float64); v != 0 {
+		t.Errorf("metrics Noop: expected audit.dropped_total=0, got %v", v)
+	}
+	if v, _ := auditNoop["queue_cap"].(float64); v != 0 {
+		t.Errorf("metrics Noop: expected audit.queue_cap=0 (Noop), got %v", v)
+	}
+	telNoop, _ := resp["telemetry"].(map[string]interface{})
+	if telNoop == nil {
+		t.Errorf("metrics Noop: missing telemetry field — body: %s", w.Body.String())
+	} else {
+		if v, _ := telNoop["dropped_total"].(float64); v != 0 {
+			t.Errorf("metrics Noop: expected telemetry.dropped_total=0, got %v", v)
+		}
+	}
+	if _, ok := resp["collected_at"].(string); !ok {
+		t.Errorf("metrics Noop: expected collected_at string, got: %s", w.Body.String())
+	}
+
+	// ── (3) 真实 Recorder 被灌满 → dropped_total >= 1 ─────────────
+	const dropAction = "integration.metrics.drop.test"
+	zapNop := zap.NewNop()
+	realAudit := audit.New(integDB, zapNop, audit.Config{
+		Enabled:   true,
+		AsyncMode: true,
+		QueueSize: 1,
+		Workers:   1,
+	})
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if err := realAudit.Shutdown(ctx); err != nil {
+			t.Logf("realAudit.Shutdown: %v", err)
+		}
+		// 删掉本次测试灌进来的审计行（accepted 的那一小撮）。
+		integDB.Exec("DELETE FROM audit_logs WHERE action = ?", dropAction)
+	})
+
+	altRouter := router.SetupRouter(integConfig(), zapNop, integDB, realAudit, telemetry.Noop{})
+
+	// 快速 Record 200 次：QueueSize=1 Workers=1，worker 每条都要做 DB 写入
+	// （毫秒级），在一个 goroutine 里 tight-loop 发 200 条，select-default
+	// 必然命中至少一次 drop 分支。
+	for i := 0; i < 200; i++ {
+		realAudit.Record(context.Background(), audit.Event{
+			Action:  dropAction,
+			Outcome: audit.OutcomeSuccess,
+		})
+	}
+
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/observability/metrics", nil)
+	req.Header.Set("Authorization", "Bearer "+integToken)
+	w2 := httptest.NewRecorder()
+	altRouter.ServeHTTP(w2, req)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("metrics drops: expected 200, got %d — body: %s", w2.Code, w2.Body.String())
+	}
+	var dropResp map[string]interface{}
+	if err := json.Unmarshal(w2.Body.Bytes(), &dropResp); err != nil {
+		t.Fatalf("metrics drops: invalid JSON: %v — body: %s", err, w2.Body.String())
+	}
+	auditDrop, _ := dropResp["audit"].(map[string]interface{})
+	if auditDrop == nil {
+		t.Fatalf("metrics drops: missing audit field — body: %s", w2.Body.String())
+	}
+	if v, _ := auditDrop["queue_cap"].(float64); v != 1 {
+		t.Errorf("metrics drops: expected audit.queue_cap=1, got %v", v)
+	}
+	if v, _ := auditDrop["accepted_total"].(float64); v < 1 {
+		t.Errorf("metrics drops: expected audit.accepted_total >= 1, got %v — body: %s", v, w2.Body.String())
+	}
+	if dropped, _ := auditDrop["dropped_total"].(float64); dropped < 1 {
+		t.Errorf("metrics drops: expected audit.dropped_total >= 1 after flooding 200 records at QueueSize=1, got %v — body: %s", dropped, w2.Body.String())
+	}
+}
+
+// TestIntegrationAuditLogStatsDefaultWindow 验证 handler 侧默认时间窗兜底：
+//
+// group_by=hour 在不传 from / to 时，后端必须自动补一个 (now-30d, now] 的窗口，
+// 避免对 audit_logs 做全表扫。本测试：
+//  1. 返回 200 + 合法 schema（group_by=hour, buckets 是数组）；
+//  2. 整个 HTTP 往返 < 500ms —— 作为「没走 Seq Scan」的冒烟信号，而不是硬指标；
+//  3. 先种一行（ts=now）确保 now 时刻的桶有数据，确认查询真的跑出了结果。
+//
+// Spec 契约未变（from / to 仍是可选），所以传空和传值都该 200；这里只覆盖缺省路径。
+func TestIntegrationAuditLogStatsDefaultWindow(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+
+	// 种一行，保证 hour 聚合在 now 时刻的桶至少有 1 条，防止误判。
+	reqID := "it-stats-dwin-" + uuid.New().String()[:8]
+	_ = insertAuditFixture(t, "default", reqID)
+
+	start := time.Now()
+	w := integDo(http.MethodGet, "/api/v1/observability/audit-logs/stats?group_by=hour", nil, integBearerHeader(integToken))
+	elapsed := time.Since(start)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("stats default window: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+
+	// 冒烟断言：默认窗口下的 hour 聚合应远快于一次全表扫（几千万行 Seq Scan 会 >> 500ms）。
+	// 放宽到 500ms 容忍 CI 冷缓存 / 本地 docker 抖动。
+	if elapsed > 500*time.Millisecond {
+		t.Errorf("stats default window: expected latency < 500ms (indicator of index scan), got %v — body: %s", elapsed, w.Body.String())
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("stats default window: invalid JSON: %v", err)
+	}
+	if resp["group_by"] != "hour" {
+		t.Errorf("stats default window: expected group_by=hour, got %v", resp["group_by"])
+	}
+	if _, ok := resp["buckets"].([]interface{}); !ok {
+		t.Errorf("stats default window: expected buckets array, got %T", resp["buckets"])
+	}
+}

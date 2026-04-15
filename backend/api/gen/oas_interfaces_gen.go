@@ -89,6 +89,10 @@ type GetLoginPageContextRes interface {
 	getLoginPageContextRes()
 }
 
+type GetObservabilityMetricsRes interface {
+	getObservabilityMetricsRes()
+}
+
 type GetObservabilityTraceRes interface {
 	getObservabilityTraceRes()
 }

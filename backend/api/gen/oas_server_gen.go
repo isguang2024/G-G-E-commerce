@@ -529,6 +529,19 @@ type Handler interface {
 	//
 	// GET /runtime/navigation
 	GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error)
+	// GetObservabilityMetrics implements getObservabilityMetrics operation.
+	//
+	// 返回当前进程内 audit.Recorder 与 telemetry.Ingester 的队列深度、累计
+	// accepted / dropped 计数。供 dashboard widget、/healthz 增强、SRE
+	// 仪表盘读取。基础设施指标，不按 tenant 分桶；请求仍需认证，复用
+	// `observability.audit.read` 权限（能看审计的人能看队列健康）。
+	// 语义注意：
+	// - `queue_depth` 是 len(chan)，瞬时弱一致，允许与 accepted/dropped 微量错位；
+	// - `accepted_total` / `dropped_total` 单调递增，进程重启归零；
+	// - Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。.
+	//
+	// GET /observability/metrics
+	GetObservabilityMetrics(ctx context.Context) (GetObservabilityMetricsRes, error)
 	// GetObservabilityTrace implements getObservabilityTrace operation.
 	//
 	// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs

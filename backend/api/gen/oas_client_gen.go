@@ -549,6 +549,19 @@ type Invoker interface {
 	//
 	// GET /runtime/navigation
 	GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error)
+	// GetObservabilityMetrics invokes getObservabilityMetrics operation.
+	//
+	// 返回当前进程内 audit.Recorder 与 telemetry.Ingester 的队列深度、累计
+	// accepted / dropped 计数。供 dashboard widget、/healthz 增强、SRE
+	// 仪表盘读取。基础设施指标，不按 tenant 分桶；请求仍需认证，复用
+	// `observability.audit.read` 权限（能看审计的人能看队列健康）。
+	// 语义注意：
+	// - `queue_depth` 是 len(chan)，瞬时弱一致，允许与 accepted/dropped 微量错位；
+	// - `accepted_total` / `dropped_total` 单调递增，进程重启归零；
+	// - Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。.
+	//
+	// GET /observability/metrics
+	GetObservabilityMetrics(ctx context.Context) (GetObservabilityMetricsRes, error)
 	// GetObservabilityTrace invokes getObservabilityTrace operation.
 	//
 	// 给定一次 request_id，同时返回该请求关联的 audit_logs 与 telemetry_logs
@@ -11948,6 +11961,120 @@ func (c *Client) sendGetNavigation(ctx context.Context, params GetNavigationPara
 
 	stage = "DecodeResponse"
 	result, err := decodeGetNavigationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetObservabilityMetrics invokes getObservabilityMetrics operation.
+//
+// 返回当前进程内 audit.Recorder 与 telemetry.Ingester 的队列深度、累计
+// accepted / dropped 计数。供 dashboard widget、/healthz 增强、SRE
+// 仪表盘读取。基础设施指标，不按 tenant 分桶；请求仍需认证，复用
+// `observability.audit.read` 权限（能看审计的人能看队列健康）。
+// 语义注意：
+// - `queue_depth` 是 len(chan)，瞬时弱一致，允许与 accepted/dropped 微量错位；
+// - `accepted_total` / `dropped_total` 单调递增，进程重启归零；
+// - Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。.
+//
+// GET /observability/metrics
+func (c *Client) GetObservabilityMetrics(ctx context.Context) (GetObservabilityMetricsRes, error) {
+	res, err := c.sendGetObservabilityMetrics(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetObservabilityMetrics(ctx context.Context) (res GetObservabilityMetricsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getObservabilityMetrics"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/observability/metrics"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetObservabilityMetricsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/observability/metrics"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, GetObservabilityMetricsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetObservabilityMetricsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

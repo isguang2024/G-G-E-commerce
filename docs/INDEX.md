@@ -1,91 +1,55 @@
 # 文档索引
 
-这个索引只收当前仓库里真正要用的入口。目标是让人不需要翻目录猜路径，也能快速判断哪份文档负责什么。
+这是仓库唯一推荐的文档导航页。目标是先判断“该看哪一类文档”，再进入唯一主文档。
 
-## 0. 快速导航
+## 真相源
 
-- 改后端 API：[`../backend/api/openapi/README.md`](../backend/api/openapi/README.md)
-- 改前端实现：[`../FRONTEND_GUIDELINE.md`](../FRONTEND_GUIDELINE.md)
-- 查文档规范：[`GUIDELINES.md`](GUIDELINES.md)
-- 查代码结构：[`project-structure.md`](project-structure.md)
-
-## 1. 一级入口
-
-| 文档 | 作用 |
+| 主题 | 文档 |
 | --- | --- |
-| [`../README.md`](../README.md) | 根目录快速入口，仓库分工和阅读顺序 |
-| [`README.md`](README.md) | `docs/` 目录总入口 |
-| [`GUIDELINES.md`](GUIDELINES.md) | 文档与协作写作规则 |
-| [`API_OPENAPI_FIXED_FLOW.md`](API_OPENAPI_FIXED_FLOW.md) | API / OpenAPI 固定闭环流程 |
-| [`project-structure.md`](project-structure.md) | 当前有效代码结构和模块分工 |
+| 协作约束 | [../AGENTS.md](../AGENTS.md) |
+| 项目边界与核心语义 | [project-framework.md](project-framework.md) |
+| 前端实现规范 | [frontend-guideline.md](frontend-guideline.md) |
+| 后端开发约束 | [../backend/CLAUDE.md](../backend/CLAUDE.md) |
 
-## 2. 真相源
+## 按任务找文档
 
-| 主题 | 入口 |
+| 你要做什么 | 先看 |
 | --- | --- |
-| 协作约束与 API 变更步骤 | [`../AGENTS.md`](../AGENTS.md) |
-| 项目架构、模块边界、核心语义 | [`../PROJECT_FRAMEWORK.md`](../PROJECT_FRAMEWORK.md) |
-| 前端实现规范、壳层和状态管理 | [`../FRONTEND_GUIDELINE.md`](../FRONTEND_GUIDELINE.md) |
-| 后端开发指引 | [`../backend/CLAUDE.md`](../backend/CLAUDE.md) |
-| API 契约、生成链路、错误码 | [`../backend/api/openapi/README.md`](../backend/api/openapi/README.md) |
+| 理解仓库结构 | [project-structure.md](project-structure.md) |
+| 新增或修改 API | [../backend/api/openapi/README.md](../backend/api/openapi/README.md) |
+| 走完整 API 闭环 | [API_OPENAPI_FIXED_FLOW.md](API_OPENAPI_FIXED_FLOW.md) |
+| 查命令 | [guides/commands.md](guides/commands.md) |
+| 查数据库/迁移/seed | [guides/database.md](guides/database.md) |
+| 查权限模型 | [guides/permission-system.md](guides/permission-system.md) |
+| 查专题手册 | [guides/README.md](guides/README.md) |
 
-## 3. 专题手册
+## 文档分层
 
-| 文档 | 作用 |
-| --- | --- |
-| [`guides/README.md`](guides/README.md) | 专题手册入口 |
-| [`guides/commands.md`](guides/commands.md) | 常用命令与生成链路速查 |
-| [`guides/add-endpoint.md`](guides/add-endpoint.md) | 新增后端接口的标准步骤 |
-| [`guides/api-auto-registration.md`](guides/api-auto-registration.md) | 接口自动入库机制 |
-| [`guides/permission-system.md`](guides/permission-system.md) | 权限系统结构与调试 |
-| [`guides/database.md`](guides/database.md) | 数据库迁移、重置、seed |
-| [`guides/permission-audit.md`](guides/permission-audit.md) | 权限审计说明 |
+| 层级 | 作用 | 代表文档 |
+| --- | --- | --- |
+| 真相源 | 定义约束与边界 | `AGENTS.md`、`docs/project-framework.md` |
+| 主说明 | 解释一个主题的当前做法 | `project-structure.md`、`API_OPENAPI_FIXED_FLOW.md` |
+| 手册 | 面向具体操作的步骤或速查 | `guides/*.md` |
+| 归档 | 历史材料，只做追溯 | `archive/*.md` |
 
-## 4. 代码域入口
-
-| 代码域 | 入口 |
-| --- | --- |
-| 后端实现 | [`../backend/`](../backend/) |
-| 前端实现 | [`../frontend/`](../frontend/) |
-| 功能/流程说明 | [`../.claude/Instructions/`](../.claude/Instructions/) |
-| 历史审计记录 | [`reports/`](reports/) |
-
-## 5. 阅读顺序
+## 当前推荐阅读顺序
 
 ### 新接手仓库
 
-1. `../README.md`
-2. `../PROJECT_FRAMEWORK.md`
-3. `project-structure.md`
-4. `guides/README.md`
+1. [../README.md](../README.md)
+2. [project-framework.md](project-framework.md)
+3. [project-structure.md](project-structure.md)
+4. [guides/README.md](guides/README.md)
 
 ### 做 API 变更
 
-1. `../backend/api/openapi/README.md`
-2. `API_OPENAPI_FIXED_FLOW.md`
-3. `guides/add-endpoint.md`
-4. `guides/api-auto-registration.md`
+1. [../backend/api/openapi/README.md](../backend/api/openapi/README.md)
+2. [API_OPENAPI_FIXED_FLOW.md](API_OPENAPI_FIXED_FLOW.md)
+3. [guides/commands.md](guides/commands.md)
+4. [guides/database.md](guides/database.md)
 
 ### 做前端联调
 
-1. `../FRONTEND_GUIDELINE.md`
-2. `../frontend/`
-3. `project-structure.md`
-
-## 6. 约定
-
-- 如与 `AGENTS.md`、`PROJECT_FRAMEWORK.md`、`FRONTEND_GUIDELINE.md`、`backend/CLAUDE.md` 冲突，以这些真相源为准。
-- 这里优先写"入口"和"职责"，不写重复的实现细节。
-- 新增文档先判断它是总入口、专题手册还是执行记录，再决定放哪一层。
-- 如果是生成产物、契约产物或临时说明，不要塞进索引主干。
-- 索引中的目录链接必须是仓库内真实存在路径。
-
-## 7. 快速翻阅索引（按内容类别）
-
-| 类别 | 入口 |
-| --- | --- |
-| 功能说明文档 | [`project-structure.md`](project-structure.md)、[`../.claude/Instructions/features/register-system-design.md`](../.claude/Instructions/features/register-system-design.md) |
-| 流程介绍文档 | [`API_OPENAPI_FIXED_FLOW.md`](API_OPENAPI_FIXED_FLOW.md) |
-| 架构设计文档 | [`../PROJECT_FRAMEWORK.md`](../PROJECT_FRAMEWORK.md)、[`../backend/README.md`](../backend/README.md) |
-| API 文档 | [`../backend/api/openapi/README.md`](../backend/api/openapi/README.md)、[`guides/add-endpoint.md`](guides/add-endpoint.md) |
-| 配置与部署文档 | [`guides/commands.md`](guides/commands.md)、[`guides/database.md`](guides/database.md) |
+1. [frontend-guideline.md](frontend-guideline.md)
+2. [../frontend/README.md](../frontend/README.md)
+3. [project-structure.md](project-structure.md)

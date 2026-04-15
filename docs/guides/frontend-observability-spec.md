@@ -5,7 +5,7 @@
 > 2. 前端表单错误语义（`el-form-item` + `data-testid` + 后端结构化 error）
 > 3. 后端结构化 `error.code` / `error.details.field` 扩展指南
 >
-> **适用范围**：一切新写的 Vue 页面、整改中的高风险页面（`docs/guides/high-risk-remediation-matrix.md`）
+> **适用范围**：一切新写的 Vue 页面、整改中的高风险页面（`docs/archive/high-risk-remediation-matrix.md`）
 > 其他业务域推荐照抄，本规范是最低约束。
 >
 > **真源**：
@@ -41,7 +41,7 @@
 
 ### 1.3 高风险整改专用基线表
 
-下列 `data-testid` 名称直接与 `docs/guides/high-risk-remediation-matrix.md` 中的整改节点一一对应，整改 PR 必须落地到这一套命名：
+下列 `data-testid` 名称直接与 `docs/archive/high-risk-remediation-matrix.md` 中的整改节点一一对应，整改 PR 必须落地到这一套命名：
 
 | 整改节点 | 页面 | `data-testid` | 用途 |
 |----------|------|---------------|------|
@@ -434,8 +434,8 @@ logger.warn('register-entry.validate_failed', { field: 'code', reason: 'required
 ## 6. 相关文档
 
 - `docs/guides/logging-spec.md`——全栈日志系统真源（zap / audit / telemetry / ingest）
-- `docs/guides/high-risk-remediation-matrix.md`——驱动本规范落地的 8 页整改清单
-- `docs/guides/add-endpoint.md`——新接口 spec 变更的固定步骤
+- `docs/archive/high-risk-remediation-matrix.md`——驱动本规范落地的 8 页整改清单
+- `docs/API_OPENAPI_FIXED_FLOW.md`——新接口 spec 变更的固定步骤
 - `backend/api/openapi/README.md`——OpenAPI 多文件结构与错误码体系真源
 - `backend/internal/api/apperr/codes.go`——错误码唯一真源
 - `frontend/src/utils/http/error.ts`——前端全局错误显示策略（`showCodes`/`hideCodes`）

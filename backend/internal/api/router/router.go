@@ -447,6 +447,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.GET("/observability/telemetry-logs", ogenBridge)
 			authenticated.GET("/observability/telemetry-logs/:id", ogenBridge)
 			authenticated.GET("/observability/trace/:request_id", ogenBridge)
+			// /observability/metrics: 进程内 Recorder/Ingester 运行时指标，无参数。
+			authenticated.GET("/observability/metrics", ogenBridge)
 		}
 
 		open := r.Group("/open/v1")

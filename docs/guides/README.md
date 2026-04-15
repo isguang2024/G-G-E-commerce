@@ -1,32 +1,21 @@
-# GGE 5.0 开发手册
+# 专题手册
 
-本目录是项目固定用法的集中参考，所有手册随代码同步维护。
+这里只保留仍然会被反复使用的高频操作手册。被主说明文档覆盖的旧手册、专项验收和排查报告统一放到 [../archive/README.md](../archive/README.md)。
 
-## 目录
+## 开发手册
 
-| 文件 | 说明 |
-|------|------|
-| [commands.md](commands.md) | 常用命令速查（含生成链路一览） |
-| [add-endpoint.md](add-endpoint.md) | 新增一条后端接口（3 步完成） |
-| [api-auto-registration.md](api-auto-registration.md) | 接口自动入库机制原理与用法 |
-| [permission-system.md](permission-system.md) | 权限系统结构与调试 |
-| [database.md](database.md) | 数据库迁移、重置、seed |
-| [permission-audit.md](permission-audit.md) | 权限审计 |
-| [social-oauth-github.md](social-oauth-github.md) | GitHub OAuth 社交登录配置 |
-| [social-oauth-manual-checklist.md](social-oauth-manual-checklist.md) | 社交登录手工验证清单 |
-| [frontend-observability-spec.md](frontend-observability-spec.md) | 前端 `data-testid` + 表单错误 + 后端结构化 error 规范 |
-| [high-risk-remediation-matrix.md](high-risk-remediation-matrix.md) | 高风险页面深测整改矩阵（驱动 2026-04 整改） |
+| 文档 | 适用场景 |
+| --- | --- |
+| [commands.md](commands.md) | 查命令、生成链和常用检查 |
+| [database.md](database.md) | 查迁移、seed、数据库排障 |
+| [permission-system.md](permission-system.md) | 理解权限模型与运行时判定 |
+| [social-oauth-github.md](social-oauth-github.md) | 配置 GitHub OAuth |
+| [frontend-observability-spec.md](frontend-observability-spec.md) | 前端可观测性与 `data-testid` 规范 |
+| [logging-spec.md](logging-spec.md) | 日志与审计相关约束 |
 
-### Spec 目录说明
+## 如何选文档
 
-[`backend/api/openapi/README.md`](../../backend/api/openapi/README.md) — OpenAPI 多文件结构、编辑规则、生成链路、错误码体系的完整说明。
-
----
-
-## 阅读顺序
-
-初次接手项目：`commands.md` → `add-endpoint.md` → `permission-system.md`
-
-只做业务开发：`add-endpoint.md` 即可
-
-排查权限问题：`permission-system.md`
+- 只想知道流程顺序：先看 [../API_OPENAPI_FIXED_FLOW.md](../API_OPENAPI_FIXED_FLOW.md)
+- 只想知道命令：先看 [commands.md](commands.md)
+- 只改一个接口：先看 [../../backend/api/openapi/README.md](../../backend/api/openapi/README.md)
+- 需要追溯历史审计或专项排查：去 [../archive/README.md](../archive/README.md)

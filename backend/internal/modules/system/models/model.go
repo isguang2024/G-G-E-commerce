@@ -128,25 +128,28 @@ func (RoleAppScope) TableName() string {
 }
 
 type Menu struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ParentID  *uuid.UUID `gorm:"type:uuid" json:"parent_id"`
-	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	SpaceKey  string    `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
-	Kind      string    `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
-	Path      string    `gorm:"type:varchar(255)" json:"path"`
-	Name      string    `gorm:"type:varchar(100)" json:"name"`
-	Component string    `gorm:"type:varchar(255)" json:"component"`
-	Title     string    `gorm:"type:varchar(100)" json:"title"`
-	Icon      string    `gorm:"type:varchar(100)" json:"icon"`
-	SortOrder int       `gorm:"default:0" json:"sort_order"`
-	Hidden    bool      `gorm:"default:false" json:"hidden"`
+	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	SpaceKey  string     `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
+	Kind      string     `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
+	Path      string     `gorm:"type:varchar(255)" json:"path"`
+	Name      string     `gorm:"type:varchar(100)" json:"name"`
+	Component string     `gorm:"type:varchar(255)" json:"component"`
+	Title     string     `gorm:"type:varchar(100)" json:"title"`
+	Icon      string     `gorm:"type:varchar(100)" json:"icon"`
+	SortOrder int        `gorm:"default:0" json:"sort_order"`
+	Hidden    bool       `gorm:"default:false" json:"hidden"`
 
 	Meta      MetaJSON       `gorm:"type:jsonb" json:"meta"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
-	Children []*Menu `gorm:"-" json:"children,omitempty"`
+	// PermissionKey 从 MenuDefinition.PermissionKey 物化而来，不落 menus 表，
+	// 仅用于运行时菜单可见性裁剪（见 page.buildRuntimeAccessContext）。
+	PermissionKey string  `gorm:"-" json:"permission_key,omitempty"`
+	Children      []*Menu `gorm:"-" json:"children,omitempty"`
 }
 
 func (Menu) TableName() string {

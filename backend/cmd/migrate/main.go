@@ -1107,6 +1107,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*systemmodels.MenuDefinition, e
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
+	permissionKey := strings.TrimSpace(spec.PermissionKey)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		definition = &systemmodels.MenuDefinition{
 			AppKey:        appKey,
@@ -1116,7 +1117,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*systemmodels.MenuDefinition, e
 			Name:          menuKey,
 			Component:     strings.TrimSpace(spec.Component),
 			PageKey:       "",
-			PermissionKey: "",
+			PermissionKey: permissionKey,
 			DefaultTitle:  strings.TrimSpace(spec.Title),
 			DefaultIcon:   strings.TrimSpace(spec.Icon),
 			Status:        "normal",
@@ -1127,15 +1128,16 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*systemmodels.MenuDefinition, e
 		}
 	} else {
 		updates := map[string]any{
-			"kind":          normalizeMenuSeedKind(spec),
-			"path":          strings.TrimSpace(spec.Path),
-			"name":          menuKey,
-			"component":     strings.TrimSpace(spec.Component),
-			"default_title": strings.TrimSpace(spec.Title),
-			"default_icon":  strings.TrimSpace(spec.Icon),
-			"status":        "normal",
-			"meta":          meta,
-			"updated_at":    time.Now(),
+			"kind":           normalizeMenuSeedKind(spec),
+			"path":           strings.TrimSpace(spec.Path),
+			"name":           menuKey,
+			"component":      strings.TrimSpace(spec.Component),
+			"permission_key": permissionKey,
+			"default_title":  strings.TrimSpace(spec.Title),
+			"default_icon":   strings.TrimSpace(spec.Icon),
+			"status":         "normal",
+			"meta":           meta,
+			"updated_at":     time.Now(),
 		}
 		if err := database.DB.Model(definition).Updates(updates).Error; err != nil {
 			return nil, err
@@ -1144,6 +1146,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*systemmodels.MenuDefinition, e
 		definition.Path = strings.TrimSpace(spec.Path)
 		definition.Name = menuKey
 		definition.Component = strings.TrimSpace(spec.Component)
+		definition.PermissionKey = permissionKey
 		definition.DefaultTitle = strings.TrimSpace(spec.Title)
 		definition.DefaultIcon = strings.TrimSpace(spec.Icon)
 		definition.Status = "normal"

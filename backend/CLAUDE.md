@@ -1,7 +1,7 @@
 # backend/CLAUDE.md
 
 Backend-specific guidance for the GGE Go service. Read `AGENTS.md`,
-`PROJECT_FRAMEWORK.md`, `FRONTEND_GUIDELINE.md` first for the shared rules.
+`docs/project-framework.md`, `docs/frontend-guideline.md` first for the shared rules.
 If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 ## Documentation Navigation

@@ -5618,6 +5618,14 @@ func (s *GetLoginPageContextPageScene) UnmarshalText(data []byte) error {
 	}
 }
 
+type GetObservabilityMetricsInternalServerError Error
+
+func (*GetObservabilityMetricsInternalServerError) getObservabilityMetricsRes() {}
+
+type GetObservabilityMetricsUnauthorized Error
+
+func (*GetObservabilityMetricsUnauthorized) getObservabilityMetricsRes() {}
+
 type GetObservabilityTraceInternalServerError Error
 
 func (*GetObservabilityTraceInternalServerError) getObservabilityTraceRes() {}
@@ -9683,6 +9691,102 @@ func (o NilUUID) Or(d uuid.UUID) uuid.UUID {
 		return v
 	}
 	return d
+}
+
+// 整个 observability 子系统的运行时观测指标。不按 tenant 分桶（基础设施
+// 指标）；返回的数值仅对当前进程有效，多副本部署需由调用方 scrape
+// 后聚合。.
+// Ref: #/components/schemas/ObservabilityMetrics
+type ObservabilityMetrics struct {
+	Audit     ObservabilityServiceStats `json:"audit"`
+	Telemetry ObservabilityServiceStats `json:"telemetry"`
+	// 本次采集时刻（服务端 UTC）。.
+	CollectedAt time.Time `json:"collected_at"`
+}
+
+// GetAudit returns the value of Audit.
+func (s *ObservabilityMetrics) GetAudit() ObservabilityServiceStats {
+	return s.Audit
+}
+
+// GetTelemetry returns the value of Telemetry.
+func (s *ObservabilityMetrics) GetTelemetry() ObservabilityServiceStats {
+	return s.Telemetry
+}
+
+// GetCollectedAt returns the value of CollectedAt.
+func (s *ObservabilityMetrics) GetCollectedAt() time.Time {
+	return s.CollectedAt
+}
+
+// SetAudit sets the value of Audit.
+func (s *ObservabilityMetrics) SetAudit(val ObservabilityServiceStats) {
+	s.Audit = val
+}
+
+// SetTelemetry sets the value of Telemetry.
+func (s *ObservabilityMetrics) SetTelemetry(val ObservabilityServiceStats) {
+	s.Telemetry = val
+}
+
+// SetCollectedAt sets the value of CollectedAt.
+func (s *ObservabilityMetrics) SetCollectedAt(val time.Time) {
+	s.CollectedAt = val
+}
+
+func (*ObservabilityMetrics) getObservabilityMetricsRes() {}
+
+// 单个观察性子服务（audit / telemetry）的运行时指标快照。.
+// Ref: #/components/schemas/ObservabilityServiceStats
+type ObservabilityServiceStats struct {
+	// 当前异步 channel 里待消费的事件数；同步模式恒为 0。.
+	QueueDepth int `json:"queue_depth"`
+	// 异步 channel 容量；0 表示同步模式或未启用异步。.
+	QueueCap int `json:"queue_cap"`
+	// 进程启动以来成功入队 / 同步写入的事件累计。.
+	AcceptedTotal int64 `json:"accepted_total"`
+	// 进程启动以来因限流或队列满被丢弃的事件累计。.
+	DroppedTotal int64 `json:"dropped_total"`
+}
+
+// GetQueueDepth returns the value of QueueDepth.
+func (s *ObservabilityServiceStats) GetQueueDepth() int {
+	return s.QueueDepth
+}
+
+// GetQueueCap returns the value of QueueCap.
+func (s *ObservabilityServiceStats) GetQueueCap() int {
+	return s.QueueCap
+}
+
+// GetAcceptedTotal returns the value of AcceptedTotal.
+func (s *ObservabilityServiceStats) GetAcceptedTotal() int64 {
+	return s.AcceptedTotal
+}
+
+// GetDroppedTotal returns the value of DroppedTotal.
+func (s *ObservabilityServiceStats) GetDroppedTotal() int64 {
+	return s.DroppedTotal
+}
+
+// SetQueueDepth sets the value of QueueDepth.
+func (s *ObservabilityServiceStats) SetQueueDepth(val int) {
+	s.QueueDepth = val
+}
+
+// SetQueueCap sets the value of QueueCap.
+func (s *ObservabilityServiceStats) SetQueueCap(val int) {
+	s.QueueCap = val
+}
+
+// SetAcceptedTotal sets the value of AcceptedTotal.
+func (s *ObservabilityServiceStats) SetAcceptedTotal(val int64) {
+	s.AcceptedTotal = val
+}
+
+// SetDroppedTotal sets the value of DroppedTotal.
+func (s *ObservabilityServiceStats) SetDroppedTotal(val int64) {
+	s.DroppedTotal = val
 }
 
 // 以 request_id 作为聚合 key，把同一次请求里产生的所有 audit_logs 与

@@ -60,16 +60,17 @@ type FeaturePackageBundleSeed struct {
 }
 
 type MenuSeed struct {
-	SpaceKey   string
-	Kind       string
-	Name       string
-	ParentName string
-	Path       string
-	Component  string
-	Title      string
-	Icon       string
-	SortOrder  int
-	Meta       usermodel.MetaJSON
+	SpaceKey      string
+	Kind          string
+	Name          string
+	ParentName    string
+	Path          string
+	Component     string
+	Title         string
+	Icon          string
+	SortOrder     int
+	PermissionKey string
+	Meta          usermodel.MetaJSON
 }
 
 type MenuSpaceSeed struct {
@@ -526,8 +527,8 @@ func DefaultMenus() []MenuSeed {
 		{Name: "ApiEndpoint", ParentName: "SystemIntegration", Path: "/system/api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "Dictionary", ParentName: "SystemIntegration", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "AuditLog", ParentName: "SystemIntegration", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "TelemetryLog", ParentName: "SystemIntegration", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "AuditLog", ParentName: "SystemIntegration", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 4, PermissionKey: "observability.audit.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.audit.read"}, "keepAlive": true}},
+		{Name: "TelemetryLog", ParentName: "SystemIntegration", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 5, PermissionKey: "observability.telemetry.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.telemetry.read"}, "keepAlive": true}},
 		{Name: "RegisterEntry", ParentName: "SystemAccount", Path: "/system/register-entry", Component: "/system/register-entry", Title: "注册入口", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterLog", ParentName: "SystemAccount", Path: "/system/register-log", Component: "/system/register-log", Title: "注册记录", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "LoginPageTemplate", ParentName: "SystemAccount", Path: "/system/login-page-template", Component: "/system/login-page-template", Title: "登录页模板", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},

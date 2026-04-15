@@ -49,9 +49,29 @@ type Event struct {
 // Record 约定：永远不返回业务级错误（不阻塞 handler 主流程）；
 // 内部失败（JSON 序列化、channel 满、DB 异常）只记 Warn/Error 日志。
 // 调用方可以安全地忽略返回值。
+//
+// Stats 返回当前运行时观测指标（队列深度、累计 accepted / dropped 计数），
+// 供 /metrics、健康检查或运维仪表盘读取。Noop 实现返回零值结构。
 type Recorder interface {
 	Record(ctx context.Context, e Event)
+	Stats() Stats
 	Shutdown(ctx context.Context) error
+}
+
+// Stats 是 Recorder 在当前进程内累计的运行时指标。
+//
+// 语义约定：
+//   - QueueDepth: 当前 buffered channel 里待消费的事件数（同步模式恒为 0）；
+//   - QueueCap:   channel 容量（同步模式恒为 0），0 可用于判断「是否启用了异步缓冲」；
+//   - AcceptedTotal: 进程启动以来成功入队 / 同步写入 DB 的事件累计；
+//   - DroppedTotal:  进程启动以来因 channel 满被丢弃的事件累计（其他失败路径归类到日志而非 dropped）。
+//
+// 这些字段单调递增，不会因 Shutdown 或重启自动清零；进程重启后计数归 0。
+type Stats struct {
+	QueueDepth    int    `json:"queue_depth"`
+	QueueCap      int    `json:"queue_cap"`
+	AcceptedTotal uint64 `json:"accepted_total"`
+	DroppedTotal  uint64 `json:"dropped_total"`
 }
 
 // Config 控制 audit service 的运行参数。通过 config.AuditConfig 加载。
@@ -89,6 +109,7 @@ type service struct {
 	stopCh   chan struct{}
 	shutdown bool
 	dropped  uint64 // 累计丢弃数量（channel 满时）
+	accepted uint64 // 累计 accepted 数量（成功入队 / 同步写 DB）
 }
 
 // New 构建一个 Recorder。
@@ -145,10 +166,16 @@ func (s *service) Record(ctx context.Context, e Event) {
 	}
 	if !s.cfg.AsyncMode {
 		s.writeRow(ctx, row)
+		s.mu.Lock()
+		s.accepted++
+		s.mu.Unlock()
 		return
 	}
 	select {
 	case s.queue <- row:
+		s.mu.Lock()
+		s.accepted++
+		s.mu.Unlock()
 	default:
 		s.mu.Lock()
 		s.dropped++
@@ -158,6 +185,26 @@ func (s *service) Record(ctx context.Context, e Event) {
 			zap.String("action", row.Action),
 			zap.Uint64("dropped_total", dropped),
 		)
+	}
+}
+
+// Stats 返回当前进程累计的审计事件观测指标。调用方需要周期读取并暴露到 /metrics。
+// 读取仅拿一次锁+两次 chan 内建查询，代价恒定；无需担心高并发 Record 时被拖慢。
+func (s *service) Stats() Stats {
+	s.mu.Lock()
+	accepted := s.accepted
+	dropped := s.dropped
+	s.mu.Unlock()
+	depth, queueCap := 0, 0
+	if s.queue != nil {
+		depth = len(s.queue)
+		queueCap = cap(s.queue)
+	}
+	return Stats{
+		QueueDepth:    depth,
+		QueueCap:      queueCap,
+		AcceptedTotal: accepted,
+		DroppedTotal:  dropped,
 	}
 }
 
@@ -307,6 +354,9 @@ type Noop struct{}
 
 // Record ignores everything.
 func (Noop) Record(_ context.Context, _ Event) {}
+
+// Stats 返回零值 Stats，表示没有运行时数据。
+func (Noop) Stats() Stats { return Stats{} }
 
 // Shutdown 总是立即返回 nil。
 func (Noop) Shutdown(_ context.Context) error { return nil }

@@ -127,6 +127,7 @@
 
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue'
+  import { useRoute } from 'vue-router'
   import {
     ElButton,
     ElCard,
@@ -332,7 +333,30 @@
     }
   }
 
-  onMounted(() => load(1))
+  // 从 URL query 预填过滤器：dashboard Top-N widget 等外部入口可用
+  // /system/audit-log?action=xxx&from=ISO&to=ISO 把用户直接带到已过滤视图。
+  // 字段名 1:1 对齐 filter；range 由 from + to 合成数组。
+  const route = useRoute()
+  const hydrateFilterFromQuery = () => {
+    const q = route.query
+    const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+    if (q.action) filter.action = str(q.action)
+    if (q.actor_id) filter.actor_id = str(q.actor_id)
+    if (q.outcome) filter.outcome = str(q.outcome)
+    if (q.resource_type) filter.resource_type = str(q.resource_type)
+    if (q.resource_id) filter.resource_id = str(q.resource_id)
+    if (q.request_id) filter.request_id = str(q.request_id)
+    const from = str(q.from)
+    const to = str(q.to)
+    if (from && to) {
+      filter.range = [from, to]
+    }
+  }
+
+  onMounted(() => {
+    hydrateFilterFromQuery()
+    load(1)
+  })
 </script>
 
 <style scoped>

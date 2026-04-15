@@ -6,8 +6,8 @@
 - 通过 Shell 读写文本必须显式 UTF-8，避免乱码。
 - 当前协作文档真相源如下，其余说明若与它们冲突，一律按这里为准：
   - `AGENTS.md`
-  - `PROJECT_FRAMEWORK.md`
-  - `FRONTEND_GUIDELINE.md`
+  - `docs/project-framework.md`
+  - `docs/frontend-guideline.md`
   - `backend/CLAUDE.md`
 
 ## 实施原则

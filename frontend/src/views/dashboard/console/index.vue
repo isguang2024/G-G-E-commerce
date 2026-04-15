@@ -63,20 +63,60 @@
           <li v-for="item in nextTasks" :key="item">{{ item }}</li>
         </ul>
       </section>
+
+      <!-- 审计 Top-N widget：仅 R_SUPER 可见（后端 observability.audit.read 会二次把关） -->
+      <section v-if="canReadAudit && !auditTopError" class="console-panel">
+        <header class="console-panel__header">
+          <div>
+            <div class="console-panel__title">审计 Top 10（最近 24h）</div>
+            <p class="console-panel__desc"
+              >按 action 聚合，点击条目跳审计页并继承当前时间窗。</p
+            >
+          </div>
+          <ElButton link type="primary" @click="goAuditLog()">查看全部</ElButton>
+        </header>
+        <div v-if="auditTopLoading" class="console-audit-empty">加载中…</div>
+        <div v-else-if="auditTopItems.length === 0" class="console-audit-empty">
+          最近 24 小时内暂无审计事件。
+        </div>
+        <ul v-else class="console-audit-list">
+          <li
+            v-for="item in auditTopItems"
+            :key="item.action"
+            class="console-audit-item"
+            @click="goAuditLog(item.action)"
+          >
+            <div class="console-audit-item__head">
+              <span class="console-audit-item__label">{{ item.action || '(unknown)' }}</span>
+              <span class="console-audit-item__count">{{ item.count }}</span>
+            </div>
+            <ElProgress
+              :percentage="item.percentage"
+              :show-text="false"
+              :stroke-width="6"
+              color="#10b981"
+            />
+          </li>
+        </ul>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { ElButton, ElProgress } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useUserStore } from '@/domains/auth/store'
+  import { fetchAuditLogStats } from '@/domains/governance/api/observability'
 
   defineOptions({ name: 'Console' })
 
   const router = useRouter()
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const userStore = useUserStore()
   const {
     currentContextMode,
     currentCollaborationWorkspace,
@@ -159,6 +199,68 @@
   const go = (path: string) => {
     router.push(path)
   }
+
+  // ── 审计 Top-N widget ────────────────────────────────────────────
+  // 接 GET /observability/audit-logs/stats?group_by=action&limit=10&from=-24h&to=now
+  // 权限：只给 R_SUPER 渲染；后端会用 observability.audit.read 再把一次关
+  // —— 即便客户端路由被绕过，API 会返 403 并把 auditTopError 标红，widget 不渲染。
+  // 数据语义：bucket=action 字符串，count=最近 24h 内该 action 的事件数。
+  type AuditTopRow = { action: string; count: number; percentage: number }
+
+  const canReadAudit = computed(() => {
+    const roles = (userStore.info?.roles || []) as string[]
+    return roles.includes('R_SUPER')
+  })
+
+  const auditTopItems = ref<AuditTopRow[]>([])
+  const auditTopLoading = ref(false)
+  const auditTopError = ref(false)
+  // 保留 from/to 作为「跳转审计页时继承的时间窗」，确保用户点进去看到的就是 widget 同一份区间的数据
+  const auditTopFrom = ref<string>('')
+  const auditTopTo = ref<string>('')
+
+  const loadAuditTop = async () => {
+    if (!canReadAudit.value) return
+    auditTopLoading.value = true
+    auditTopError.value = false
+    try {
+      const now = new Date()
+      const from = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      auditTopFrom.value = from.toISOString()
+      auditTopTo.value = now.toISOString()
+      const res: any = await fetchAuditLogStats({
+        group_by: 'action',
+        limit: 10,
+        from: auditTopFrom.value,
+        to: auditTopTo.value
+      } as any)
+      const buckets: Array<{ bucket: string; count: number }> = Array.isArray(res?.buckets)
+        ? res.buckets
+        : []
+      const max = buckets.reduce((acc, b) => (b.count > acc ? b.count : acc), 0)
+      auditTopItems.value = buckets.map((b) => ({
+        action: b.bucket,
+        count: Number(b.count || 0),
+        percentage: max > 0 ? Math.round((Number(b.count || 0) / max) * 100) : 0
+      }))
+    } catch {
+      // 悄悄隐藏：可能是 403 / 后端暂时不可用；仪表盘不应为此闪红。
+      auditTopError.value = true
+      auditTopItems.value = []
+    } finally {
+      auditTopLoading.value = false
+    }
+  }
+
+  const goAuditLog = (action?: string) => {
+    const query: Record<string, string> = {}
+    if (action) query.action = action
+    if (auditTopFrom.value) query.from = auditTopFrom.value
+    if (auditTopTo.value) query.to = auditTopTo.value
+    router.push({ path: '/system/audit-log', query })
+  }
+
+  onMounted(loadAuditTop)
 </script>
 
 <style scoped lang="scss">
@@ -297,6 +399,65 @@
     color: #334155;
     font-size: 13px;
     line-height: 1.8;
+  }
+
+  .console-audit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .console-audit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    cursor: pointer;
+    border: 1px solid rgb(226 232 240 / 0.9);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.78);
+    transition:
+      border-color 0.18s ease,
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .console-audit-item:hover {
+    transform: translateY(-1px);
+    border-color: rgb(110 231 183 / 0.9);
+    box-shadow: 0 10px 22px rgb(15 23 42 / 0.06);
+  }
+
+  .console-audit-item__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+  }
+
+  .console-audit-item__label {
+    overflow: hidden;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .console-audit-item__count {
+    color: #0f766e;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .console-audit-empty {
+    padding: 12px 4px;
+    color: #94a3b8;
+    font-size: 13px;
   }
 
   @media (max-width: 1080px) {

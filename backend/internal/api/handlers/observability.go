@@ -181,12 +181,23 @@ func (h *APIHandler) GetAuditLogStats(ctx context.Context, params gen.GetAuditLo
 	q := h.db.WithContext(ctx).
 		Model(&audit.AuditLog{}).
 		Where("tenant_id = ?", tenant)
+
+	// 默认时间窗兜底：缺省 from → now()-30d；缺省 to → now()。
+	// 规避 group_by=hour 缺 from/to 时对 audit_logs 做全表扫（生产几千万行会打爆 DB）。
+	// Spec 里参数仍是可选，只在 handler 侧兜底；调用方想要更大窗口请显式传 from/to。
+	// 有了始终存在的 ts 上下界后，查询稳定命中 idx_audit_logs_tenant_ts
+	// (tenant_id, ts DESC)，EXPLAIN 走 Index Scan 而非 Seq Scan。
+	defaultStatsWindow := 30 * 24 * time.Hour
+	now := time.Now().UTC()
+	fromTS := now.Add(-defaultStatsWindow)
 	if params.From.Set {
-		q = q.Where("ts >= ?", params.From.Value)
+		fromTS = params.From.Value
 	}
+	toTS := now
 	if params.To.Set {
-		q = q.Where("ts <= ?", params.To.Value)
+		toTS = params.To.Value
 	}
+	q = q.Where("ts >= ?", fromTS).Where("ts <= ?", toTS)
 
 	type rawRow struct {
 		Bucket string
@@ -313,6 +324,39 @@ func (h *APIHandler) GetObservabilityTrace(ctx context.Context, params gen.GetOb
 		RequestID:     requestID,
 		AuditLogs:     auditItems,
 		TelemetryLogs: telemetryItems,
+	}, nil
+}
+
+// GetObservabilityMetrics 暴露 audit.Recorder / telemetry.Ingester 的运行时指标。
+//
+// 设计说明：
+//  1. 数据源是进程内 Recorder / Ingester 的 Stats()，不读 DB——延迟 < 1ms；
+//  2. 不按 tenant 分桶：这是基础设施级指标，进程内没有隔离，调用方看到的
+//     queue_depth / dropped_total 是整机维度；需要多副本聚合时由 scraper 负责；
+//  3. 权限复用 observability.audit.read：能看审计的人能看队列健康状况，不再
+//     单独维护一个 metrics permission key；
+//  4. 认证层走 ogen 中间件，handler 侧只兜底 401；Stats() 本身是 O(1) + 只加
+//     一次锁，可以安全高频 scrape（Grafana / Prometheus agent 30s 一次）。
+func (h *APIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObservabilityMetricsRes, error) {
+	if _, ok := userIDFromContext(ctx); !ok {
+		return &gen.GetObservabilityMetricsUnauthorized{Code: 401, Message: "未认证"}, nil
+	}
+	auditStats := h.audit.Stats()
+	telemetryStats := h.telemetry.Stats()
+	return &gen.ObservabilityMetrics{
+		Audit: gen.ObservabilityServiceStats{
+			QueueDepth:    auditStats.QueueDepth,
+			QueueCap:      auditStats.QueueCap,
+			AcceptedTotal: int64(auditStats.AcceptedTotal),
+			DroppedTotal:  int64(auditStats.DroppedTotal),
+		},
+		Telemetry: gen.ObservabilityServiceStats{
+			QueueDepth:    telemetryStats.QueueDepth,
+			QueueCap:      telemetryStats.QueueCap,
+			AcceptedTotal: int64(telemetryStats.AcceptedTotal),
+			DroppedTotal:  int64(telemetryStats.DroppedTotal),
+		},
+		CollectedAt: time.Now().UTC(),
 	}, nil
 }
 

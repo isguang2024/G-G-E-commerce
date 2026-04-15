@@ -58,8 +58,12 @@ type Viewport struct {
 //   - 不返回业务错误（批量上报绝对不能让前端看到 5xx / 4xx）；
 //   - 返回 accepted / dropped 数量，调用方回传给前端做心理预期对齐；
 //   - 被限流时把整个 batch 的 dropped 全部扣住，accepted=0，不再调用 DB。
+//
+// Stats 返回当前进程累计的观测指标（queue depth/cap、accepted/dropped 累计值），
+// 供 /metrics 端点或运维仪表盘读取。Noop 返零值。
 type Ingester interface {
 	Ingest(ctx context.Context, entries []Entry, sessionKey, ipKey string) Result
+	Stats() Stats
 	Shutdown(ctx context.Context) error
 }
 
@@ -69,19 +73,35 @@ type Result struct {
 	Dropped  int32
 }
 
+// Stats 是 Ingester 在当前进程内累计的运行时指标。
+//
+// 语义约定：
+//   - QueueDepth:    当前 buffered channel 里待消费的 entry 数（同步模式恒为 0）；
+//   - QueueCap:      channel 容量（同步模式恒为 0）；
+//   - AcceptedTotal: 进程启动以来成功入队 / 同步写 DB 的 entry 累计；
+//   - DroppedTotal:  进程启动以来因限流（session / IP token bucket）或队列满被丢弃的 entry 累计。
+//
+// 单调递增，进程重启后归 0。
+type Stats struct {
+	QueueDepth    int    `json:"queue_depth"`
+	QueueCap      int    `json:"queue_cap"`
+	AcceptedTotal uint64 `json:"accepted_total"`
+	DroppedTotal  uint64 `json:"dropped_total"`
+}
+
 // Config 控制 telemetry 服务的运行参数。
 type Config struct {
-	Enabled          bool
-	QueueSize        int     // 异步写入 channel 缓冲；<= 0 则同步写
-	Workers          int     // 异步 worker 数
-	RedactFields     []string
-	Release          string // 构建版本/git sha，写入 telemetry_logs.release
-	PerSessionRate   float64 // 每秒 ingest 请求数上限（按 session_id）
-	PerSessionBurst  float64 // session token bucket 容量
-	PerIPRate        float64 // 每秒 ingest 请求数上限（按 IP）
-	PerIPBurst       float64 // IP token bucket 容量
-	BucketIdleTTL    time.Duration
-	MaxMessageBytes  int // 单条 entry 序列化后最大字节数；超限截断
+	Enabled         bool
+	QueueSize       int // 异步写入 channel 缓冲；<= 0 则同步写
+	Workers         int // 异步 worker 数
+	RedactFields    []string
+	Release         string  // 构建版本/git sha，写入 telemetry_logs.release
+	PerSessionRate  float64 // 每秒 ingest 请求数上限（按 session_id）
+	PerSessionBurst float64 // session token bucket 容量
+	PerIPRate       float64 // 每秒 ingest 请求数上限（按 IP）
+	PerIPBurst      float64 // IP token bucket 容量
+	BucketIdleTTL   time.Duration
+	MaxMessageBytes int // 单条 entry 序列化后最大字节数；超限截断
 }
 
 // DefaultConfig 提供生产默认值。
@@ -114,6 +134,7 @@ type service struct {
 	mu       sync.Mutex
 	shutdown bool
 	dropped  uint64
+	accepted uint64
 }
 
 // redactorLike 复用 audit 的 redactor，避免重复实现。
@@ -224,6 +245,9 @@ func (s *service) Ingest(ctx context.Context, entries []Entry, sessionKey, ipKey
 			select {
 			case s.queue <- row:
 				accepted++
+				s.mu.Lock()
+				s.accepted++
+				s.mu.Unlock()
 			default:
 				dropped++
 				s.mu.Lock()
@@ -234,9 +258,31 @@ func (s *service) Ingest(ctx context.Context, entries []Entry, sessionKey, ipKey
 			// 同步模式（测试 / 小流量场景）。
 			s.writeRow(ctx, row)
 			accepted++
+			s.mu.Lock()
+			s.accepted++
+			s.mu.Unlock()
 		}
 	}
 	return Result{Accepted: accepted, Dropped: dropped}
+}
+
+// Stats 返回当前进程累计的遥测观测指标。供 /metrics 端点或 runtime 运维仪表盘读取。
+func (s *service) Stats() Stats {
+	s.mu.Lock()
+	accepted := s.accepted
+	dropped := s.dropped
+	s.mu.Unlock()
+	depth, queueCap := 0, 0
+	if s.queue != nil {
+		depth = len(s.queue)
+		queueCap = cap(s.queue)
+	}
+	return Stats{
+		QueueDepth:    depth,
+		QueueCap:      queueCap,
+		AcceptedTotal: accepted,
+		DroppedTotal:  dropped,
+	}
 }
 
 func (s *service) Shutdown(ctx context.Context) error {
@@ -396,6 +442,9 @@ type Noop struct{}
 func (Noop) Ingest(_ context.Context, entries []Entry, _, _ string) Result {
 	return Result{Accepted: int32(len(entries)), Dropped: 0}
 }
+
+// Stats 返回零值 Stats（表示 Noop 不承载任何运行时指标）。
+func (Noop) Stats() Stats                     { return Stats{} }
 func (Noop) Shutdown(_ context.Context) error { return nil }
 
 // --- helpers ---

@@ -526,6 +526,65 @@ ingester 的异步通道仍是唯一的写入者。
 6. 补 `integration_test.go` smoke（`go test -tags integration ./internal/api/handlers/...`）
 7. 前端 `frontend/src/domains/governance/api/observability.ts` 封装 client 函数
 
+### 7.5 观测指标 runbook（`/observability/metrics`）
+
+运行时指标端点暴露 recorder / ingester 的**进程内**计数，不查 DB（响应 <1ms），
+供健康检查、仪表盘、Prometheus agent 定期 scrape。权限复用
+`observability.audit.read`；`x-app-scope: none`（基础设施指标，和租户无关）。
+
+响应形状固定：`{ audit: ServiceStats, telemetry: ServiceStats, collected_at }`，
+其中 `ServiceStats` 四字段含义：
+
+| 字段              | 含义                                                     | 典型值（稳态）  |
+|-------------------|----------------------------------------------------------|-----------------|
+| `queue_depth`     | 当前 buffered channel 里待消费事件数；同步模式恒为 0       | 0 ~ 几十        |
+| `queue_cap`       | channel 容量；`0` 表示同步模式或 Noop（未启用异步缓冲）    | audit/telemetry 按 config 配，默认 1024 |
+| `accepted_total`  | 进程启动以来成功入队 / 同步写入的累计（**单调递增**）      | 随流量线性上涨 |
+| `dropped_total`   | 进程启动以来因 channel 满 / rate-limit 被丢弃的累计         | 应长期贴近 0    |
+
+> 字段单调递增；进程重启后归 0。多副本部署必须在 scrape 层按 `pod/replica` 打标
+> 再求 `sum(rate(...))`，**不要**把不同副本的 `accepted_total` 直接加减当成一个
+> 全局 counter——每个进程是独立 series。
+
+#### 采集周期建议
+
+| 场景                        | 建议周期   | 备注                                 |
+|-----------------------------|-----------|--------------------------------------|
+| Prometheus agent scrape     | `30s`     | counter 类型，grafana `rate(... [5m])` |
+| 运维仪表盘手动刷新          | `60s`     | 肉眼读够用，避免压爆无价值查询         |
+| CI / 冒烟测试               | 一次即可  | 断言形状 + Noop 零值                  |
+
+#### 告警阈值建议
+
+1. **drop 飙升**：`increase(audit_dropped_total[15m]) > 0`
+   或 `increase(telemetry_dropped_total[15m]) > 0` 任一触发即告警。
+   稳态下 `dropped_total` 不该增长，一旦出现 delta > 0 表示 channel 真的被灌满
+   过，无论数量多少都值得看一眼。
+2. **队列持续深水位**：`avg_over_time(audit_queue_depth[5m]) / audit_queue_cap > 0.8`
+   持续 5 分钟告警。worker 追不上 producer，下一步就是 drop；提前扩 worker
+   或降 action 频率。
+3. （可选）**accepted 完全停止**：`rate(audit_accepted_total[10m]) == 0` 且租户流量
+   未归零 → recorder 可能挂了或 AuthMiddleware 绕过了 Record 分支。
+
+#### 排障 runbook（drop 飙升时）
+
+1. **确认到底是谁在 drop**：先分 audit vs telemetry。telemetry drop 一般是前端
+   刷屏/爬虫/rate-limit 起作用；audit drop 是 DB 真实卡顿的信号，优先级更高。
+2. **看 zap warn 日志**：service 每次 drop 都会打 `audit.queue_full_drop` /
+   `telemetry.queue_full_drop` 带 `dropped_total`。按 pod grep，定位是单副本热
+   点还是全集群共性；日志里的 `action` / `event` 字段指向具体热源。
+3. **看 `accepted_total` 斜率**：drop 期间 accepted 斜率是否骤增？骤增 → 业务侧
+   有放量调用（看 audit 的 action 分布）；无变化 → DB 写入变慢（看
+   `pg_stat_activity` 或慢查询日志，`audit_logs` 的写 latency 是否抬高）。
+4. **临时止血**：
+   - audit：调大 `AuditConfig.QueueSize` + `Workers`（重启生效，热更未支持）；
+   - telemetry：调大 `TelemetryConfig.RateLimitCapacity`；或前端临时关某个高频
+     `event`（修 `minReportLevel` / 打 `disableRemote`）。
+5. **根因修复后验证**：等 15min，`increase(dropped_total[15m])` 归零即收敛。
+
+> 注意：`/metrics` 本身是 Observer，不会反向写 audit（否则会和被观测系统耦合）。
+> 不要在 recorder 内部调 `/metrics`——走进程变量直接拿 `Stats()` 就够。
+
 ---
 
 ## 8. 自查清单（新 handler / 整改 PR 提交前）
@@ -545,7 +604,7 @@ ingester 的异步通道仍是唯一的写入者。
 ## 9. 相关文档
 
 - `docs/guides/frontend-observability-spec.md` — 前端可观测性（data-testid / form error / error code）
-- `docs/guides/add-endpoint.md` — 新接口 spec 变更的固定步骤
+- `docs/API_OPENAPI_FIXED_FLOW.md` — 新接口 spec 变更的固定步骤
 - `backend/api/openapi/README.md` — OpenAPI 多文件结构
 - `backend/internal/api/apperr/codes.go` — 错误码唯一真源
 - `frontend/src/utils/logger/index.ts` — 前端 logger 单例与脱敏

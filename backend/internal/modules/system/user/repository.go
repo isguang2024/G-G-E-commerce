@@ -724,15 +724,16 @@ func preferredPlacementScore(placement SpaceMenuPlacement, defaultSpaceKey strin
 
 func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPlacement) Menu {
 	menu := Menu{
-		ID:        definition.ID,
-		AppKey:    definition.AppKey,
-		Kind:      strings.TrimSpace(definition.Kind),
-		Path:      definition.Path,
-		Name:      definition.Name,
-		Component: definition.Component,
-		Title:     definition.DefaultTitle,
-		Icon:      definition.DefaultIcon,
-		Meta:      cloneMetaJSON(definition.Meta),
+		ID:            definition.ID,
+		AppKey:        definition.AppKey,
+		Kind:          strings.TrimSpace(definition.Kind),
+		Path:          definition.Path,
+		Name:          definition.Name,
+		Component:     definition.Component,
+		Title:         definition.DefaultTitle,
+		Icon:          definition.DefaultIcon,
+		PermissionKey: strings.TrimSpace(definition.PermissionKey),
+		Meta:          cloneMetaJSON(definition.Meta),
 	}
 	if menu.Name == "" {
 		menu.Name = definition.MenuKey

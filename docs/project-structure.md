@@ -137,7 +137,7 @@
 ## 当前有效文档
 
 - `AGENTS.md` — 协作约束
-- `PROJECT_FRAMEWORK.md` — 项目架构与边界
-- `FRONTEND_GUIDELINE.md` — 前端实现规范
+- `docs/project-framework.md` — 项目架构与边界
+- `docs/frontend-guideline.md` — 前端实现规范
 - `backend/CLAUDE.md` — 后端开发指引
 - `docs/project-structure.md` — 代码结构与模块分工
