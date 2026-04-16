@@ -23,7 +23,7 @@
   import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
   import { ElMessage } from 'element-plus'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
-  import { uploadMediaWithPrepare } from '@/domains/upload/api'
+  import { describeMediaUploadPlan, uploadMediaWithPlan } from '@/domains/upload/api'
 
   defineOptions({ name: 'ArtWangEditor' })
 
@@ -117,12 +117,16 @@
         maxFileSize: mergedUploadConfig.value.maxFileSize,
         maxNumberOfFiles: mergedUploadConfig.value.maxNumberOfFiles,
         allowedFileTypes: mergedUploadConfig.value.allowedFileTypes,
-        async customUpload(file: File, insertFn: (url: string, alt?: string, href?: string) => void) {
-          const uploaded = await uploadMediaWithPrepare(file, { key: 'editor.inline' })
-          const url = `${uploaded?.url || ''}`.trim()
+        async customUpload(
+          file: File,
+          insertFn: (url: string, alt?: string, href?: string) => void
+        ) {
+          const result = await uploadMediaWithPlan(file, { key: 'editor.inline' })
+          const url = `${result.media?.url || ''}`.trim()
           if (!url) {
             throw new Error('上传响应缺少 url')
           }
+          ElMessage.success(`图片上传成功（${describeMediaUploadPlan(result.plan)}）`)
           insertFn(url, file.name, url)
         },
         customInsert(res: any, insertFn: (url: string, alt?: string, href?: string) => void) {
@@ -132,9 +136,7 @@
           }
           insertFn(url, '', url)
         },
-        onSuccess() {
-          ElMessage.success(`图片上传成功 ${emojiText[200]}`)
-        },
+        onSuccess() {},
         onError(file: File, err: any, res: any) {
           console.error('图片上传失败:', err, res)
           ElMessage.error(`图片上传失败 ${emojiText[500]}`)

@@ -6,21 +6,14 @@
       :metrics="summaryMetrics"
     >
       <div class="fast-enter-hero-actions">
-        <ElSelect
+        <AppKeySelect
           v-model="selectedAppKey"
           clearable
-          filterable
           placeholder="选择 App"
           class="fast-enter-app-select"
+          :eager="false"
           @change="handleManagedAppChange"
-        >
-          <ElOption
-            v-for="item in appOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
+        />
         <ElButton type="primary" @click="saveConfig" v-ripple>保存配置</ElButton>
         <ElButton @click="restoreDraft" v-ripple>撤销未保存修改</ElButton>
         <ElButton type="danger" plain @click="resetToDefault" v-ripple>恢复默认</ElButton>
@@ -270,8 +263,9 @@
   import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { storeToRefs } from 'pinia'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { fetchGetApps, fetchGetMenuTreeAll } from '@/domains/governance/api'
+  import { fetchGetMenuTreeAll } from '@/domains/governance/api'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { getDefaultFastEnterConfig, useFastEnterStore } from '@/store/modules/fast-enter'
   import type { AppRouteRecord } from '@/types/router'
@@ -308,14 +302,7 @@
   const fastEnterStore = useFastEnterStore()
   const { config } = storeToRefs(fastEnterStore)
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
-  const appList = ref<Api.SystemManage.AppItem[]>([])
   const selectedAppKey = ref('')
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
 
   const cloneConfig = (value: FastEnterConfig): FastEnterConfig =>
     JSON.parse(JSON.stringify(value)) as FastEnterConfig
@@ -365,11 +352,6 @@
     }
     const menuTree = await fetchGetMenuTreeAll(undefined, targetAppKey.value)
     menuRouteTree.value = buildRouteTree(menuTree || [])
-  }
-
-  const loadAppOptions = async () => {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
   }
 
   const handleManagedAppChange = async (value?: string) => {
@@ -608,9 +590,6 @@
 
   onMounted(async () => {
     selectedAppKey.value = targetAppKey.value
-    await loadAppOptions().catch(() => {
-      appList.value = []
-    })
     await fastEnterStore.loadConfig(true)
     Object.assign(draft, cloneConfig(config.value))
     persistedConfig.value = cloneConfig(config.value)

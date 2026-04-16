@@ -29,22 +29,13 @@
         </ElSelect>
       </ElFormItem>
       <ElFormItem label="生效 App">
-        <ElSelect
+        <AppKeySelect
           v-model="form.appKeys"
           multiple
           clearable
-          filterable
           placeholder="留空表示全局通用"
-          style="width: 100%"
-          :loading="appLoading"
-        >
-          <ElOption
-            v-for="app in appOptions"
-            :key="app.value"
-            :label="app.label"
-            :value="app.value"
-          />
-        </ElSelect>
+          :eager="false"
+        />
         <div class="form-help-text"
           >未配置 App 时角色对所有 App 通用；配置后仅在这些 App 下生效。</div
         >
@@ -85,7 +76,8 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { fetchCreateRole, fetchGetApps, fetchUpdateRole } from '@/domains/governance/api'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
+  import { fetchCreateRole, fetchUpdateRole } from '@/domains/governance/api'
   import { ElMessage } from 'element-plus'
 
   type RoleListItem = Api.SystemManage.RoleListItem
@@ -109,8 +101,6 @@
 
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
-  const appLoading = ref(false)
-  const appOptions = ref<Array<{ label: string; value: string }>>([])
 
   const visible = computed({
     get: () => props.modelValue,
@@ -205,25 +195,10 @@
     () => props.modelValue,
     (newVal) => {
       if (newVal) {
-        loadAppOptions()
         initForm()
       }
     }
   )
-
-  const loadAppOptions = async () => {
-    if (appOptions.value.length > 0 || appLoading.value) return
-    appLoading.value = true
-    try {
-      const res = await fetchGetApps()
-      appOptions.value = (res.records || []).map((item: any) => ({
-        label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-        value: item.appKey
-      }))
-    } finally {
-      appLoading.value = false
-    }
-  }
 
   watch(
     () => props.roleData,

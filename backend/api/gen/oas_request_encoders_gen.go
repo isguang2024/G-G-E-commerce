@@ -169,6 +169,20 @@ func encodeCreateCurrentCollaborationWorkspaceRoleRequest(
 	return nil
 }
 
+func encodeCreateDictItemRequest(
+	req *DictItemSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateDictTypeRequest(
 	req *DictTypeSaveRequest,
 	r *http.Request,
@@ -1039,6 +1053,20 @@ func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 
 func encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(
 	req *CollaborationWorkspaceMemberRoleRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateDictItemRequest(
+	req *DictItemSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

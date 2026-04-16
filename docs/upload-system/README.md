@@ -2,6 +2,14 @@
 
 > 单文档收口。原先的 `spec.md / architecture.md / review.md / adr-summary.md / api-reference.md / frontend-integration.md / extensibility.md / ops-runbook.md / inventory.md / legacy-migration.md / release-plan.md / custom-driver-ftp-example.md / adrs/*` 已合并到本文件，删除其它 md 不会再丢任何上下文。
 
+## 二期补充文档
+
+- [上传配置中心二期设计稿](./upload-config-v2-design.md)
+- [上传配置中心二期现状差距与实施范围](./upload-config-v2-gap-analysis.md)
+- [上传配置中心二期扩展参数注册与持久化约束](./upload-config-v2-schema-registry.md)
+- [上传配置中心二期交付说明](./upload-config-v2-release.md)
+- [上传配置中心二期运维与配置示例](./upload-config-v2-ops-guide.md)
+
 ---
 
 ## 1. 当前能力快照

@@ -11,6 +11,7 @@
 
 <script setup lang="ts">
   import { fetchGetRoleOptions } from '@/domains/governance/api'
+  import { useDictionary } from '@/hooks/business/useDictionary'
   import { logger } from '@/utils/logger'
 
   interface Props {
@@ -36,12 +37,7 @@
     { label: '禁用', value: 'inactive' }
   ]
 
-  // 注册来源选项
-  const registerSourceOptions = [
-    { label: '管理员添加', value: 'admin' },
-    { label: '自注册', value: 'self' },
-    { label: '邀请注册', value: 'invite' }
-  ]
+  const { options: registerSourceOptions } = useDictionary('register_source')
 
   // 角色列表选项
   const roleOptions = ref<Array<{ label: string; value: string }>>([])
@@ -128,7 +124,7 @@
       type: 'select',
       props: {
         placeholder: '请选择注册来源',
-        options: registerSourceOptions,
+        options: registerSourceOptions.value,
         clearable: true
       }
     },

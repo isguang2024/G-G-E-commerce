@@ -694,6 +694,36 @@ func (s *DictItemSaveRequest) Validate() error {
 		})
 	}
 	if err := func() error {
+		if value, ok := s.Description.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     500,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "description",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if value, ok := s.Status.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
@@ -726,6 +756,48 @@ func (s DictItemSaveRequestStatus) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *DictItemSummary) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.Description.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     500,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "description",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
 }
 
 func (s *DictItemsBatchSaveRequest) Validate() error {
@@ -777,6 +849,23 @@ func (s *DictTypeDetail) Validate() error {
 	if err := func() error {
 		if s.Items == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Items {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -937,6 +1026,23 @@ func (s DictsByCodesResponse) Validate() error {
 		if err := func() error {
 			if elem == nil {
 				return errors.New("nil is invalid value")
+			}
+			var failures []validate.FieldError
+			for i, elem := range elem {
+				if err := func() error {
+					if err := elem.Validate(); err != nil {
+						return err
+					}
+					return nil
+				}(); err != nil {
+					failures = append(failures, validate.FieldError{
+						Name:  fmt.Sprintf("[%d]", i),
+						Error: err,
+					})
+				}
+			}
+			if len(failures) > 0 {
+				return &validate.Error{Fields: failures}
 			}
 			return nil
 		}(); err != nil {
@@ -1392,6 +1498,23 @@ func (s ListDictItemsOKApplicationJSON) Validate() error {
 	alias := ([]DictItemSummary)(s)
 	if alias == nil {
 		return errors.New("nil is invalid value")
+	}
+	var failures []validate.FieldError
+	for i, elem := range alias {
+		if err := func() error {
+			if err := elem.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			failures = append(failures, validate.FieldError{
+				Name:  fmt.Sprintf("[%d]", i),
+				Error: err,
+			})
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }
@@ -1954,6 +2077,24 @@ func (s *MediaPrepareUploadResponse) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.Visibility.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "visibility",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -1965,6 +2106,234 @@ func (s MediaPrepareUploadResponseMode) Validate() error {
 	case "relay":
 		return nil
 	case "direct":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s MediaPrepareUploadResponseVisibility) Validate() error {
+	switch s {
+	case "public":
+		return nil
+	case "private":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *MediaVisibleUploadKey) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.UploadMode.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "uploadMode",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Visibility.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "visibility",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.ClientAccept == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "clientAccept",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Rules == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Rules {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "rules",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *MediaVisibleUploadKeyListResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Records == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Records {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "records",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s MediaVisibleUploadKeyUploadMode) Validate() error {
+	switch s {
+	case "auto":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s MediaVisibleUploadKeyVisibility) Validate() error {
+	switch s {
+	case "public":
+		return nil
+	case "private":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *MediaVisibleUploadRule) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.UploadMode.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "uploadMode",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Visibility.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "visibility",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.ClientAccept == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "clientAccept",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.AllowedMimeTypes == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "allowedMimeTypes",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s MediaVisibleUploadRuleUploadMode) Validate() error {
+	switch s {
+	case "auto":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s MediaVisibleUploadRuleVisibility) Validate() error {
+	switch s {
+	case "public":
+		return nil
+	case "private":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -3669,6 +4038,23 @@ func (s SaveDictItemsOKApplicationJSON) Validate() error {
 	if alias == nil {
 		return errors.New("nil is invalid value")
 	}
+	var failures []validate.FieldError
+	for i, elem := range alias {
+		if err := func() error {
+			if err := elem.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			failures = append(failures, validate.FieldError{
+				Name:  fmt.Sprintf("[%d]", i),
+				Error: err,
+			})
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
 	return nil
 }
 
@@ -3826,6 +4212,8 @@ func (s SiteConfigResolvedItemValueType) Validate() error {
 	case "image":
 		return nil
 	case "json":
+		return nil
+	case "svg":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -3985,6 +4373,8 @@ func (s SiteConfigSaveRequestValueType) Validate() error {
 	case "image":
 		return nil
 	case "json":
+		return nil
+	case "svg":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -4228,6 +4618,8 @@ func (s SiteConfigSummaryValueType) Validate() error {
 	case "image":
 		return nil
 	case "json":
+		return nil
+	case "svg":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5657,6 +6049,24 @@ func (s *UploadKeyDetail) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if value, ok := s.UploadMode.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "upload_mode",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := s.Visibility.Validate(); err != nil {
 			return err
 		}
@@ -5717,6 +6127,19 @@ func (s UploadKeyDetailStatus) Validate() error {
 	case "ready":
 		return nil
 	case "disabled":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s UploadKeyDetailUploadMode) Validate() error {
+	switch s {
+	case "auto":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5915,6 +6338,42 @@ func (s *UploadKeyRuleSaveRequest) Validate() error {
 		})
 	}
 	if err := func() error {
+		if value, ok := s.ModeOverride.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "mode_override",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.VisibilityOverride.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "visibility_override",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if value, ok := s.Status.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
@@ -5949,11 +6408,37 @@ func (s UploadKeyRuleSaveRequestFilenameStrategy) Validate() error {
 	}
 }
 
+func (s UploadKeyRuleSaveRequestModeOverride) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s UploadKeyRuleSaveRequestStatus) Validate() error {
 	switch s {
 	case "ready":
 		return nil
 	case "disabled":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s UploadKeyRuleSaveRequestVisibilityOverride) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "public":
+		return nil
+	case "private":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5974,6 +6459,42 @@ func (s *UploadKeyRuleSummary) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "filename_strategy",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.ModeOverride.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "mode_override",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.VisibilityOverride.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "visibility_override",
 			Error: err,
 		})
 	}
@@ -6005,11 +6526,37 @@ func (s UploadKeyRuleSummaryFilenameStrategy) Validate() error {
 	}
 }
 
+func (s UploadKeyRuleSummaryModeOverride) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s UploadKeyRuleSummaryStatus) Validate() error {
 	switch s {
 	case "ready":
 		return nil
 	case "disabled":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s UploadKeyRuleSummaryVisibilityOverride) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "public":
+		return nil
+	case "private":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -6129,6 +6676,84 @@ func (s *UploadKeySaveRequest) Validate() error {
 		})
 	}
 	if err := func() error {
+		if value, ok := s.UploadMode.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "upload_mode",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.PermissionKey.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     150,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "permission_key",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.FallbackKey.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     150,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fallback_key",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if value, ok := s.Visibility.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
@@ -6181,6 +6806,19 @@ func (s UploadKeySaveRequestStatus) Validate() error {
 	}
 }
 
+func (s UploadKeySaveRequestUploadMode) Validate() error {
+	switch s {
+	case "auto":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s UploadKeySaveRequestVisibility) Validate() error {
 	switch s {
 	case "public":
@@ -6198,6 +6836,24 @@ func (s *UploadKeySummary) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.UploadMode.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "upload_mode",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if err := s.Visibility.Validate(); err != nil {
 			return err
@@ -6231,6 +6887,19 @@ func (s UploadKeySummaryStatus) Validate() error {
 	case "ready":
 		return nil
 	case "disabled":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s UploadKeySummaryUploadMode) Validate() error {
+	switch s {
+	case "auto":
+		return nil
+	case "direct":
+		return nil
+	case "relay":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

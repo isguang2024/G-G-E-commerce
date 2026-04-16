@@ -6,21 +6,12 @@
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
-        <ElSelect
+        <AppKeySelect
           v-model="selectedAppKey"
-          clearable
-          filterable
           placeholder="选择 App"
           class="menu-space-app-select"
           @change="handleManagedAppChange"
-        >
-          <ElOption
-            v-for="item in appOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
+        />
         <ElSelect v-model="spaceMode" class="menu-space-mode-select">
           <ElOption label="单空间模式" value="single" />
           <ElOption label="多空间模式" value="multi" />
@@ -441,6 +432,7 @@
   // 视图脚本：所有 reactive state、handler、watch、lifecycle 均在 useMenuSpacePage 中
   // 这里只做：1) 引入子组件；2) 调用 composable；3) 把返回值拉到 setup 作用域供模板访问。
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import { useMenuSpacePage } from './modules/use-menu-space-page'
 
   defineOptions({ name: 'MenuSpaceManage' })
@@ -476,7 +468,6 @@
     spaceModeTagType,
     resolveByLabel,
     summaryMetrics,
-    appOptions,
     spaceOptions,
     spaceDrawerTitle,
     hostDrawerTitle,

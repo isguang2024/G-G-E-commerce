@@ -62,32 +62,32 @@ func (m MetaJSON) String() string {
 }
 
 type User struct {
-	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Email          string         `gorm:"type:varchar(255);uniqueIndex" json:"email"`
-	Username       string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"username"`
-	PasswordHash   string         `gorm:"type:varchar(255);not null" json:"-"`
-	Nickname       string         `gorm:"type:varchar(100)" json:"nickname"`
-	AvatarURL      string         `gorm:"type:varchar(500)" json:"avatar_url"`
-	Phone          string         `gorm:"type:varchar(20)" json:"phone"`
-	SystemRemark   string         `gorm:"type:text" json:"system_remark"`
-	Status         string         `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
-	IsSuperAdmin   bool           `gorm:"default:false" json:"is_super_admin"`
-	LastLoginAt    *time.Time     `json:"last_login_at"`
-	LastLoginIP    string         `gorm:"type:varchar(45)" json:"last_login_ip"`
-	RegisterSource     string     `gorm:"type:varchar(20);default:'self'" json:"register_source"`
-	RegisterAppKey     string     `gorm:"type:varchar(64);not null;default:''" json:"register_app_key"`
-	RegisterEntryCode  string     `gorm:"type:varchar(64);not null;default:''" json:"register_entry_code"`
-	RegisterIP         string     `gorm:"type:varchar(64);not null;default:''" json:"register_ip"`
-	RegisterUserAgent  string     `gorm:"type:varchar(512);not null;default:''" json:"register_user_agent"`
-	AgreementVersion        string     `gorm:"type:varchar(32);not null;default:''" json:"agreement_version"`
+	ID                uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Email             string     `gorm:"type:varchar(255);uniqueIndex" json:"email"`
+	Username          string     `gorm:"type:varchar(100);not null;uniqueIndex" json:"username"`
+	PasswordHash      string     `gorm:"type:varchar(255);not null" json:"-"`
+	Nickname          string     `gorm:"type:varchar(100)" json:"nickname"`
+	AvatarURL         string     `gorm:"type:varchar(500)" json:"avatar_url"`
+	Phone             string     `gorm:"type:varchar(20)" json:"phone"`
+	SystemRemark      string     `gorm:"type:text" json:"system_remark"`
+	Status            string     `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
+	IsSuperAdmin      bool       `gorm:"default:false" json:"is_super_admin"`
+	LastLoginAt       *time.Time `json:"last_login_at"`
+	LastLoginIP       string     `gorm:"type:varchar(45)" json:"last_login_ip"`
+	RegisterSource    string     `gorm:"type:varchar(32);default:'self'" json:"register_source"`
+	RegisterAppKey    string     `gorm:"type:varchar(64);not null;default:''" json:"register_app_key"`
+	RegisterEntryCode string     `gorm:"type:varchar(64);not null;default:''" json:"register_entry_code"`
+	RegisterIP        string     `gorm:"type:varchar(64);not null;default:''" json:"register_ip"`
+	RegisterUserAgent string     `gorm:"type:varchar(512);not null;default:''" json:"register_user_agent"`
+	AgreementVersion  string     `gorm:"type:varchar(32);not null;default:''" json:"agreement_version"`
 	// 注册时刻有效策略快照（jsonb），后续策略修改不影响历史记录
-	RegisterPolicySnapshot  MetaJSON   `gorm:"type:jsonb" json:"register_policy_snapshot,omitempty"`
-	EmailVerifiedAt    *time.Time `json:"email_verified_at,omitempty"`
-	InvitationCodeID   *uuid.UUID `gorm:"type:uuid" json:"invitation_code_id,omitempty"`
-	InvitedBy          *uuid.UUID `gorm:"type:uuid" json:"invited_by"`
-	CreatedAt          time.Time  `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	RegisterPolicySnapshot MetaJSON       `gorm:"type:jsonb" json:"register_policy_snapshot,omitempty"`
+	EmailVerifiedAt        *time.Time     `json:"email_verified_at,omitempty"`
+	InvitationCodeID       *uuid.UUID     `gorm:"type:uuid" json:"invitation_code_id,omitempty"`
+	InvitedBy              *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
+	CreatedAt              time.Time      `json:"created_at"`
+	UpdatedAt              time.Time      `json:"updated_at"`
+	DeletedAt              gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	Roles []Role `gorm:"many2many:user_roles;" json:"roles,omitempty"`
 }
@@ -261,21 +261,21 @@ func (PermissionKey) TableName() string {
 }
 
 type FeaturePackage struct {
-	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey        string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	AppKeys       []string       `gorm:"type:jsonb;serializer:json;not null;default:'[]'::jsonb" json:"app_keys,omitempty"`
-	PackageKey    string         `gorm:"type:varchar(100);not null" json:"package_key"`
-	PackageType   string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
-	Name          string         `gorm:"type:varchar(150);not null" json:"name"`
-	Description   string         `gorm:"type:varchar(255)" json:"description"`
-	WorkspaceScope string        `gorm:"type:varchar(20);not null;default:'all'" json:"workspace_scope"`
-	ContextType   string         `gorm:"type:varchar(20);not null;default:'common'" json:"context_type"`
-	IsBuiltin     bool           `gorm:"not null;default:false" json:"is_builtin"`
-	Status        string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	SortOrder     int            `gorm:"default:0" json:"sort_order"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey         string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	AppKeys        []string       `gorm:"type:jsonb;serializer:json;not null;default:'[]'::jsonb" json:"app_keys,omitempty"`
+	PackageKey     string         `gorm:"type:varchar(100);not null" json:"package_key"`
+	PackageType    string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
+	Name           string         `gorm:"type:varchar(150);not null" json:"name"`
+	Description    string         `gorm:"type:varchar(255)" json:"description"`
+	WorkspaceScope string         `gorm:"type:varchar(20);not null;default:'all'" json:"workspace_scope"`
+	ContextType    string         `gorm:"type:varchar(20);not null;default:'common'" json:"context_type"`
+	IsBuiltin      bool           `gorm:"not null;default:false" json:"is_builtin"`
+	Status         string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder      int            `gorm:"default:0" json:"sort_order"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (FeaturePackage) TableName() string {
@@ -528,17 +528,17 @@ func (CollaborationWorkspaceRoleAccessSnapshot) TableName() string {
 }
 
 type APIEndpoint struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Code         string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
-	Method       string         `gorm:"type:varchar(10);not null" json:"method"`
-	Path         string         `gorm:"type:varchar(255);not null" json:"path"`
-	Handler      string         `gorm:"type:varchar(255)" json:"handler"`
-	Summary      string         `gorm:"type:varchar(255)" json:"summary"`
-	CategoryID   *uuid.UUID     `gorm:"type:uuid;index" json:"category_id"`
-	Status       string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code       string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
+	Method     string         `gorm:"type:varchar(10);not null" json:"method"`
+	Path       string         `gorm:"type:varchar(255);not null" json:"path"`
+	Handler    string         `gorm:"type:varchar(255)" json:"handler"`
+	Summary    string         `gorm:"type:varchar(255)" json:"summary"`
+	CategoryID *uuid.UUID     `gorm:"type:uuid;index" json:"category_id"`
+	Status     string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (APIEndpoint) TableName() string {
@@ -876,18 +876,20 @@ func (DictType) TableName() string {
 }
 
 type DictItem struct {
-	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID   string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
-	DictTypeID uuid.UUID      `gorm:"type:uuid;not null;index" json:"dict_type_id"`
-	Label      string         `gorm:"type:varchar(200);not null" json:"label"`
-	Value      string         `gorm:"type:varchar(200);not null" json:"value"`
-	Extra      MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"extra"`
-	IsDefault  bool           `gorm:"not null;default:false" json:"is_default"`
-	Status     string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	SortOrder  int            `gorm:"not null;default:0" json:"sort_order"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID    string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
+	DictTypeID  uuid.UUID      `gorm:"type:uuid;not null;index" json:"dict_type_id"`
+	Label       string         `gorm:"type:varchar(200);not null" json:"label"`
+	Value       string         `gorm:"type:varchar(200);not null" json:"value"`
+	Description string         `gorm:"type:varchar(500);not null;default:''" json:"description"`
+	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
+	Extra       MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"extra"`
+	IsDefault   bool           `gorm:"not null;default:false" json:"is_default"`
+	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder   int            `gorm:"not null;default:0" json:"sort_order"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (DictItem) TableName() string {

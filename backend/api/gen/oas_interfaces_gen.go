@@ -17,6 +17,10 @@ type CreateApiEndpointCategoryRes interface {
 	createApiEndpointCategoryRes()
 }
 
+type CreateDictItemRes interface {
+	createDictItemRes()
+}
+
 type CreateDictTypeRes interface {
 	createDictTypeRes()
 }
@@ -47,6 +51,10 @@ type CreateUploadKeyRuleRes interface {
 
 type CreateUserRes interface {
 	createUserRes()
+}
+
+type DeleteDictItemRes interface {
+	deleteDictItemRes()
 }
 
 type DeleteDictTypeRes interface {
@@ -269,6 +277,10 @@ type ListUsersRes interface {
 	listUsersRes()
 }
 
+type ListVisibleMediaUploadKeysRes interface {
+	listVisibleMediaUploadKeysRes()
+}
+
 type LoginRes interface {
 	loginRes()
 }
@@ -327,6 +339,10 @@ type UpdateApiEndpointContextScopeRes interface {
 
 type UpdateApiEndpointRes interface {
 	updateApiEndpointRes()
+}
+
+type UpdateDictItemRes interface {
+	updateDictItemRes()
 }
 
 type UpdateDictTypeRes interface {

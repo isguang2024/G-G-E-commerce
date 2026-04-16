@@ -14,21 +14,12 @@
         :metrics="heroMetrics"
       >
         <div class="role-hero-actions">
-          <ElSelect
+          <AppKeySelect
             v-model="selectedAppKey"
-            clearable
-            filterable
             placeholder="选择 App"
             class="role-app-select"
             @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
+          />
           <ElButton
             v-action="'system.role.manage'"
             type="primary"
@@ -93,9 +84,10 @@
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchDeleteRole, fetchGetApps, fetchGetRoleList } from '@/domains/governance/api'
+  import { fetchDeleteRole, fetchGetRoleList } from '@/domains/governance/api'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { refreshUserMenus } from '@/domains/navigation/runtime/navigation'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -112,7 +104,6 @@
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
   const showSearchBar = ref(false)
-  const appList = ref<Api.SystemManage.AppItem[]>([])
   const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
@@ -125,12 +116,6 @@
     { label: '当前页', value: data.value.length || 0 },
     { label: '全局通用', value: data.value.filter((item) => item.isGlobal).length || 0 }
   ])
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
 
   const searchForm = ref({
     roleName: undefined,
@@ -312,11 +297,6 @@
     getData()
   }
 
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
-
   async function handleManagedAppChange(value?: string) {
     await setManagedAppKey(`${value || ''}`.trim())
   }
@@ -381,9 +361,6 @@
 
   onMounted(() => {
     selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
   })
 
   watch(

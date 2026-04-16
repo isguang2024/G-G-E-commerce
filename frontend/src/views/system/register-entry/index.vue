@@ -11,14 +11,13 @@
           </div>
         </template>
         <template #right>
-          <ElSelect
+          <AppKeySelect
             v-model="filterAppKey"
             clearable
             placeholder="按 App 筛选"
+            :eager="false"
             style="width: 200px; margin-right: 12px"
-          >
-            <ElOption v-for="key in appKeyOptions" :key="key" :label="key" :value="key" />
-          </ElSelect>
+          />
           <ElDropdown trigger="click" @command="handleCreateCommand">
             <ElButton type="primary">
               新建入口 <ElIcon class="el-icon--right"><ArrowDown /></ElIcon>
@@ -99,7 +98,7 @@
                 :data-field="'app_key'"
                 required
               >
-                <ElInput v-model="form.app_key" placeholder="如 account-portal" />
+                <AppKeySelect v-model="form.app_key" allow-create placeholder="如 account-portal" />
               </ElFormItem>
               <div class="field-row">
                 <ElFormItem label="Host" class="field-half">
@@ -110,7 +109,19 @@
                 </ElFormItem>
               </div>
               <ElFormItem label="注册来源标识">
-                <ElInput v-model="form.register_source" placeholder="self / invite / ..." />
+                <DictSelect
+                  v-model="form.register_source"
+                  allow-create
+                  clearable
+                  code="register_source"
+                  placeholder="从字典选择或输入新来源"
+                  :fallback-options="registerSourceFallbackOptions"
+                  :auto-select-default="!editing"
+                  @create-option="handleRegisterSourceCreate"
+                />
+                <div class="field-tip">
+                  支持直接输入新来源；保存时会尝试自动加入“注册来源”字典。带“默认”标记的项会优先作为新建入口的初始值。
+                </div>
               </ElFormItem>
               <ElFormItem label="登录页模板">
                 <ElSelect v-model="form.login_page_key" filterable allow-create default-first-option style="width: 100%">
@@ -174,7 +185,11 @@
                 <div class="field-tip">填写后将忽略下方 App Key / Home Path 配置，直接外跳此 URL。仅允许 http(s) 或相对路径。</div>
               </ElFormItem>
               <ElFormItem label="Target App Key">
-                <ElInput v-model="form.target_app_key" placeholder="注册成功后跳转到的目标 App" />
+                <AppKeySelect
+                  v-model="form.target_app_key"
+                  allow-create
+                  placeholder="注册成功后跳转到的目标 App"
+                />
               </ElFormItem>
               <div class="field-row">
                 <ElFormItem label="导航空间 Key" class="field-half">
@@ -239,6 +254,16 @@
   import { ArrowDown } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElButton, ElIcon, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import {
+    fetchCreateDictItem,
+    fetchDictItems,
+    fetchDictTypeList,
+    type DictItemSummary,
+    type DictTypeSummary
+  } from '@/api/system-manage/dictionary'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
+  import DictSelect from '@/components/business/dictionary/DictSelect.vue'
+  import { invalidateDict } from '@/hooks/business/useDictionary'
   import type { ColumnOption } from '@/types/component'
   import { HttpError } from '@/utils/http/error'
   import {
@@ -285,7 +310,7 @@
     app_key: 'account-portal',
     host: '',
     path_prefix: '/account/auth/register',
-    register_source: 'self',
+    register_source: '',
     login_page_key: 'default',
     status: 'enabled',
     sort_order: 0,
@@ -340,6 +365,17 @@
       feature_package_keys: ['self_service.basic']
     }
   }
+  const REGISTER_SOURCE_DICT_CODE = 'register_source'
+  const registerSourceFallbackOptions = [
+    { label: '自注册', value: 'self', isDefault: true },
+    { label: '邀请注册', value: 'invite', isDefault: false },
+    { label: '管理员添加', value: 'admin', isDefault: false },
+    { label: '邮箱注册', value: 'email', isDefault: false },
+    { label: '短信注册', value: 'sms', isDefault: false },
+    { label: '第三方登录注册', value: 'oauth', isDefault: false }
+  ]
+  const registerSourceDictType = ref<DictTypeSummary | null>(null)
+  const savingRegisterSource = ref(false)
 
   const list = ref<any[]>([])
   const templateList = ref<any[]>([])
@@ -386,10 +422,6 @@
   const drawerTitle = computed(() => {
     if (!editing.value) return '新建入口'
     return isSystemReserved.value ? '编辑入口（系统保留）' : '编辑入口'
-  })
-  const appKeyOptions = computed(() => {
-    const keys = new Set(list.value.map((r: any) => r.app_key).filter(Boolean))
-    return Array.from(keys).sort()
   })
   const filteredList = computed(() => {
     if (!filterAppKey.value) return list.value
@@ -468,6 +500,57 @@
         ])
     }
   ])
+
+  async function loadRegisterSourceDictType() {
+    try {
+      const list = await fetchDictTypeList({
+        current: 1,
+        size: 200,
+        keyword: REGISTER_SOURCE_DICT_CODE
+      })
+      const records = (list?.records || []) as DictTypeSummary[]
+      registerSourceDictType.value =
+        records.find((item) => `${item.code || ''}`.trim() === REGISTER_SOURCE_DICT_CODE) || null
+    } catch {
+      registerSourceDictType.value = null
+    }
+  }
+
+  async function handleRegisterSourceCreate(value: string) {
+    form.register_source = `${value || ''}`.trim()
+    await ensureRegisterSourceInDict(form.register_source)
+  }
+
+  async function ensureRegisterSourceInDict(value: string) {
+    if (!value || savingRegisterSource.value) return
+    const dictType = registerSourceDictType.value
+    if (!dictType?.id) return
+
+    savingRegisterSource.value = true
+    try {
+      const currentItems = (await fetchDictItems(dictType.id)) as DictItemSummary[]
+      const exists = currentItems.some((item) => `${item.value || ''}`.trim() === value)
+      if (exists) return
+      const maxSortOrder = currentItems.reduce(
+        (max, item) => Math.max(max, Number(item.sort_order || 0)),
+        0
+      )
+      await fetchCreateDictItem(dictType.id, {
+        label: value,
+        value,
+        is_default: false,
+        status: 'normal',
+        sort_order: maxSortOrder + 1
+      })
+      invalidateDict(REGISTER_SOURCE_DICT_CODE)
+      ElMessage.success('已加入“注册来源”字典')
+    } catch {
+      // 用户可能没有字典管理权限；不阻断入口保存，仅提示一次。
+      ElMessage.warning('新来源未写入字典（可能无字典管理权限），但可继续保存入口')
+    } finally {
+      savingRegisterSource.value = false
+    }
+  }
 
   const load = async () => {
     loading.value = true
@@ -581,7 +664,9 @@
     pagination.total = filteredList.value.length
   })
 
-  onMounted(load)
+  onMounted(async () => {
+    await Promise.all([load(), loadRegisterSourceDictType()])
+  })
 </script>
 
 <style scoped>

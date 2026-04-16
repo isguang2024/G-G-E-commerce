@@ -3,7 +3,11 @@
     <ElCard class="art-table-card register-log-main" shadow="never">
       <ElForm :inline="true" :model="filter" class="register-log-filters">
         <ElFormItem label="来源">
-          <ElInput v-model="filter.source" clearable placeholder="self / invite" />
+          <DictSelect
+            v-model="filter.source"
+            code="register_source"
+            placeholder="请选择注册来源"
+          />
         </ElFormItem>
         <ElFormItem label="入口 Code">
           <ElInput v-model="filter.entry_code" clearable />
@@ -39,6 +43,8 @@
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue'
   import { ElMessage, ElTag } from 'element-plus'
+  import DictSelect from '@/components/business/dictionary/DictSelect.vue'
+  import { useDictionary } from '@/hooks/business/useDictionary'
   import type { ColumnOption } from '@/types/component'
   import { fetchListRegisterLogs } from '@/domains/governance/api/register'
 
@@ -50,6 +56,7 @@
   const pageSize = ref(20)
   const loading = ref(false)
   const filter = reactive<any>({ source: '', entry_code: '' })
+  const { map: registerSourceLabelMap } = useDictionary('register_source')
   const pagination = computed(() => ({
     current: page.value,
     size: pageSize.value,
@@ -59,7 +66,12 @@
     { type: 'index', label: '序号', width: 70 },
     { prop: 'username', label: '用户名', width: 160, showOverflowTooltip: true },
     { prop: 'email', label: '邮箱', minWidth: 200, showOverflowTooltip: true },
-    { prop: 'register_source', label: '来源', width: 100 },
+    {
+      prop: 'register_source',
+      label: '来源',
+      width: 120,
+      formatter: (row) => registerSourceLabelMap.value[row.register_source || ''] || row.register_source || '-'
+    },
     { prop: 'register_entry_code', label: '入口 Code', minWidth: 160, showOverflowTooltip: true },
     { prop: 'register_app_key', label: '注册 App', width: 140 },
     {

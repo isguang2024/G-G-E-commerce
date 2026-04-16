@@ -80,6 +80,12 @@ type Handler interface {
 	//
 	// POST /collaboration-workspaces/current/roles
 	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
+	// CreateDictItem implements createDictItem operation.
+	//
+	// 创建单个字典项.
+	//
+	// POST /dictionaries/{id}/items
+	CreateDictItem(ctx context.Context, req *DictItemSaveRequest, params CreateDictItemParams) (CreateDictItemRes, error)
 	// CreateDictType implements createDictType operation.
 	//
 	// 创建字典类型.
@@ -206,6 +212,12 @@ type Handler interface {
 	//
 	// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
 	DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	// DeleteDictItem implements deleteDictItem operation.
+	//
+	// 删除单个字典项.
+	//
+	// DELETE /dictionaries/{id}/items/{itemId}
+	DeleteDictItem(ctx context.Context, params DeleteDictItemParams) (DeleteDictItemRes, error)
 	// DeleteDictType implements deleteDictType operation.
 	//
 	// 删除字典类型.
@@ -1148,6 +1160,12 @@ type Handler interface {
 	//
 	// GET /users
 	ListUsers(ctx context.Context, params ListUsersParams) (ListUsersRes, error)
+	// ListVisibleMediaUploadKeys implements listVisibleMediaUploadKeys operation.
+	//
+	// 获取当前用户可见的上传配置.
+	//
+	// GET /media/upload-keys
+	ListVisibleMediaUploadKeys(ctx context.Context) (ListVisibleMediaUploadKeysRes, error)
 	// Login implements login operation.
 	//
 	// 用户登录.
@@ -1460,6 +1478,12 @@ type Handler interface {
 	//
 	// PUT /collaboration-workspaces/current/members/{userId}/role
 	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	// UpdateDictItem implements updateDictItem operation.
+	//
+	// 更新单个字典项.
+	//
+	// PUT /dictionaries/{id}/items/{itemId}
+	UpdateDictItem(ctx context.Context, req *DictItemSaveRequest, params UpdateDictItemParams) (UpdateDictItemRes, error)
 	// UpdateDictType implements updateDictType operation.
 	//
 	// 更新字典类型.

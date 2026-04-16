@@ -1,4 +1,4 @@
-﻿package upload
+package upload
 
 import (
 	"context"
@@ -26,20 +26,26 @@ type ParsedUploadKey struct {
 }
 
 type EffectiveConfig struct {
-	Provider         models.StorageProvider
-	Bucket           models.StorageBucket
-	UploadKey        models.UploadKey
-	Rule             models.UploadKeyRule
-	ResolvedKey      string
-	ResolvedRule     string
-	FallbackUsed     bool
-	MaxSizeBytes     int64
-	AllowedMimeTypes models.StringList
-	PathTemplate     string
-	SubPath          string
-	FilenameStrategy string
-	ProcessPipeline  models.StringList
-	Visibility       string
+	Provider                 models.StorageProvider
+	Bucket                   models.StorageBucket
+	UploadKey                models.UploadKey
+	Rule                     models.UploadKeyRule
+	ResolvedKey              string
+	ResolvedRule             string
+	FallbackUsed             bool
+	MaxSizeBytes             int64
+	AllowedMimeTypes         models.StringList
+	PathTemplate             string
+	SubPath                  string
+	FilenameStrategy         string
+	ProcessPipeline          models.StringList
+	UploadMode               string
+	IsFrontendVisible        bool
+	PermissionKey            string
+	FallbackKey              string
+	ClientAccept             models.StringList
+	DirectSizeThresholdBytes int64
+	Visibility               string
 }
 
 func ParseUploadKey(value string) ParsedUploadKey {
@@ -145,6 +151,13 @@ func buildEffectiveConfig(cfg *ResolvedConfig, resolvedKey, resolvedRule string,
 	if len(processPipeline) == 0 {
 		processPipeline = models.StringList{}
 	}
+	clientAccept := cfg.Rule.ClientAccept
+	if len(clientAccept) == 0 {
+		clientAccept = cfg.UploadKey.ClientAccept
+	}
+	if len(clientAccept) == 0 {
+		clientAccept = models.StringList{}
+	}
 	ruleKey := strings.TrimSpace(resolvedRule)
 	if ruleKey == "" {
 		ruleKey = rule.RuleKey
@@ -153,22 +166,42 @@ func buildEffectiveConfig(cfg *ResolvedConfig, resolvedKey, resolvedRule string,
 	if key == "" {
 		key = cfg.UploadKey.Key
 	}
+	uploadMode := strings.TrimSpace(cfg.UploadKey.UploadMode)
+	if uploadMode == "" {
+		uploadMode = models.UploadModeAuto
+	}
+	if override := strings.TrimSpace(cfg.Rule.ModeOverride); override != "" && override != models.UploadModeInherit {
+		uploadMode = override
+	}
+	visibility := strings.TrimSpace(cfg.UploadKey.Visibility)
+	if visibility == "" {
+		visibility = "public"
+	}
+	if override := strings.TrimSpace(cfg.Rule.VisibilityOverride); override != "" && override != models.VisibilityOverrideInherit {
+		visibility = override
+	}
 
 	return &EffectiveConfig{
-		Provider:         cfg.Provider,
-		Bucket:           cfg.Bucket,
-		UploadKey:        cfg.UploadKey,
-		Rule:             rule,
-		ResolvedKey:      key,
-		ResolvedRule:     ruleKey,
-		FallbackUsed:     fallbackUsed,
-		MaxSizeBytes:     maxSize,
-		AllowedMimeTypes: allowedMimeTypes,
-		PathTemplate:     cfg.UploadKey.PathTemplate,
-		SubPath:          rule.SubPath,
-		FilenameStrategy: rule.FilenameStrategy,
-		ProcessPipeline:  processPipeline,
-		Visibility:       cfg.UploadKey.Visibility,
+		Provider:                 cfg.Provider,
+		Bucket:                   cfg.Bucket,
+		UploadKey:                cfg.UploadKey,
+		Rule:                     rule,
+		ResolvedKey:              key,
+		ResolvedRule:             ruleKey,
+		FallbackUsed:             fallbackUsed,
+		MaxSizeBytes:             maxSize,
+		AllowedMimeTypes:         allowedMimeTypes,
+		PathTemplate:             cfg.UploadKey.PathTemplate,
+		SubPath:                  rule.SubPath,
+		FilenameStrategy:         rule.FilenameStrategy,
+		ProcessPipeline:          processPipeline,
+		UploadMode:               uploadMode,
+		IsFrontendVisible:        cfg.UploadKey.IsFrontendVisible,
+		PermissionKey:            strings.TrimSpace(cfg.UploadKey.PermissionKey),
+		FallbackKey:              strings.TrimSpace(cfg.UploadKey.FallbackKey),
+		ClientAccept:             clientAccept,
+		DirectSizeThresholdBytes: cfg.UploadKey.DirectSizeThresholdBytes,
+		Visibility:               visibility,
 	}
 }
 
@@ -187,4 +220,3 @@ func (r *Repository) GetUploadRuleByKey(ctx context.Context, tenantID string, up
 	}
 	return &rule, nil
 }
-

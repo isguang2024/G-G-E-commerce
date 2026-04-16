@@ -6,21 +6,12 @@
       :metrics="heroMetrics"
     >
       <div class="collaboration-workspace-role-hero-actions">
-        <ElSelect
+        <AppKeySelect
           v-model="selectedAppKey"
-          clearable
-          filterable
           placeholder="选择 App"
           class="collaboration-workspace-role-app-select"
           @change="handleManagedAppChange"
-        >
-          <ElOption
-            v-for="item in appOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
+        />
         <ElButton
           v-if="hasAction('collaboration_workspace.member.manage')"
           type="primary"
@@ -95,6 +86,7 @@
 <script setup lang="ts">
   import { computed, h, onMounted, ref, watch } from 'vue'
   import { ElMessageBox, ElTag } from 'element-plus'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useAuth } from '@/hooks/core/useAuth'
@@ -104,7 +96,6 @@
     fetchGetMyCollaborationWorkspaceBoundaryRoles
   } from '@/api/collaboration-workspace'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
-  import { fetchGetApps } from '@/domains/governance/api'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import CollaborationWorkspaceRoleDialog from './modules/collaboration-workspace-role-dialog.vue'
   import CollaborationWorkspaceRolePackageDialog from './modules/collaboration-workspace-role-package-dialog.vue'
@@ -118,7 +109,6 @@
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
   const showSearchBar = ref(false)
-  const appList = ref<Api.SystemManage.AppItem[]>([])
   const selectedAppKey = ref('')
   const roleDialog = ref(false)
   const packageDialog = ref(false)
@@ -134,12 +124,6 @@
   ])
   const baseRoleCount = computed(() => data.value.filter((item) => item.isGlobal).length)
   const customRoleCount = computed(() => data.value.filter((item) => !item.isGlobal).length)
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
 
   const {
     columns,
@@ -264,20 +248,12 @@
     refreshData()
   }
 
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
-
   async function handleManagedAppChange(value?: string) {
     await setManagedAppKey(`${value || ''}`.trim())
   }
 
   onMounted(() => {
     selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
   })
 
   watch(

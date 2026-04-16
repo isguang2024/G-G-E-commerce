@@ -121,6 +121,15 @@ func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.
 	return r, ht.ErrNotImplemented
 }
 
+// CreateDictItem implements createDictItem operation.
+//
+// 创建单个字典项.
+//
+// POST /dictionaries/{id}/items
+func (UnimplementedHandler) CreateDictItem(ctx context.Context, req *DictItemSaveRequest, params CreateDictItemParams) (r CreateDictItemRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateDictType implements createDictType operation.
 //
 // 创建字典类型.
@@ -307,6 +316,15 @@ func (UnimplementedHandler) DeleteCollaborationWorkspace(ctx context.Context, pa
 //
 // DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
 func (UnimplementedHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteDictItem implements deleteDictItem operation.
+//
+// 删除单个字典项.
+//
+// DELETE /dictionaries/{id}/items/{itemId}
+func (UnimplementedHandler) DeleteDictItem(ctx context.Context, params DeleteDictItemParams) (r DeleteDictItemRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1708,6 +1726,15 @@ func (UnimplementedHandler) ListUsers(ctx context.Context, params ListUsersParam
 	return r, ht.ErrNotImplemented
 }
 
+// ListVisibleMediaUploadKeys implements listVisibleMediaUploadKeys operation.
+//
+// 获取当前用户可见的上传配置.
+//
+// GET /media/upload-keys
+func (UnimplementedHandler) ListVisibleMediaUploadKeys(ctx context.Context) (r ListVisibleMediaUploadKeysRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // Login implements login operation.
 //
 // 用户登录.
@@ -2173,6 +2200,15 @@ func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx 
 //
 // PUT /collaboration-workspaces/current/members/{userId}/role
 func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateDictItem implements updateDictItem operation.
+//
+// 更新单个字典项.
+//
+// PUT /dictionaries/{id}/items/{itemId}
+func (UnimplementedHandler) UpdateDictItem(ctx context.Context, req *DictItemSaveRequest, params UpdateDictItemParams) (r UpdateDictItemRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

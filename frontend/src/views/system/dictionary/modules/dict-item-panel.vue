@@ -8,42 +8,68 @@
         </div>
         <div class="panel-header-right">
           <ElButton size="small" @click="showItemDialog('add')">新增</ElButton>
-          <ElButton type="primary" size="small" :loading="saving" @click="handleBatchSave">
-            批量保存
-          </ElButton>
         </div>
       </div>
     </template>
 
-    <ElTable
-      v-loading="loading"
-      :data="itemList"
-      border
-      style="width: 100%"
-      row-key="id"
-    >
-      <ElTableColumn prop="sort_order" label="排序" width="70" align="center" />
-      <ElTableColumn prop="label" label="标签" min-width="120" />
-      <ElTableColumn prop="value" label="值" min-width="120" />
-      <ElTableColumn prop="is_default" label="默认" width="70" align="center">
-        <template #default="{ row }">
-          <ElTag v-if="row.is_default" size="small" type="success">是</ElTag>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="status" label="状态" width="80" align="center">
-        <template #default="{ row }">
-          <ElTag :type="row.status === 'normal' ? 'success' : 'info'" size="small">
-            {{ row.status === 'normal' ? '正常' : '停用' }}
-          </ElTag>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="操作" width="120" align="center" fixed="right">
-        <template #default="{ row, $index }">
-          <ElButton text size="small" @click="showItemDialog('edit', row, $index)">编辑</ElButton>
-          <ElButton text size="small" type="danger" @click="handleRemoveItem($index)">删除</ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
+    <div class="dict-item-table-wrap">
+      <ElTable
+        v-loading="loading"
+        :data="itemList"
+        border
+        max-height="100%"
+        style="width: 100%"
+        row-key="id"
+      >
+        <ElTableColumn prop="sort_order" label="排序" width="70" align="center" />
+        <ElTableColumn prop="label" label="标签" min-width="120" />
+        <ElTableColumn prop="value" label="值" min-width="120" />
+        <ElTableColumn prop="description" label="备注" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.description || '-' }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="is_default" label="默认" width="70" align="center">
+          <template #default="{ row }">
+            <ElTag v-if="row.is_default" size="small" type="success">是</ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="is_builtin" label="内置" width="70" align="center">
+          <template #default="{ row }">
+            <ElTag v-if="row.is_builtin" size="small" type="info" effect="plain">是</ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="status" label="状态" width="80" align="center">
+          <template #default="{ row }">
+            <ElTag :type="row.status === 'normal' ? 'success' : 'info'" size="small">
+              {{ row.status === 'normal' ? '正常' : '停用' }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="操作" width="220" align="center" fixed="right">
+          <template #default="{ row, $index }">
+            <ElButton text size="small" @click="showItemDialog('edit', row, $index)">编辑</ElButton>
+            <ElButton
+              text
+              size="small"
+              :type="row.status === 'normal' ? 'warning' : 'success'"
+              @click="handleToggleStatus(row, $index)"
+            >
+              {{ row.status === 'normal' ? '停用' : '启用' }}
+            </ElButton>
+            <ElButton
+              v-if="!row.is_builtin"
+              text
+              size="small"
+              type="danger"
+              @click="handleDeleteItem(row, $index)"
+            >
+              删除
+            </ElButton>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+    </div>
 
     <!-- Item Dialog -->
     <DictItemDialog
@@ -57,10 +83,12 @@
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     fetchDictItems,
-    fetchSaveDictItems,
+    fetchCreateDictItem,
+    fetchUpdateDictItem,
+    fetchDeleteDictItem,
     type DictTypeSummary,
     type DictItemSummary
   } from '@/api/system-manage/dictionary'
@@ -79,7 +107,6 @@
   const emit = defineEmits<Emits>()
 
   const loading = ref(false)
-  const saving = ref(false)
   const itemList = ref<DictItemSummary[]>([])
 
   const itemDialogVisible = ref(false)
@@ -106,45 +133,108 @@
     itemDialogVisible.value = true
   }
 
-  function handleItemDialogSuccess(item: DictItemSummary) {
-    if (itemDialogType.value === 'add') {
-      item.sort_order = itemList.value.length
-      itemList.value.push(item)
-    } else if (editingIndex.value >= 0) {
-      itemList.value.splice(editingIndex.value, 1, item)
-    }
-  }
-
-  function handleRemoveItem(index: number) {
-    itemList.value.splice(index, 1)
-  }
-
-  async function handleBatchSave() {
-    saving.value = true
-    const snapshot = JSON.parse(JSON.stringify(itemList.value)) as DictItemSummary[]
+  async function handleItemDialogSuccess(item: DictItemSummary) {
     try {
-      const body = {
-        items: itemList.value.map((item, index) => ({
+      if (itemDialogType.value === 'add') {
+        const created = await fetchCreateDictItem(props.dictType.id, {
           label: item.label,
           value: item.value,
+          description: item.description,
           is_default: item.is_default,
-          status: item.status as 'normal' | 'suspended',
-          sort_order: item.sort_order ?? index
-        }))
+          status: (item.status as 'normal' | 'suspended') || 'normal',
+          sort_order: Number(item.sort_order ?? itemList.value.length)
+        })
+        itemList.value.push(created)
+        ElMessage.success('新增成功')
+      } else if (editingIndex.value >= 0 && itemDataId(itemList.value[editingIndex.value])) {
+        const current = itemList.value[editingIndex.value]
+        const updated = await fetchUpdateDictItem(props.dictType.id, current.id, {
+          label: item.label,
+          value: item.value,
+          description: item.description,
+          is_default: item.is_default,
+          status: (item.status as 'normal' | 'suspended') || 'normal',
+          sort_order: Number(item.sort_order ?? editingIndex.value)
+        })
+        itemList.value.splice(editingIndex.value, 1, updated)
+        ElMessage.success('保存成功')
       }
-      const result = await fetchSaveDictItems(props.dictType.id, body)
-      itemList.value = result as DictItemSummary[]
       invalidateDict(props.dictType.code)
-      ElMessage.success('保存成功')
       emit('type-updated')
     } catch (error) {
-      itemList.value = snapshot
       if (error instanceof Error) {
         ElMessage.error(error.message)
       }
-    } finally {
-      saving.value = false
     }
+  }
+
+  async function handleToggleStatus(row: DictItemSummary, index: number) {
+    const nextStatus = row.status === 'normal' ? 'suspended' : 'normal'
+    const actionText = nextStatus === 'suspended' ? '停用' : '启用'
+    try {
+      await ElMessageBox.confirm(
+        nextStatus === 'suspended'
+          ? `确定停用字典项“${row.label}”吗？停用后才能继续删除。`
+          : `确定启用字典项“${row.label}”吗？`,
+        `${actionText}确认`,
+        {
+          type: nextStatus === 'suspended' ? 'warning' : 'info',
+          confirmButtonText: `确定${actionText}`,
+          cancelButtonText: '取消'
+        }
+      )
+      const updated = await fetchUpdateDictItem(props.dictType.id, row.id, {
+        label: row.label,
+        value: row.value,
+        description: row.description,
+        is_default: row.is_default,
+        status: nextStatus,
+        sort_order: Number(row.sort_order ?? index)
+      })
+      itemList.value.splice(index, 1, updated)
+      invalidateDict(props.dictType.code)
+      emit('type-updated')
+      ElMessage.success(`${actionText}成功`)
+    } catch (error) {
+      if (error !== 'cancel' && error instanceof Error) {
+        ElMessage.error(error.message)
+      }
+    }
+  }
+
+  async function handleDeleteItem(row: DictItemSummary, index: number) {
+    if (row.is_builtin) {
+      ElMessage.warning('内置字典项不允许删除')
+      return
+    }
+    if (row.status !== 'suspended') {
+      ElMessage.warning('请先停用该字典项，再执行删除')
+      return
+    }
+    try {
+      await ElMessageBox.confirm(
+        `确定删除字典项“${row.label}”吗？删除后不可恢复。`,
+        '删除确认',
+        {
+          type: 'warning',
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消'
+        }
+      )
+      await fetchDeleteDictItem(props.dictType.id, row.id)
+      itemList.value.splice(index, 1)
+      invalidateDict(props.dictType.code)
+      emit('type-updated')
+      ElMessage.success('删除成功')
+    } catch (error) {
+      if (error !== 'cancel' && error instanceof Error) {
+        ElMessage.error(error.message)
+      }
+    }
+  }
+
+  function itemDataId(item?: DictItemSummary) {
+    return `${item?.id || ''}`.trim()
   }
 
   onMounted(() => {
@@ -154,11 +244,24 @@
 
 <style scoped lang="scss">
   .dict-item-panel {
-    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 
     :deep(.el-card__body) {
-      overflow: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
+  }
+
+  .dict-item-table-wrap {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .panel-header {

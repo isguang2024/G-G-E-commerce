@@ -35,21 +35,12 @@
 
       <ElForm class="trace-form" label-position="top">
         <ElFormItem label="App">
-          <ElSelect
+          <AppKeySelect
             v-model="selectedAppKey"
-            filterable
-            clearable
             placeholder="选择 App"
             class="trace-field"
             @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
+          />
         </ElFormItem>
 
         <ElFormItem label="菜单空间">
@@ -507,6 +498,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, type ElTree as ElTreeType } from 'element-plus'
   import { ArrowRight, Search } from '@element-plus/icons-vue'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import {
@@ -514,7 +506,6 @@
     fetchGetCollaborationWorkspaceRoles
   } from '@/api/collaboration-workspace'
   import {
-    fetchGetApps,
     fetchGetMenuSpaces,
     fetchGetPageAccessTrace,
     fetchGetPageList,
@@ -541,7 +532,6 @@
 
   const loading = ref(false)
   const result = ref<Api.SystemManage.PageAccessTraceResult | null>(null)
-  const appList = ref<Api.SystemManage.AppItem[]>([])
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
@@ -566,12 +556,6 @@
       : roleOptions.value.filter((item) => item.source === 'personal')
   )
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
   const spaceOptions = computed(() =>
     menuSpaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
@@ -710,11 +694,6 @@
     pageKey: '',
     spaceKey: ''
   })
-
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
 
   function formatUserLabel(user: Api.SystemManage.UserListItem) {
     const userName = `${user.userName || ''}`.trim()
@@ -867,9 +846,6 @@
 
   onMounted(() => {
     selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
     loadOptions().catch(() => {
       ElMessage.error('初始化测试数据失败')
     })

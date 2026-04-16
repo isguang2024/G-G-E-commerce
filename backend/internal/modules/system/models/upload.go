@@ -11,6 +11,11 @@ const (
 	UploadProviderDriverLocal = "local"
 	UploadProviderStatusReady = "ready"
 	UploadRecordStatusActive  = "active"
+	UploadModeAuto            = "auto"
+	UploadModeDirect          = "direct"
+	UploadModeRelay           = "relay"
+	UploadModeInherit         = "inherit"
+	VisibilityOverrideInherit = "inherit"
 )
 
 type StorageProvider struct {
@@ -32,7 +37,7 @@ type StorageProvider struct {
 	DeletedAt          gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (StorageProvider) TableName() string  { return "storage_providers" }
+func (StorageProvider) TableName() string   { return "storage_providers" }
 func (m StorageProvider) GetStatus() string { return m.Status }
 
 type StorageBucket struct {
@@ -52,47 +57,58 @@ type StorageBucket struct {
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (StorageBucket) TableName() string  { return "storage_buckets" }
+func (StorageBucket) TableName() string   { return "storage_buckets" }
 func (m StorageBucket) GetStatus() string { return m.Status }
 
 type UploadKey struct {
-	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID         string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
-	BucketID         uuid.UUID      `gorm:"type:uuid;not null;index" json:"bucket_id"`
-	Key              string         `gorm:"type:varchar(150);not null" json:"key"`
-	Name             string         `gorm:"type:varchar(200);not null" json:"name"`
-	PathTemplate     string         `gorm:"type:varchar(500);not null;default:''" json:"path_template"`
-	DefaultRuleKey   string         `gorm:"type:varchar(150);not null;default:''" json:"default_rule_key"`
-	MaxSizeBytes     int64          `gorm:"not null;default:0" json:"max_size_bytes"`
-	AllowedMimeTypes StringList     `gorm:"type:jsonb;serializer:json;not null" json:"allowed_mime_types"`
-	Visibility       string         `gorm:"type:varchar(20);not null;default:'public'" json:"visibility"`
-	Status           string         `gorm:"type:varchar(20);not null;default:'ready'" json:"status"`
-	Meta             MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"meta"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID                 string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
+	BucketID                 uuid.UUID      `gorm:"type:uuid;not null;index" json:"bucket_id"`
+	Key                      string         `gorm:"type:varchar(150);not null" json:"key"`
+	Name                     string         `gorm:"type:varchar(200);not null" json:"name"`
+	PathTemplate             string         `gorm:"type:varchar(500);not null;default:''" json:"path_template"`
+	DefaultRuleKey           string         `gorm:"type:varchar(150);not null;default:''" json:"default_rule_key"`
+	MaxSizeBytes             int64          `gorm:"not null;default:0" json:"max_size_bytes"`
+	AllowedMimeTypes         StringList     `gorm:"type:jsonb;serializer:json;not null" json:"allowed_mime_types"`
+	UploadMode               string         `gorm:"type:varchar(20);not null;default:'auto'" json:"upload_mode"`
+	IsFrontendVisible        bool           `gorm:"not null;default:false" json:"is_frontend_visible"`
+	PermissionKey            string         `gorm:"type:varchar(150);not null;default:''" json:"permission_key"`
+	FallbackKey              string         `gorm:"type:varchar(150);not null;default:''" json:"fallback_key"`
+	ClientAccept             StringList     `gorm:"type:jsonb;serializer:json;not null" json:"client_accept"`
+	DirectSizeThresholdBytes int64          `gorm:"not null;default:0" json:"direct_size_threshold_bytes"`
+	ExtraSchema              MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"extra_schema"`
+	Visibility               string         `gorm:"type:varchar(20);not null;default:'public'" json:"visibility"`
+	Status                   string         `gorm:"type:varchar(20);not null;default:'ready'" json:"status"`
+	Meta                     MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"meta"`
+	CreatedAt                time.Time      `json:"created_at"`
+	UpdatedAt                time.Time      `json:"updated_at"`
+	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (UploadKey) TableName() string  { return "upload_keys" }
+func (UploadKey) TableName() string   { return "upload_keys" }
 func (m UploadKey) GetStatus() string { return m.Status }
 
 type UploadKeyRule struct {
-	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID         string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
-	UploadKeyID      uuid.UUID      `gorm:"type:uuid;not null;index" json:"upload_key_id"`
-	RuleKey          string         `gorm:"type:varchar(150);not null" json:"rule_key"`
-	Name             string         `gorm:"type:varchar(200);not null" json:"name"`
-	SubPath          string         `gorm:"type:varchar(255);not null;default:''" json:"sub_path"`
-	FilenameStrategy string         `gorm:"type:varchar(50);not null;default:'uuid'" json:"filename_strategy"`
-	MaxSizeBytes     int64          `gorm:"not null;default:0" json:"max_size_bytes"`
-	AllowedMimeTypes StringList     `gorm:"type:jsonb;serializer:json;not null" json:"allowed_mime_types"`
-	ProcessPipeline  StringList     `gorm:"type:jsonb;serializer:json;not null" json:"process_pipeline"`
-	IsDefault        bool           `gorm:"not null;default:false" json:"is_default"`
-	Status           string         `gorm:"type:varchar(20);not null;default:'ready'" json:"status"`
-	Meta             MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"meta"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                 uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID           string         `gorm:"type:varchar(64);not null;default:'default';index" json:"tenant_id"`
+	UploadKeyID        uuid.UUID      `gorm:"type:uuid;not null;index" json:"upload_key_id"`
+	RuleKey            string         `gorm:"type:varchar(150);not null" json:"rule_key"`
+	Name               string         `gorm:"type:varchar(200);not null" json:"name"`
+	SubPath            string         `gorm:"type:varchar(255);not null;default:''" json:"sub_path"`
+	FilenameStrategy   string         `gorm:"type:varchar(50);not null;default:'uuid'" json:"filename_strategy"`
+	MaxSizeBytes       int64          `gorm:"not null;default:0" json:"max_size_bytes"`
+	AllowedMimeTypes   StringList     `gorm:"type:jsonb;serializer:json;not null" json:"allowed_mime_types"`
+	ProcessPipeline    StringList     `gorm:"type:jsonb;serializer:json;not null" json:"process_pipeline"`
+	ModeOverride       string         `gorm:"type:varchar(20);not null;default:'inherit'" json:"mode_override"`
+	VisibilityOverride string         `gorm:"type:varchar(20);not null;default:'inherit'" json:"visibility_override"`
+	ClientAccept       StringList     `gorm:"type:jsonb;serializer:json;not null" json:"client_accept"`
+	ExtraSchema        MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"extra_schema"`
+	IsDefault          bool           `gorm:"not null;default:false" json:"is_default"`
+	Status             string         `gorm:"type:varchar(20);not null;default:'ready'" json:"status"`
+	Meta               MetaJSON       `gorm:"type:jsonb;not null;default:'{}'::jsonb" json:"meta"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (UploadKeyRule) TableName() string { return "upload_key_rules" }

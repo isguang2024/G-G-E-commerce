@@ -109,6 +109,12 @@ components:
         process_pipeline:
           type: array
           items: {type: string}
+        mode_override: {type: string, enum: [inherit, direct, relay]}
+        visibility_override: {type: string, enum: [inherit, public, private]}
+        client_accept:
+          type: array
+          items: {type: string}
+        extra_schema: {type: object, additionalProperties: true}
         is_default: {type: boolean}
         status: {type: string, enum: [ready, disabled]}
         meta: {type: object, additionalProperties: true}
@@ -129,6 +135,12 @@ components:
         process_pipeline:
           type: array
           items: {type: string}
+        mode_override: {type: string, enum: [inherit, direct, relay]}
+        visibility_override: {type: string, enum: [inherit, public, private]}
+        client_accept:
+          type: array
+          items: {type: string}
+        extra_schema: {type: object, additionalProperties: true}
         is_default: {type: boolean}
         status: {type: string, enum: [ready, disabled]}
         meta: {type: object, additionalProperties: true}
@@ -148,6 +160,15 @@ components:
         allowed_mime_types:
           type: array
           items: {type: string}
+        upload_mode: {type: string, enum: [auto, direct, relay]}
+        is_frontend_visible: {type: boolean}
+        permission_key: {type: string}
+        fallback_key: {type: string}
+        client_accept:
+          type: array
+          items: {type: string}
+        direct_size_threshold_bytes: {type: integer, format: int64}
+        extra_schema: {type: object, additionalProperties: true}
         visibility: {type: string, enum: [public, private]}
         status: {type: string, enum: [ready, disabled]}
         meta: {type: object, additionalProperties: true}
@@ -183,6 +204,15 @@ components:
         allowed_mime_types:
           type: array
           items: {type: string}
+        upload_mode: {type: string, enum: [auto, direct, relay]}
+        is_frontend_visible: {type: boolean}
+        permission_key: {type: string, maxLength: 150}
+        fallback_key: {type: string, maxLength: 150}
+        client_accept:
+          type: array
+          items: {type: string}
+        direct_size_threshold_bytes: {type: integer, format: int64}
+        extra_schema: {type: object, additionalProperties: true}
         visibility: {type: string, enum: [public, private]}
         status: {type: string, enum: [ready, disabled]}
         meta: {type: object, additionalProperties: true}

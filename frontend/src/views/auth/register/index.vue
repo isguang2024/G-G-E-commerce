@@ -223,6 +223,7 @@
   import { RoutesAlias } from '@/router/routesAlias'
   import { useRegisterFlow, type RegisterFormState } from '@/domains/auth/flows/useRegisterFlow'
   import { useAuthPageTemplate } from '@/domains/auth/useAuthPageTemplate'
+  import { useDictionary } from '@/hooks/business/useDictionary'
   import { logger } from '@/utils/logger'
   import SocialLoginPanel from '../login/components/SocialLoginPanel.vue'
 
@@ -238,6 +239,7 @@
     useRegisterFlow()
   const { themeClass, loginPageKey, templateName, theme, social, features, texts, isPreview } =
     useAuthPageTemplate('register')
+  const { map: registerSourceLabelMap } = useDictionary('register_source')
   const pageTitle = computed(() => `${texts.value.title || t('register.title')}`)
   const pageSubTitle = computed(() => `${texts.value.subTitle || t('register.subTitle')}`)
   const pageButtonText = computed(() => `${texts.value.buttonText || t('register.submitBtnText')}`)
@@ -245,9 +247,7 @@
   const formKey = ref(0)
   const registerSourceLabel = computed(() => {
     const source = `${ctx.value?.register_source || 'self'}`.trim()
-    if (source === 'invite') return '邀请码注册'
-    if (source === 'self') return '默认公开注册'
-    return source
+    return registerSourceLabelMap.value[source] || source || '-'
   })
   const landingSummary = computed(() => {
     if (!ctx.value) return '待加载'

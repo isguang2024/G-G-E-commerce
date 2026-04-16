@@ -1,4 +1,4 @@
-﻿package upload
+package upload
 
 // service_admin.go exposes admin-facing CRUD facade for Provider / Bucket / UploadKey / Rule
 // plus a Provider connectivity probe used by the storage_admin handler.
@@ -83,29 +83,40 @@ type BucketSaveInput struct {
 }
 
 type UploadKeySaveInput struct {
-	BucketID         uuid.UUID
-	Key              string
-	Name             string
-	PathTemplate     string
-	DefaultRuleKey   string
-	MaxSizeBytes     int64
-	AllowedMimeTypes models.StringList
-	Visibility       string
-	Status           string
-	Meta             models.MetaJSON
+	BucketID                 uuid.UUID
+	Key                      string
+	Name                     string
+	PathTemplate             string
+	DefaultRuleKey           string
+	MaxSizeBytes             int64
+	AllowedMimeTypes         models.StringList
+	UploadMode               string
+	IsFrontendVisible        bool
+	PermissionKey            string
+	FallbackKey              string
+	ClientAccept             models.StringList
+	DirectSizeThresholdBytes int64
+	ExtraSchema              models.MetaJSON
+	Visibility               string
+	Status                   string
+	Meta                     models.MetaJSON
 }
 
 type UploadRuleSaveInput struct {
-	RuleKey          string
-	Name             string
-	SubPath          string
-	FilenameStrategy string
-	MaxSizeBytes     int64
-	AllowedMimeTypes models.StringList
-	ProcessPipeline  models.StringList
-	IsDefault        bool
-	Status           string
-	Meta             models.MetaJSON
+	RuleKey            string
+	Name               string
+	SubPath            string
+	FilenameStrategy   string
+	MaxSizeBytes       int64
+	AllowedMimeTypes   models.StringList
+	ProcessPipeline    models.StringList
+	ModeOverride       string
+	VisibilityOverride string
+	ClientAccept       models.StringList
+	ExtraSchema        models.MetaJSON
+	IsDefault          bool
+	Status             string
+	Meta               models.MetaJSON
 }
 
 // Admin returns the service cast to AdminAPI. Service implements AdminAPI directly.
@@ -328,22 +339,37 @@ func (s *service) CreateUploadKey(ctx context.Context, tenantID string, input Up
 	if input.BucketID == uuid.Nil || strings.TrimSpace(input.Key) == "" || strings.TrimSpace(input.Name) == "" {
 		return nil, errors.New("bucket_id/key/name are required")
 	}
+	extraSchema, err := NormalizeUploadKeyExtraSchema(input.ExtraSchema)
+	if err != nil {
+		return nil, err
+	}
 	allowed := input.AllowedMimeTypes
 	if allowed == nil {
 		allowed = models.StringList{}
 	}
+	clientAccept := input.ClientAccept
+	if clientAccept == nil {
+		clientAccept = models.StringList{}
+	}
 	item := &models.UploadKey{
-		TenantID:         normalizeTenantID(tenantID),
-		BucketID:         input.BucketID,
-		Key:              strings.TrimSpace(input.Key),
-		Name:             strings.TrimSpace(input.Name),
-		PathTemplate:     input.PathTemplate,
-		DefaultRuleKey:   strings.TrimSpace(input.DefaultRuleKey),
-		MaxSizeBytes:     input.MaxSizeBytes,
-		AllowedMimeTypes: allowed,
-		Visibility:       firstNonEmpty(input.Visibility, "public"),
-		Status:           firstNonEmpty(input.Status, models.UploadProviderStatusReady),
-		Meta:             input.Meta,
+		TenantID:                 normalizeTenantID(tenantID),
+		BucketID:                 input.BucketID,
+		Key:                      strings.TrimSpace(input.Key),
+		Name:                     strings.TrimSpace(input.Name),
+		PathTemplate:             input.PathTemplate,
+		DefaultRuleKey:           strings.TrimSpace(input.DefaultRuleKey),
+		MaxSizeBytes:             input.MaxSizeBytes,
+		AllowedMimeTypes:         allowed,
+		UploadMode:               firstNonEmpty(input.UploadMode, models.UploadModeAuto),
+		IsFrontendVisible:        input.IsFrontendVisible,
+		PermissionKey:            strings.TrimSpace(input.PermissionKey),
+		FallbackKey:              strings.TrimSpace(input.FallbackKey),
+		ClientAccept:             clientAccept,
+		DirectSizeThresholdBytes: input.DirectSizeThresholdBytes,
+		ExtraSchema:              extraSchema,
+		Visibility:               firstNonEmpty(input.Visibility, "public"),
+		Status:                   firstNonEmpty(input.Status, models.UploadProviderStatusReady),
+		Meta:                     input.Meta,
 	}
 	if err := s.repo.EnsureUploadKey(ctx, item); err != nil {
 		return nil, err
@@ -352,17 +378,28 @@ func (s *service) CreateUploadKey(ctx context.Context, tenantID string, input Up
 }
 
 func (s *service) UpdateUploadKey(ctx context.Context, tenantID string, id uuid.UUID, input UploadKeySaveInput) (*models.UploadKey, error) {
+	extraSchema, err := NormalizeUploadKeyExtraSchema(input.ExtraSchema)
+	if err != nil {
+		return nil, err
+	}
 	return s.repo.UpdateUploadKeyByID(ctx, tenantID, id, UploadKeyUpdate{
-		BucketID:         input.BucketID,
-		Key:              input.Key,
-		Name:             input.Name,
-		PathTemplate:     input.PathTemplate,
-		DefaultRuleKey:   input.DefaultRuleKey,
-		MaxSizeBytes:     input.MaxSizeBytes,
-		AllowedMimeTypes: input.AllowedMimeTypes,
-		Visibility:       input.Visibility,
-		Status:           input.Status,
-		Meta:             input.Meta,
+		BucketID:                 input.BucketID,
+		Key:                      input.Key,
+		Name:                     input.Name,
+		PathTemplate:             input.PathTemplate,
+		DefaultRuleKey:           input.DefaultRuleKey,
+		MaxSizeBytes:             input.MaxSizeBytes,
+		AllowedMimeTypes:         input.AllowedMimeTypes,
+		UploadMode:               input.UploadMode,
+		IsFrontendVisible:        input.IsFrontendVisible,
+		PermissionKey:            input.PermissionKey,
+		FallbackKey:              input.FallbackKey,
+		ClientAccept:             input.ClientAccept,
+		DirectSizeThresholdBytes: input.DirectSizeThresholdBytes,
+		ExtraSchema:              extraSchema,
+		Visibility:               input.Visibility,
+		Status:                   input.Status,
+		Meta:                     input.Meta,
 	})
 }
 
@@ -387,6 +424,10 @@ func (s *service) CreateRule(ctx context.Context, tenantID string, uploadKeyID u
 	if uploadKeyID == uuid.Nil || strings.TrimSpace(input.RuleKey) == "" || strings.TrimSpace(input.Name) == "" {
 		return nil, errors.New("upload_key_id/rule_key/name are required")
 	}
+	extraSchema, err := NormalizeUploadRuleExtraSchema(input.ExtraSchema)
+	if err != nil {
+		return nil, err
+	}
 	allowed := input.AllowedMimeTypes
 	if allowed == nil {
 		allowed = models.StringList{}
@@ -395,19 +436,27 @@ func (s *service) CreateRule(ctx context.Context, tenantID string, uploadKeyID u
 	if pipeline == nil {
 		pipeline = models.StringList{}
 	}
+	clientAccept := input.ClientAccept
+	if clientAccept == nil {
+		clientAccept = models.StringList{}
+	}
 	item := &models.UploadKeyRule{
-		TenantID:         normalizeTenantID(tenantID),
-		UploadKeyID:      uploadKeyID,
-		RuleKey:          strings.TrimSpace(input.RuleKey),
-		Name:             strings.TrimSpace(input.Name),
-		SubPath:          input.SubPath,
-		FilenameStrategy: firstNonEmpty(input.FilenameStrategy, "uuid"),
-		MaxSizeBytes:     input.MaxSizeBytes,
-		AllowedMimeTypes: allowed,
-		ProcessPipeline:  pipeline,
-		IsDefault:        input.IsDefault,
-		Status:           firstNonEmpty(input.Status, models.UploadProviderStatusReady),
-		Meta:             input.Meta,
+		TenantID:           normalizeTenantID(tenantID),
+		UploadKeyID:        uploadKeyID,
+		RuleKey:            strings.TrimSpace(input.RuleKey),
+		Name:               strings.TrimSpace(input.Name),
+		SubPath:            input.SubPath,
+		FilenameStrategy:   firstNonEmpty(input.FilenameStrategy, "uuid"),
+		MaxSizeBytes:       input.MaxSizeBytes,
+		AllowedMimeTypes:   allowed,
+		ProcessPipeline:    pipeline,
+		ModeOverride:       firstNonEmpty(input.ModeOverride, models.UploadModeInherit),
+		VisibilityOverride: firstNonEmpty(input.VisibilityOverride, models.VisibilityOverrideInherit),
+		ClientAccept:       clientAccept,
+		ExtraSchema:        extraSchema,
+		IsDefault:          input.IsDefault,
+		Status:             firstNonEmpty(input.Status, models.UploadProviderStatusReady),
+		Meta:               input.Meta,
 	}
 	if err := s.repo.EnsureUploadRule(ctx, item); err != nil {
 		return nil, err
@@ -416,21 +465,28 @@ func (s *service) CreateRule(ctx context.Context, tenantID string, uploadKeyID u
 }
 
 func (s *service) UpdateRule(ctx context.Context, tenantID string, id uuid.UUID, input UploadRuleSaveInput) (*models.UploadKeyRule, error) {
+	extraSchema, err := NormalizeUploadRuleExtraSchema(input.ExtraSchema)
+	if err != nil {
+		return nil, err
+	}
 	return s.repo.UpdateUploadRuleByID(ctx, tenantID, id, UploadRuleUpdate{
-		RuleKey:          input.RuleKey,
-		Name:             input.Name,
-		SubPath:          input.SubPath,
-		FilenameStrategy: input.FilenameStrategy,
-		MaxSizeBytes:     input.MaxSizeBytes,
-		AllowedMimeTypes: input.AllowedMimeTypes,
-		ProcessPipeline:  input.ProcessPipeline,
-		IsDefault:        input.IsDefault,
-		Status:           input.Status,
-		Meta:             input.Meta,
+		RuleKey:            input.RuleKey,
+		Name:               input.Name,
+		SubPath:            input.SubPath,
+		FilenameStrategy:   input.FilenameStrategy,
+		MaxSizeBytes:       input.MaxSizeBytes,
+		AllowedMimeTypes:   input.AllowedMimeTypes,
+		ProcessPipeline:    input.ProcessPipeline,
+		ModeOverride:       input.ModeOverride,
+		VisibilityOverride: input.VisibilityOverride,
+		ClientAccept:       input.ClientAccept,
+		ExtraSchema:        extraSchema,
+		IsDefault:          input.IsDefault,
+		Status:             input.Status,
+		Meta:               input.Meta,
 	})
 }
 
 func (s *service) DeleteRule(ctx context.Context, tenantID string, id uuid.UUID) error {
 	return s.repo.DeleteUploadRule(ctx, tenantID, id)
 }
-

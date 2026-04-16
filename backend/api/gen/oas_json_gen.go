@@ -7188,6 +7188,82 @@ func (s *CreateApiEndpointCategoryUnauthorized) UnmarshalJSON(data []byte) error
 	return s.Decode(d)
 }
 
+// Encode encodes CreateDictItemBadRequest as json.
+func (s *CreateDictItemBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes CreateDictItemBadRequest from json.
+func (s *CreateDictItemBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode CreateDictItemBadRequest to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = CreateDictItemBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *CreateDictItemBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *CreateDictItemBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes CreateDictItemNotFound as json.
+func (s *CreateDictItemNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes CreateDictItemNotFound from json.
+func (s *CreateDictItemNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode CreateDictItemNotFound to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = CreateDictItemNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *CreateDictItemNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *CreateDictItemNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes CreateLogPolicyBadRequest as json.
 func (s *CreateLogPolicyBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*Error)(s)
@@ -7945,6 +8021,120 @@ func (s *DataScopeOption) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes DeleteDictItemBadRequest as json.
+func (s *DeleteDictItemBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes DeleteDictItemBadRequest from json.
+func (s *DeleteDictItemBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DeleteDictItemBadRequest to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = DeleteDictItemBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *DeleteDictItemBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DeleteDictItemBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes DeleteDictItemNotFound as json.
+func (s *DeleteDictItemNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes DeleteDictItemNotFound from json.
+func (s *DeleteDictItemNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DeleteDictItemNotFound to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = DeleteDictItemNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *DeleteDictItemNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DeleteDictItemNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes DeleteDictItemOK as json.
+func (s *DeleteDictItemOK) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes DeleteDictItemOK from json.
+func (s *DeleteDictItemOK) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DeleteDictItemOK to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = DeleteDictItemOK(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *DeleteDictItemOK) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DeleteDictItemOK) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes DeleteDictTypeBadRequest as json.
 func (s *DeleteDictTypeBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*Error)(s)
@@ -8571,6 +8761,12 @@ func (s *DictItemSaveRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.Value)
 	}
 	{
+		if s.Description.Set {
+			e.FieldStart("description")
+			s.Description.Encode(e)
+		}
+	}
+	{
 		if s.Extra != nil {
 			e.FieldStart("extra")
 			s.Extra.Encode(e)
@@ -8596,13 +8792,14 @@ func (s *DictItemSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDictItemSaveRequest = [6]string{
+var jsonFieldsNameOfDictItemSaveRequest = [7]string{
 	0: "label",
 	1: "value",
-	2: "extra",
-	3: "is_default",
-	4: "status",
-	5: "sort_order",
+	2: "description",
+	3: "extra",
+	4: "is_default",
+	5: "status",
+	6: "sort_order",
 }
 
 // Decode decodes DictItemSaveRequest from json.
@@ -8637,6 +8834,16 @@ func (s *DictItemSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"value\"")
+			}
+		case "description":
+			if err := func() error {
+				s.Description.Reset()
+				if err := s.Description.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "extra":
 			if err := func() error {
@@ -8842,10 +9049,20 @@ func (s *DictItemSummary) encodeFields(e *jx.Encoder) {
 		e.Str(s.Value)
 	}
 	{
+		if s.Description.Set {
+			e.FieldStart("description")
+			s.Description.Encode(e)
+		}
+	}
+	{
 		if s.Extra != nil {
 			e.FieldStart("extra")
 			s.Extra.Encode(e)
 		}
+	}
+	{
+		e.FieldStart("is_builtin")
+		e.Bool(s.IsBuiltin)
 	}
 	{
 		if s.IsDefault.Set {
@@ -8865,14 +9082,16 @@ func (s *DictItemSummary) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDictItemSummary = [7]string{
+var jsonFieldsNameOfDictItemSummary = [9]string{
 	0: "id",
 	1: "label",
 	2: "value",
-	3: "extra",
-	4: "is_default",
-	5: "status",
-	6: "sort_order",
+	3: "description",
+	4: "extra",
+	5: "is_builtin",
+	6: "is_default",
+	7: "status",
+	8: "sort_order",
 }
 
 // Decode decodes DictItemSummary from json.
@@ -8880,7 +9099,7 @@ func (s *DictItemSummary) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode DictItemSummary to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -8920,6 +9139,16 @@ func (s *DictItemSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
+		case "description":
+			if err := func() error {
+				s.Description.Reset()
+				if err := s.Description.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"description\"")
+			}
 		case "extra":
 			if err := func() error {
 				s.Extra = nil
@@ -8932,6 +9161,18 @@ func (s *DictItemSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"extra\"")
 			}
+		case "is_builtin":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.IsBuiltin = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_builtin\"")
+			}
 		case "is_default":
 			if err := func() error {
 				s.IsDefault.Reset()
@@ -8943,7 +9184,7 @@ func (s *DictItemSummary) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"is_default\"")
 			}
 		case "status":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -8973,8 +9214,9 @@ func (s *DictItemSummary) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00100111,
+	for i, mask := range [2]uint8{
+		0b10100111,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -19008,6 +19250,82 @@ func (s *ListUsersUnauthorized) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ListVisibleMediaUploadKeysInternalServerError as json.
+func (s *ListVisibleMediaUploadKeysInternalServerError) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ListVisibleMediaUploadKeysInternalServerError from json.
+func (s *ListVisibleMediaUploadKeysInternalServerError) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ListVisibleMediaUploadKeysInternalServerError to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ListVisibleMediaUploadKeysInternalServerError(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ListVisibleMediaUploadKeysInternalServerError) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ListVisibleMediaUploadKeysInternalServerError) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ListVisibleMediaUploadKeysUnauthorized as json.
+func (s *ListVisibleMediaUploadKeysUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ListVisibleMediaUploadKeysUnauthorized from json.
+func (s *ListVisibleMediaUploadKeysUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ListVisibleMediaUploadKeysUnauthorized to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ListVisibleMediaUploadKeysUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ListVisibleMediaUploadKeysUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ListVisibleMediaUploadKeysUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *LogPolicyCreateRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -23284,12 +23602,18 @@ func (s *MediaPrepareUploadResponse) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Visibility.Set {
+			e.FieldStart("visibility")
+			s.Visibility.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("fallbackUsed")
 		e.Bool(s.FallbackUsed)
 	}
 }
 
-var jsonFieldsNameOfMediaPrepareUploadResponse = [12]string{
+var jsonFieldsNameOfMediaPrepareUploadResponse = [13]string{
 	0:  "mode",
 	1:  "method",
 	2:  "url",
@@ -23301,7 +23625,8 @@ var jsonFieldsNameOfMediaPrepareUploadResponse = [12]string{
 	8:  "contentType",
 	9:  "uploadKey",
 	10: "ruleKey",
-	11: "fallbackUsed",
+	11: "visibility",
+	12: "fallbackUsed",
 }
 
 // Decode decodes MediaPrepareUploadResponse from json.
@@ -23431,8 +23756,18 @@ func (s *MediaPrepareUploadResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"ruleKey\"")
 			}
+		case "visibility":
+			if err := func() error {
+				s.Visibility.Reset()
+				if err := s.Visibility.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"visibility\"")
+			}
 		case "fallbackUsed":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.FallbackUsed = bool(v)
@@ -23454,7 +23789,7 @@ func (s *MediaPrepareUploadResponse) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11000001,
-		0b00001011,
+		0b00010011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -23648,6 +23983,46 @@ func (s MediaPrepareUploadResponseMode) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *MediaPrepareUploadResponseMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MediaPrepareUploadResponseVisibility as json.
+func (s MediaPrepareUploadResponseVisibility) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MediaPrepareUploadResponseVisibility from json.
+func (s *MediaPrepareUploadResponseVisibility) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaPrepareUploadResponseVisibility to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MediaPrepareUploadResponseVisibility(v) {
+	case MediaPrepareUploadResponseVisibilityPublic:
+		*s = MediaPrepareUploadResponseVisibilityPublic
+	case MediaPrepareUploadResponseVisibilityPrivate:
+		*s = MediaPrepareUploadResponseVisibilityPrivate
+	default:
+		*s = MediaPrepareUploadResponseVisibility(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MediaPrepareUploadResponseVisibility) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaPrepareUploadResponseVisibility) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -23846,6 +24221,796 @@ func (s *MediaUploadResponse) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *MediaUploadResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *MediaVisibleUploadKey) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *MediaVisibleUploadKey) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		e.FieldStart("defaultRuleKey")
+		e.Str(s.DefaultRuleKey)
+	}
+	{
+		e.FieldStart("uploadMode")
+		s.UploadMode.Encode(e)
+	}
+	{
+		e.FieldStart("visibility")
+		s.Visibility.Encode(e)
+	}
+	{
+		e.FieldStart("clientAccept")
+		e.ArrStart()
+		for _, elem := range s.ClientAccept {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("maxSizeBytes")
+		e.Int64(s.MaxSizeBytes)
+	}
+	{
+		e.FieldStart("directSizeThresholdBytes")
+		e.Int64(s.DirectSizeThresholdBytes)
+	}
+	{
+		e.FieldStart("fallbackKey")
+		e.Str(s.FallbackKey)
+	}
+	{
+		e.FieldStart("rules")
+		e.ArrStart()
+		for _, elem := range s.Rules {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfMediaVisibleUploadKey = [10]string{
+	0: "key",
+	1: "name",
+	2: "defaultRuleKey",
+	3: "uploadMode",
+	4: "visibility",
+	5: "clientAccept",
+	6: "maxSizeBytes",
+	7: "directSizeThresholdBytes",
+	8: "fallbackKey",
+	9: "rules",
+}
+
+// Decode decodes MediaVisibleUploadKey from json.
+func (s *MediaVisibleUploadKey) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadKey to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "defaultRuleKey":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.DefaultRuleKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"defaultRuleKey\"")
+			}
+		case "uploadMode":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.UploadMode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"uploadMode\"")
+			}
+		case "visibility":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Visibility.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"visibility\"")
+			}
+		case "clientAccept":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientAccept\"")
+			}
+		case "maxSizeBytes":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Int64()
+				s.MaxSizeBytes = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"maxSizeBytes\"")
+			}
+		case "directSizeThresholdBytes":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Int64()
+				s.DirectSizeThresholdBytes = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"directSizeThresholdBytes\"")
+			}
+		case "fallbackKey":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.FallbackKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallbackKey\"")
+			}
+		case "rules":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				s.Rules = make([]MediaVisibleUploadRule, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem MediaVisibleUploadRule
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Rules = append(s.Rules, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rules\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode MediaVisibleUploadKey")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b11111111,
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfMediaVisibleUploadKey) {
+					name = jsonFieldsNameOfMediaVisibleUploadKey[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *MediaVisibleUploadKey) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadKey) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *MediaVisibleUploadKeyListResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *MediaVisibleUploadKeyListResponse) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("records")
+		e.ArrStart()
+		for _, elem := range s.Records {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("total")
+		e.Int(s.Total)
+	}
+}
+
+var jsonFieldsNameOfMediaVisibleUploadKeyListResponse = [2]string{
+	0: "records",
+	1: "total",
+}
+
+// Decode decodes MediaVisibleUploadKeyListResponse from json.
+func (s *MediaVisibleUploadKeyListResponse) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadKeyListResponse to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "records":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Records = make([]MediaVisibleUploadKey, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem MediaVisibleUploadKey
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Records = append(s.Records, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"records\"")
+			}
+		case "total":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int()
+				s.Total = int(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"total\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode MediaVisibleUploadKeyListResponse")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfMediaVisibleUploadKeyListResponse) {
+					name = jsonFieldsNameOfMediaVisibleUploadKeyListResponse[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *MediaVisibleUploadKeyListResponse) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadKeyListResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MediaVisibleUploadKeyUploadMode as json.
+func (s MediaVisibleUploadKeyUploadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MediaVisibleUploadKeyUploadMode from json.
+func (s *MediaVisibleUploadKeyUploadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadKeyUploadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MediaVisibleUploadKeyUploadMode(v) {
+	case MediaVisibleUploadKeyUploadModeAuto:
+		*s = MediaVisibleUploadKeyUploadModeAuto
+	case MediaVisibleUploadKeyUploadModeDirect:
+		*s = MediaVisibleUploadKeyUploadModeDirect
+	case MediaVisibleUploadKeyUploadModeRelay:
+		*s = MediaVisibleUploadKeyUploadModeRelay
+	default:
+		*s = MediaVisibleUploadKeyUploadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MediaVisibleUploadKeyUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadKeyUploadMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MediaVisibleUploadKeyVisibility as json.
+func (s MediaVisibleUploadKeyVisibility) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MediaVisibleUploadKeyVisibility from json.
+func (s *MediaVisibleUploadKeyVisibility) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadKeyVisibility to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MediaVisibleUploadKeyVisibility(v) {
+	case MediaVisibleUploadKeyVisibilityPublic:
+		*s = MediaVisibleUploadKeyVisibilityPublic
+	case MediaVisibleUploadKeyVisibilityPrivate:
+		*s = MediaVisibleUploadKeyVisibilityPrivate
+	default:
+		*s = MediaVisibleUploadKeyVisibility(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MediaVisibleUploadKeyVisibility) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadKeyVisibility) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *MediaVisibleUploadRule) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *MediaVisibleUploadRule) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("ruleKey")
+		e.Str(s.RuleKey)
+	}
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		e.FieldStart("uploadMode")
+		s.UploadMode.Encode(e)
+	}
+	{
+		e.FieldStart("visibility")
+		s.Visibility.Encode(e)
+	}
+	{
+		e.FieldStart("clientAccept")
+		e.ArrStart()
+		for _, elem := range s.ClientAccept {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("maxSizeBytes")
+		e.Int64(s.MaxSizeBytes)
+	}
+	{
+		e.FieldStart("allowedMimeTypes")
+		e.ArrStart()
+		for _, elem := range s.AllowedMimeTypes {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("isDefault")
+		e.Bool(s.IsDefault)
+	}
+}
+
+var jsonFieldsNameOfMediaVisibleUploadRule = [8]string{
+	0: "ruleKey",
+	1: "name",
+	2: "uploadMode",
+	3: "visibility",
+	4: "clientAccept",
+	5: "maxSizeBytes",
+	6: "allowedMimeTypes",
+	7: "isDefault",
+}
+
+// Decode decodes MediaVisibleUploadRule from json.
+func (s *MediaVisibleUploadRule) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadRule to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "ruleKey":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.RuleKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ruleKey\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "uploadMode":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.UploadMode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"uploadMode\"")
+			}
+		case "visibility":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Visibility.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"visibility\"")
+			}
+		case "clientAccept":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientAccept\"")
+			}
+		case "maxSizeBytes":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int64()
+				s.MaxSizeBytes = int64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"maxSizeBytes\"")
+			}
+		case "allowedMimeTypes":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				s.AllowedMimeTypes = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.AllowedMimeTypes = append(s.AllowedMimeTypes, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allowedMimeTypes\"")
+			}
+		case "isDefault":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Bool()
+				s.IsDefault = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"isDefault\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode MediaVisibleUploadRule")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b11111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfMediaVisibleUploadRule) {
+					name = jsonFieldsNameOfMediaVisibleUploadRule[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *MediaVisibleUploadRule) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadRule) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MediaVisibleUploadRuleUploadMode as json.
+func (s MediaVisibleUploadRuleUploadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MediaVisibleUploadRuleUploadMode from json.
+func (s *MediaVisibleUploadRuleUploadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadRuleUploadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MediaVisibleUploadRuleUploadMode(v) {
+	case MediaVisibleUploadRuleUploadModeAuto:
+		*s = MediaVisibleUploadRuleUploadModeAuto
+	case MediaVisibleUploadRuleUploadModeDirect:
+		*s = MediaVisibleUploadRuleUploadModeDirect
+	case MediaVisibleUploadRuleUploadModeRelay:
+		*s = MediaVisibleUploadRuleUploadModeRelay
+	default:
+		*s = MediaVisibleUploadRuleUploadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MediaVisibleUploadRuleUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadRuleUploadMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MediaVisibleUploadRuleVisibility as json.
+func (s MediaVisibleUploadRuleVisibility) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MediaVisibleUploadRuleVisibility from json.
+func (s *MediaVisibleUploadRuleVisibility) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MediaVisibleUploadRuleVisibility to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MediaVisibleUploadRuleVisibility(v) {
+	case MediaVisibleUploadRuleVisibilityPublic:
+		*s = MediaVisibleUploadRuleVisibilityPublic
+	case MediaVisibleUploadRuleVisibilityPrivate:
+		*s = MediaVisibleUploadRuleVisibilityPrivate
+	default:
+		*s = MediaVisibleUploadRuleVisibility(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MediaVisibleUploadRuleVisibility) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MediaVisibleUploadRuleVisibility) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -31224,6 +32389,39 @@ func (s *OptMediaPrepareUploadResponseHeaders) UnmarshalJSON(data []byte) error 
 	return s.Decode(d)
 }
 
+// Encode encodes MediaPrepareUploadResponseVisibility as json.
+func (o OptMediaPrepareUploadResponseVisibility) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes MediaPrepareUploadResponseVisibility from json.
+func (o *OptMediaPrepareUploadResponseVisibility) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptMediaPrepareUploadResponseVisibility to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptMediaPrepareUploadResponseVisibility) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptMediaPrepareUploadResponseVisibility) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes MessageInboxMeta as json.
 func (o OptMessageInboxMeta) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -33130,6 +34328,40 @@ func (s *OptUUID) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UploadKeyDetailExtraSchema as json.
+func (o OptUploadKeyDetailExtraSchema) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UploadKeyDetailExtraSchema from json.
+func (o *OptUploadKeyDetailExtraSchema) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyDetailExtraSchema to nil")
+	}
+	o.Set = true
+	o.Value = make(UploadKeyDetailExtraSchema)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyDetailExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyDetailExtraSchema) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UploadKeyDetailMeta as json.
 func (o OptUploadKeyDetailMeta) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -33160,6 +34392,73 @@ func (s OptUploadKeyDetailMeta) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptUploadKeyDetailMeta) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyDetailUploadMode as json.
+func (o OptUploadKeyDetailUploadMode) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeyDetailUploadMode from json.
+func (o *OptUploadKeyDetailUploadMode) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyDetailUploadMode to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyDetailUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyDetailUploadMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSaveRequestExtraSchema as json.
+func (o OptUploadKeyRuleSaveRequestExtraSchema) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UploadKeyRuleSaveRequestExtraSchema from json.
+func (o *OptUploadKeyRuleSaveRequestExtraSchema) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSaveRequestExtraSchema to nil")
+	}
+	o.Set = true
+	o.Value = make(UploadKeyRuleSaveRequestExtraSchema)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSaveRequestExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSaveRequestExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33231,6 +34530,39 @@ func (s *OptUploadKeyRuleSaveRequestMeta) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UploadKeyRuleSaveRequestModeOverride as json.
+func (o OptUploadKeyRuleSaveRequestModeOverride) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeyRuleSaveRequestModeOverride from json.
+func (o *OptUploadKeyRuleSaveRequestModeOverride) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSaveRequestModeOverride to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSaveRequestModeOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSaveRequestModeOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UploadKeyRuleSaveRequestStatus as json.
 func (o OptUploadKeyRuleSaveRequestStatus) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -33260,6 +34592,73 @@ func (s OptUploadKeyRuleSaveRequestStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptUploadKeyRuleSaveRequestStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSaveRequestVisibilityOverride as json.
+func (o OptUploadKeyRuleSaveRequestVisibilityOverride) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeyRuleSaveRequestVisibilityOverride from json.
+func (o *OptUploadKeyRuleSaveRequestVisibilityOverride) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSaveRequestVisibilityOverride to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSaveRequestVisibilityOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSaveRequestVisibilityOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSummaryExtraSchema as json.
+func (o OptUploadKeyRuleSummaryExtraSchema) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UploadKeyRuleSummaryExtraSchema from json.
+func (o *OptUploadKeyRuleSummaryExtraSchema) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSummaryExtraSchema to nil")
+	}
+	o.Set = true
+	o.Value = make(UploadKeyRuleSummaryExtraSchema)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSummaryExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSummaryExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33294,6 +34693,106 @@ func (s OptUploadKeyRuleSummaryMeta) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptUploadKeyRuleSummaryMeta) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSummaryModeOverride as json.
+func (o OptUploadKeyRuleSummaryModeOverride) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeyRuleSummaryModeOverride from json.
+func (o *OptUploadKeyRuleSummaryModeOverride) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSummaryModeOverride to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSummaryModeOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSummaryModeOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSummaryVisibilityOverride as json.
+func (o OptUploadKeyRuleSummaryVisibilityOverride) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeyRuleSummaryVisibilityOverride from json.
+func (o *OptUploadKeyRuleSummaryVisibilityOverride) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeyRuleSummaryVisibilityOverride to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeyRuleSummaryVisibilityOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeyRuleSummaryVisibilityOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeySaveRequestExtraSchema as json.
+func (o OptUploadKeySaveRequestExtraSchema) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UploadKeySaveRequestExtraSchema from json.
+func (o *OptUploadKeySaveRequestExtraSchema) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeySaveRequestExtraSchema to nil")
+	}
+	o.Set = true
+	o.Value = make(UploadKeySaveRequestExtraSchema)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeySaveRequestExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeySaveRequestExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33365,6 +34864,39 @@ func (s *OptUploadKeySaveRequestStatus) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UploadKeySaveRequestUploadMode as json.
+func (o OptUploadKeySaveRequestUploadMode) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeySaveRequestUploadMode from json.
+func (o *OptUploadKeySaveRequestUploadMode) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeySaveRequestUploadMode to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeySaveRequestUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeySaveRequestUploadMode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UploadKeySaveRequestVisibility as json.
 func (o OptUploadKeySaveRequestVisibility) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -33394,6 +34926,40 @@ func (s OptUploadKeySaveRequestVisibility) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptUploadKeySaveRequestVisibility) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeySummaryExtraSchema as json.
+func (o OptUploadKeySummaryExtraSchema) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UploadKeySummaryExtraSchema from json.
+func (o *OptUploadKeySummaryExtraSchema) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeySummaryExtraSchema to nil")
+	}
+	o.Set = true
+	o.Value = make(UploadKeySummaryExtraSchema)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeySummaryExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeySummaryExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33428,6 +34994,39 @@ func (s OptUploadKeySummaryMeta) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptUploadKeySummaryMeta) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeySummaryUploadMode as json.
+func (o OptUploadKeySummaryUploadMode) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes UploadKeySummaryUploadMode from json.
+func (o *OptUploadKeySummaryUploadMode) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUploadKeySummaryUploadMode to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUploadKeySummaryUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUploadKeySummaryUploadMode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -49895,6 +51494,8 @@ func (s *SiteConfigResolvedItemValueType) Decode(d *jx.Decoder) error {
 		*s = SiteConfigResolvedItemValueTypeImage
 	case SiteConfigResolvedItemValueTypeJSON:
 		*s = SiteConfigResolvedItemValueTypeJSON
+	case SiteConfigResolvedItemValueTypeSvg:
+		*s = SiteConfigResolvedItemValueTypeSvg
 	default:
 		*s = SiteConfigResolvedItemValueType(v)
 	}
@@ -50254,6 +51855,8 @@ func (s *SiteConfigSaveRequestValueType) Decode(d *jx.Decoder) error {
 		*s = SiteConfigSaveRequestValueTypeImage
 	case SiteConfigSaveRequestValueTypeJSON:
 		*s = SiteConfigSaveRequestValueTypeJSON
+	case SiteConfigSaveRequestValueTypeSvg:
+		*s = SiteConfigSaveRequestValueTypeSvg
 	default:
 		*s = SiteConfigSaveRequestValueType(v)
 	}
@@ -51371,6 +52974,8 @@ func (s *SiteConfigSummaryValueType) Decode(d *jx.Decoder) error {
 		*s = SiteConfigSummaryValueTypeImage
 	case SiteConfigSummaryValueTypeJSON:
 		*s = SiteConfigSummaryValueTypeJSON
+	case SiteConfigSummaryValueTypeSvg:
+		*s = SiteConfigSummaryValueTypeSvg
 	default:
 		*s = SiteConfigSummaryValueType(v)
 	}
@@ -62962,6 +64567,82 @@ func (s *UpdateApiEndpointUnauthorized) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UpdateDictItemBadRequest as json.
+func (s *UpdateDictItemBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes UpdateDictItemBadRequest from json.
+func (s *UpdateDictItemBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UpdateDictItemBadRequest to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = UpdateDictItemBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *UpdateDictItemBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UpdateDictItemBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UpdateDictItemNotFound as json.
+func (s *UpdateDictItemNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes UpdateDictItemNotFound from json.
+func (s *UpdateDictItemNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UpdateDictItemNotFound to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = UpdateDictItemNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *UpdateDictItemNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UpdateDictItemNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UpdateDictTypeBadRequest as json.
 func (s *UpdateDictTypeBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*Error)(s)
@@ -63744,6 +65425,52 @@ func (s *UploadKeyDetail) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.UploadMode.Set {
+			e.FieldStart("upload_mode")
+			s.UploadMode.Encode(e)
+		}
+	}
+	{
+		if s.IsFrontendVisible.Set {
+			e.FieldStart("is_frontend_visible")
+			s.IsFrontendVisible.Encode(e)
+		}
+	}
+	{
+		if s.PermissionKey.Set {
+			e.FieldStart("permission_key")
+			s.PermissionKey.Encode(e)
+		}
+	}
+	{
+		if s.FallbackKey.Set {
+			e.FieldStart("fallback_key")
+			s.FallbackKey.Encode(e)
+		}
+	}
+	{
+		if s.ClientAccept != nil {
+			e.FieldStart("client_accept")
+			e.ArrStart()
+			for _, elem := range s.ClientAccept {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.DirectSizeThresholdBytes.Set {
+			e.FieldStart("direct_size_threshold_bytes")
+			s.DirectSizeThresholdBytes.Encode(e)
+		}
+	}
+	{
+		if s.ExtraSchema.Set {
+			e.FieldStart("extra_schema")
+			s.ExtraSchema.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("visibility")
 		s.Visibility.Encode(e)
 	}
@@ -63779,7 +65506,7 @@ func (s *UploadKeyDetail) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUploadKeyDetail = [15]string{
+var jsonFieldsNameOfUploadKeyDetail = [22]string{
 	0:  "id",
 	1:  "bucket_id",
 	2:  "bucket_key",
@@ -63789,12 +65516,19 @@ var jsonFieldsNameOfUploadKeyDetail = [15]string{
 	6:  "default_rule_key",
 	7:  "max_size_bytes",
 	8:  "allowed_mime_types",
-	9:  "visibility",
-	10: "status",
-	11: "meta",
-	12: "created_at",
-	13: "updated_at",
-	14: "rules",
+	9:  "upload_mode",
+	10: "is_frontend_visible",
+	11: "permission_key",
+	12: "fallback_key",
+	13: "client_accept",
+	14: "direct_size_threshold_bytes",
+	15: "extra_schema",
+	16: "visibility",
+	17: "status",
+	18: "meta",
+	19: "created_at",
+	20: "updated_at",
+	21: "rules",
 }
 
 // Decode decodes UploadKeyDetail from json.
@@ -63802,7 +65536,7 @@ func (s *UploadKeyDetail) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UploadKeyDetail to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -63913,8 +65647,87 @@ func (s *UploadKeyDetail) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"allowed_mime_types\"")
 			}
+		case "upload_mode":
+			if err := func() error {
+				s.UploadMode.Reset()
+				if err := s.UploadMode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"upload_mode\"")
+			}
+		case "is_frontend_visible":
+			if err := func() error {
+				s.IsFrontendVisible.Reset()
+				if err := s.IsFrontendVisible.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_frontend_visible\"")
+			}
+		case "permission_key":
+			if err := func() error {
+				s.PermissionKey.Reset()
+				if err := s.PermissionKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permission_key\"")
+			}
+		case "fallback_key":
+			if err := func() error {
+				s.FallbackKey.Reset()
+				if err := s.FallbackKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallback_key\"")
+			}
+		case "client_accept":
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_accept\"")
+			}
+		case "direct_size_threshold_bytes":
+			if err := func() error {
+				s.DirectSizeThresholdBytes.Reset()
+				if err := s.DirectSizeThresholdBytes.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"direct_size_threshold_bytes\"")
+			}
+		case "extra_schema":
+			if err := func() error {
+				s.ExtraSchema.Reset()
+				if err := s.ExtraSchema.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"extra_schema\"")
+			}
 		case "visibility":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.Visibility.Decode(d); err != nil {
 					return err
@@ -63924,7 +65737,7 @@ func (s *UploadKeyDetail) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"visibility\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -63964,7 +65777,7 @@ func (s *UploadKeyDetail) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"updated_at\"")
 			}
 		case "rules":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				s.Rules = make([]UploadKeyRuleSummary, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -63990,9 +65803,10 @@ func (s *UploadKeyDetail) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b00011011,
-		0b01000110,
+		0b00000000,
+		0b00100011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -64034,6 +65848,64 @@ func (s *UploadKeyDetail) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyDetail) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s UploadKeyDetailExtraSchema) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s UploadKeyDetailExtraSchema) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes UploadKeyDetailExtraSchema from json.
+func (s *UploadKeyDetailExtraSchema) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyDetailExtraSchema to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UploadKeyDetailExtraSchema")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyDetailExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyDetailExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -64132,6 +66004,48 @@ func (s UploadKeyDetailStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyDetailStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyDetailUploadMode as json.
+func (s UploadKeyDetailUploadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeyDetailUploadMode from json.
+func (s *UploadKeyDetailUploadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyDetailUploadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeyDetailUploadMode(v) {
+	case UploadKeyDetailUploadModeAuto:
+		*s = UploadKeyDetailUploadModeAuto
+	case UploadKeyDetailUploadModeDirect:
+		*s = UploadKeyDetailUploadModeDirect
+	case UploadKeyDetailUploadModeRelay:
+		*s = UploadKeyDetailUploadModeRelay
+	default:
+		*s = UploadKeyDetailUploadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyDetailUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyDetailUploadMode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -64478,6 +66392,34 @@ func (s *UploadKeyRuleSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ModeOverride.Set {
+			e.FieldStart("mode_override")
+			s.ModeOverride.Encode(e)
+		}
+	}
+	{
+		if s.VisibilityOverride.Set {
+			e.FieldStart("visibility_override")
+			s.VisibilityOverride.Encode(e)
+		}
+	}
+	{
+		if s.ClientAccept != nil {
+			e.FieldStart("client_accept")
+			e.ArrStart()
+			for _, elem := range s.ClientAccept {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.ExtraSchema.Set {
+			e.FieldStart("extra_schema")
+			s.ExtraSchema.Encode(e)
+		}
+	}
+	{
 		if s.IsDefault.Set {
 			e.FieldStart("is_default")
 			s.IsDefault.Encode(e)
@@ -64497,17 +66439,21 @@ func (s *UploadKeyRuleSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUploadKeyRuleSaveRequest = [10]string{
-	0: "rule_key",
-	1: "name",
-	2: "sub_path",
-	3: "filename_strategy",
-	4: "max_size_bytes",
-	5: "allowed_mime_types",
-	6: "process_pipeline",
-	7: "is_default",
-	8: "status",
-	9: "meta",
+var jsonFieldsNameOfUploadKeyRuleSaveRequest = [14]string{
+	0:  "rule_key",
+	1:  "name",
+	2:  "sub_path",
+	3:  "filename_strategy",
+	4:  "max_size_bytes",
+	5:  "allowed_mime_types",
+	6:  "process_pipeline",
+	7:  "mode_override",
+	8:  "visibility_override",
+	9:  "client_accept",
+	10: "extra_schema",
+	11: "is_default",
+	12: "status",
+	13: "meta",
 }
 
 // Decode decodes UploadKeyRuleSaveRequest from json.
@@ -64611,6 +66557,55 @@ func (s *UploadKeyRuleSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"process_pipeline\"")
 			}
+		case "mode_override":
+			if err := func() error {
+				s.ModeOverride.Reset()
+				if err := s.ModeOverride.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mode_override\"")
+			}
+		case "visibility_override":
+			if err := func() error {
+				s.VisibilityOverride.Reset()
+				if err := s.VisibilityOverride.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"visibility_override\"")
+			}
+		case "client_accept":
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_accept\"")
+			}
+		case "extra_schema":
+			if err := func() error {
+				s.ExtraSchema.Reset()
+				if err := s.ExtraSchema.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"extra_schema\"")
+			}
 		case "is_default":
 			if err := func() error {
 				s.IsDefault.Reset()
@@ -64694,6 +66689,64 @@ func (s *UploadKeyRuleSaveRequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyRuleSaveRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s UploadKeyRuleSaveRequestExtraSchema) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s UploadKeyRuleSaveRequestExtraSchema) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes UploadKeyRuleSaveRequestExtraSchema from json.
+func (s *UploadKeyRuleSaveRequestExtraSchema) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSaveRequestExtraSchema to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UploadKeyRuleSaveRequestExtraSchema")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSaveRequestExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSaveRequestExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -64796,6 +66849,48 @@ func (s *UploadKeyRuleSaveRequestMeta) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UploadKeyRuleSaveRequestModeOverride as json.
+func (s UploadKeyRuleSaveRequestModeOverride) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeyRuleSaveRequestModeOverride from json.
+func (s *UploadKeyRuleSaveRequestModeOverride) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSaveRequestModeOverride to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeyRuleSaveRequestModeOverride(v) {
+	case UploadKeyRuleSaveRequestModeOverrideInherit:
+		*s = UploadKeyRuleSaveRequestModeOverrideInherit
+	case UploadKeyRuleSaveRequestModeOverrideDirect:
+		*s = UploadKeyRuleSaveRequestModeOverrideDirect
+	case UploadKeyRuleSaveRequestModeOverrideRelay:
+		*s = UploadKeyRuleSaveRequestModeOverrideRelay
+	default:
+		*s = UploadKeyRuleSaveRequestModeOverride(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSaveRequestModeOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSaveRequestModeOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UploadKeyRuleSaveRequestStatus as json.
 func (s UploadKeyRuleSaveRequestStatus) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -64832,6 +66927,48 @@ func (s UploadKeyRuleSaveRequestStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyRuleSaveRequestStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSaveRequestVisibilityOverride as json.
+func (s UploadKeyRuleSaveRequestVisibilityOverride) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeyRuleSaveRequestVisibilityOverride from json.
+func (s *UploadKeyRuleSaveRequestVisibilityOverride) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSaveRequestVisibilityOverride to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeyRuleSaveRequestVisibilityOverride(v) {
+	case UploadKeyRuleSaveRequestVisibilityOverrideInherit:
+		*s = UploadKeyRuleSaveRequestVisibilityOverrideInherit
+	case UploadKeyRuleSaveRequestVisibilityOverridePublic:
+		*s = UploadKeyRuleSaveRequestVisibilityOverridePublic
+	case UploadKeyRuleSaveRequestVisibilityOverridePrivate:
+		*s = UploadKeyRuleSaveRequestVisibilityOverridePrivate
+	default:
+		*s = UploadKeyRuleSaveRequestVisibilityOverride(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSaveRequestVisibilityOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSaveRequestVisibilityOverride) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -64898,6 +67035,34 @@ func (s *UploadKeyRuleSummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ModeOverride.Set {
+			e.FieldStart("mode_override")
+			s.ModeOverride.Encode(e)
+		}
+	}
+	{
+		if s.VisibilityOverride.Set {
+			e.FieldStart("visibility_override")
+			s.VisibilityOverride.Encode(e)
+		}
+	}
+	{
+		if s.ClientAccept != nil {
+			e.FieldStart("client_accept")
+			e.ArrStart()
+			for _, elem := range s.ClientAccept {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.ExtraSchema.Set {
+			e.FieldStart("extra_schema")
+			s.ExtraSchema.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("is_default")
 		e.Bool(s.IsDefault)
 	}
@@ -64925,7 +67090,7 @@ func (s *UploadKeyRuleSummary) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUploadKeyRuleSummary = [14]string{
+var jsonFieldsNameOfUploadKeyRuleSummary = [18]string{
 	0:  "id",
 	1:  "upload_key_id",
 	2:  "rule_key",
@@ -64935,11 +67100,15 @@ var jsonFieldsNameOfUploadKeyRuleSummary = [14]string{
 	6:  "max_size_bytes",
 	7:  "allowed_mime_types",
 	8:  "process_pipeline",
-	9:  "is_default",
-	10: "status",
-	11: "meta",
-	12: "created_at",
-	13: "updated_at",
+	9:  "mode_override",
+	10: "visibility_override",
+	11: "client_accept",
+	12: "extra_schema",
+	13: "is_default",
+	14: "status",
+	15: "meta",
+	16: "created_at",
+	17: "updated_at",
 }
 
 // Decode decodes UploadKeyRuleSummary from json.
@@ -64947,7 +67116,7 @@ func (s *UploadKeyRuleSummary) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UploadKeyRuleSummary to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -65067,8 +67236,57 @@ func (s *UploadKeyRuleSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"process_pipeline\"")
 			}
+		case "mode_override":
+			if err := func() error {
+				s.ModeOverride.Reset()
+				if err := s.ModeOverride.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mode_override\"")
+			}
+		case "visibility_override":
+			if err := func() error {
+				s.VisibilityOverride.Reset()
+				if err := s.VisibilityOverride.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"visibility_override\"")
+			}
+		case "client_accept":
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_accept\"")
+			}
+		case "extra_schema":
+			if err := func() error {
+				s.ExtraSchema.Reset()
+				if err := s.ExtraSchema.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"extra_schema\"")
+			}
 		case "is_default":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.IsDefault = bool(v)
@@ -65080,7 +67298,7 @@ func (s *UploadKeyRuleSummary) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"is_default\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -65128,9 +67346,10 @@ func (s *UploadKeyRuleSummary) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b00101111,
-		0b00000110,
+		0b01100000,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -65172,6 +67391,64 @@ func (s *UploadKeyRuleSummary) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyRuleSummary) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s UploadKeyRuleSummaryExtraSchema) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s UploadKeyRuleSummaryExtraSchema) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes UploadKeyRuleSummaryExtraSchema from json.
+func (s *UploadKeyRuleSummaryExtraSchema) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSummaryExtraSchema to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UploadKeyRuleSummaryExtraSchema")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSummaryExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSummaryExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -65274,6 +67551,48 @@ func (s *UploadKeyRuleSummaryMeta) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes UploadKeyRuleSummaryModeOverride as json.
+func (s UploadKeyRuleSummaryModeOverride) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeyRuleSummaryModeOverride from json.
+func (s *UploadKeyRuleSummaryModeOverride) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSummaryModeOverride to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeyRuleSummaryModeOverride(v) {
+	case UploadKeyRuleSummaryModeOverrideInherit:
+		*s = UploadKeyRuleSummaryModeOverrideInherit
+	case UploadKeyRuleSummaryModeOverrideDirect:
+		*s = UploadKeyRuleSummaryModeOverrideDirect
+	case UploadKeyRuleSummaryModeOverrideRelay:
+		*s = UploadKeyRuleSummaryModeOverrideRelay
+	default:
+		*s = UploadKeyRuleSummaryModeOverride(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSummaryModeOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSummaryModeOverride) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UploadKeyRuleSummaryStatus as json.
 func (s UploadKeyRuleSummaryStatus) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -65310,6 +67629,48 @@ func (s UploadKeyRuleSummaryStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeyRuleSummaryStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeyRuleSummaryVisibilityOverride as json.
+func (s UploadKeyRuleSummaryVisibilityOverride) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeyRuleSummaryVisibilityOverride from json.
+func (s *UploadKeyRuleSummaryVisibilityOverride) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeyRuleSummaryVisibilityOverride to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeyRuleSummaryVisibilityOverride(v) {
+	case UploadKeyRuleSummaryVisibilityOverrideInherit:
+		*s = UploadKeyRuleSummaryVisibilityOverrideInherit
+	case UploadKeyRuleSummaryVisibilityOverridePublic:
+		*s = UploadKeyRuleSummaryVisibilityOverridePublic
+	case UploadKeyRuleSummaryVisibilityOverridePrivate:
+		*s = UploadKeyRuleSummaryVisibilityOverridePrivate
+	default:
+		*s = UploadKeyRuleSummaryVisibilityOverride(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeyRuleSummaryVisibilityOverride) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeyRuleSummaryVisibilityOverride) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -65364,6 +67725,52 @@ func (s *UploadKeySaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.UploadMode.Set {
+			e.FieldStart("upload_mode")
+			s.UploadMode.Encode(e)
+		}
+	}
+	{
+		if s.IsFrontendVisible.Set {
+			e.FieldStart("is_frontend_visible")
+			s.IsFrontendVisible.Encode(e)
+		}
+	}
+	{
+		if s.PermissionKey.Set {
+			e.FieldStart("permission_key")
+			s.PermissionKey.Encode(e)
+		}
+	}
+	{
+		if s.FallbackKey.Set {
+			e.FieldStart("fallback_key")
+			s.FallbackKey.Encode(e)
+		}
+	}
+	{
+		if s.ClientAccept != nil {
+			e.FieldStart("client_accept")
+			e.ArrStart()
+			for _, elem := range s.ClientAccept {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.DirectSizeThresholdBytes.Set {
+			e.FieldStart("direct_size_threshold_bytes")
+			s.DirectSizeThresholdBytes.Encode(e)
+		}
+	}
+	{
+		if s.ExtraSchema.Set {
+			e.FieldStart("extra_schema")
+			s.ExtraSchema.Encode(e)
+		}
+	}
+	{
 		if s.Visibility.Set {
 			e.FieldStart("visibility")
 			s.Visibility.Encode(e)
@@ -65383,17 +67790,24 @@ func (s *UploadKeySaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUploadKeySaveRequest = [10]string{
-	0: "bucket_id",
-	1: "key",
-	2: "name",
-	3: "path_template",
-	4: "default_rule_key",
-	5: "max_size_bytes",
-	6: "allowed_mime_types",
-	7: "visibility",
-	8: "status",
-	9: "meta",
+var jsonFieldsNameOfUploadKeySaveRequest = [17]string{
+	0:  "bucket_id",
+	1:  "key",
+	2:  "name",
+	3:  "path_template",
+	4:  "default_rule_key",
+	5:  "max_size_bytes",
+	6:  "allowed_mime_types",
+	7:  "upload_mode",
+	8:  "is_frontend_visible",
+	9:  "permission_key",
+	10: "fallback_key",
+	11: "client_accept",
+	12: "direct_size_threshold_bytes",
+	13: "extra_schema",
+	14: "visibility",
+	15: "status",
+	16: "meta",
 }
 
 // Decode decodes UploadKeySaveRequest from json.
@@ -65401,7 +67815,7 @@ func (s *UploadKeySaveRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UploadKeySaveRequest to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -65490,6 +67904,85 @@ func (s *UploadKeySaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"allowed_mime_types\"")
 			}
+		case "upload_mode":
+			if err := func() error {
+				s.UploadMode.Reset()
+				if err := s.UploadMode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"upload_mode\"")
+			}
+		case "is_frontend_visible":
+			if err := func() error {
+				s.IsFrontendVisible.Reset()
+				if err := s.IsFrontendVisible.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_frontend_visible\"")
+			}
+		case "permission_key":
+			if err := func() error {
+				s.PermissionKey.Reset()
+				if err := s.PermissionKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permission_key\"")
+			}
+		case "fallback_key":
+			if err := func() error {
+				s.FallbackKey.Reset()
+				if err := s.FallbackKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallback_key\"")
+			}
+		case "client_accept":
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_accept\"")
+			}
+		case "direct_size_threshold_bytes":
+			if err := func() error {
+				s.DirectSizeThresholdBytes.Reset()
+				if err := s.DirectSizeThresholdBytes.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"direct_size_threshold_bytes\"")
+			}
+		case "extra_schema":
+			if err := func() error {
+				s.ExtraSchema.Reset()
+				if err := s.ExtraSchema.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"extra_schema\"")
+			}
 		case "visibility":
 			if err := func() error {
 				s.Visibility.Reset()
@@ -65529,8 +68022,9 @@ func (s *UploadKeySaveRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b00000111,
+		0b00000000,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -65573,6 +68067,64 @@ func (s *UploadKeySaveRequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeySaveRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s UploadKeySaveRequestExtraSchema) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s UploadKeySaveRequestExtraSchema) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes UploadKeySaveRequestExtraSchema from json.
+func (s *UploadKeySaveRequestExtraSchema) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeySaveRequestExtraSchema to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UploadKeySaveRequestExtraSchema")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeySaveRequestExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeySaveRequestExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -65671,6 +68223,48 @@ func (s UploadKeySaveRequestStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeySaveRequestStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeySaveRequestUploadMode as json.
+func (s UploadKeySaveRequestUploadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeySaveRequestUploadMode from json.
+func (s *UploadKeySaveRequestUploadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeySaveRequestUploadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeySaveRequestUploadMode(v) {
+	case UploadKeySaveRequestUploadModeAuto:
+		*s = UploadKeySaveRequestUploadModeAuto
+	case UploadKeySaveRequestUploadModeDirect:
+		*s = UploadKeySaveRequestUploadModeDirect
+	case UploadKeySaveRequestUploadModeRelay:
+		*s = UploadKeySaveRequestUploadModeRelay
+	default:
+		*s = UploadKeySaveRequestUploadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeySaveRequestUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeySaveRequestUploadMode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -65775,6 +68369,52 @@ func (s *UploadKeySummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.UploadMode.Set {
+			e.FieldStart("upload_mode")
+			s.UploadMode.Encode(e)
+		}
+	}
+	{
+		if s.IsFrontendVisible.Set {
+			e.FieldStart("is_frontend_visible")
+			s.IsFrontendVisible.Encode(e)
+		}
+	}
+	{
+		if s.PermissionKey.Set {
+			e.FieldStart("permission_key")
+			s.PermissionKey.Encode(e)
+		}
+	}
+	{
+		if s.FallbackKey.Set {
+			e.FieldStart("fallback_key")
+			s.FallbackKey.Encode(e)
+		}
+	}
+	{
+		if s.ClientAccept != nil {
+			e.FieldStart("client_accept")
+			e.ArrStart()
+			for _, elem := range s.ClientAccept {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.DirectSizeThresholdBytes.Set {
+			e.FieldStart("direct_size_threshold_bytes")
+			s.DirectSizeThresholdBytes.Encode(e)
+		}
+	}
+	{
+		if s.ExtraSchema.Set {
+			e.FieldStart("extra_schema")
+			s.ExtraSchema.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("visibility")
 		s.Visibility.Encode(e)
 	}
@@ -65802,7 +68442,7 @@ func (s *UploadKeySummary) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUploadKeySummary = [14]string{
+var jsonFieldsNameOfUploadKeySummary = [21]string{
 	0:  "id",
 	1:  "bucket_id",
 	2:  "bucket_key",
@@ -65812,11 +68452,18 @@ var jsonFieldsNameOfUploadKeySummary = [14]string{
 	6:  "default_rule_key",
 	7:  "max_size_bytes",
 	8:  "allowed_mime_types",
-	9:  "visibility",
-	10: "status",
-	11: "meta",
-	12: "created_at",
-	13: "updated_at",
+	9:  "upload_mode",
+	10: "is_frontend_visible",
+	11: "permission_key",
+	12: "fallback_key",
+	13: "client_accept",
+	14: "direct_size_threshold_bytes",
+	15: "extra_schema",
+	16: "visibility",
+	17: "status",
+	18: "meta",
+	19: "created_at",
+	20: "updated_at",
 }
 
 // Decode decodes UploadKeySummary from json.
@@ -65824,7 +68471,7 @@ func (s *UploadKeySummary) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UploadKeySummary to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -65935,8 +68582,87 @@ func (s *UploadKeySummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"allowed_mime_types\"")
 			}
+		case "upload_mode":
+			if err := func() error {
+				s.UploadMode.Reset()
+				if err := s.UploadMode.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"upload_mode\"")
+			}
+		case "is_frontend_visible":
+			if err := func() error {
+				s.IsFrontendVisible.Reset()
+				if err := s.IsFrontendVisible.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"is_frontend_visible\"")
+			}
+		case "permission_key":
+			if err := func() error {
+				s.PermissionKey.Reset()
+				if err := s.PermissionKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permission_key\"")
+			}
+		case "fallback_key":
+			if err := func() error {
+				s.FallbackKey.Reset()
+				if err := s.FallbackKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallback_key\"")
+			}
+		case "client_accept":
+			if err := func() error {
+				s.ClientAccept = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ClientAccept = append(s.ClientAccept, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"client_accept\"")
+			}
+		case "direct_size_threshold_bytes":
+			if err := func() error {
+				s.DirectSizeThresholdBytes.Reset()
+				if err := s.DirectSizeThresholdBytes.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"direct_size_threshold_bytes\"")
+			}
+		case "extra_schema":
+			if err := func() error {
+				s.ExtraSchema.Reset()
+				if err := s.ExtraSchema.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"extra_schema\"")
+			}
 		case "visibility":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.Visibility.Decode(d); err != nil {
 					return err
@@ -65946,7 +68672,7 @@ func (s *UploadKeySummary) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"visibility\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -65994,9 +68720,10 @@ func (s *UploadKeySummary) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b00011011,
-		0b00000110,
+		0b00000000,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -66038,6 +68765,64 @@ func (s *UploadKeySummary) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeySummary) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s UploadKeySummaryExtraSchema) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s UploadKeySummaryExtraSchema) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes UploadKeySummaryExtraSchema from json.
+func (s *UploadKeySummaryExtraSchema) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeySummaryExtraSchema to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UploadKeySummaryExtraSchema")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeySummaryExtraSchema) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeySummaryExtraSchema) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -66136,6 +68921,48 @@ func (s UploadKeySummaryStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UploadKeySummaryStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UploadKeySummaryUploadMode as json.
+func (s UploadKeySummaryUploadMode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes UploadKeySummaryUploadMode from json.
+func (s *UploadKeySummaryUploadMode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UploadKeySummaryUploadMode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch UploadKeySummaryUploadMode(v) {
+	case UploadKeySummaryUploadModeAuto:
+		*s = UploadKeySummaryUploadModeAuto
+	case UploadKeySummaryUploadModeDirect:
+		*s = UploadKeySummaryUploadModeDirect
+	case UploadKeySummaryUploadModeRelay:
+		*s = UploadKeySummaryUploadModeRelay
+	default:
+		*s = UploadKeySummaryUploadMode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UploadKeySummaryUploadMode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UploadKeySummaryUploadMode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

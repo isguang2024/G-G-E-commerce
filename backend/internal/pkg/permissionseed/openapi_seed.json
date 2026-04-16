@@ -692,11 +692,41 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "deleteDictItem",
+      "method": "delete",
+      "path": "/dictionaries/{id}/items",
+      "permission_key": "system.dictionary.manage",
+      "summary": "删除单个字典项",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listDictItems",
       "method": "get",
       "path": "/dictionaries/{id}/items",
       "permission_key": "system.dictionary.view",
       "summary": "获取字典项列表",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateDictItem",
+      "method": "patch",
+      "path": "/dictionaries/{id}/items",
+      "permission_key": "system.dictionary.manage",
+      "summary": "更新单个字典项",
+      "tags": "dictionary",
+      "api_category": "dictionary",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createDictItem",
+      "method": "post",
+      "path": "/dictionaries/{id}/items",
+      "permission_key": "system.dictionary.manage",
+      "summary": "创建单个字典项",
       "tags": "dictionary",
       "api_category": "dictionary",
       "access_mode": "permission"
@@ -957,6 +987,16 @@
       "path": "/media/upload",
       "permission_key": "system.media.manage",
       "summary": "上传媒体资源",
+      "tags": "media",
+      "api_category": "media",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listVisibleMediaUploadKeys",
+      "method": "get",
+      "path": "/media/upload-keys",
+      "permission_key": "system.media.manage",
+      "summary": "获取当前用户可见的上传配置",
       "tags": "media",
       "api_category": "media",
       "access_mode": "permission"

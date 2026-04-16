@@ -50,7 +50,7 @@ export async function fetchDeleteDictType(id: string) {
 
 // ─── Dict Item ───────────────────────────────────────────────────────────────
 
-export async function fetchDictItems(dictTypeId: string) {
+export async function fetchDictItems(dictTypeId: string): Promise<DictItemSummary[]> {
   return unwrap(
     v5Client.GET('/dictionaries/{id}/items', { params: { path: { id: dictTypeId } } })
   )
@@ -64,6 +64,39 @@ export async function fetchSaveDictItems(
     v5Client.PUT('/dictionaries/{id}/items', {
       params: { path: { id: dictTypeId } },
       body
+    })
+  )
+}
+
+export async function fetchCreateDictItem(
+  dictTypeId: string,
+  body: V5RequestBody<'/dictionaries/{id}/items', 'post'>
+): Promise<DictItemSummary> {
+  return unwrap(
+    v5Client.POST('/dictionaries/{id}/items', {
+      params: { path: { id: dictTypeId } },
+      body
+    })
+  )
+}
+
+export async function fetchUpdateDictItem(
+  dictTypeId: string,
+  itemId: string,
+  body: V5RequestBody<'/dictionaries/{id}/items/{itemId}', 'put'>
+): Promise<DictItemSummary> {
+  return unwrap(
+    v5Client.PUT('/dictionaries/{id}/items/{itemId}', {
+      params: { path: { id: dictTypeId, itemId } },
+      body
+    })
+  )
+}
+
+export async function fetchDeleteDictItem(dictTypeId: string, itemId: string): Promise<void> {
+  await unwrap(
+    v5Client.DELETE('/dictionaries/{id}/items/{itemId}', {
+      params: { path: { id: dictTypeId, itemId } }
     })
   )
 }

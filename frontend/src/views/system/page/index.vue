@@ -20,21 +20,12 @@
         :metrics="summaryStats"
       >
         <div class="page-hero-actions">
-          <ElSelect
+          <AppKeySelect
             v-model="selectedAppKey"
-            clearable
-            filterable
             placeholder="选择 App"
             class="page-app-select"
             @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
+          />
           <ElDropdown trigger="click" @command="handleCreateCommand">
             <ElButton v-action="'system.page.manage'" type="primary" v-ripple> 新增 </ElButton>
             <template #dropdown>
@@ -290,6 +281,7 @@
   // 视图脚本：所有 reactive state、handler、watch、lifecycle 均在 usePagePage 中
   // 这里只做：1) 引入子组件；2) 调用 composable；3) 把返回值拉到 setup 作用域供模板访问。
   import { ElButton, ElInput, ElOption, ElSelect, ElTag } from 'element-plus'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import PageDialog from './modules/page-dialog.vue'
@@ -327,7 +319,6 @@
     displayColumns,
     tableData,
     summaryStats,
-    appOptions,
     handleSearch,
     handleReset,
     handleRefresh,

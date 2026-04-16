@@ -2551,6 +2551,14 @@ type CreateApiEndpointCategoryUnauthorized Error
 
 func (*CreateApiEndpointCategoryUnauthorized) createApiEndpointCategoryRes() {}
 
+type CreateDictItemBadRequest Error
+
+func (*CreateDictItemBadRequest) createDictItemRes() {}
+
+type CreateDictItemNotFound Error
+
+func (*CreateDictItemNotFound) createDictItemRes() {}
+
 type CreateLogPolicyBadRequest Error
 
 func (*CreateLogPolicyBadRequest) createLogPolicyRes() {}
@@ -2673,6 +2681,18 @@ func (s *DataScopeOption) SetLabel(val string) {
 	s.Label = val
 }
 
+type DeleteDictItemBadRequest Error
+
+func (*DeleteDictItemBadRequest) deleteDictItemRes() {}
+
+type DeleteDictItemNotFound Error
+
+func (*DeleteDictItemNotFound) deleteDictItemRes() {}
+
+type DeleteDictItemOK Error
+
+func (*DeleteDictItemOK) deleteDictItemRes() {}
+
 type DeleteDictTypeBadRequest Error
 
 func (*DeleteDictTypeBadRequest) deleteDictTypeRes() {}
@@ -2749,12 +2769,13 @@ func (*DeleteUserUnauthorized) deleteUserRes() {}
 
 // Ref: #/components/schemas/DictItemSaveRequest
 type DictItemSaveRequest struct {
-	Label     string                       `json:"label"`
-	Value     string                       `json:"value"`
-	Extra     *DictItemSaveRequestExtra    `json:"extra"`
-	IsDefault OptBool                      `json:"is_default"`
-	Status    OptDictItemSaveRequestStatus `json:"status"`
-	SortOrder OptInt                       `json:"sort_order"`
+	Label       string                       `json:"label"`
+	Value       string                       `json:"value"`
+	Description OptString                    `json:"description"`
+	Extra       *DictItemSaveRequestExtra    `json:"extra"`
+	IsDefault   OptBool                      `json:"is_default"`
+	Status      OptDictItemSaveRequestStatus `json:"status"`
+	SortOrder   OptInt                       `json:"sort_order"`
 }
 
 // GetLabel returns the value of Label.
@@ -2765,6 +2786,11 @@ func (s *DictItemSaveRequest) GetLabel() string {
 // GetValue returns the value of Value.
 func (s *DictItemSaveRequest) GetValue() string {
 	return s.Value
+}
+
+// GetDescription returns the value of Description.
+func (s *DictItemSaveRequest) GetDescription() OptString {
+	return s.Description
 }
 
 // GetExtra returns the value of Extra.
@@ -2795,6 +2821,11 @@ func (s *DictItemSaveRequest) SetLabel(val string) {
 // SetValue sets the value of Value.
 func (s *DictItemSaveRequest) SetValue(val string) {
 	s.Value = val
+}
+
+// SetDescription sets the value of Description.
+func (s *DictItemSaveRequest) SetDescription(val OptString) {
+	s.Description = val
 }
 
 // SetExtra sets the value of Extra.
@@ -2862,13 +2893,15 @@ func (s *DictItemSaveRequestStatus) UnmarshalText(data []byte) error {
 
 // Ref: #/components/schemas/DictItemSummary
 type DictItemSummary struct {
-	ID        uuid.UUID             `json:"id"`
-	Label     string                `json:"label"`
-	Value     string                `json:"value"`
-	Extra     *DictItemSummaryExtra `json:"extra"`
-	IsDefault OptBool               `json:"is_default"`
-	Status    string                `json:"status"`
-	SortOrder OptInt                `json:"sort_order"`
+	ID          uuid.UUID             `json:"id"`
+	Label       string                `json:"label"`
+	Value       string                `json:"value"`
+	Description OptString             `json:"description"`
+	Extra       *DictItemSummaryExtra `json:"extra"`
+	IsBuiltin   bool                  `json:"is_builtin"`
+	IsDefault   OptBool               `json:"is_default"`
+	Status      string                `json:"status"`
+	SortOrder   OptInt                `json:"sort_order"`
 }
 
 // GetID returns the value of ID.
@@ -2886,9 +2919,19 @@ func (s *DictItemSummary) GetValue() string {
 	return s.Value
 }
 
+// GetDescription returns the value of Description.
+func (s *DictItemSummary) GetDescription() OptString {
+	return s.Description
+}
+
 // GetExtra returns the value of Extra.
 func (s *DictItemSummary) GetExtra() *DictItemSummaryExtra {
 	return s.Extra
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *DictItemSummary) GetIsBuiltin() bool {
+	return s.IsBuiltin
 }
 
 // GetIsDefault returns the value of IsDefault.
@@ -2921,9 +2964,19 @@ func (s *DictItemSummary) SetValue(val string) {
 	s.Value = val
 }
 
+// SetDescription sets the value of Description.
+func (s *DictItemSummary) SetDescription(val OptString) {
+	s.Description = val
+}
+
 // SetExtra sets the value of Extra.
 func (s *DictItemSummary) SetExtra(val *DictItemSummaryExtra) {
 	s.Extra = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *DictItemSummary) SetIsBuiltin(val bool) {
+	s.IsBuiltin = val
 }
 
 // SetIsDefault sets the value of IsDefault.
@@ -2940,6 +2993,9 @@ func (s *DictItemSummary) SetStatus(val string) {
 func (s *DictItemSummary) SetSortOrder(val OptInt) {
 	s.SortOrder = val
 }
+
+func (*DictItemSummary) createDictItemRes() {}
+func (*DictItemSummary) updateDictItemRes() {}
 
 type DictItemSummaryExtra struct{}
 
@@ -6557,6 +6613,14 @@ type ListUsersUnauthorized Error
 
 func (*ListUsersUnauthorized) listUsersRes() {}
 
+type ListVisibleMediaUploadKeysInternalServerError Error
+
+func (*ListVisibleMediaUploadKeysInternalServerError) listVisibleMediaUploadKeysRes() {}
+
+type ListVisibleMediaUploadKeysUnauthorized Error
+
+func (*ListVisibleMediaUploadKeysUnauthorized) listVisibleMediaUploadKeysRes() {}
+
 // Ref: #/components/schemas/LogPolicyCreateRequest
 type LogPolicyCreateRequest struct {
 	Pipeline   LogPolicyCreateRequestPipeline   `json:"pipeline"`
@@ -8582,18 +8646,19 @@ func (s *MediaPrepareUploadRequest) SetChecksum(val OptString) {
 
 // Ref: #/components/schemas/MediaPrepareUploadResponse
 type MediaPrepareUploadResponse struct {
-	Mode         MediaPrepareUploadResponseMode       `json:"mode"`
-	Method       OptString                            `json:"method"`
-	URL          OptString                            `json:"url"`
-	RelayUrl     OptString                            `json:"relayUrl"`
-	Headers      OptMediaPrepareUploadResponseHeaders `json:"headers"`
-	Form         OptMediaPrepareUploadResponseForm    `json:"form"`
-	StorageKey   string                               `json:"storageKey"`
-	Filename     string                               `json:"filename"`
-	ContentType  string                               `json:"contentType"`
-	UploadKey    string                               `json:"uploadKey"`
-	RuleKey      OptString                            `json:"ruleKey"`
-	FallbackUsed bool                                 `json:"fallbackUsed"`
+	Mode         MediaPrepareUploadResponseMode          `json:"mode"`
+	Method       OptString                               `json:"method"`
+	URL          OptString                               `json:"url"`
+	RelayUrl     OptString                               `json:"relayUrl"`
+	Headers      OptMediaPrepareUploadResponseHeaders    `json:"headers"`
+	Form         OptMediaPrepareUploadResponseForm       `json:"form"`
+	StorageKey   string                                  `json:"storageKey"`
+	Filename     string                                  `json:"filename"`
+	ContentType  string                                  `json:"contentType"`
+	UploadKey    string                                  `json:"uploadKey"`
+	RuleKey      OptString                               `json:"ruleKey"`
+	Visibility   OptMediaPrepareUploadResponseVisibility `json:"visibility"`
+	FallbackUsed bool                                    `json:"fallbackUsed"`
 }
 
 // GetMode returns the value of Mode.
@@ -8649,6 +8714,11 @@ func (s *MediaPrepareUploadResponse) GetUploadKey() string {
 // GetRuleKey returns the value of RuleKey.
 func (s *MediaPrepareUploadResponse) GetRuleKey() OptString {
 	return s.RuleKey
+}
+
+// GetVisibility returns the value of Visibility.
+func (s *MediaPrepareUploadResponse) GetVisibility() OptMediaPrepareUploadResponseVisibility {
+	return s.Visibility
 }
 
 // GetFallbackUsed returns the value of FallbackUsed.
@@ -8709,6 +8779,11 @@ func (s *MediaPrepareUploadResponse) SetUploadKey(val string) {
 // SetRuleKey sets the value of RuleKey.
 func (s *MediaPrepareUploadResponse) SetRuleKey(val OptString) {
 	s.RuleKey = val
+}
+
+// SetVisibility sets the value of Visibility.
+func (s *MediaPrepareUploadResponse) SetVisibility(val OptMediaPrepareUploadResponseVisibility) {
+	s.Visibility = val
 }
 
 // SetFallbackUsed sets the value of FallbackUsed.
@@ -8775,6 +8850,47 @@ func (s *MediaPrepareUploadResponseMode) UnmarshalText(data []byte) error {
 		return nil
 	case MediaPrepareUploadResponseModeDirect:
 		*s = MediaPrepareUploadResponseModeDirect
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type MediaPrepareUploadResponseVisibility string
+
+const (
+	MediaPrepareUploadResponseVisibilityPublic  MediaPrepareUploadResponseVisibility = "public"
+	MediaPrepareUploadResponseVisibilityPrivate MediaPrepareUploadResponseVisibility = "private"
+)
+
+// AllValues returns all MediaPrepareUploadResponseVisibility values.
+func (MediaPrepareUploadResponseVisibility) AllValues() []MediaPrepareUploadResponseVisibility {
+	return []MediaPrepareUploadResponseVisibility{
+		MediaPrepareUploadResponseVisibilityPublic,
+		MediaPrepareUploadResponseVisibilityPrivate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MediaPrepareUploadResponseVisibility) MarshalText() ([]byte, error) {
+	switch s {
+	case MediaPrepareUploadResponseVisibilityPublic:
+		return []byte(s), nil
+	case MediaPrepareUploadResponseVisibilityPrivate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MediaPrepareUploadResponseVisibility) UnmarshalText(data []byte) error {
+	switch MediaPrepareUploadResponseVisibility(data) {
+	case MediaPrepareUploadResponseVisibilityPublic:
+		*s = MediaPrepareUploadResponseVisibilityPublic
+		return nil
+	case MediaPrepareUploadResponseVisibilityPrivate:
+		*s = MediaPrepareUploadResponseVisibilityPrivate
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -8864,6 +8980,418 @@ func (s *MediaUploadResponse) SetCreatedAt(val time.Time) {
 
 func (*MediaUploadResponse) completeMediaUploadRes() {}
 func (*MediaUploadResponse) uploadMediaRes()         {}
+
+// Ref: #/components/schemas/MediaVisibleUploadKey
+type MediaVisibleUploadKey struct {
+	Key                      string                          `json:"key"`
+	Name                     string                          `json:"name"`
+	DefaultRuleKey           string                          `json:"defaultRuleKey"`
+	UploadMode               MediaVisibleUploadKeyUploadMode `json:"uploadMode"`
+	Visibility               MediaVisibleUploadKeyVisibility `json:"visibility"`
+	ClientAccept             []string                        `json:"clientAccept"`
+	MaxSizeBytes             int64                           `json:"maxSizeBytes"`
+	DirectSizeThresholdBytes int64                           `json:"directSizeThresholdBytes"`
+	FallbackKey              string                          `json:"fallbackKey"`
+	Rules                    []MediaVisibleUploadRule        `json:"rules"`
+}
+
+// GetKey returns the value of Key.
+func (s *MediaVisibleUploadKey) GetKey() string {
+	return s.Key
+}
+
+// GetName returns the value of Name.
+func (s *MediaVisibleUploadKey) GetName() string {
+	return s.Name
+}
+
+// GetDefaultRuleKey returns the value of DefaultRuleKey.
+func (s *MediaVisibleUploadKey) GetDefaultRuleKey() string {
+	return s.DefaultRuleKey
+}
+
+// GetUploadMode returns the value of UploadMode.
+func (s *MediaVisibleUploadKey) GetUploadMode() MediaVisibleUploadKeyUploadMode {
+	return s.UploadMode
+}
+
+// GetVisibility returns the value of Visibility.
+func (s *MediaVisibleUploadKey) GetVisibility() MediaVisibleUploadKeyVisibility {
+	return s.Visibility
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *MediaVisibleUploadKey) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetMaxSizeBytes returns the value of MaxSizeBytes.
+func (s *MediaVisibleUploadKey) GetMaxSizeBytes() int64 {
+	return s.MaxSizeBytes
+}
+
+// GetDirectSizeThresholdBytes returns the value of DirectSizeThresholdBytes.
+func (s *MediaVisibleUploadKey) GetDirectSizeThresholdBytes() int64 {
+	return s.DirectSizeThresholdBytes
+}
+
+// GetFallbackKey returns the value of FallbackKey.
+func (s *MediaVisibleUploadKey) GetFallbackKey() string {
+	return s.FallbackKey
+}
+
+// GetRules returns the value of Rules.
+func (s *MediaVisibleUploadKey) GetRules() []MediaVisibleUploadRule {
+	return s.Rules
+}
+
+// SetKey sets the value of Key.
+func (s *MediaVisibleUploadKey) SetKey(val string) {
+	s.Key = val
+}
+
+// SetName sets the value of Name.
+func (s *MediaVisibleUploadKey) SetName(val string) {
+	s.Name = val
+}
+
+// SetDefaultRuleKey sets the value of DefaultRuleKey.
+func (s *MediaVisibleUploadKey) SetDefaultRuleKey(val string) {
+	s.DefaultRuleKey = val
+}
+
+// SetUploadMode sets the value of UploadMode.
+func (s *MediaVisibleUploadKey) SetUploadMode(val MediaVisibleUploadKeyUploadMode) {
+	s.UploadMode = val
+}
+
+// SetVisibility sets the value of Visibility.
+func (s *MediaVisibleUploadKey) SetVisibility(val MediaVisibleUploadKeyVisibility) {
+	s.Visibility = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *MediaVisibleUploadKey) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetMaxSizeBytes sets the value of MaxSizeBytes.
+func (s *MediaVisibleUploadKey) SetMaxSizeBytes(val int64) {
+	s.MaxSizeBytes = val
+}
+
+// SetDirectSizeThresholdBytes sets the value of DirectSizeThresholdBytes.
+func (s *MediaVisibleUploadKey) SetDirectSizeThresholdBytes(val int64) {
+	s.DirectSizeThresholdBytes = val
+}
+
+// SetFallbackKey sets the value of FallbackKey.
+func (s *MediaVisibleUploadKey) SetFallbackKey(val string) {
+	s.FallbackKey = val
+}
+
+// SetRules sets the value of Rules.
+func (s *MediaVisibleUploadKey) SetRules(val []MediaVisibleUploadRule) {
+	s.Rules = val
+}
+
+// Ref: #/components/schemas/MediaVisibleUploadKeyListResponse
+type MediaVisibleUploadKeyListResponse struct {
+	Records []MediaVisibleUploadKey `json:"records"`
+	Total   int                     `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MediaVisibleUploadKeyListResponse) GetRecords() []MediaVisibleUploadKey {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *MediaVisibleUploadKeyListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *MediaVisibleUploadKeyListResponse) SetRecords(val []MediaVisibleUploadKey) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *MediaVisibleUploadKeyListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*MediaVisibleUploadKeyListResponse) listVisibleMediaUploadKeysRes() {}
+
+type MediaVisibleUploadKeyUploadMode string
+
+const (
+	MediaVisibleUploadKeyUploadModeAuto   MediaVisibleUploadKeyUploadMode = "auto"
+	MediaVisibleUploadKeyUploadModeDirect MediaVisibleUploadKeyUploadMode = "direct"
+	MediaVisibleUploadKeyUploadModeRelay  MediaVisibleUploadKeyUploadMode = "relay"
+)
+
+// AllValues returns all MediaVisibleUploadKeyUploadMode values.
+func (MediaVisibleUploadKeyUploadMode) AllValues() []MediaVisibleUploadKeyUploadMode {
+	return []MediaVisibleUploadKeyUploadMode{
+		MediaVisibleUploadKeyUploadModeAuto,
+		MediaVisibleUploadKeyUploadModeDirect,
+		MediaVisibleUploadKeyUploadModeRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MediaVisibleUploadKeyUploadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case MediaVisibleUploadKeyUploadModeAuto:
+		return []byte(s), nil
+	case MediaVisibleUploadKeyUploadModeDirect:
+		return []byte(s), nil
+	case MediaVisibleUploadKeyUploadModeRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MediaVisibleUploadKeyUploadMode) UnmarshalText(data []byte) error {
+	switch MediaVisibleUploadKeyUploadMode(data) {
+	case MediaVisibleUploadKeyUploadModeAuto:
+		*s = MediaVisibleUploadKeyUploadModeAuto
+		return nil
+	case MediaVisibleUploadKeyUploadModeDirect:
+		*s = MediaVisibleUploadKeyUploadModeDirect
+		return nil
+	case MediaVisibleUploadKeyUploadModeRelay:
+		*s = MediaVisibleUploadKeyUploadModeRelay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type MediaVisibleUploadKeyVisibility string
+
+const (
+	MediaVisibleUploadKeyVisibilityPublic  MediaVisibleUploadKeyVisibility = "public"
+	MediaVisibleUploadKeyVisibilityPrivate MediaVisibleUploadKeyVisibility = "private"
+)
+
+// AllValues returns all MediaVisibleUploadKeyVisibility values.
+func (MediaVisibleUploadKeyVisibility) AllValues() []MediaVisibleUploadKeyVisibility {
+	return []MediaVisibleUploadKeyVisibility{
+		MediaVisibleUploadKeyVisibilityPublic,
+		MediaVisibleUploadKeyVisibilityPrivate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MediaVisibleUploadKeyVisibility) MarshalText() ([]byte, error) {
+	switch s {
+	case MediaVisibleUploadKeyVisibilityPublic:
+		return []byte(s), nil
+	case MediaVisibleUploadKeyVisibilityPrivate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MediaVisibleUploadKeyVisibility) UnmarshalText(data []byte) error {
+	switch MediaVisibleUploadKeyVisibility(data) {
+	case MediaVisibleUploadKeyVisibilityPublic:
+		*s = MediaVisibleUploadKeyVisibilityPublic
+		return nil
+	case MediaVisibleUploadKeyVisibilityPrivate:
+		*s = MediaVisibleUploadKeyVisibilityPrivate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/MediaVisibleUploadRule
+type MediaVisibleUploadRule struct {
+	RuleKey          string                           `json:"ruleKey"`
+	Name             string                           `json:"name"`
+	UploadMode       MediaVisibleUploadRuleUploadMode `json:"uploadMode"`
+	Visibility       MediaVisibleUploadRuleVisibility `json:"visibility"`
+	ClientAccept     []string                         `json:"clientAccept"`
+	MaxSizeBytes     int64                            `json:"maxSizeBytes"`
+	AllowedMimeTypes []string                         `json:"allowedMimeTypes"`
+	IsDefault        bool                             `json:"isDefault"`
+}
+
+// GetRuleKey returns the value of RuleKey.
+func (s *MediaVisibleUploadRule) GetRuleKey() string {
+	return s.RuleKey
+}
+
+// GetName returns the value of Name.
+func (s *MediaVisibleUploadRule) GetName() string {
+	return s.Name
+}
+
+// GetUploadMode returns the value of UploadMode.
+func (s *MediaVisibleUploadRule) GetUploadMode() MediaVisibleUploadRuleUploadMode {
+	return s.UploadMode
+}
+
+// GetVisibility returns the value of Visibility.
+func (s *MediaVisibleUploadRule) GetVisibility() MediaVisibleUploadRuleVisibility {
+	return s.Visibility
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *MediaVisibleUploadRule) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetMaxSizeBytes returns the value of MaxSizeBytes.
+func (s *MediaVisibleUploadRule) GetMaxSizeBytes() int64 {
+	return s.MaxSizeBytes
+}
+
+// GetAllowedMimeTypes returns the value of AllowedMimeTypes.
+func (s *MediaVisibleUploadRule) GetAllowedMimeTypes() []string {
+	return s.AllowedMimeTypes
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *MediaVisibleUploadRule) GetIsDefault() bool {
+	return s.IsDefault
+}
+
+// SetRuleKey sets the value of RuleKey.
+func (s *MediaVisibleUploadRule) SetRuleKey(val string) {
+	s.RuleKey = val
+}
+
+// SetName sets the value of Name.
+func (s *MediaVisibleUploadRule) SetName(val string) {
+	s.Name = val
+}
+
+// SetUploadMode sets the value of UploadMode.
+func (s *MediaVisibleUploadRule) SetUploadMode(val MediaVisibleUploadRuleUploadMode) {
+	s.UploadMode = val
+}
+
+// SetVisibility sets the value of Visibility.
+func (s *MediaVisibleUploadRule) SetVisibility(val MediaVisibleUploadRuleVisibility) {
+	s.Visibility = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *MediaVisibleUploadRule) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetMaxSizeBytes sets the value of MaxSizeBytes.
+func (s *MediaVisibleUploadRule) SetMaxSizeBytes(val int64) {
+	s.MaxSizeBytes = val
+}
+
+// SetAllowedMimeTypes sets the value of AllowedMimeTypes.
+func (s *MediaVisibleUploadRule) SetAllowedMimeTypes(val []string) {
+	s.AllowedMimeTypes = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *MediaVisibleUploadRule) SetIsDefault(val bool) {
+	s.IsDefault = val
+}
+
+type MediaVisibleUploadRuleUploadMode string
+
+const (
+	MediaVisibleUploadRuleUploadModeAuto   MediaVisibleUploadRuleUploadMode = "auto"
+	MediaVisibleUploadRuleUploadModeDirect MediaVisibleUploadRuleUploadMode = "direct"
+	MediaVisibleUploadRuleUploadModeRelay  MediaVisibleUploadRuleUploadMode = "relay"
+)
+
+// AllValues returns all MediaVisibleUploadRuleUploadMode values.
+func (MediaVisibleUploadRuleUploadMode) AllValues() []MediaVisibleUploadRuleUploadMode {
+	return []MediaVisibleUploadRuleUploadMode{
+		MediaVisibleUploadRuleUploadModeAuto,
+		MediaVisibleUploadRuleUploadModeDirect,
+		MediaVisibleUploadRuleUploadModeRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MediaVisibleUploadRuleUploadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case MediaVisibleUploadRuleUploadModeAuto:
+		return []byte(s), nil
+	case MediaVisibleUploadRuleUploadModeDirect:
+		return []byte(s), nil
+	case MediaVisibleUploadRuleUploadModeRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MediaVisibleUploadRuleUploadMode) UnmarshalText(data []byte) error {
+	switch MediaVisibleUploadRuleUploadMode(data) {
+	case MediaVisibleUploadRuleUploadModeAuto:
+		*s = MediaVisibleUploadRuleUploadModeAuto
+		return nil
+	case MediaVisibleUploadRuleUploadModeDirect:
+		*s = MediaVisibleUploadRuleUploadModeDirect
+		return nil
+	case MediaVisibleUploadRuleUploadModeRelay:
+		*s = MediaVisibleUploadRuleUploadModeRelay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type MediaVisibleUploadRuleVisibility string
+
+const (
+	MediaVisibleUploadRuleVisibilityPublic  MediaVisibleUploadRuleVisibility = "public"
+	MediaVisibleUploadRuleVisibilityPrivate MediaVisibleUploadRuleVisibility = "private"
+)
+
+// AllValues returns all MediaVisibleUploadRuleVisibility values.
+func (MediaVisibleUploadRuleVisibility) AllValues() []MediaVisibleUploadRuleVisibility {
+	return []MediaVisibleUploadRuleVisibility{
+		MediaVisibleUploadRuleVisibilityPublic,
+		MediaVisibleUploadRuleVisibilityPrivate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MediaVisibleUploadRuleVisibility) MarshalText() ([]byte, error) {
+	switch s {
+	case MediaVisibleUploadRuleVisibilityPublic:
+		return []byte(s), nil
+	case MediaVisibleUploadRuleVisibilityPrivate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MediaVisibleUploadRuleVisibility) UnmarshalText(data []byte) error {
+	switch MediaVisibleUploadRuleVisibility(data) {
+	case MediaVisibleUploadRuleVisibilityPublic:
+		*s = MediaVisibleUploadRuleVisibilityPublic
+		return nil
+	case MediaVisibleUploadRuleVisibilityPrivate:
+		*s = MediaVisibleUploadRuleVisibilityPrivate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Ref: #/components/schemas/MenuDeletePreviewResponse
 type MenuDeletePreviewResponse struct {
@@ -12638,6 +13166,52 @@ func (o OptMediaPrepareUploadResponseHeaders) Or(d MediaPrepareUploadResponseHea
 	return d
 }
 
+// NewOptMediaPrepareUploadResponseVisibility returns new OptMediaPrepareUploadResponseVisibility with value set to v.
+func NewOptMediaPrepareUploadResponseVisibility(v MediaPrepareUploadResponseVisibility) OptMediaPrepareUploadResponseVisibility {
+	return OptMediaPrepareUploadResponseVisibility{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMediaPrepareUploadResponseVisibility is optional MediaPrepareUploadResponseVisibility.
+type OptMediaPrepareUploadResponseVisibility struct {
+	Value MediaPrepareUploadResponseVisibility
+	Set   bool
+}
+
+// IsSet returns true if OptMediaPrepareUploadResponseVisibility was set.
+func (o OptMediaPrepareUploadResponseVisibility) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMediaPrepareUploadResponseVisibility) Reset() {
+	var v MediaPrepareUploadResponseVisibility
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMediaPrepareUploadResponseVisibility) SetTo(v MediaPrepareUploadResponseVisibility) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMediaPrepareUploadResponseVisibility) Get() (v MediaPrepareUploadResponseVisibility, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMediaPrepareUploadResponseVisibility) Or(d MediaPrepareUploadResponseVisibility) MediaPrepareUploadResponseVisibility {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptMessageInboxMeta returns new OptMessageInboxMeta with value set to v.
 func NewOptMessageInboxMeta(v MessageInboxMeta) OptMessageInboxMeta {
 	return OptMessageInboxMeta{
@@ -15193,6 +15767,52 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	return d
 }
 
+// NewOptUploadKeyDetailExtraSchema returns new OptUploadKeyDetailExtraSchema with value set to v.
+func NewOptUploadKeyDetailExtraSchema(v UploadKeyDetailExtraSchema) OptUploadKeyDetailExtraSchema {
+	return OptUploadKeyDetailExtraSchema{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyDetailExtraSchema is optional UploadKeyDetailExtraSchema.
+type OptUploadKeyDetailExtraSchema struct {
+	Value UploadKeyDetailExtraSchema
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyDetailExtraSchema was set.
+func (o OptUploadKeyDetailExtraSchema) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyDetailExtraSchema) Reset() {
+	var v UploadKeyDetailExtraSchema
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyDetailExtraSchema) SetTo(v UploadKeyDetailExtraSchema) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyDetailExtraSchema) Get() (v UploadKeyDetailExtraSchema, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyDetailExtraSchema) Or(d UploadKeyDetailExtraSchema) UploadKeyDetailExtraSchema {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUploadKeyDetailMeta returns new OptUploadKeyDetailMeta with value set to v.
 func NewOptUploadKeyDetailMeta(v UploadKeyDetailMeta) OptUploadKeyDetailMeta {
 	return OptUploadKeyDetailMeta{
@@ -15233,6 +15853,98 @@ func (o OptUploadKeyDetailMeta) Get() (v UploadKeyDetailMeta, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUploadKeyDetailMeta) Or(d UploadKeyDetailMeta) UploadKeyDetailMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeyDetailUploadMode returns new OptUploadKeyDetailUploadMode with value set to v.
+func NewOptUploadKeyDetailUploadMode(v UploadKeyDetailUploadMode) OptUploadKeyDetailUploadMode {
+	return OptUploadKeyDetailUploadMode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyDetailUploadMode is optional UploadKeyDetailUploadMode.
+type OptUploadKeyDetailUploadMode struct {
+	Value UploadKeyDetailUploadMode
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyDetailUploadMode was set.
+func (o OptUploadKeyDetailUploadMode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyDetailUploadMode) Reset() {
+	var v UploadKeyDetailUploadMode
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyDetailUploadMode) SetTo(v UploadKeyDetailUploadMode) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyDetailUploadMode) Get() (v UploadKeyDetailUploadMode, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyDetailUploadMode) Or(d UploadKeyDetailUploadMode) UploadKeyDetailUploadMode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeyRuleSaveRequestExtraSchema returns new OptUploadKeyRuleSaveRequestExtraSchema with value set to v.
+func NewOptUploadKeyRuleSaveRequestExtraSchema(v UploadKeyRuleSaveRequestExtraSchema) OptUploadKeyRuleSaveRequestExtraSchema {
+	return OptUploadKeyRuleSaveRequestExtraSchema{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSaveRequestExtraSchema is optional UploadKeyRuleSaveRequestExtraSchema.
+type OptUploadKeyRuleSaveRequestExtraSchema struct {
+	Value UploadKeyRuleSaveRequestExtraSchema
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSaveRequestExtraSchema was set.
+func (o OptUploadKeyRuleSaveRequestExtraSchema) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSaveRequestExtraSchema) Reset() {
+	var v UploadKeyRuleSaveRequestExtraSchema
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSaveRequestExtraSchema) SetTo(v UploadKeyRuleSaveRequestExtraSchema) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSaveRequestExtraSchema) Get() (v UploadKeyRuleSaveRequestExtraSchema, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSaveRequestExtraSchema) Or(d UploadKeyRuleSaveRequestExtraSchema) UploadKeyRuleSaveRequestExtraSchema {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -15331,6 +16043,52 @@ func (o OptUploadKeyRuleSaveRequestMeta) Or(d UploadKeyRuleSaveRequestMeta) Uplo
 	return d
 }
 
+// NewOptUploadKeyRuleSaveRequestModeOverride returns new OptUploadKeyRuleSaveRequestModeOverride with value set to v.
+func NewOptUploadKeyRuleSaveRequestModeOverride(v UploadKeyRuleSaveRequestModeOverride) OptUploadKeyRuleSaveRequestModeOverride {
+	return OptUploadKeyRuleSaveRequestModeOverride{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSaveRequestModeOverride is optional UploadKeyRuleSaveRequestModeOverride.
+type OptUploadKeyRuleSaveRequestModeOverride struct {
+	Value UploadKeyRuleSaveRequestModeOverride
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSaveRequestModeOverride was set.
+func (o OptUploadKeyRuleSaveRequestModeOverride) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSaveRequestModeOverride) Reset() {
+	var v UploadKeyRuleSaveRequestModeOverride
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSaveRequestModeOverride) SetTo(v UploadKeyRuleSaveRequestModeOverride) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSaveRequestModeOverride) Get() (v UploadKeyRuleSaveRequestModeOverride, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSaveRequestModeOverride) Or(d UploadKeyRuleSaveRequestModeOverride) UploadKeyRuleSaveRequestModeOverride {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUploadKeyRuleSaveRequestStatus returns new OptUploadKeyRuleSaveRequestStatus with value set to v.
 func NewOptUploadKeyRuleSaveRequestStatus(v UploadKeyRuleSaveRequestStatus) OptUploadKeyRuleSaveRequestStatus {
 	return OptUploadKeyRuleSaveRequestStatus{
@@ -15377,6 +16135,98 @@ func (o OptUploadKeyRuleSaveRequestStatus) Or(d UploadKeyRuleSaveRequestStatus) 
 	return d
 }
 
+// NewOptUploadKeyRuleSaveRequestVisibilityOverride returns new OptUploadKeyRuleSaveRequestVisibilityOverride with value set to v.
+func NewOptUploadKeyRuleSaveRequestVisibilityOverride(v UploadKeyRuleSaveRequestVisibilityOverride) OptUploadKeyRuleSaveRequestVisibilityOverride {
+	return OptUploadKeyRuleSaveRequestVisibilityOverride{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSaveRequestVisibilityOverride is optional UploadKeyRuleSaveRequestVisibilityOverride.
+type OptUploadKeyRuleSaveRequestVisibilityOverride struct {
+	Value UploadKeyRuleSaveRequestVisibilityOverride
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSaveRequestVisibilityOverride was set.
+func (o OptUploadKeyRuleSaveRequestVisibilityOverride) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSaveRequestVisibilityOverride) Reset() {
+	var v UploadKeyRuleSaveRequestVisibilityOverride
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSaveRequestVisibilityOverride) SetTo(v UploadKeyRuleSaveRequestVisibilityOverride) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSaveRequestVisibilityOverride) Get() (v UploadKeyRuleSaveRequestVisibilityOverride, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSaveRequestVisibilityOverride) Or(d UploadKeyRuleSaveRequestVisibilityOverride) UploadKeyRuleSaveRequestVisibilityOverride {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeyRuleSummaryExtraSchema returns new OptUploadKeyRuleSummaryExtraSchema with value set to v.
+func NewOptUploadKeyRuleSummaryExtraSchema(v UploadKeyRuleSummaryExtraSchema) OptUploadKeyRuleSummaryExtraSchema {
+	return OptUploadKeyRuleSummaryExtraSchema{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSummaryExtraSchema is optional UploadKeyRuleSummaryExtraSchema.
+type OptUploadKeyRuleSummaryExtraSchema struct {
+	Value UploadKeyRuleSummaryExtraSchema
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSummaryExtraSchema was set.
+func (o OptUploadKeyRuleSummaryExtraSchema) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSummaryExtraSchema) Reset() {
+	var v UploadKeyRuleSummaryExtraSchema
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSummaryExtraSchema) SetTo(v UploadKeyRuleSummaryExtraSchema) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSummaryExtraSchema) Get() (v UploadKeyRuleSummaryExtraSchema, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSummaryExtraSchema) Or(d UploadKeyRuleSummaryExtraSchema) UploadKeyRuleSummaryExtraSchema {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUploadKeyRuleSummaryMeta returns new OptUploadKeyRuleSummaryMeta with value set to v.
 func NewOptUploadKeyRuleSummaryMeta(v UploadKeyRuleSummaryMeta) OptUploadKeyRuleSummaryMeta {
 	return OptUploadKeyRuleSummaryMeta{
@@ -15417,6 +16267,144 @@ func (o OptUploadKeyRuleSummaryMeta) Get() (v UploadKeyRuleSummaryMeta, ok bool)
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUploadKeyRuleSummaryMeta) Or(d UploadKeyRuleSummaryMeta) UploadKeyRuleSummaryMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeyRuleSummaryModeOverride returns new OptUploadKeyRuleSummaryModeOverride with value set to v.
+func NewOptUploadKeyRuleSummaryModeOverride(v UploadKeyRuleSummaryModeOverride) OptUploadKeyRuleSummaryModeOverride {
+	return OptUploadKeyRuleSummaryModeOverride{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSummaryModeOverride is optional UploadKeyRuleSummaryModeOverride.
+type OptUploadKeyRuleSummaryModeOverride struct {
+	Value UploadKeyRuleSummaryModeOverride
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSummaryModeOverride was set.
+func (o OptUploadKeyRuleSummaryModeOverride) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSummaryModeOverride) Reset() {
+	var v UploadKeyRuleSummaryModeOverride
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSummaryModeOverride) SetTo(v UploadKeyRuleSummaryModeOverride) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSummaryModeOverride) Get() (v UploadKeyRuleSummaryModeOverride, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSummaryModeOverride) Or(d UploadKeyRuleSummaryModeOverride) UploadKeyRuleSummaryModeOverride {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeyRuleSummaryVisibilityOverride returns new OptUploadKeyRuleSummaryVisibilityOverride with value set to v.
+func NewOptUploadKeyRuleSummaryVisibilityOverride(v UploadKeyRuleSummaryVisibilityOverride) OptUploadKeyRuleSummaryVisibilityOverride {
+	return OptUploadKeyRuleSummaryVisibilityOverride{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeyRuleSummaryVisibilityOverride is optional UploadKeyRuleSummaryVisibilityOverride.
+type OptUploadKeyRuleSummaryVisibilityOverride struct {
+	Value UploadKeyRuleSummaryVisibilityOverride
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeyRuleSummaryVisibilityOverride was set.
+func (o OptUploadKeyRuleSummaryVisibilityOverride) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeyRuleSummaryVisibilityOverride) Reset() {
+	var v UploadKeyRuleSummaryVisibilityOverride
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeyRuleSummaryVisibilityOverride) SetTo(v UploadKeyRuleSummaryVisibilityOverride) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeyRuleSummaryVisibilityOverride) Get() (v UploadKeyRuleSummaryVisibilityOverride, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeyRuleSummaryVisibilityOverride) Or(d UploadKeyRuleSummaryVisibilityOverride) UploadKeyRuleSummaryVisibilityOverride {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeySaveRequestExtraSchema returns new OptUploadKeySaveRequestExtraSchema with value set to v.
+func NewOptUploadKeySaveRequestExtraSchema(v UploadKeySaveRequestExtraSchema) OptUploadKeySaveRequestExtraSchema {
+	return OptUploadKeySaveRequestExtraSchema{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeySaveRequestExtraSchema is optional UploadKeySaveRequestExtraSchema.
+type OptUploadKeySaveRequestExtraSchema struct {
+	Value UploadKeySaveRequestExtraSchema
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeySaveRequestExtraSchema was set.
+func (o OptUploadKeySaveRequestExtraSchema) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeySaveRequestExtraSchema) Reset() {
+	var v UploadKeySaveRequestExtraSchema
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeySaveRequestExtraSchema) SetTo(v UploadKeySaveRequestExtraSchema) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeySaveRequestExtraSchema) Get() (v UploadKeySaveRequestExtraSchema, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeySaveRequestExtraSchema) Or(d UploadKeySaveRequestExtraSchema) UploadKeySaveRequestExtraSchema {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -15515,6 +16503,52 @@ func (o OptUploadKeySaveRequestStatus) Or(d UploadKeySaveRequestStatus) UploadKe
 	return d
 }
 
+// NewOptUploadKeySaveRequestUploadMode returns new OptUploadKeySaveRequestUploadMode with value set to v.
+func NewOptUploadKeySaveRequestUploadMode(v UploadKeySaveRequestUploadMode) OptUploadKeySaveRequestUploadMode {
+	return OptUploadKeySaveRequestUploadMode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeySaveRequestUploadMode is optional UploadKeySaveRequestUploadMode.
+type OptUploadKeySaveRequestUploadMode struct {
+	Value UploadKeySaveRequestUploadMode
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeySaveRequestUploadMode was set.
+func (o OptUploadKeySaveRequestUploadMode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeySaveRequestUploadMode) Reset() {
+	var v UploadKeySaveRequestUploadMode
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeySaveRequestUploadMode) SetTo(v UploadKeySaveRequestUploadMode) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeySaveRequestUploadMode) Get() (v UploadKeySaveRequestUploadMode, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeySaveRequestUploadMode) Or(d UploadKeySaveRequestUploadMode) UploadKeySaveRequestUploadMode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUploadKeySaveRequestVisibility returns new OptUploadKeySaveRequestVisibility with value set to v.
 func NewOptUploadKeySaveRequestVisibility(v UploadKeySaveRequestVisibility) OptUploadKeySaveRequestVisibility {
 	return OptUploadKeySaveRequestVisibility{
@@ -15561,6 +16595,52 @@ func (o OptUploadKeySaveRequestVisibility) Or(d UploadKeySaveRequestVisibility) 
 	return d
 }
 
+// NewOptUploadKeySummaryExtraSchema returns new OptUploadKeySummaryExtraSchema with value set to v.
+func NewOptUploadKeySummaryExtraSchema(v UploadKeySummaryExtraSchema) OptUploadKeySummaryExtraSchema {
+	return OptUploadKeySummaryExtraSchema{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeySummaryExtraSchema is optional UploadKeySummaryExtraSchema.
+type OptUploadKeySummaryExtraSchema struct {
+	Value UploadKeySummaryExtraSchema
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeySummaryExtraSchema was set.
+func (o OptUploadKeySummaryExtraSchema) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeySummaryExtraSchema) Reset() {
+	var v UploadKeySummaryExtraSchema
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeySummaryExtraSchema) SetTo(v UploadKeySummaryExtraSchema) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeySummaryExtraSchema) Get() (v UploadKeySummaryExtraSchema, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeySummaryExtraSchema) Or(d UploadKeySummaryExtraSchema) UploadKeySummaryExtraSchema {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUploadKeySummaryMeta returns new OptUploadKeySummaryMeta with value set to v.
 func NewOptUploadKeySummaryMeta(v UploadKeySummaryMeta) OptUploadKeySummaryMeta {
 	return OptUploadKeySummaryMeta{
@@ -15601,6 +16681,52 @@ func (o OptUploadKeySummaryMeta) Get() (v UploadKeySummaryMeta, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUploadKeySummaryMeta) Or(d UploadKeySummaryMeta) UploadKeySummaryMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUploadKeySummaryUploadMode returns new OptUploadKeySummaryUploadMode with value set to v.
+func NewOptUploadKeySummaryUploadMode(v UploadKeySummaryUploadMode) OptUploadKeySummaryUploadMode {
+	return OptUploadKeySummaryUploadMode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUploadKeySummaryUploadMode is optional UploadKeySummaryUploadMode.
+type OptUploadKeySummaryUploadMode struct {
+	Value UploadKeySummaryUploadMode
+	Set   bool
+}
+
+// IsSet returns true if OptUploadKeySummaryUploadMode was set.
+func (o OptUploadKeySummaryUploadMode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUploadKeySummaryUploadMode) Reset() {
+	var v UploadKeySummaryUploadMode
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUploadKeySummaryUploadMode) SetTo(v UploadKeySummaryUploadMode) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUploadKeySummaryUploadMode) Get() (v UploadKeySummaryUploadMode, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUploadKeySummaryUploadMode) Or(d UploadKeySummaryUploadMode) UploadKeySummaryUploadMode {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -22188,7 +23314,7 @@ const (
 	SiteConfigResolvedItemValueTypeBool   SiteConfigResolvedItemValueType = "bool"
 	SiteConfigResolvedItemValueTypeImage  SiteConfigResolvedItemValueType = "image"
 	SiteConfigResolvedItemValueTypeJSON   SiteConfigResolvedItemValueType = "json"
-	SiteConfigResolvedItemValueTypeSVG    SiteConfigResolvedItemValueType = "svg"
+	SiteConfigResolvedItemValueTypeSvg    SiteConfigResolvedItemValueType = "svg"
 )
 
 // AllValues returns all SiteConfigResolvedItemValueType values.
@@ -22199,7 +23325,7 @@ func (SiteConfigResolvedItemValueType) AllValues() []SiteConfigResolvedItemValue
 		SiteConfigResolvedItemValueTypeBool,
 		SiteConfigResolvedItemValueTypeImage,
 		SiteConfigResolvedItemValueTypeJSON,
-		SiteConfigResolvedItemValueTypeSVG,
+		SiteConfigResolvedItemValueTypeSvg,
 	}
 }
 
@@ -22216,7 +23342,7 @@ func (s SiteConfigResolvedItemValueType) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case SiteConfigResolvedItemValueTypeJSON:
 		return []byte(s), nil
-	case SiteConfigResolvedItemValueTypeSVG:
+	case SiteConfigResolvedItemValueTypeSvg:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -22241,8 +23367,8 @@ func (s *SiteConfigResolvedItemValueType) UnmarshalText(data []byte) error {
 	case SiteConfigResolvedItemValueTypeJSON:
 		*s = SiteConfigResolvedItemValueTypeJSON
 		return nil
-	case SiteConfigResolvedItemValueTypeSVG:
-		*s = SiteConfigResolvedItemValueTypeSVG
+	case SiteConfigResolvedItemValueTypeSvg:
+		*s = SiteConfigResolvedItemValueTypeSvg
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -22402,7 +23528,7 @@ const (
 	SiteConfigSaveRequestValueTypeBool   SiteConfigSaveRequestValueType = "bool"
 	SiteConfigSaveRequestValueTypeImage  SiteConfigSaveRequestValueType = "image"
 	SiteConfigSaveRequestValueTypeJSON   SiteConfigSaveRequestValueType = "json"
-	SiteConfigSaveRequestValueTypeSVG    SiteConfigSaveRequestValueType = "svg"
+	SiteConfigSaveRequestValueTypeSvg    SiteConfigSaveRequestValueType = "svg"
 )
 
 // AllValues returns all SiteConfigSaveRequestValueType values.
@@ -22413,7 +23539,7 @@ func (SiteConfigSaveRequestValueType) AllValues() []SiteConfigSaveRequestValueTy
 		SiteConfigSaveRequestValueTypeBool,
 		SiteConfigSaveRequestValueTypeImage,
 		SiteConfigSaveRequestValueTypeJSON,
-		SiteConfigSaveRequestValueTypeSVG,
+		SiteConfigSaveRequestValueTypeSvg,
 	}
 }
 
@@ -22430,7 +23556,7 @@ func (s SiteConfigSaveRequestValueType) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case SiteConfigSaveRequestValueTypeJSON:
 		return []byte(s), nil
-	case SiteConfigSaveRequestValueTypeSVG:
+	case SiteConfigSaveRequestValueTypeSvg:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -22455,8 +23581,8 @@ func (s *SiteConfigSaveRequestValueType) UnmarshalText(data []byte) error {
 	case SiteConfigSaveRequestValueTypeJSON:
 		*s = SiteConfigSaveRequestValueTypeJSON
 		return nil
-	case SiteConfigSaveRequestValueTypeSVG:
-		*s = SiteConfigSaveRequestValueTypeSVG
+	case SiteConfigSaveRequestValueTypeSvg:
+		*s = SiteConfigSaveRequestValueTypeSvg
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -22905,7 +24031,7 @@ const (
 	SiteConfigSummaryValueTypeBool   SiteConfigSummaryValueType = "bool"
 	SiteConfigSummaryValueTypeImage  SiteConfigSummaryValueType = "image"
 	SiteConfigSummaryValueTypeJSON   SiteConfigSummaryValueType = "json"
-	SiteConfigSummaryValueTypeSVG    SiteConfigSummaryValueType = "svg"
+	SiteConfigSummaryValueTypeSvg    SiteConfigSummaryValueType = "svg"
 )
 
 // AllValues returns all SiteConfigSummaryValueType values.
@@ -22916,7 +24042,7 @@ func (SiteConfigSummaryValueType) AllValues() []SiteConfigSummaryValueType {
 		SiteConfigSummaryValueTypeBool,
 		SiteConfigSummaryValueTypeImage,
 		SiteConfigSummaryValueTypeJSON,
-		SiteConfigSummaryValueTypeSVG,
+		SiteConfigSummaryValueTypeSvg,
 	}
 }
 
@@ -22933,7 +24059,7 @@ func (s SiteConfigSummaryValueType) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case SiteConfigSummaryValueTypeJSON:
 		return []byte(s), nil
-	case SiteConfigSummaryValueTypeSVG:
+	case SiteConfigSummaryValueTypeSvg:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -22958,8 +24084,8 @@ func (s *SiteConfigSummaryValueType) UnmarshalText(data []byte) error {
 	case SiteConfigSummaryValueTypeJSON:
 		*s = SiteConfigSummaryValueTypeJSON
 		return nil
-	case SiteConfigSummaryValueTypeSVG:
-		*s = SiteConfigSummaryValueTypeSVG
+	case SiteConfigSummaryValueTypeSvg:
+		*s = SiteConfigSummaryValueTypeSvg
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -27674,6 +28800,14 @@ type UpdateApiEndpointUnauthorized Error
 
 func (*UpdateApiEndpointUnauthorized) updateApiEndpointRes() {}
 
+type UpdateDictItemBadRequest Error
+
+func (*UpdateDictItemBadRequest) updateDictItemRes() {}
+
+type UpdateDictItemNotFound Error
+
+func (*UpdateDictItemNotFound) updateDictItemRes() {}
+
 type UpdateDictTypeBadRequest Error
 
 func (*UpdateDictTypeBadRequest) updateDictTypeRes() {}
@@ -27753,21 +28887,28 @@ func (*UpdateUserUnauthorized) updateUserRes() {}
 // Merged schema.
 // Ref: #/components/schemas/UploadKeyDetail
 type UploadKeyDetail struct {
-	ID               uuid.UUID                 `json:"id"`
-	BucketID         uuid.UUID                 `json:"bucket_id"`
-	BucketKey        OptString                 `json:"bucket_key"`
-	Key              string                    `json:"key"`
-	Name             string                    `json:"name"`
-	PathTemplate     OptString                 `json:"path_template"`
-	DefaultRuleKey   OptString                 `json:"default_rule_key"`
-	MaxSizeBytes     OptInt64                  `json:"max_size_bytes"`
-	AllowedMimeTypes []string                  `json:"allowed_mime_types"`
-	Visibility       UploadKeyDetailVisibility `json:"visibility"`
-	Status           UploadKeyDetailStatus     `json:"status"`
-	Meta             OptUploadKeyDetailMeta    `json:"meta"`
-	CreatedAt        OptDateTime               `json:"created_at"`
-	UpdatedAt        OptDateTime               `json:"updated_at"`
-	Rules            []UploadKeyRuleSummary    `json:"rules"`
+	ID                       uuid.UUID                     `json:"id"`
+	BucketID                 uuid.UUID                     `json:"bucket_id"`
+	BucketKey                OptString                     `json:"bucket_key"`
+	Key                      string                        `json:"key"`
+	Name                     string                        `json:"name"`
+	PathTemplate             OptString                     `json:"path_template"`
+	DefaultRuleKey           OptString                     `json:"default_rule_key"`
+	MaxSizeBytes             OptInt64                      `json:"max_size_bytes"`
+	AllowedMimeTypes         []string                      `json:"allowed_mime_types"`
+	UploadMode               OptUploadKeyDetailUploadMode  `json:"upload_mode"`
+	IsFrontendVisible        OptBool                       `json:"is_frontend_visible"`
+	PermissionKey            OptString                     `json:"permission_key"`
+	FallbackKey              OptString                     `json:"fallback_key"`
+	ClientAccept             []string                      `json:"client_accept"`
+	DirectSizeThresholdBytes OptInt64                      `json:"direct_size_threshold_bytes"`
+	ExtraSchema              OptUploadKeyDetailExtraSchema `json:"extra_schema"`
+	Visibility               UploadKeyDetailVisibility     `json:"visibility"`
+	Status                   UploadKeyDetailStatus         `json:"status"`
+	Meta                     OptUploadKeyDetailMeta        `json:"meta"`
+	CreatedAt                OptDateTime                   `json:"created_at"`
+	UpdatedAt                OptDateTime                   `json:"updated_at"`
+	Rules                    []UploadKeyRuleSummary        `json:"rules"`
 }
 
 // GetID returns the value of ID.
@@ -27813,6 +28954,41 @@ func (s *UploadKeyDetail) GetMaxSizeBytes() OptInt64 {
 // GetAllowedMimeTypes returns the value of AllowedMimeTypes.
 func (s *UploadKeyDetail) GetAllowedMimeTypes() []string {
 	return s.AllowedMimeTypes
+}
+
+// GetUploadMode returns the value of UploadMode.
+func (s *UploadKeyDetail) GetUploadMode() OptUploadKeyDetailUploadMode {
+	return s.UploadMode
+}
+
+// GetIsFrontendVisible returns the value of IsFrontendVisible.
+func (s *UploadKeyDetail) GetIsFrontendVisible() OptBool {
+	return s.IsFrontendVisible
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *UploadKeyDetail) GetPermissionKey() OptString {
+	return s.PermissionKey
+}
+
+// GetFallbackKey returns the value of FallbackKey.
+func (s *UploadKeyDetail) GetFallbackKey() OptString {
+	return s.FallbackKey
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *UploadKeyDetail) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetDirectSizeThresholdBytes returns the value of DirectSizeThresholdBytes.
+func (s *UploadKeyDetail) GetDirectSizeThresholdBytes() OptInt64 {
+	return s.DirectSizeThresholdBytes
+}
+
+// GetExtraSchema returns the value of ExtraSchema.
+func (s *UploadKeyDetail) GetExtraSchema() OptUploadKeyDetailExtraSchema {
+	return s.ExtraSchema
 }
 
 // GetVisibility returns the value of Visibility.
@@ -27890,6 +29066,41 @@ func (s *UploadKeyDetail) SetAllowedMimeTypes(val []string) {
 	s.AllowedMimeTypes = val
 }
 
+// SetUploadMode sets the value of UploadMode.
+func (s *UploadKeyDetail) SetUploadMode(val OptUploadKeyDetailUploadMode) {
+	s.UploadMode = val
+}
+
+// SetIsFrontendVisible sets the value of IsFrontendVisible.
+func (s *UploadKeyDetail) SetIsFrontendVisible(val OptBool) {
+	s.IsFrontendVisible = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *UploadKeyDetail) SetPermissionKey(val OptString) {
+	s.PermissionKey = val
+}
+
+// SetFallbackKey sets the value of FallbackKey.
+func (s *UploadKeyDetail) SetFallbackKey(val OptString) {
+	s.FallbackKey = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *UploadKeyDetail) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetDirectSizeThresholdBytes sets the value of DirectSizeThresholdBytes.
+func (s *UploadKeyDetail) SetDirectSizeThresholdBytes(val OptInt64) {
+	s.DirectSizeThresholdBytes = val
+}
+
+// SetExtraSchema sets the value of ExtraSchema.
+func (s *UploadKeyDetail) SetExtraSchema(val OptUploadKeyDetailExtraSchema) {
+	s.ExtraSchema = val
+}
+
 // SetVisibility sets the value of Visibility.
 func (s *UploadKeyDetail) SetVisibility(val UploadKeyDetailVisibility) {
 	s.Visibility = val
@@ -27921,6 +29132,17 @@ func (s *UploadKeyDetail) SetRules(val []UploadKeyRuleSummary) {
 }
 
 func (*UploadKeyDetail) getUploadKeyRes() {}
+
+type UploadKeyDetailExtraSchema map[string]jx.Raw
+
+func (s *UploadKeyDetailExtraSchema) init() UploadKeyDetailExtraSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type UploadKeyDetailMeta map[string]jx.Raw
 
@@ -27968,6 +29190,54 @@ func (s *UploadKeyDetailStatus) UnmarshalText(data []byte) error {
 		return nil
 	case UploadKeyDetailStatusDisabled:
 		*s = UploadKeyDetailStatusDisabled
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type UploadKeyDetailUploadMode string
+
+const (
+	UploadKeyDetailUploadModeAuto   UploadKeyDetailUploadMode = "auto"
+	UploadKeyDetailUploadModeDirect UploadKeyDetailUploadMode = "direct"
+	UploadKeyDetailUploadModeRelay  UploadKeyDetailUploadMode = "relay"
+)
+
+// AllValues returns all UploadKeyDetailUploadMode values.
+func (UploadKeyDetailUploadMode) AllValues() []UploadKeyDetailUploadMode {
+	return []UploadKeyDetailUploadMode{
+		UploadKeyDetailUploadModeAuto,
+		UploadKeyDetailUploadModeDirect,
+		UploadKeyDetailUploadModeRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeyDetailUploadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeyDetailUploadModeAuto:
+		return []byte(s), nil
+	case UploadKeyDetailUploadModeDirect:
+		return []byte(s), nil
+	case UploadKeyDetailUploadModeRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeyDetailUploadMode) UnmarshalText(data []byte) error {
+	switch UploadKeyDetailUploadMode(data) {
+	case UploadKeyDetailUploadModeAuto:
+		*s = UploadKeyDetailUploadModeAuto
+		return nil
+	case UploadKeyDetailUploadModeDirect:
+		*s = UploadKeyDetailUploadModeDirect
+		return nil
+	case UploadKeyDetailUploadModeRelay:
+		*s = UploadKeyDetailUploadModeRelay
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -28073,16 +29343,20 @@ func (*UploadKeyRuleListResponse) listUploadKeyRulesRes() {}
 
 // Ref: #/components/schemas/UploadKeyRuleSaveRequest
 type UploadKeyRuleSaveRequest struct {
-	RuleKey          string                                      `json:"rule_key"`
-	Name             string                                      `json:"name"`
-	SubPath          OptString                                   `json:"sub_path"`
-	FilenameStrategy OptUploadKeyRuleSaveRequestFilenameStrategy `json:"filename_strategy"`
-	MaxSizeBytes     OptInt64                                    `json:"max_size_bytes"`
-	AllowedMimeTypes []string                                    `json:"allowed_mime_types"`
-	ProcessPipeline  []string                                    `json:"process_pipeline"`
-	IsDefault        OptBool                                     `json:"is_default"`
-	Status           OptUploadKeyRuleSaveRequestStatus           `json:"status"`
-	Meta             OptUploadKeyRuleSaveRequestMeta             `json:"meta"`
+	RuleKey            string                                        `json:"rule_key"`
+	Name               string                                        `json:"name"`
+	SubPath            OptString                                     `json:"sub_path"`
+	FilenameStrategy   OptUploadKeyRuleSaveRequestFilenameStrategy   `json:"filename_strategy"`
+	MaxSizeBytes       OptInt64                                      `json:"max_size_bytes"`
+	AllowedMimeTypes   []string                                      `json:"allowed_mime_types"`
+	ProcessPipeline    []string                                      `json:"process_pipeline"`
+	ModeOverride       OptUploadKeyRuleSaveRequestModeOverride       `json:"mode_override"`
+	VisibilityOverride OptUploadKeyRuleSaveRequestVisibilityOverride `json:"visibility_override"`
+	ClientAccept       []string                                      `json:"client_accept"`
+	ExtraSchema        OptUploadKeyRuleSaveRequestExtraSchema        `json:"extra_schema"`
+	IsDefault          OptBool                                       `json:"is_default"`
+	Status             OptUploadKeyRuleSaveRequestStatus             `json:"status"`
+	Meta               OptUploadKeyRuleSaveRequestMeta               `json:"meta"`
 }
 
 // GetRuleKey returns the value of RuleKey.
@@ -28118,6 +29392,26 @@ func (s *UploadKeyRuleSaveRequest) GetAllowedMimeTypes() []string {
 // GetProcessPipeline returns the value of ProcessPipeline.
 func (s *UploadKeyRuleSaveRequest) GetProcessPipeline() []string {
 	return s.ProcessPipeline
+}
+
+// GetModeOverride returns the value of ModeOverride.
+func (s *UploadKeyRuleSaveRequest) GetModeOverride() OptUploadKeyRuleSaveRequestModeOverride {
+	return s.ModeOverride
+}
+
+// GetVisibilityOverride returns the value of VisibilityOverride.
+func (s *UploadKeyRuleSaveRequest) GetVisibilityOverride() OptUploadKeyRuleSaveRequestVisibilityOverride {
+	return s.VisibilityOverride
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *UploadKeyRuleSaveRequest) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetExtraSchema returns the value of ExtraSchema.
+func (s *UploadKeyRuleSaveRequest) GetExtraSchema() OptUploadKeyRuleSaveRequestExtraSchema {
+	return s.ExtraSchema
 }
 
 // GetIsDefault returns the value of IsDefault.
@@ -28170,6 +29464,26 @@ func (s *UploadKeyRuleSaveRequest) SetProcessPipeline(val []string) {
 	s.ProcessPipeline = val
 }
 
+// SetModeOverride sets the value of ModeOverride.
+func (s *UploadKeyRuleSaveRequest) SetModeOverride(val OptUploadKeyRuleSaveRequestModeOverride) {
+	s.ModeOverride = val
+}
+
+// SetVisibilityOverride sets the value of VisibilityOverride.
+func (s *UploadKeyRuleSaveRequest) SetVisibilityOverride(val OptUploadKeyRuleSaveRequestVisibilityOverride) {
+	s.VisibilityOverride = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *UploadKeyRuleSaveRequest) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetExtraSchema sets the value of ExtraSchema.
+func (s *UploadKeyRuleSaveRequest) SetExtraSchema(val OptUploadKeyRuleSaveRequestExtraSchema) {
+	s.ExtraSchema = val
+}
+
 // SetIsDefault sets the value of IsDefault.
 func (s *UploadKeyRuleSaveRequest) SetIsDefault(val OptBool) {
 	s.IsDefault = val
@@ -28183,6 +29497,17 @@ func (s *UploadKeyRuleSaveRequest) SetStatus(val OptUploadKeyRuleSaveRequestStat
 // SetMeta sets the value of Meta.
 func (s *UploadKeyRuleSaveRequest) SetMeta(val OptUploadKeyRuleSaveRequestMeta) {
 	s.Meta = val
+}
+
+type UploadKeyRuleSaveRequestExtraSchema map[string]jx.Raw
+
+func (s *UploadKeyRuleSaveRequestExtraSchema) init() UploadKeyRuleSaveRequestExtraSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 type UploadKeyRuleSaveRequestFilenameStrategy string
@@ -28237,6 +29562,54 @@ func (s *UploadKeyRuleSaveRequestMeta) init() UploadKeyRuleSaveRequestMeta {
 	return m
 }
 
+type UploadKeyRuleSaveRequestModeOverride string
+
+const (
+	UploadKeyRuleSaveRequestModeOverrideInherit UploadKeyRuleSaveRequestModeOverride = "inherit"
+	UploadKeyRuleSaveRequestModeOverrideDirect  UploadKeyRuleSaveRequestModeOverride = "direct"
+	UploadKeyRuleSaveRequestModeOverrideRelay   UploadKeyRuleSaveRequestModeOverride = "relay"
+)
+
+// AllValues returns all UploadKeyRuleSaveRequestModeOverride values.
+func (UploadKeyRuleSaveRequestModeOverride) AllValues() []UploadKeyRuleSaveRequestModeOverride {
+	return []UploadKeyRuleSaveRequestModeOverride{
+		UploadKeyRuleSaveRequestModeOverrideInherit,
+		UploadKeyRuleSaveRequestModeOverrideDirect,
+		UploadKeyRuleSaveRequestModeOverrideRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeyRuleSaveRequestModeOverride) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeyRuleSaveRequestModeOverrideInherit:
+		return []byte(s), nil
+	case UploadKeyRuleSaveRequestModeOverrideDirect:
+		return []byte(s), nil
+	case UploadKeyRuleSaveRequestModeOverrideRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeyRuleSaveRequestModeOverride) UnmarshalText(data []byte) error {
+	switch UploadKeyRuleSaveRequestModeOverride(data) {
+	case UploadKeyRuleSaveRequestModeOverrideInherit:
+		*s = UploadKeyRuleSaveRequestModeOverrideInherit
+		return nil
+	case UploadKeyRuleSaveRequestModeOverrideDirect:
+		*s = UploadKeyRuleSaveRequestModeOverrideDirect
+		return nil
+	case UploadKeyRuleSaveRequestModeOverrideRelay:
+		*s = UploadKeyRuleSaveRequestModeOverrideRelay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type UploadKeyRuleSaveRequestStatus string
 
 const (
@@ -28278,22 +29651,74 @@ func (s *UploadKeyRuleSaveRequestStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+type UploadKeyRuleSaveRequestVisibilityOverride string
+
+const (
+	UploadKeyRuleSaveRequestVisibilityOverrideInherit UploadKeyRuleSaveRequestVisibilityOverride = "inherit"
+	UploadKeyRuleSaveRequestVisibilityOverridePublic  UploadKeyRuleSaveRequestVisibilityOverride = "public"
+	UploadKeyRuleSaveRequestVisibilityOverridePrivate UploadKeyRuleSaveRequestVisibilityOverride = "private"
+)
+
+// AllValues returns all UploadKeyRuleSaveRequestVisibilityOverride values.
+func (UploadKeyRuleSaveRequestVisibilityOverride) AllValues() []UploadKeyRuleSaveRequestVisibilityOverride {
+	return []UploadKeyRuleSaveRequestVisibilityOverride{
+		UploadKeyRuleSaveRequestVisibilityOverrideInherit,
+		UploadKeyRuleSaveRequestVisibilityOverridePublic,
+		UploadKeyRuleSaveRequestVisibilityOverridePrivate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeyRuleSaveRequestVisibilityOverride) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeyRuleSaveRequestVisibilityOverrideInherit:
+		return []byte(s), nil
+	case UploadKeyRuleSaveRequestVisibilityOverridePublic:
+		return []byte(s), nil
+	case UploadKeyRuleSaveRequestVisibilityOverridePrivate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeyRuleSaveRequestVisibilityOverride) UnmarshalText(data []byte) error {
+	switch UploadKeyRuleSaveRequestVisibilityOverride(data) {
+	case UploadKeyRuleSaveRequestVisibilityOverrideInherit:
+		*s = UploadKeyRuleSaveRequestVisibilityOverrideInherit
+		return nil
+	case UploadKeyRuleSaveRequestVisibilityOverridePublic:
+		*s = UploadKeyRuleSaveRequestVisibilityOverridePublic
+		return nil
+	case UploadKeyRuleSaveRequestVisibilityOverridePrivate:
+		*s = UploadKeyRuleSaveRequestVisibilityOverridePrivate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/UploadKeyRuleSummary
 type UploadKeyRuleSummary struct {
-	ID               uuid.UUID                            `json:"id"`
-	UploadKeyID      uuid.UUID                            `json:"upload_key_id"`
-	RuleKey          string                               `json:"rule_key"`
-	Name             string                               `json:"name"`
-	SubPath          OptString                            `json:"sub_path"`
-	FilenameStrategy UploadKeyRuleSummaryFilenameStrategy `json:"filename_strategy"`
-	MaxSizeBytes     OptInt64                             `json:"max_size_bytes"`
-	AllowedMimeTypes []string                             `json:"allowed_mime_types"`
-	ProcessPipeline  []string                             `json:"process_pipeline"`
-	IsDefault        bool                                 `json:"is_default"`
-	Status           UploadKeyRuleSummaryStatus           `json:"status"`
-	Meta             OptUploadKeyRuleSummaryMeta          `json:"meta"`
-	CreatedAt        OptDateTime                          `json:"created_at"`
-	UpdatedAt        OptDateTime                          `json:"updated_at"`
+	ID                 uuid.UUID                                 `json:"id"`
+	UploadKeyID        uuid.UUID                                 `json:"upload_key_id"`
+	RuleKey            string                                    `json:"rule_key"`
+	Name               string                                    `json:"name"`
+	SubPath            OptString                                 `json:"sub_path"`
+	FilenameStrategy   UploadKeyRuleSummaryFilenameStrategy      `json:"filename_strategy"`
+	MaxSizeBytes       OptInt64                                  `json:"max_size_bytes"`
+	AllowedMimeTypes   []string                                  `json:"allowed_mime_types"`
+	ProcessPipeline    []string                                  `json:"process_pipeline"`
+	ModeOverride       OptUploadKeyRuleSummaryModeOverride       `json:"mode_override"`
+	VisibilityOverride OptUploadKeyRuleSummaryVisibilityOverride `json:"visibility_override"`
+	ClientAccept       []string                                  `json:"client_accept"`
+	ExtraSchema        OptUploadKeyRuleSummaryExtraSchema        `json:"extra_schema"`
+	IsDefault          bool                                      `json:"is_default"`
+	Status             UploadKeyRuleSummaryStatus                `json:"status"`
+	Meta               OptUploadKeyRuleSummaryMeta               `json:"meta"`
+	CreatedAt          OptDateTime                               `json:"created_at"`
+	UpdatedAt          OptDateTime                               `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -28339,6 +29764,26 @@ func (s *UploadKeyRuleSummary) GetAllowedMimeTypes() []string {
 // GetProcessPipeline returns the value of ProcessPipeline.
 func (s *UploadKeyRuleSummary) GetProcessPipeline() []string {
 	return s.ProcessPipeline
+}
+
+// GetModeOverride returns the value of ModeOverride.
+func (s *UploadKeyRuleSummary) GetModeOverride() OptUploadKeyRuleSummaryModeOverride {
+	return s.ModeOverride
+}
+
+// GetVisibilityOverride returns the value of VisibilityOverride.
+func (s *UploadKeyRuleSummary) GetVisibilityOverride() OptUploadKeyRuleSummaryVisibilityOverride {
+	return s.VisibilityOverride
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *UploadKeyRuleSummary) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetExtraSchema returns the value of ExtraSchema.
+func (s *UploadKeyRuleSummary) GetExtraSchema() OptUploadKeyRuleSummaryExtraSchema {
+	return s.ExtraSchema
 }
 
 // GetIsDefault returns the value of IsDefault.
@@ -28411,6 +29856,26 @@ func (s *UploadKeyRuleSummary) SetProcessPipeline(val []string) {
 	s.ProcessPipeline = val
 }
 
+// SetModeOverride sets the value of ModeOverride.
+func (s *UploadKeyRuleSummary) SetModeOverride(val OptUploadKeyRuleSummaryModeOverride) {
+	s.ModeOverride = val
+}
+
+// SetVisibilityOverride sets the value of VisibilityOverride.
+func (s *UploadKeyRuleSummary) SetVisibilityOverride(val OptUploadKeyRuleSummaryVisibilityOverride) {
+	s.VisibilityOverride = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *UploadKeyRuleSummary) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetExtraSchema sets the value of ExtraSchema.
+func (s *UploadKeyRuleSummary) SetExtraSchema(val OptUploadKeyRuleSummaryExtraSchema) {
+	s.ExtraSchema = val
+}
+
 // SetIsDefault sets the value of IsDefault.
 func (s *UploadKeyRuleSummary) SetIsDefault(val bool) {
 	s.IsDefault = val
@@ -28438,6 +29903,17 @@ func (s *UploadKeyRuleSummary) SetUpdatedAt(val OptDateTime) {
 
 func (*UploadKeyRuleSummary) createUploadKeyRuleRes() {}
 func (*UploadKeyRuleSummary) updateUploadKeyRuleRes() {}
+
+type UploadKeyRuleSummaryExtraSchema map[string]jx.Raw
+
+func (s *UploadKeyRuleSummaryExtraSchema) init() UploadKeyRuleSummaryExtraSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type UploadKeyRuleSummaryFilenameStrategy string
 
@@ -28491,6 +29967,54 @@ func (s *UploadKeyRuleSummaryMeta) init() UploadKeyRuleSummaryMeta {
 	return m
 }
 
+type UploadKeyRuleSummaryModeOverride string
+
+const (
+	UploadKeyRuleSummaryModeOverrideInherit UploadKeyRuleSummaryModeOverride = "inherit"
+	UploadKeyRuleSummaryModeOverrideDirect  UploadKeyRuleSummaryModeOverride = "direct"
+	UploadKeyRuleSummaryModeOverrideRelay   UploadKeyRuleSummaryModeOverride = "relay"
+)
+
+// AllValues returns all UploadKeyRuleSummaryModeOverride values.
+func (UploadKeyRuleSummaryModeOverride) AllValues() []UploadKeyRuleSummaryModeOverride {
+	return []UploadKeyRuleSummaryModeOverride{
+		UploadKeyRuleSummaryModeOverrideInherit,
+		UploadKeyRuleSummaryModeOverrideDirect,
+		UploadKeyRuleSummaryModeOverrideRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeyRuleSummaryModeOverride) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeyRuleSummaryModeOverrideInherit:
+		return []byte(s), nil
+	case UploadKeyRuleSummaryModeOverrideDirect:
+		return []byte(s), nil
+	case UploadKeyRuleSummaryModeOverrideRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeyRuleSummaryModeOverride) UnmarshalText(data []byte) error {
+	switch UploadKeyRuleSummaryModeOverride(data) {
+	case UploadKeyRuleSummaryModeOverrideInherit:
+		*s = UploadKeyRuleSummaryModeOverrideInherit
+		return nil
+	case UploadKeyRuleSummaryModeOverrideDirect:
+		*s = UploadKeyRuleSummaryModeOverrideDirect
+		return nil
+	case UploadKeyRuleSummaryModeOverrideRelay:
+		*s = UploadKeyRuleSummaryModeOverrideRelay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type UploadKeyRuleSummaryStatus string
 
 const (
@@ -28532,18 +30056,73 @@ func (s *UploadKeyRuleSummaryStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+type UploadKeyRuleSummaryVisibilityOverride string
+
+const (
+	UploadKeyRuleSummaryVisibilityOverrideInherit UploadKeyRuleSummaryVisibilityOverride = "inherit"
+	UploadKeyRuleSummaryVisibilityOverridePublic  UploadKeyRuleSummaryVisibilityOverride = "public"
+	UploadKeyRuleSummaryVisibilityOverridePrivate UploadKeyRuleSummaryVisibilityOverride = "private"
+)
+
+// AllValues returns all UploadKeyRuleSummaryVisibilityOverride values.
+func (UploadKeyRuleSummaryVisibilityOverride) AllValues() []UploadKeyRuleSummaryVisibilityOverride {
+	return []UploadKeyRuleSummaryVisibilityOverride{
+		UploadKeyRuleSummaryVisibilityOverrideInherit,
+		UploadKeyRuleSummaryVisibilityOverridePublic,
+		UploadKeyRuleSummaryVisibilityOverridePrivate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeyRuleSummaryVisibilityOverride) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeyRuleSummaryVisibilityOverrideInherit:
+		return []byte(s), nil
+	case UploadKeyRuleSummaryVisibilityOverridePublic:
+		return []byte(s), nil
+	case UploadKeyRuleSummaryVisibilityOverridePrivate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeyRuleSummaryVisibilityOverride) UnmarshalText(data []byte) error {
+	switch UploadKeyRuleSummaryVisibilityOverride(data) {
+	case UploadKeyRuleSummaryVisibilityOverrideInherit:
+		*s = UploadKeyRuleSummaryVisibilityOverrideInherit
+		return nil
+	case UploadKeyRuleSummaryVisibilityOverridePublic:
+		*s = UploadKeyRuleSummaryVisibilityOverridePublic
+		return nil
+	case UploadKeyRuleSummaryVisibilityOverridePrivate:
+		*s = UploadKeyRuleSummaryVisibilityOverridePrivate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/UploadKeySaveRequest
 type UploadKeySaveRequest struct {
-	BucketID         uuid.UUID                         `json:"bucket_id"`
-	Key              string                            `json:"key"`
-	Name             string                            `json:"name"`
-	PathTemplate     OptString                         `json:"path_template"`
-	DefaultRuleKey   OptString                         `json:"default_rule_key"`
-	MaxSizeBytes     OptInt64                          `json:"max_size_bytes"`
-	AllowedMimeTypes []string                          `json:"allowed_mime_types"`
-	Visibility       OptUploadKeySaveRequestVisibility `json:"visibility"`
-	Status           OptUploadKeySaveRequestStatus     `json:"status"`
-	Meta             OptUploadKeySaveRequestMeta       `json:"meta"`
+	BucketID                 uuid.UUID                          `json:"bucket_id"`
+	Key                      string                             `json:"key"`
+	Name                     string                             `json:"name"`
+	PathTemplate             OptString                          `json:"path_template"`
+	DefaultRuleKey           OptString                          `json:"default_rule_key"`
+	MaxSizeBytes             OptInt64                           `json:"max_size_bytes"`
+	AllowedMimeTypes         []string                           `json:"allowed_mime_types"`
+	UploadMode               OptUploadKeySaveRequestUploadMode  `json:"upload_mode"`
+	IsFrontendVisible        OptBool                            `json:"is_frontend_visible"`
+	PermissionKey            OptString                          `json:"permission_key"`
+	FallbackKey              OptString                          `json:"fallback_key"`
+	ClientAccept             []string                           `json:"client_accept"`
+	DirectSizeThresholdBytes OptInt64                           `json:"direct_size_threshold_bytes"`
+	ExtraSchema              OptUploadKeySaveRequestExtraSchema `json:"extra_schema"`
+	Visibility               OptUploadKeySaveRequestVisibility  `json:"visibility"`
+	Status                   OptUploadKeySaveRequestStatus      `json:"status"`
+	Meta                     OptUploadKeySaveRequestMeta        `json:"meta"`
 }
 
 // GetBucketID returns the value of BucketID.
@@ -28579,6 +30158,41 @@ func (s *UploadKeySaveRequest) GetMaxSizeBytes() OptInt64 {
 // GetAllowedMimeTypes returns the value of AllowedMimeTypes.
 func (s *UploadKeySaveRequest) GetAllowedMimeTypes() []string {
 	return s.AllowedMimeTypes
+}
+
+// GetUploadMode returns the value of UploadMode.
+func (s *UploadKeySaveRequest) GetUploadMode() OptUploadKeySaveRequestUploadMode {
+	return s.UploadMode
+}
+
+// GetIsFrontendVisible returns the value of IsFrontendVisible.
+func (s *UploadKeySaveRequest) GetIsFrontendVisible() OptBool {
+	return s.IsFrontendVisible
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *UploadKeySaveRequest) GetPermissionKey() OptString {
+	return s.PermissionKey
+}
+
+// GetFallbackKey returns the value of FallbackKey.
+func (s *UploadKeySaveRequest) GetFallbackKey() OptString {
+	return s.FallbackKey
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *UploadKeySaveRequest) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetDirectSizeThresholdBytes returns the value of DirectSizeThresholdBytes.
+func (s *UploadKeySaveRequest) GetDirectSizeThresholdBytes() OptInt64 {
+	return s.DirectSizeThresholdBytes
+}
+
+// GetExtraSchema returns the value of ExtraSchema.
+func (s *UploadKeySaveRequest) GetExtraSchema() OptUploadKeySaveRequestExtraSchema {
+	return s.ExtraSchema
 }
 
 // GetVisibility returns the value of Visibility.
@@ -28631,6 +30245,41 @@ func (s *UploadKeySaveRequest) SetAllowedMimeTypes(val []string) {
 	s.AllowedMimeTypes = val
 }
 
+// SetUploadMode sets the value of UploadMode.
+func (s *UploadKeySaveRequest) SetUploadMode(val OptUploadKeySaveRequestUploadMode) {
+	s.UploadMode = val
+}
+
+// SetIsFrontendVisible sets the value of IsFrontendVisible.
+func (s *UploadKeySaveRequest) SetIsFrontendVisible(val OptBool) {
+	s.IsFrontendVisible = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *UploadKeySaveRequest) SetPermissionKey(val OptString) {
+	s.PermissionKey = val
+}
+
+// SetFallbackKey sets the value of FallbackKey.
+func (s *UploadKeySaveRequest) SetFallbackKey(val OptString) {
+	s.FallbackKey = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *UploadKeySaveRequest) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetDirectSizeThresholdBytes sets the value of DirectSizeThresholdBytes.
+func (s *UploadKeySaveRequest) SetDirectSizeThresholdBytes(val OptInt64) {
+	s.DirectSizeThresholdBytes = val
+}
+
+// SetExtraSchema sets the value of ExtraSchema.
+func (s *UploadKeySaveRequest) SetExtraSchema(val OptUploadKeySaveRequestExtraSchema) {
+	s.ExtraSchema = val
+}
+
 // SetVisibility sets the value of Visibility.
 func (s *UploadKeySaveRequest) SetVisibility(val OptUploadKeySaveRequestVisibility) {
 	s.Visibility = val
@@ -28644,6 +30293,17 @@ func (s *UploadKeySaveRequest) SetStatus(val OptUploadKeySaveRequestStatus) {
 // SetMeta sets the value of Meta.
 func (s *UploadKeySaveRequest) SetMeta(val OptUploadKeySaveRequestMeta) {
 	s.Meta = val
+}
+
+type UploadKeySaveRequestExtraSchema map[string]jx.Raw
+
+func (s *UploadKeySaveRequestExtraSchema) init() UploadKeySaveRequestExtraSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 type UploadKeySaveRequestMeta map[string]jx.Raw
@@ -28698,6 +30358,54 @@ func (s *UploadKeySaveRequestStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+type UploadKeySaveRequestUploadMode string
+
+const (
+	UploadKeySaveRequestUploadModeAuto   UploadKeySaveRequestUploadMode = "auto"
+	UploadKeySaveRequestUploadModeDirect UploadKeySaveRequestUploadMode = "direct"
+	UploadKeySaveRequestUploadModeRelay  UploadKeySaveRequestUploadMode = "relay"
+)
+
+// AllValues returns all UploadKeySaveRequestUploadMode values.
+func (UploadKeySaveRequestUploadMode) AllValues() []UploadKeySaveRequestUploadMode {
+	return []UploadKeySaveRequestUploadMode{
+		UploadKeySaveRequestUploadModeAuto,
+		UploadKeySaveRequestUploadModeDirect,
+		UploadKeySaveRequestUploadModeRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeySaveRequestUploadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeySaveRequestUploadModeAuto:
+		return []byte(s), nil
+	case UploadKeySaveRequestUploadModeDirect:
+		return []byte(s), nil
+	case UploadKeySaveRequestUploadModeRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeySaveRequestUploadMode) UnmarshalText(data []byte) error {
+	switch UploadKeySaveRequestUploadMode(data) {
+	case UploadKeySaveRequestUploadModeAuto:
+		*s = UploadKeySaveRequestUploadModeAuto
+		return nil
+	case UploadKeySaveRequestUploadModeDirect:
+		*s = UploadKeySaveRequestUploadModeDirect
+		return nil
+	case UploadKeySaveRequestUploadModeRelay:
+		*s = UploadKeySaveRequestUploadModeRelay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type UploadKeySaveRequestVisibility string
 
 const (
@@ -28741,20 +30449,27 @@ func (s *UploadKeySaveRequestVisibility) UnmarshalText(data []byte) error {
 
 // Ref: #/components/schemas/UploadKeySummary
 type UploadKeySummary struct {
-	ID               uuid.UUID                  `json:"id"`
-	BucketID         uuid.UUID                  `json:"bucket_id"`
-	BucketKey        OptString                  `json:"bucket_key"`
-	Key              string                     `json:"key"`
-	Name             string                     `json:"name"`
-	PathTemplate     OptString                  `json:"path_template"`
-	DefaultRuleKey   OptString                  `json:"default_rule_key"`
-	MaxSizeBytes     OptInt64                   `json:"max_size_bytes"`
-	AllowedMimeTypes []string                   `json:"allowed_mime_types"`
-	Visibility       UploadKeySummaryVisibility `json:"visibility"`
-	Status           UploadKeySummaryStatus     `json:"status"`
-	Meta             OptUploadKeySummaryMeta    `json:"meta"`
-	CreatedAt        OptDateTime                `json:"created_at"`
-	UpdatedAt        OptDateTime                `json:"updated_at"`
+	ID                       uuid.UUID                      `json:"id"`
+	BucketID                 uuid.UUID                      `json:"bucket_id"`
+	BucketKey                OptString                      `json:"bucket_key"`
+	Key                      string                         `json:"key"`
+	Name                     string                         `json:"name"`
+	PathTemplate             OptString                      `json:"path_template"`
+	DefaultRuleKey           OptString                      `json:"default_rule_key"`
+	MaxSizeBytes             OptInt64                       `json:"max_size_bytes"`
+	AllowedMimeTypes         []string                       `json:"allowed_mime_types"`
+	UploadMode               OptUploadKeySummaryUploadMode  `json:"upload_mode"`
+	IsFrontendVisible        OptBool                        `json:"is_frontend_visible"`
+	PermissionKey            OptString                      `json:"permission_key"`
+	FallbackKey              OptString                      `json:"fallback_key"`
+	ClientAccept             []string                       `json:"client_accept"`
+	DirectSizeThresholdBytes OptInt64                       `json:"direct_size_threshold_bytes"`
+	ExtraSchema              OptUploadKeySummaryExtraSchema `json:"extra_schema"`
+	Visibility               UploadKeySummaryVisibility     `json:"visibility"`
+	Status                   UploadKeySummaryStatus         `json:"status"`
+	Meta                     OptUploadKeySummaryMeta        `json:"meta"`
+	CreatedAt                OptDateTime                    `json:"created_at"`
+	UpdatedAt                OptDateTime                    `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -28800,6 +30515,41 @@ func (s *UploadKeySummary) GetMaxSizeBytes() OptInt64 {
 // GetAllowedMimeTypes returns the value of AllowedMimeTypes.
 func (s *UploadKeySummary) GetAllowedMimeTypes() []string {
 	return s.AllowedMimeTypes
+}
+
+// GetUploadMode returns the value of UploadMode.
+func (s *UploadKeySummary) GetUploadMode() OptUploadKeySummaryUploadMode {
+	return s.UploadMode
+}
+
+// GetIsFrontendVisible returns the value of IsFrontendVisible.
+func (s *UploadKeySummary) GetIsFrontendVisible() OptBool {
+	return s.IsFrontendVisible
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *UploadKeySummary) GetPermissionKey() OptString {
+	return s.PermissionKey
+}
+
+// GetFallbackKey returns the value of FallbackKey.
+func (s *UploadKeySummary) GetFallbackKey() OptString {
+	return s.FallbackKey
+}
+
+// GetClientAccept returns the value of ClientAccept.
+func (s *UploadKeySummary) GetClientAccept() []string {
+	return s.ClientAccept
+}
+
+// GetDirectSizeThresholdBytes returns the value of DirectSizeThresholdBytes.
+func (s *UploadKeySummary) GetDirectSizeThresholdBytes() OptInt64 {
+	return s.DirectSizeThresholdBytes
+}
+
+// GetExtraSchema returns the value of ExtraSchema.
+func (s *UploadKeySummary) GetExtraSchema() OptUploadKeySummaryExtraSchema {
+	return s.ExtraSchema
 }
 
 // GetVisibility returns the value of Visibility.
@@ -28872,6 +30622,41 @@ func (s *UploadKeySummary) SetAllowedMimeTypes(val []string) {
 	s.AllowedMimeTypes = val
 }
 
+// SetUploadMode sets the value of UploadMode.
+func (s *UploadKeySummary) SetUploadMode(val OptUploadKeySummaryUploadMode) {
+	s.UploadMode = val
+}
+
+// SetIsFrontendVisible sets the value of IsFrontendVisible.
+func (s *UploadKeySummary) SetIsFrontendVisible(val OptBool) {
+	s.IsFrontendVisible = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *UploadKeySummary) SetPermissionKey(val OptString) {
+	s.PermissionKey = val
+}
+
+// SetFallbackKey sets the value of FallbackKey.
+func (s *UploadKeySummary) SetFallbackKey(val OptString) {
+	s.FallbackKey = val
+}
+
+// SetClientAccept sets the value of ClientAccept.
+func (s *UploadKeySummary) SetClientAccept(val []string) {
+	s.ClientAccept = val
+}
+
+// SetDirectSizeThresholdBytes sets the value of DirectSizeThresholdBytes.
+func (s *UploadKeySummary) SetDirectSizeThresholdBytes(val OptInt64) {
+	s.DirectSizeThresholdBytes = val
+}
+
+// SetExtraSchema sets the value of ExtraSchema.
+func (s *UploadKeySummary) SetExtraSchema(val OptUploadKeySummaryExtraSchema) {
+	s.ExtraSchema = val
+}
+
 // SetVisibility sets the value of Visibility.
 func (s *UploadKeySummary) SetVisibility(val UploadKeySummaryVisibility) {
 	s.Visibility = val
@@ -28899,6 +30684,17 @@ func (s *UploadKeySummary) SetUpdatedAt(val OptDateTime) {
 
 func (*UploadKeySummary) createUploadKeyRes() {}
 func (*UploadKeySummary) updateUploadKeyRes() {}
+
+type UploadKeySummaryExtraSchema map[string]jx.Raw
+
+func (s *UploadKeySummaryExtraSchema) init() UploadKeySummaryExtraSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type UploadKeySummaryMeta map[string]jx.Raw
 
@@ -28946,6 +30742,54 @@ func (s *UploadKeySummaryStatus) UnmarshalText(data []byte) error {
 		return nil
 	case UploadKeySummaryStatusDisabled:
 		*s = UploadKeySummaryStatusDisabled
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type UploadKeySummaryUploadMode string
+
+const (
+	UploadKeySummaryUploadModeAuto   UploadKeySummaryUploadMode = "auto"
+	UploadKeySummaryUploadModeDirect UploadKeySummaryUploadMode = "direct"
+	UploadKeySummaryUploadModeRelay  UploadKeySummaryUploadMode = "relay"
+)
+
+// AllValues returns all UploadKeySummaryUploadMode values.
+func (UploadKeySummaryUploadMode) AllValues() []UploadKeySummaryUploadMode {
+	return []UploadKeySummaryUploadMode{
+		UploadKeySummaryUploadModeAuto,
+		UploadKeySummaryUploadModeDirect,
+		UploadKeySummaryUploadModeRelay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UploadKeySummaryUploadMode) MarshalText() ([]byte, error) {
+	switch s {
+	case UploadKeySummaryUploadModeAuto:
+		return []byte(s), nil
+	case UploadKeySummaryUploadModeDirect:
+		return []byte(s), nil
+	case UploadKeySummaryUploadModeRelay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UploadKeySummaryUploadMode) UnmarshalText(data []byte) error {
+	switch UploadKeySummaryUploadMode(data) {
+	case UploadKeySummaryUploadModeAuto:
+		*s = UploadKeySummaryUploadModeAuto
+		return nil
+	case UploadKeySummaryUploadModeDirect:
+		*s = UploadKeySummaryUploadModeDirect
+		return nil
+	case UploadKeySummaryUploadModeRelay:
+		*s = UploadKeySummaryUploadModeRelay
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

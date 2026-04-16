@@ -35,12 +35,14 @@ components:
         sort_order: {type: integer}
     DictItemSummary:
       type: object
-      required: [id, label, value, status]
+      required: [id, label, value, status, is_builtin]
       properties:
         id: {type: string, format: uuid}
         label: {type: string}
         value: {type: string}
+        description: {type: string, maxLength: 500}
         extra: {type: object}
+        is_builtin: {type: boolean}
         is_default: {type: boolean}
         status: {type: string}
         sort_order: {type: integer}
@@ -67,6 +69,7 @@ components:
       properties:
         label: {type: string, maxLength: 200}
         value: {type: string, maxLength: 200}
+        description: {type: string, maxLength: 500}
         extra: {type: object}
         is_default: {type: boolean}
         status: {type: string, enum: [normal, suspended]}

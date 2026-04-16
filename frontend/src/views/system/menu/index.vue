@@ -17,21 +17,12 @@
         :metrics="menuHeroMetrics"
       >
         <div class="menu-hero-actions">
-          <ElSelect
+          <AppKeySelect
             v-model="selectedAppKey"
             class="menu-app-select"
-            clearable
-            filterable
             placeholder="选择 App"
             @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
+          />
           <ElSelect
             v-if="selectedAppKey"
             v-model="activeSpaceKey"
@@ -300,6 +291,7 @@
   // 这里只做：1) 引入子组件；2) 调用 composable；3) 把返回值拉到 setup 作用域供模板访问。
   // 拆分前 1280+ 行，拆分后 ~120 行。
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import {
     ElAlert,
@@ -344,7 +336,6 @@
     selectedMenuRows,
     isLayoutMode,
     menuSpaceOptions,
-    appOptions,
     menuPageTitle,
     menuPageDescription,
     menuToolbarTip,

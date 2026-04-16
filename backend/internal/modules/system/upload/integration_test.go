@@ -1,4 +1,4 @@
-﻿package upload
+package upload
 
 import (
 	"bytes"
@@ -92,6 +92,13 @@ func newUploadTestDB(t *testing.T) *gorm.DB {
 			default_rule_key TEXT NOT NULL DEFAULT '',
 			max_size_bytes INTEGER NOT NULL DEFAULT 0,
 			allowed_mime_types TEXT NOT NULL DEFAULT '[]',
+			upload_mode TEXT NOT NULL DEFAULT 'auto',
+			is_frontend_visible INTEGER NOT NULL DEFAULT 0,
+			permission_key TEXT NOT NULL DEFAULT '',
+			fallback_key TEXT NOT NULL DEFAULT '',
+			client_accept TEXT NOT NULL DEFAULT '[]',
+			direct_size_threshold_bytes INTEGER NOT NULL DEFAULT 0,
+			extra_schema TEXT NOT NULL DEFAULT '{}',
 			visibility TEXT NOT NULL DEFAULT 'public',
 			status TEXT NOT NULL DEFAULT 'ready',
 			meta TEXT NOT NULL DEFAULT '{}',
@@ -111,6 +118,10 @@ func newUploadTestDB(t *testing.T) *gorm.DB {
 			max_size_bytes INTEGER NOT NULL DEFAULT 0,
 			allowed_mime_types TEXT NOT NULL DEFAULT '[]',
 			process_pipeline TEXT NOT NULL DEFAULT '[]',
+			mode_override TEXT NOT NULL DEFAULT 'inherit',
+			visibility_override TEXT NOT NULL DEFAULT 'inherit',
+			client_accept TEXT NOT NULL DEFAULT '[]',
+			extra_schema TEXT NOT NULL DEFAULT '{}',
 			is_default INTEGER NOT NULL DEFAULT 0,
 			status TEXT NOT NULL DEFAULT 'ready',
 			meta TEXT NOT NULL DEFAULT '{}',
@@ -387,6 +398,37 @@ func TestServiceSQLiteEnsureSeedUploadListAndDelete(t *testing.T) {
 		t.Fatalf("EnsureDefaultSeeds() wrapper error = %v", err)
 	}
 
+	avatarKey, err := repo.GetUploadKeyByKey(ctx, "tenant-a", "user.avatar")
+	if err != nil {
+		t.Fatalf("GetUploadKeyByKey(user.avatar) error = %v", err)
+	}
+	if avatarKey.UploadMode != models.UploadModeAuto {
+		t.Fatalf("user.avatar upload_mode = %q, want %q", avatarKey.UploadMode, models.UploadModeAuto)
+	}
+	if !avatarKey.IsFrontendVisible {
+		t.Fatalf("user.avatar is_frontend_visible = false, want true")
+	}
+	if len(avatarKey.ClientAccept) == 0 || avatarKey.ClientAccept[0] != "image/*" {
+		t.Fatalf("user.avatar client_accept = %#v, want image/*", avatarKey.ClientAccept)
+	}
+	if avatarKey.ExtraSchema == nil {
+		t.Fatalf("user.avatar extra_schema = nil, want {}")
+	}
+
+	editorRule, err := repo.GetUploadRuleByKey(ctx, "tenant-a", avatarKey.ID, "avatar")
+	if err != nil {
+		t.Fatalf("GetUploadRuleByKey(avatar) error = %v", err)
+	}
+	if editorRule.ModeOverride != models.UploadModeInherit {
+		t.Fatalf("avatar rule mode_override = %q, want %q", editorRule.ModeOverride, models.UploadModeInherit)
+	}
+	if editorRule.VisibilityOverride != models.VisibilityOverrideInherit {
+		t.Fatalf("avatar rule visibility_override = %q, want %q", editorRule.VisibilityOverride, models.VisibilityOverrideInherit)
+	}
+	if len(editorRule.ClientAccept) == 0 || editorRule.ClientAccept[0] != "image/*" {
+		t.Fatalf("avatar rule client_accept = %#v, want image/*", editorRule.ClientAccept)
+	}
+
 	if _, err := svc.Upload(ctx, "tenant-a", nil, UploadInput{Name: "", File: bytes.NewBuffer(nil)}); !errors.Is(err, ErrInvalidFile) {
 		t.Fatalf("Upload() invalid input error = %v, want %v", err, ErrInvalidFile)
 	}
@@ -498,4 +540,3 @@ func TestResolvedConfigCacheLogWarnAndMalformedPayload(t *testing.T) {
 	cache.logWarn("test")
 	cache.handleInvalidationPayload("not-json")
 }
-

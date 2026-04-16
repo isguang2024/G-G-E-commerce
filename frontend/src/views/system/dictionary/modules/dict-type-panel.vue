@@ -29,45 +29,50 @@
         @click="$emit('select', item)"
       >
         <div class="type-item-main">
-          <div class="type-item-name">
-            {{ item.name }}
-            <ElTag v-if="item.is_builtin" size="small" type="info" style="margin-left: 6px">
-              内置
-            </ElTag>
+          <div class="type-item-top">
+            <div class="type-item-name">
+              {{ item.name }}
+              <ElTag v-if="item.is_builtin" size="small" type="info" effect="plain">
+                内置
+              </ElTag>
+            </div>
+            <div class="type-item-actions">
+              <ElDropdown
+                v-if="!item.is_builtin"
+                trigger="click"
+                @command="(cmd: string) => handleCommand(cmd, item)"
+                @click.stop
+              >
+                <ElButton :icon="MoreFilled" text size="small" @click.stop />
+                <template #dropdown>
+                  <ElDropdownMenu>
+                    <ElDropdownItem command="edit">编辑</ElDropdownItem>
+                    <ElDropdownItem command="delete" divided style="color: var(--el-color-danger)">
+                      删除
+                    </ElDropdownItem>
+                  </ElDropdownMenu>
+                </template>
+              </ElDropdown>
+              <ElDropdown
+                v-else
+                trigger="click"
+                @command="(cmd: string) => handleCommand(cmd, item)"
+                @click.stop
+              >
+                <ElButton :icon="MoreFilled" text size="small" @click.stop />
+                <template #dropdown>
+                  <ElDropdownMenu>
+                    <ElDropdownItem command="edit">编辑</ElDropdownItem>
+                  </ElDropdownMenu>
+                </template>
+              </ElDropdown>
+            </div>
           </div>
-          <div class="type-item-code">{{ item.code }}</div>
-        </div>
-        <div class="type-item-actions">
-          <span class="type-item-count">{{ item.item_count }} 项</span>
-          <ElDropdown
-            v-if="!item.is_builtin"
-            trigger="click"
-            @command="(cmd: string) => handleCommand(cmd, item)"
-            @click.stop
-          >
-            <ElButton :icon="MoreFilled" text size="small" @click.stop />
-            <template #dropdown>
-              <ElDropdownMenu>
-                <ElDropdownItem command="edit">编辑</ElDropdownItem>
-                <ElDropdownItem command="delete" divided style="color: var(--el-color-danger)">
-                  删除
-                </ElDropdownItem>
-              </ElDropdownMenu>
-            </template>
-          </ElDropdown>
-          <ElDropdown
-            v-else
-            trigger="click"
-            @command="(cmd: string) => handleCommand(cmd, item)"
-            @click.stop
-          >
-            <ElButton :icon="MoreFilled" text size="small" @click.stop />
-            <template #dropdown>
-              <ElDropdownMenu>
-                <ElDropdownItem command="edit">编辑</ElDropdownItem>
-              </ElDropdownMenu>
-            </template>
-          </ElDropdown>
+          <div class="type-item-meta">
+            <span class="type-item-code">{{ item.code }}</span>
+            <span v-if="item.description" class="type-item-description">{{ item.description }}</span>
+            <span class="type-item-count">{{ item.item_count }} 项</span>
+          </div>
         </div>
       </div>
 
@@ -193,12 +198,14 @@
 
 <style scoped lang="scss">
   .dict-type-panel {
-    height: 100%;
+    max-height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 
     :deep(.el-card__body) {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -218,30 +225,43 @@
 
   .type-list {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
   .type-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    border-radius: 6px;
+    padding: 14px 12px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition:
+      background-color 0.2s,
+      box-shadow 0.2s;
+    border: 1px solid transparent;
 
     &:hover {
       background-color: var(--el-fill-color-light);
+      border-color: var(--el-border-color);
     }
 
     &.is-active {
       background-color: var(--el-color-primary-light-9);
+      border-color: var(--el-color-primary-light-5);
+      box-shadow: 0 6px 16px rgb(64 158 255 / 8%);
     }
   }
 
   .type-item-main {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     min-width: 0;
+  }
+
+  .type-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .type-item-name {
@@ -249,24 +269,61 @@
     font-weight: 500;
     display: flex;
     align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .type-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-width: 0;
   }
 
   .type-item-code {
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-top: 2px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .type-item-description {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--el-text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .type-item-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: flex-end;
+    gap: 6px;
     flex-shrink: 0;
   }
 
   .type-item-count {
     font-size: 12px;
-    color: var(--el-text-color-placeholder);
+    color: var(--el-color-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 1400px) {
+    .type-item {
+      padding: 12px 10px;
+    }
+
+    .type-item-meta {
+      gap: 6px;
+    }
   }
 
   .type-pagination {

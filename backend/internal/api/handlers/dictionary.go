@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"context"
@@ -212,12 +212,17 @@ func (h *APIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchS
 		if v, ok := item.IsDefault.Get(); ok {
 			isDefault = v
 		}
+		description := ""
+		if v, ok := item.Description.Get(); ok {
+			description = v
+		}
 		inputs[i] = dictionary.DictItemInput{
-			Label:     item.Label,
-			Value:     item.Value,
-			IsDefault: isDefault,
-			Status:    status,
-			SortOrder: sortOrder,
+			Label:       item.Label,
+			Value:       item.Value,
+			Description: description,
+			IsDefault:   isDefault,
+			Status:      status,
+			SortOrder:   sortOrder,
 		}
 	}
 
@@ -229,7 +234,10 @@ func (h *APIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchS
 		}
 		if errors.Is(err, dictionary.ErrItemLabelRequired) ||
 			errors.Is(err, dictionary.ErrItemValueRequired) ||
-			errors.Is(err, dictionary.ErrItemValueDuplicate) {
+			errors.Is(err, dictionary.ErrItemValueDuplicate) ||
+			errors.Is(err, dictionary.ErrItemBuiltinReadonly) ||
+			errors.Is(err, dictionary.ErrItemDeleteRequiresSuspended) ||
+			errors.Is(err, dictionary.ErrItemBuiltinValueImmutable) {
 			e := gen.SaveDictItemsBadRequest(gen.Error{Code: 400, Message: err.Error()})
 			return &e, nil
 		}
@@ -243,6 +251,68 @@ func (h *APIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchS
 		result[i] = mapDictItemSummary(item)
 	}
 	return &result, nil
+}
+
+func (h *APIHandler) CreateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.CreateDictItemParams) (gen.CreateDictItemRes, error) {
+	item, err := h.dictSvc.CreateItem(ctx, params.ID, toDictItemInput(*req))
+	if err != nil {
+		if errors.Is(err, dictionary.ErrTypeNotFound) {
+			e := gen.CreateDictItemNotFound(gen.Error{Code: 404, Message: err.Error()})
+			return &e, nil
+		}
+		if errors.Is(err, dictionary.ErrItemLabelRequired) ||
+			errors.Is(err, dictionary.ErrItemValueRequired) ||
+			errors.Is(err, dictionary.ErrItemValueDuplicate) {
+			e := gen.CreateDictItemBadRequest(gen.Error{Code: 400, Message: err.Error()})
+			return &e, nil
+		}
+		h.logger.Error("create dict item", zap.Error(err))
+		e := gen.CreateDictItemBadRequest(gen.Error{Code: 500, Message: "创建失败"})
+		return &e, nil
+	}
+	summary := mapDictItemSummary(*item)
+	return &summary, nil
+}
+
+func (h *APIHandler) UpdateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.UpdateDictItemParams) (gen.UpdateDictItemRes, error) {
+	item, err := h.dictSvc.UpdateItem(ctx, params.ID, params.ItemId, toDictItemInput(*req))
+	if err != nil {
+		if errors.Is(err, dictionary.ErrItemNotFound) || errors.Is(err, dictionary.ErrTypeNotFound) {
+			e := gen.UpdateDictItemNotFound(gen.Error{Code: 404, Message: err.Error()})
+			return &e, nil
+		}
+		if errors.Is(err, dictionary.ErrItemLabelRequired) ||
+			errors.Is(err, dictionary.ErrItemValueRequired) ||
+			errors.Is(err, dictionary.ErrItemValueDuplicate) ||
+			errors.Is(err, dictionary.ErrItemBuiltinValueImmutable) {
+			e := gen.UpdateDictItemBadRequest(gen.Error{Code: 400, Message: err.Error()})
+			return &e, nil
+		}
+		h.logger.Error("update dict item", zap.Error(err))
+		e := gen.UpdateDictItemBadRequest(gen.Error{Code: 500, Message: "更新失败"})
+		return &e, nil
+	}
+	summary := mapDictItemSummary(*item)
+	return &summary, nil
+}
+
+func (h *APIHandler) DeleteDictItem(ctx context.Context, params gen.DeleteDictItemParams) (gen.DeleteDictItemRes, error) {
+	if err := h.dictSvc.DeleteItem(ctx, params.ID, params.ItemId); err != nil {
+		if errors.Is(err, dictionary.ErrItemNotFound) || errors.Is(err, dictionary.ErrTypeNotFound) {
+			e := gen.DeleteDictItemNotFound(gen.Error{Code: 404, Message: err.Error()})
+			return &e, nil
+		}
+		if errors.Is(err, dictionary.ErrItemBuiltinReadonly) ||
+			errors.Is(err, dictionary.ErrItemDeleteRequiresSuspended) {
+			e := gen.DeleteDictItemBadRequest(gen.Error{Code: 400, Message: err.Error()})
+			return &e, nil
+		}
+		h.logger.Error("delete dict item", zap.Error(err))
+		e := gen.DeleteDictItemBadRequest(gen.Error{Code: 500, Message: "删除失败"})
+		return &e, nil
+	}
+	ok := gen.DeleteDictItemOK(gen.Error{Code: 200, Message: "ok"})
+	return &ok, nil
 }
 
 // ─── GetDictsByCodes ─────────────────────────────────────────────────────────
@@ -298,12 +368,40 @@ func mapDictTypeSummary(t models.DictType, itemCount int64) gen.DictTypeSummary 
 
 func mapDictItemSummary(item models.DictItem) gen.DictItemSummary {
 	return gen.DictItemSummary{
-		ID:        item.ID,
-		Label:     item.Label,
-		Value:     item.Value,
-		IsDefault: gen.NewOptBool(item.IsDefault),
-		Status:    item.Status,
-		SortOrder: gen.NewOptInt(item.SortOrder),
+		ID:          item.ID,
+		Label:       item.Label,
+		Value:       item.Value,
+		Description: gen.NewOptString(item.Description),
+		IsBuiltin:   item.IsBuiltin,
+		IsDefault:   gen.NewOptBool(item.IsDefault),
+		Status:      item.Status,
+		SortOrder:   gen.NewOptInt(item.SortOrder),
 	}
 }
 
+func toDictItemInput(item gen.DictItemSaveRequest) dictionary.DictItemInput {
+	status := ""
+	if v, ok := item.Status.Get(); ok {
+		status = string(v)
+	}
+	sortOrder := 0
+	if v, ok := item.SortOrder.Get(); ok {
+		sortOrder = v
+	}
+	isDefault := false
+	if v, ok := item.IsDefault.Get(); ok {
+		isDefault = v
+	}
+	description := ""
+	if v, ok := item.Description.Get(); ok {
+		description = v
+	}
+	return dictionary.DictItemInput{
+		Label:       item.Label,
+		Value:       item.Value,
+		Description: description,
+		IsDefault:   isDefault,
+		Status:      status,
+		SortOrder:   sortOrder,
+	}
+}

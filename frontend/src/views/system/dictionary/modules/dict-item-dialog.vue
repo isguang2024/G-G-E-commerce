@@ -11,7 +11,19 @@
         <ElInput v-model="form.label" placeholder="显示文本，如「男」" />
       </ElFormItem>
       <ElFormItem label="值" prop="value">
-        <ElInput v-model="form.value" placeholder="存储值，如 male" />
+        <ElInput
+          v-model="form.value"
+          :disabled="dialogType === 'edit' && Boolean(itemData?.is_builtin)"
+          placeholder="存储值，如 male"
+        />
+      </ElFormItem>
+      <ElFormItem label="备注">
+        <ElInput
+          v-model="form.description"
+          type="textarea"
+          :rows="3"
+          placeholder="补充说明该字典项的业务语义"
+        />
       </ElFormItem>
       <ElFormItem label="默认">
         <ElSwitch v-model="form.is_default" />
@@ -25,6 +37,9 @@
       <ElFormItem label="排序">
         <ElInputNumber v-model="form.sort_order" :min="0" :max="9999" controls-position="right" />
       </ElFormItem>
+      <div v-if="dialogType === 'edit' && itemData?.is_builtin" class="form-tip">
+        内置字典项禁止修改 value，也不允许直接删除。
+      </div>
     </ElForm>
 
     <template #footer>
@@ -67,6 +82,7 @@
   const form = reactive({
     label: '',
     value: '',
+    description: '',
     is_default: false,
     status: 'normal' as string,
     sort_order: 0
@@ -80,19 +96,22 @@
     value: [
       { required: true, message: '请输入值', trigger: 'blur' },
       { max: 200, message: '值最长 200 字符', trigger: 'blur' }
-    ]
+    ],
+    description: [{ max: 500, message: '备注最长 500 字符', trigger: 'blur' }]
   }
 
   function initForm() {
     if (props.dialogType === 'edit' && props.itemData) {
       form.label = props.itemData.label
       form.value = props.itemData.value
+      form.description = props.itemData.description ?? ''
       form.is_default = props.itemData.is_default ?? false
       form.status = props.itemData.status
       form.sort_order = props.itemData.sort_order ?? 0
     } else {
       form.label = ''
       form.value = ''
+      form.description = ''
       form.is_default = false
       form.status = 'normal'
       form.sort_order = 0
@@ -123,6 +142,8 @@
       id: props.itemData?.id || `_new_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       label: form.label,
       value: form.value,
+      description: form.description || undefined,
+      is_builtin: props.itemData?.is_builtin ?? false,
       is_default: form.is_default,
       status: form.status,
       sort_order: form.sort_order
@@ -131,3 +152,12 @@
     handleClose()
   }
 </script>
+
+<style scoped lang="scss">
+  .form-tip {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-secondary);
+  }
+</style>

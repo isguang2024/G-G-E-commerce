@@ -1,4 +1,4 @@
-﻿package dictionary
+package dictionary
 
 import (
 	"context"
@@ -112,6 +112,34 @@ func (r *Repository) ListItems(ctx context.Context, typeID uuid.UUID) ([]models.
 	return list, err
 }
 
+func (r *Repository) GetItemByID(ctx context.Context, typeID, itemID uuid.UUID) (*models.DictItem, error) {
+	var item models.DictItem
+	if err := r.db.WithContext(ctx).
+		Where("id = ? AND dict_type_id = ? AND tenant_id = ?", itemID, typeID, "default").
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *Repository) CreateItem(ctx context.Context, item *models.DictItem) error {
+	item.TenantID = "default"
+	if item.ID == uuid.Nil {
+		item.ID = uuid.New()
+	}
+	return r.db.WithContext(ctx).Create(item).Error
+}
+
+func (r *Repository) UpdateItem(ctx context.Context, item *models.DictItem) error {
+	return r.db.WithContext(ctx).Save(item).Error
+}
+
+func (r *Repository) DeleteItem(ctx context.Context, typeID, itemID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Where("id = ? AND dict_type_id = ? AND tenant_id = ?", itemID, typeID, "default").
+		Delete(&models.DictItem{}).Error
+}
+
 // BatchReplaceItems replaces all items under a dict type in a transaction.
 func (r *Repository) BatchReplaceItems(ctx context.Context, typeID uuid.UUID, items []models.DictItem) ([]models.DictItem, error) {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -191,4 +219,3 @@ func (r *Repository) DeleteItemsByTypeID(ctx context.Context, typeID uuid.UUID) 
 		Where("dict_type_id = ? AND tenant_id = ?", typeID, "default").
 		Delete(&models.DictItem{}).Error
 }
-

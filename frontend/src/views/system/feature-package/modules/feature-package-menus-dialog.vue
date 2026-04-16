@@ -16,20 +16,13 @@
       </div>
 
       <div class="cascader-toolbar">
-        <ElSelect
+        <AppKeySelect
           v-model="selectedAppKey"
-          filterable
           placeholder="选择 App"
           class="toolbar-select"
+          :eager="false"
           @change="handleAppChange"
-        >
-          <ElOption
-            v-for="app in appOptions"
-            :key="app.appKey"
-            :label="`${app.name} (${app.appKey})`"
-            :value="app.appKey"
-          />
-        </ElSelect>
+        />
         <ElSelect
           v-model="selectedMenuSpaceKey"
           filterable
@@ -122,8 +115,8 @@
   import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import {
-    fetchGetApps,
     fetchGetMenuSpaces,
     fetchGetMenuTreeAll,
     fetchGetFeaturePackageMenus,
@@ -188,7 +181,6 @@
   const menuPanelRef = ref<any>()
   const loading = ref(false)
   const saving = ref(false)
-  const appOptions = ref<Api.SystemManage.AppItem[]>([])
   const menuSpaceOptions = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const selectedAppKey = ref('')
   const selectedMenuSpaceKey = ref('')
@@ -282,9 +274,6 @@
       selectedAppKey.value = ''
       selectedMenuSpaceKey.value = ''
     }
-    if (appOptions.value.length === 0) {
-      await loadAppOptions()
-    }
     if (!selectedAppKey.value) {
       selectedAppKey.value = resolveInitialAppKey()
     }
@@ -296,21 +285,12 @@
     }
   }
 
-  async function loadAppOptions() {
-    try {
-      const result = await fetchGetApps()
-      appOptions.value = result.records || []
-    } catch {
-      appOptions.value = []
-    }
-  }
-
   function resolveInitialAppKey() {
     const explicit = `${props.appKey || ''}`.trim()
     if (explicit) return explicit
     const scoped = props.appKeys?.map((item) => `${item || ''}`.trim()).filter(Boolean) || []
     if (scoped.length > 0) return scoped[0]
-    return appOptions.value[0]?.appKey || ''
+    return ''
   }
 
   async function loadMenuSpaces() {

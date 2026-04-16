@@ -1,4 +1,4 @@
-﻿// storage_admin.go — ogen handlers for the upload configuration center
+// storage_admin.go — ogen handlers for the upload configuration center
 // (storage providers / buckets / upload keys / upload key rules).
 //
 // All operations live under the single permission key `system.upload.config.manage`
@@ -443,19 +443,32 @@ func storageBucketInputFromRequest(req *gen.StorageBucketSaveRequest) upload.Buc
 
 func uploadKeyInputFromRequest(req *gen.UploadKeySaveRequest) upload.UploadKeySaveInput {
 	input := upload.UploadKeySaveInput{
-		BucketID:         req.BucketID,
-		Key:              req.Key,
-		Name:             req.Name,
-		PathTemplate:     optString(req.PathTemplate),
-		DefaultRuleKey:   optString(req.DefaultRuleKey),
-		MaxSizeBytes:     optInt64(req.MaxSizeBytes),
-		AllowedMimeTypes: models.StringList(req.AllowedMimeTypes),
+		BucketID:                 req.BucketID,
+		Key:                      req.Key,
+		Name:                     req.Name,
+		PathTemplate:             optString(req.PathTemplate),
+		DefaultRuleKey:           optString(req.DefaultRuleKey),
+		MaxSizeBytes:             optInt64(req.MaxSizeBytes),
+		AllowedMimeTypes:         models.StringList(req.AllowedMimeTypes),
+		PermissionKey:            optString(req.PermissionKey),
+		FallbackKey:              optString(req.FallbackKey),
+		ClientAccept:             models.StringList(req.ClientAccept),
+		DirectSizeThresholdBytes: optInt64(req.DirectSizeThresholdBytes),
+	}
+	if req.UploadMode.Set {
+		input.UploadMode = string(req.UploadMode.Value)
+	}
+	if req.IsFrontendVisible.Set {
+		input.IsFrontendVisible = req.IsFrontendVisible.Value
 	}
 	if req.Visibility.Set {
 		input.Visibility = string(req.Visibility.Value)
 	}
 	if req.Status.Set {
 		input.Status = string(req.Status.Value)
+	}
+	if req.ExtraSchema.Set {
+		input.ExtraSchema = jxRawMapToMeta(map[string]jx.Raw(req.ExtraSchema.Value))
 	}
 	if req.Meta.Set {
 		input.Meta = jxRawMapToMeta(map[string]jx.Raw(req.Meta.Value))
@@ -471,13 +484,23 @@ func uploadRuleInputFromRequest(req *gen.UploadKeyRuleSaveRequest) upload.Upload
 		MaxSizeBytes:     optInt64(req.MaxSizeBytes),
 		AllowedMimeTypes: models.StringList(req.AllowedMimeTypes),
 		ProcessPipeline:  models.StringList(req.ProcessPipeline),
+		ClientAccept:     models.StringList(req.ClientAccept),
 		IsDefault:        optBool(req.IsDefault),
 	}
 	if req.FilenameStrategy.Set {
 		input.FilenameStrategy = string(req.FilenameStrategy.Value)
 	}
+	if req.ModeOverride.Set {
+		input.ModeOverride = string(req.ModeOverride.Value)
+	}
+	if req.VisibilityOverride.Set {
+		input.VisibilityOverride = string(req.VisibilityOverride.Value)
+	}
 	if req.Status.Set {
 		input.Status = string(req.Status.Value)
+	}
+	if req.ExtraSchema.Set {
+		input.ExtraSchema = jxRawMapToMeta(map[string]jx.Raw(req.ExtraSchema.Value))
 	}
 	if req.Meta.Set {
 		input.Meta = jxRawMapToMeta(map[string]jx.Raw(req.Meta.Value))
@@ -557,13 +580,16 @@ func mapUploadKeySummary(item *models.UploadKey) gen.UploadKeySummary {
 		allowed = []string{}
 	}
 	out := gen.UploadKeySummary{
-		ID:               item.ID,
-		BucketID:         item.BucketID,
-		Key:              item.Key,
-		Name:             item.Name,
-		AllowedMimeTypes: allowed,
-		Visibility:       gen.UploadKeySummaryVisibility(coalesceVisibility(item.Visibility)),
-		Status:           gen.UploadKeySummaryStatus(coalesceUploadKeyStatus(item.Status)),
+		ID:                item.ID,
+		BucketID:          item.BucketID,
+		Key:               item.Key,
+		Name:              item.Name,
+		AllowedMimeTypes:  allowed,
+		UploadMode:        gen.NewOptUploadKeySummaryUploadMode(gen.UploadKeySummaryUploadMode(coalesceUploadMode(item.UploadMode))),
+		IsFrontendVisible: gen.OptBool{Value: item.IsFrontendVisible, Set: true},
+		ClientAccept:      []string(item.ClientAccept),
+		Visibility:        gen.UploadKeySummaryVisibility(coalesceVisibility(item.Visibility)),
+		Status:            gen.UploadKeySummaryStatus(coalesceUploadKeyStatus(item.Status)),
 	}
 	if item.PathTemplate != "" {
 		out.PathTemplate = gen.NewOptString(item.PathTemplate)
@@ -573,6 +599,18 @@ func mapUploadKeySummary(item *models.UploadKey) gen.UploadKeySummary {
 	}
 	if item.MaxSizeBytes > 0 {
 		out.MaxSizeBytes = gen.NewOptInt64(item.MaxSizeBytes)
+	}
+	if item.PermissionKey != "" {
+		out.PermissionKey = gen.NewOptString(item.PermissionKey)
+	}
+	if item.FallbackKey != "" {
+		out.FallbackKey = gen.NewOptString(item.FallbackKey)
+	}
+	if item.DirectSizeThresholdBytes > 0 {
+		out.DirectSizeThresholdBytes = gen.NewOptInt64(item.DirectSizeThresholdBytes)
+	}
+	if extraSchema := metaToUploadKeySummaryExtraSchema(item.ExtraSchema); extraSchema != nil {
+		out.ExtraSchema = gen.NewOptUploadKeySummaryExtraSchema(extraSchema)
 	}
 	if meta := metaToUploadKeySummaryMeta(item.Meta); meta != nil {
 		out.Meta = gen.NewOptUploadKeySummaryMeta(meta)
@@ -592,14 +630,17 @@ func mapUploadKeyDetail(item *models.UploadKey, rules []models.UploadKeyRule) ge
 		allowed = []string{}
 	}
 	out := gen.UploadKeyDetail{
-		ID:               item.ID,
-		BucketID:         item.BucketID,
-		Key:              item.Key,
-		Name:             item.Name,
-		AllowedMimeTypes: allowed,
-		Visibility:       gen.UploadKeyDetailVisibility(coalesceVisibility(item.Visibility)),
-		Status:           gen.UploadKeyDetailStatus(coalesceUploadKeyStatus(item.Status)),
-		Rules:            make([]gen.UploadKeyRuleSummary, 0, len(rules)),
+		ID:                item.ID,
+		BucketID:          item.BucketID,
+		Key:               item.Key,
+		Name:              item.Name,
+		AllowedMimeTypes:  allowed,
+		UploadMode:        gen.NewOptUploadKeyDetailUploadMode(gen.UploadKeyDetailUploadMode(coalesceUploadMode(item.UploadMode))),
+		IsFrontendVisible: gen.OptBool{Value: item.IsFrontendVisible, Set: true},
+		ClientAccept:      []string(item.ClientAccept),
+		Visibility:        gen.UploadKeyDetailVisibility(coalesceVisibility(item.Visibility)),
+		Status:            gen.UploadKeyDetailStatus(coalesceUploadKeyStatus(item.Status)),
+		Rules:             make([]gen.UploadKeyRuleSummary, 0, len(rules)),
 	}
 	if item.PathTemplate != "" {
 		out.PathTemplate = gen.NewOptString(item.PathTemplate)
@@ -609,6 +650,18 @@ func mapUploadKeyDetail(item *models.UploadKey, rules []models.UploadKeyRule) ge
 	}
 	if item.MaxSizeBytes > 0 {
 		out.MaxSizeBytes = gen.NewOptInt64(item.MaxSizeBytes)
+	}
+	if item.PermissionKey != "" {
+		out.PermissionKey = gen.NewOptString(item.PermissionKey)
+	}
+	if item.FallbackKey != "" {
+		out.FallbackKey = gen.NewOptString(item.FallbackKey)
+	}
+	if item.DirectSizeThresholdBytes > 0 {
+		out.DirectSizeThresholdBytes = gen.NewOptInt64(item.DirectSizeThresholdBytes)
+	}
+	if extraSchema := metaToUploadKeyDetailExtraSchema(item.ExtraSchema); extraSchema != nil {
+		out.ExtraSchema = gen.NewOptUploadKeyDetailExtraSchema(extraSchema)
 	}
 	if meta := metaToUploadKeyDetailMeta(item.Meta); meta != nil {
 		out.Meta = gen.NewOptUploadKeyDetailMeta(meta)
@@ -642,6 +695,7 @@ func mapUploadKeyRuleSummary(item *models.UploadKeyRule) gen.UploadKeyRuleSummar
 		FilenameStrategy: gen.UploadKeyRuleSummaryFilenameStrategy(coalesceFilenameStrategy(item.FilenameStrategy)),
 		AllowedMimeTypes: allowed,
 		ProcessPipeline:  pipeline,
+		ClientAccept:     []string(item.ClientAccept),
 		IsDefault:        item.IsDefault,
 		Status:           gen.UploadKeyRuleSummaryStatus(coalesceUploadKeyStatus(item.Status)),
 	}
@@ -650,6 +704,15 @@ func mapUploadKeyRuleSummary(item *models.UploadKeyRule) gen.UploadKeyRuleSummar
 	}
 	if item.MaxSizeBytes > 0 {
 		out.MaxSizeBytes = gen.NewOptInt64(item.MaxSizeBytes)
+	}
+	if item.ModeOverride != "" {
+		out.ModeOverride = gen.NewOptUploadKeyRuleSummaryModeOverride(gen.UploadKeyRuleSummaryModeOverride(coalesceRuleModeOverride(item.ModeOverride)))
+	}
+	if item.VisibilityOverride != "" {
+		out.VisibilityOverride = gen.NewOptUploadKeyRuleSummaryVisibilityOverride(gen.UploadKeyRuleSummaryVisibilityOverride(coalesceRuleVisibilityOverride(item.VisibilityOverride)))
+	}
+	if extraSchema := metaToUploadRuleSummaryExtraSchema(item.ExtraSchema); extraSchema != nil {
+		out.ExtraSchema = gen.NewOptUploadKeyRuleSummaryExtraSchema(extraSchema)
 	}
 	if meta := metaToUploadRuleSummaryMeta(item.Meta); meta != nil {
 		out.Meta = gen.NewOptUploadKeyRuleSummaryMeta(meta)
@@ -758,6 +821,14 @@ func metaToUploadKeySummaryMeta(meta models.MetaJSON) gen.UploadKeySummaryMeta {
 	return gen.UploadKeySummaryMeta(raw)
 }
 
+func metaToUploadKeySummaryExtraSchema(meta models.MetaJSON) gen.UploadKeySummaryExtraSchema {
+	raw := metaToJxRaw(meta)
+	if raw == nil {
+		return nil
+	}
+	return gen.UploadKeySummaryExtraSchema(raw)
+}
+
 func metaToUploadKeyDetailMeta(meta models.MetaJSON) gen.UploadKeyDetailMeta {
 	raw := metaToJxRaw(meta)
 	if raw == nil {
@@ -766,12 +837,28 @@ func metaToUploadKeyDetailMeta(meta models.MetaJSON) gen.UploadKeyDetailMeta {
 	return gen.UploadKeyDetailMeta(raw)
 }
 
+func metaToUploadKeyDetailExtraSchema(meta models.MetaJSON) gen.UploadKeyDetailExtraSchema {
+	raw := metaToJxRaw(meta)
+	if raw == nil {
+		return nil
+	}
+	return gen.UploadKeyDetailExtraSchema(raw)
+}
+
 func metaToUploadRuleSummaryMeta(meta models.MetaJSON) gen.UploadKeyRuleSummaryMeta {
 	raw := metaToJxRaw(meta)
 	if raw == nil {
 		return nil
 	}
 	return gen.UploadKeyRuleSummaryMeta(raw)
+}
+
+func metaToUploadRuleSummaryExtraSchema(meta models.MetaJSON) gen.UploadKeyRuleSummaryExtraSchema {
+	raw := metaToJxRaw(meta)
+	if raw == nil {
+		return nil
+	}
+	return gen.UploadKeyRuleSummaryExtraSchema(raw)
 }
 
 func coalesceDriver(v string) string {
@@ -819,6 +906,36 @@ func coalesceFilenameStrategy(v string) string {
 	return string(gen.UploadKeyRuleSummaryFilenameStrategyUUID)
 }
 
+func coalesceUploadMode(v string) string {
+	switch v {
+	case string(gen.UploadKeySummaryUploadModeDirect),
+		string(gen.UploadKeySummaryUploadModeRelay):
+		return v
+	default:
+		return string(gen.UploadKeySummaryUploadModeAuto)
+	}
+}
+
+func coalesceRuleModeOverride(v string) string {
+	switch v {
+	case string(gen.UploadKeyRuleSummaryModeOverrideDirect),
+		string(gen.UploadKeyRuleSummaryModeOverrideRelay):
+		return v
+	default:
+		return string(gen.UploadKeyRuleSummaryModeOverrideInherit)
+	}
+}
+
+func coalesceRuleVisibilityOverride(v string) string {
+	switch v {
+	case string(gen.UploadKeyRuleSummaryVisibilityOverridePublic),
+		string(gen.UploadKeyRuleSummaryVisibilityOverridePrivate):
+		return v
+	default:
+		return string(gen.UploadKeyRuleSummaryVisibilityOverrideInherit)
+	}
+}
+
 type statusGetter interface{ GetStatus() string }
 
 func filterByStatus[T statusGetter](items []T, status string) []T {
@@ -830,4 +947,3 @@ func filterByStatus[T statusGetter](items []T, status string) []T {
 	}
 	return filtered
 }
-

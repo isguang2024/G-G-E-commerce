@@ -20,9 +20,10 @@ import (
 )
 
 var (
-	ErrInvalidFile        = errors.New("invalid upload file")
-	ErrRecordNotFound     = errors.New("upload record not found")
-	ErrUploadRecordExists = errors.New("upload record already exists")
+	ErrInvalidFile            = errors.New("invalid upload file")
+	ErrRecordNotFound         = errors.New("upload record not found")
+	ErrUploadRecordExists     = errors.New("upload record already exists")
+	ErrUploadPermissionDenied = errors.New("upload permission denied")
 )
 
 type Service interface {
@@ -30,28 +31,31 @@ type Service interface {
 	Upload(ctx context.Context, tenantID string, userID *uuid.UUID, input UploadInput) (*models.UploadRecord, error)
 	PrepareUpload(ctx context.Context, tenantID string, input PrepareUploadInput) (*PrepareUploadResult, error)
 	CompleteDirectUpload(ctx context.Context, tenantID string, userID *uuid.UUID, input CompleteDirectUploadInput) (*models.UploadRecord, error)
+	ListVisibleUploadKeys(ctx context.Context, tenantID string, grantedPermissionKeys map[string]struct{}) ([]VisibleUploadKey, error)
 	List(ctx context.Context, tenantID string, limit int) ([]models.UploadRecord, int64, error)
 	Delete(ctx context.Context, tenantID string, id uuid.UUID) error
 	Admin() AdminAPI
 }
 
 type UploadInput struct {
-	Key      string
-	Rule     string
-	Name     string
-	File     io.Reader
-	Size     int64
-	MimeType string
-	Checksum string
+	Key                   string
+	Rule                  string
+	Name                  string
+	File                  io.Reader
+	Size                  int64
+	MimeType              string
+	Checksum              string
+	GrantedPermissionKeys map[string]struct{}
 }
 
 type PrepareUploadInput struct {
-	Key      string
-	Rule     string
-	Name     string
-	Size     int64
-	MimeType string
-	Checksum string
+	Key                   string
+	Rule                  string
+	Name                  string
+	Size                  int64
+	MimeType              string
+	Checksum              string
+	GrantedPermissionKeys map[string]struct{}
 }
 
 type PrepareUploadResult struct {
@@ -66,18 +70,44 @@ type PrepareUploadResult struct {
 	ContentType  string
 	UploadKey    string
 	RuleKey      string
+	Visibility   string
 	FallbackUsed bool
 }
 
 type CompleteDirectUploadInput struct {
-	Key        string
-	Rule       string
-	Name       string
-	StorageKey string
-	Size       int64
-	MimeType   string
-	Checksum   string
-	ETag       string
+	Key                   string
+	Rule                  string
+	Name                  string
+	StorageKey            string
+	Size                  int64
+	MimeType              string
+	Checksum              string
+	ETag                  string
+	GrantedPermissionKeys map[string]struct{}
+}
+
+type VisibleUploadKey struct {
+	Key                      string
+	Name                     string
+	DefaultRuleKey           string
+	UploadMode               string
+	Visibility               string
+	ClientAccept             []string
+	MaxSizeBytes             int64
+	DirectSizeThresholdBytes int64
+	FallbackKey              string
+	Rules                    []VisibleUploadRule
+}
+
+type VisibleUploadRule struct {
+	RuleKey          string
+	Name             string
+	UploadMode       string
+	Visibility       string
+	ClientAccept     []string
+	MaxSizeBytes     int64
+	AllowedMimeTypes []string
+	IsDefault        bool
 }
 
 type service struct {
@@ -219,9 +249,13 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		DefaultRuleKey:   defaultRuleKey,
 		MaxSizeBytes:     defaultMaxFileSize,
 		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"},
+		UploadMode:       models.UploadModeAuto,
+		ClientAccept:     models.StringList{"image/*"},
+		ExtraSchema:      models.MetaJSON{},
 		Visibility:       "public",
 		Status:           models.UploadProviderStatusReady,
 	}
+	applyUploadKeySeedDefaults(key)
 	if err := s.repo.EnsureUploadKey(ctx, key); err != nil {
 		return err
 	}
@@ -241,9 +275,13 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		MaxSizeBytes:     defaultMaxFileSize,
 		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"},
 		ProcessPipeline:  models.StringList{},
+		ModeOverride:     models.UploadModeInherit,
+		ClientAccept:     models.StringList{"image/*"},
+		ExtraSchema:      models.MetaJSON{},
 		IsDefault:        true,
 		Status:           models.UploadProviderStatusReady,
 	}
+	applyUploadRuleSeedDefaults(rule)
 	if err := s.repo.EnsureUploadRule(ctx, rule); err != nil {
 		return err
 	}
@@ -252,13 +290,17 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 	seeds := []uploadSeedSpec{
 		{
 			UploadKey: models.UploadKey{
-				Key:              "user.avatar",
-				Name:             "用户头像上传",
-				PathTemplate:     "avatars/{yyyy}/{mm}",
-				DefaultRuleKey:   "avatar",
-				MaxSizeBytes:     2 * 1024 * 1024,
-				AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
-				Visibility:       "public",
+				Key:               "user.avatar",
+				Name:              "用户头像上传",
+				PathTemplate:      "avatars/{yyyy}/{mm}",
+				DefaultRuleKey:    "avatar",
+				MaxSizeBytes:      2 * 1024 * 1024,
+				AllowedMimeTypes:  models.StringList{"image/jpeg", "image/png", "image/webp"},
+				UploadMode:        models.UploadModeAuto,
+				IsFrontendVisible: true,
+				ClientAccept:      models.StringList{"image/*"},
+				ExtraSchema:       models.MetaJSON{},
+				Visibility:        "public",
 			},
 			Rules: []models.UploadKeyRule{
 				{
@@ -269,19 +311,26 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 					MaxSizeBytes:     2 * 1024 * 1024,
 					AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
 					ProcessPipeline:  models.StringList{},
+					ModeOverride:     models.UploadModeInherit,
+					ClientAccept:     models.StringList{"image/*"},
+					ExtraSchema:      models.MetaJSON{},
 					IsDefault:        true,
 				},
 			},
 		},
 		{
 			UploadKey: models.UploadKey{
-				Key:              "doc.attachment",
-				Name:             "文档附件上传",
-				PathTemplate:     "docs/{yyyy}/{mm}",
-				DefaultRuleKey:   "pdf",
-				MaxSizeBytes:     50 * 1024 * 1024,
-				AllowedMimeTypes: models.StringList{"application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-				Visibility:       "private",
+				Key:               "doc.attachment",
+				Name:              "文档附件上传",
+				PathTemplate:      "docs/{yyyy}/{mm}",
+				DefaultRuleKey:    "pdf",
+				MaxSizeBytes:      50 * 1024 * 1024,
+				AllowedMimeTypes:  models.StringList{"application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+				UploadMode:        models.UploadModeAuto,
+				IsFrontendVisible: true,
+				ClientAccept:      models.StringList{".pdf", ".doc", ".docx", ".xls", ".xlsx"},
+				ExtraSchema:       models.MetaJSON{},
+				Visibility:        "private",
 			},
 			Rules: []models.UploadKeyRule{
 				{
@@ -292,6 +341,9 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 					MaxSizeBytes:     50 * 1024 * 1024,
 					AllowedMimeTypes: models.StringList{"application/pdf"},
 					ProcessPipeline:  models.StringList{},
+					ModeOverride:     models.UploadModeInherit,
+					ClientAccept:     models.StringList{".pdf"},
+					ExtraSchema:      models.MetaJSON{},
 					IsDefault:        true,
 				},
 				{
@@ -302,19 +354,26 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 					MaxSizeBytes:     30 * 1024 * 1024,
 					AllowedMimeTypes: models.StringList{"application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
 					ProcessPipeline:  models.StringList{},
+					ModeOverride:     models.UploadModeInherit,
+					ClientAccept:     models.StringList{".doc", ".docx", ".xls", ".xlsx"},
+					ExtraSchema:      models.MetaJSON{},
 					IsDefault:        false,
 				},
 			},
 		},
 		{
 			UploadKey: models.UploadKey{
-				Key:              "editor.inline",
-				Name:             "富文本编辑器图片",
-				PathTemplate:     "editor/{yyyy}/{mm}/{dd}",
-				DefaultRuleKey:   "editor-image",
-				MaxSizeBytes:     5 * 1024 * 1024,
-				AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
-				Visibility:       "public",
+				Key:               "editor.inline",
+				Name:              "富文本编辑器图片",
+				PathTemplate:      "editor/{yyyy}/{mm}/{dd}",
+				DefaultRuleKey:    "editor-image",
+				MaxSizeBytes:      5 * 1024 * 1024,
+				AllowedMimeTypes:  models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
+				UploadMode:        models.UploadModeAuto,
+				IsFrontendVisible: true,
+				ClientAccept:      models.StringList{"image/*"},
+				ExtraSchema:       models.MetaJSON{},
+				Visibility:        "public",
 			},
 			Rules: []models.UploadKeyRule{
 				{
@@ -325,6 +384,9 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 					MaxSizeBytes:     5 * 1024 * 1024,
 					AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
 					ProcessPipeline:  models.StringList{},
+					ModeOverride:     models.UploadModeInherit,
+					ClientAccept:     models.StringList{"image/*"},
+					ExtraSchema:      models.MetaJSON{},
 					IsDefault:        true,
 				},
 			},
@@ -343,9 +405,7 @@ func (s *service) ensureUploadSeed(ctx context.Context, bucketID uuid.UUID, spec
 	key := spec.UploadKey
 	key.TenantID = defaultTenantID
 	key.BucketID = bucketID
-	if strings.TrimSpace(key.Status) == "" {
-		key.Status = models.UploadProviderStatusReady
-	}
+	applyUploadKeySeedDefaults(&key)
 	if err := s.repo.EnsureUploadKey(ctx, &key); err != nil {
 		return err
 	}
@@ -359,14 +419,66 @@ func (s *service) ensureUploadSeed(ctx context.Context, bucketID uuid.UUID, spec
 		rule := ruleSpec
 		rule.TenantID = defaultTenantID
 		rule.UploadKeyID = storedKey.ID
-		if strings.TrimSpace(rule.Status) == "" {
-			rule.Status = models.UploadProviderStatusReady
-		}
+		applyUploadRuleSeedDefaults(&rule)
 		if err := s.repo.EnsureUploadRule(ctx, &rule); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func applyUploadKeySeedDefaults(item *models.UploadKey) {
+	if item == nil {
+		return
+	}
+	if item.AllowedMimeTypes == nil {
+		item.AllowedMimeTypes = models.StringList{}
+	}
+	if item.ClientAccept == nil {
+		item.ClientAccept = models.StringList{}
+	}
+	if item.ExtraSchema == nil {
+		item.ExtraSchema = models.MetaJSON{}
+	}
+	if strings.TrimSpace(item.UploadMode) == "" {
+		item.UploadMode = models.UploadModeAuto
+	}
+	if strings.TrimSpace(item.Visibility) == "" {
+		item.Visibility = "public"
+	}
+	if strings.TrimSpace(item.Status) == "" {
+		item.Status = models.UploadProviderStatusReady
+	}
+}
+
+func applyUploadRuleSeedDefaults(item *models.UploadKeyRule) {
+	if item == nil {
+		return
+	}
+	if item.AllowedMimeTypes == nil {
+		item.AllowedMimeTypes = models.StringList{}
+	}
+	if item.ProcessPipeline == nil {
+		item.ProcessPipeline = models.StringList{}
+	}
+	if item.ClientAccept == nil {
+		item.ClientAccept = models.StringList{}
+	}
+	if item.ExtraSchema == nil {
+		item.ExtraSchema = models.MetaJSON{}
+	}
+	if strings.TrimSpace(item.FilenameStrategy) == "" {
+		item.FilenameStrategy = "uuid"
+	}
+	if strings.TrimSpace(item.ModeOverride) == "" {
+		item.ModeOverride = models.UploadModeInherit
+	}
+	if strings.TrimSpace(item.VisibilityOverride) == "" {
+		item.VisibilityOverride = models.VisibilityOverrideInherit
+	}
+	if strings.TrimSpace(item.Status) == "" {
+		item.Status = models.UploadProviderStatusReady
+	}
 }
 
 func (s *service) Upload(ctx context.Context, tenantID string, userID *uuid.UUID, input UploadInput) (*models.UploadRecord, error) {
@@ -380,6 +492,9 @@ func (s *service) Upload(ctx context.Context, tenantID string, userID *uuid.UUID
 		Fallback: true,
 	})
 	if err != nil {
+		return nil, err
+	}
+	if err := validateUploadPermission(effective.PermissionKey, input.GrantedPermissionKeys); err != nil {
 		return nil, err
 	}
 	driver, err := s.registry.Open(DriverFactoryInput{
@@ -438,6 +553,9 @@ func (s *service) PrepareUpload(ctx context.Context, tenantID string, input Prep
 	if err != nil {
 		return nil, err
 	}
+	if err := validateUploadPermission(effective.PermissionKey, input.GrantedPermissionKeys); err != nil {
+		return nil, err
+	}
 	driver, err := s.registry.Open(DriverFactoryInput{
 		Config:   s.cfg,
 		Provider: effective.Provider,
@@ -464,9 +582,14 @@ func (s *service) PrepareUpload(ctx context.Context, tenantID string, input Prep
 		ContentType:  contentType,
 		UploadKey:    effective.ResolvedKey,
 		RuleKey:      effective.ResolvedRule,
+		Visibility:   effective.Visibility,
 		FallbackUsed: effective.FallbackUsed,
 	}
-	if driver.Capabilities().Direct {
+	modeDecision, err := decidePrepareMode(driver.Capabilities(), effective, input.Size)
+	if err != nil {
+		return nil, err
+	}
+	if modeDecision == models.UploadModeDirect {
 		directResult, directErr := driver.PrepareDirectUpload(ctx, DirectUploadRequest{
 			TenantID:    normalizeTenantID(tenantID),
 			StorageKey:  storageKey,
@@ -474,7 +597,7 @@ func (s *service) PrepareUpload(ctx context.Context, tenantID string, input Prep
 			Size:        input.Size,
 		})
 		if directErr == nil {
-			result.Mode = "direct"
+			result.Mode = models.UploadModeDirect
 			result.Method = directResult.Method
 			result.URL = directResult.URL
 			result.Headers = directResult.Headers
@@ -487,7 +610,7 @@ func (s *service) PrepareUpload(ctx context.Context, tenantID string, input Prep
 		}
 	}
 
-	result.Mode = "relay"
+	result.Mode = models.UploadModeRelay
 	result.RelayURL = "/api/v1/media/upload"
 	return result, nil
 }
@@ -508,6 +631,9 @@ func (s *service) CompleteDirectUpload(ctx context.Context, tenantID string, use
 		Fallback: true,
 	})
 	if err != nil {
+		return nil, err
+	}
+	if err := validateUploadPermission(effective.PermissionKey, input.GrantedPermissionKeys); err != nil {
 		return nil, err
 	}
 	normalizedStorageKey, storedName, err := validateStorageKeyForConfig(input.StorageKey, effective.Bucket.BasePath)
@@ -565,6 +691,66 @@ func (s *service) CompleteDirectUpload(ctx context.Context, tenantID string, use
 		return nil, err
 	}
 	return record, nil
+}
+
+func (s *service) ListVisibleUploadKeys(ctx context.Context, tenantID string, grantedPermissionKeys map[string]struct{}) ([]VisibleUploadKey, error) {
+	items, err := s.repo.ListFrontendVisibleUploadKeys(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	visible := make([]VisibleUploadKey, 0, len(items))
+	for i := range items {
+		item := items[i]
+		if !permissionGranted(strings.TrimSpace(item.PermissionKey), grantedPermissionKeys) {
+			continue
+		}
+		rules, err := s.repo.ListRulesByUploadKey(ctx, tenantID, item.ID)
+		if err != nil {
+			return nil, err
+		}
+		out := VisibleUploadKey{
+			Key:                      item.Key,
+			Name:                     item.Name,
+			DefaultRuleKey:           item.DefaultRuleKey,
+			UploadMode:               firstNonEmpty(strings.TrimSpace(item.UploadMode), models.UploadModeAuto),
+			Visibility:               firstNonEmpty(strings.TrimSpace(item.Visibility), "public"),
+			ClientAccept:             append([]string(nil), []string(item.ClientAccept)...),
+			MaxSizeBytes:             item.MaxSizeBytes,
+			DirectSizeThresholdBytes: item.DirectSizeThresholdBytes,
+			FallbackKey:              item.FallbackKey,
+			Rules:                    make([]VisibleUploadRule, 0, len(rules)),
+		}
+		for j := range rules {
+			rule := rules[j]
+			if strings.TrimSpace(rule.Status) != models.UploadProviderStatusReady {
+				continue
+			}
+			mode := out.UploadMode
+			if override := strings.TrimSpace(rule.ModeOverride); override != "" && override != models.UploadModeInherit {
+				mode = override
+			}
+			visibility := out.Visibility
+			if override := strings.TrimSpace(rule.VisibilityOverride); override != "" && override != models.VisibilityOverrideInherit {
+				visibility = override
+			}
+			clientAccept := append([]string(nil), out.ClientAccept...)
+			if len(rule.ClientAccept) > 0 {
+				clientAccept = append([]string(nil), []string(rule.ClientAccept)...)
+			}
+			out.Rules = append(out.Rules, VisibleUploadRule{
+				RuleKey:          rule.RuleKey,
+				Name:             rule.Name,
+				UploadMode:       mode,
+				Visibility:       visibility,
+				ClientAccept:     clientAccept,
+				MaxSizeBytes:     coalescePositiveInt64(rule.MaxSizeBytes, out.MaxSizeBytes),
+				AllowedMimeTypes: append([]string(nil), []string(rule.AllowedMimeTypes)...),
+				IsDefault:        rule.IsDefault || rule.RuleKey == out.DefaultRuleKey,
+			})
+		}
+		visible = append(visible, out)
+	}
+	return visible, nil
 }
 
 func (s *service) List(ctx context.Context, tenantID string, limit int) ([]models.UploadRecord, int64, error) {
@@ -748,6 +934,58 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func validateUploadPermission(permissionKey string, grantedPermissionKeys map[string]struct{}) error {
+	if permissionGranted(permissionKey, grantedPermissionKeys) {
+		return nil
+	}
+	if strings.TrimSpace(permissionKey) == "" {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", ErrUploadPermissionDenied, strings.TrimSpace(permissionKey))
+}
+
+func permissionGranted(permissionKey string, grantedPermissionKeys map[string]struct{}) bool {
+	permissionKey = strings.TrimSpace(permissionKey)
+	if permissionKey == "" {
+		return true
+	}
+	if len(grantedPermissionKeys) == 0 {
+		return false
+	}
+	_, ok := grantedPermissionKeys[permissionKey]
+	return ok
+}
+
+func decidePrepareMode(capabilities DriverCapabilities, effective *EffectiveConfig, size int64) (string, error) {
+	if effective == nil {
+		return "", ErrInvalidFile
+	}
+	if effective.DirectSizeThresholdBytes > 0 && size > effective.DirectSizeThresholdBytes {
+		return models.UploadModeRelay, nil
+	}
+	switch firstNonEmpty(strings.TrimSpace(effective.UploadMode), models.UploadModeAuto) {
+	case models.UploadModeRelay:
+		return models.UploadModeRelay, nil
+	case models.UploadModeDirect:
+		if !capabilities.Direct {
+			return "", fmt.Errorf("upload mode direct is configured but driver does not support direct upload")
+		}
+		return models.UploadModeDirect, nil
+	default:
+		if capabilities.Direct {
+			return models.UploadModeDirect, nil
+		}
+		return models.UploadModeRelay, nil
+	}
+}
+
+func coalescePositiveInt64(value, fallback int64) int64 {
+	if value > 0 {
+		return value
+	}
+	return fallback
 }
 
 func buildRelativeDir(basePath, template, subPath string, now time.Time) string {

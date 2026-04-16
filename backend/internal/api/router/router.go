@@ -1,4 +1,4 @@
-﻿package router
+package router
 
 import (
 	"context"
@@ -428,9 +428,13 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.PUT("/dictionaries/:id", ogenBridge)
 			authenticated.DELETE("/dictionaries/:id", ogenBridge)
 			authenticated.GET("/dictionaries/:id/items", ogenBridge)
+			authenticated.POST("/dictionaries/:id/items", ogenBridge)
 			authenticated.PUT("/dictionaries/:id/items", ogenBridge)
+			authenticated.PUT("/dictionaries/:id/items/:itemId", ogenBridge)
+			authenticated.DELETE("/dictionaries/:id/items/:itemId", ogenBridge)
 
 			// ── media ─────────────────────────────────────────────────────
+			authenticated.GET("/media/upload-keys", ogenBridge)
 			authenticated.POST("/media/upload", ogenBridge)
 			authenticated.GET("/media", ogenBridge)
 			authenticated.DELETE("/media/:id", ogenBridge)
@@ -549,4 +553,3 @@ func findMissingPermissionKeys(db *gorm.DB, seed *permissionseed.OpenAPISeed) []
 	}
 	return missing
 }
-

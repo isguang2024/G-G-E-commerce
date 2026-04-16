@@ -1,5 +1,34 @@
 # domains/media/paths.yaml — AUTO-SPLIT by split_spec.py
 paths:
+  /media/upload-keys:
+    get:
+      operationId: listVisibleMediaUploadKeys
+      summary: 获取当前用户可见的上传配置
+      tags:
+      - media
+      x-permission-key: system.media.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/MediaVisibleUploadKeyListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
   /media/upload:
     post:
       operationId: uploadMedia

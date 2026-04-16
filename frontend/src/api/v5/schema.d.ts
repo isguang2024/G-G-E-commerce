@@ -2864,6 +2864,42 @@ export interface paths {
         get: operations["listDictItems"];
         /** 批量保存字典项 */
         put: operations["saveDictItems"];
+        /** 创建单个字典项 */
+        post: operations["createDictItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新单个字典项 */
+        put: operations["updateDictItem"];
+        post?: never;
+        /** 删除单个字典项 */
+        delete: operations["deleteDictItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/upload-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取当前用户可见的上传配置 */
+        get: operations["listVisibleMediaUploadKeys"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -3864,6 +3900,14 @@ export interface components {
             max_size_bytes?: number;
             allowed_mime_types?: string[];
             process_pipeline?: string[];
+            /** @enum {string} */
+            mode_override?: "inherit" | "direct" | "relay";
+            /** @enum {string} */
+            visibility_override?: "inherit" | "public" | "private";
+            client_accept?: string[];
+            extra_schema?: {
+                [key: string]: unknown;
+            };
             is_default: boolean;
             /** @enum {string} */
             status: "ready" | "disabled";
@@ -3885,6 +3929,14 @@ export interface components {
             max_size_bytes?: number;
             allowed_mime_types?: string[];
             process_pipeline?: string[];
+            /** @enum {string} */
+            mode_override?: "inherit" | "direct" | "relay";
+            /** @enum {string} */
+            visibility_override?: "inherit" | "public" | "private";
+            client_accept?: string[];
+            extra_schema?: {
+                [key: string]: unknown;
+            };
             is_default?: boolean;
             /** @enum {string} */
             status?: "ready" | "disabled";
@@ -3909,6 +3961,17 @@ export interface components {
             /** Format: int64 */
             max_size_bytes?: number;
             allowed_mime_types?: string[];
+            /** @enum {string} */
+            upload_mode?: "auto" | "direct" | "relay";
+            is_frontend_visible?: boolean;
+            permission_key?: string;
+            fallback_key?: string;
+            client_accept?: string[];
+            /** Format: int64 */
+            direct_size_threshold_bytes?: number;
+            extra_schema?: {
+                [key: string]: unknown;
+            };
             /** @enum {string} */
             visibility: "public" | "private";
             /** @enum {string} */
@@ -3938,6 +4001,17 @@ export interface components {
             /** Format: int64 */
             max_size_bytes?: number;
             allowed_mime_types?: string[];
+            /** @enum {string} */
+            upload_mode?: "auto" | "direct" | "relay";
+            is_frontend_visible?: boolean;
+            permission_key?: string;
+            fallback_key?: string;
+            client_accept?: string[];
+            /** Format: int64 */
+            direct_size_threshold_bytes?: number;
+            extra_schema?: {
+                [key: string]: unknown;
+            };
             /** @enum {string} */
             visibility?: "public" | "private";
             /** @enum {string} */
@@ -6288,7 +6362,9 @@ export interface components {
             id: string;
             label: string;
             value: string;
+            description?: string;
             extra?: Record<string, never>;
+            is_builtin: boolean;
             is_default?: boolean;
             status: string;
             sort_order?: number;
@@ -6315,6 +6391,7 @@ export interface components {
         DictItemSaveRequest: {
             label: string;
             value: string;
+            description?: string;
             extra?: Record<string, never>;
             is_default?: boolean;
             /** @enum {string} */
@@ -6323,6 +6400,39 @@ export interface components {
         };
         DictItemsBatchSaveRequest: {
             items: components["schemas"]["DictItemSaveRequest"][];
+        };
+        MediaVisibleUploadRule: {
+            ruleKey: string;
+            name: string;
+            /** @enum {string} */
+            uploadMode: "auto" | "direct" | "relay";
+            /** @enum {string} */
+            visibility: "public" | "private";
+            clientAccept: string[];
+            /** Format: int64 */
+            maxSizeBytes: number;
+            allowedMimeTypes: string[];
+            isDefault: boolean;
+        };
+        MediaVisibleUploadKey: {
+            key: string;
+            name: string;
+            defaultRuleKey: string;
+            /** @enum {string} */
+            uploadMode: "auto" | "direct" | "relay";
+            /** @enum {string} */
+            visibility: "public" | "private";
+            clientAccept: string[];
+            /** Format: int64 */
+            maxSizeBytes: number;
+            /** Format: int64 */
+            directSizeThresholdBytes: number;
+            fallbackKey: string;
+            rules: components["schemas"]["MediaVisibleUploadRule"][];
+        };
+        MediaVisibleUploadKeyListResponse: {
+            records: components["schemas"]["MediaVisibleUploadKey"][];
+            total: number;
         };
         MediaUploadResponse: {
             /** Format: uuid */
@@ -6362,6 +6472,8 @@ export interface components {
             contentType: string;
             uploadKey: string;
             ruleKey?: string;
+            /** @enum {string} */
+            visibility?: "public" | "private";
             fallbackUsed: boolean;
         };
         MediaCompleteUploadRequest: {
@@ -12866,6 +12978,174 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createDictItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictItemSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictItemSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateDictItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictItemSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictItemSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteDictItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listVisibleMediaUploadKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaVisibleUploadKeyListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

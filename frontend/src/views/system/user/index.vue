@@ -99,6 +99,7 @@
   import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { useUserStore } from '@/domains/auth/store'
+  import { useDictionary } from '@/hooks/business/useDictionary'
 
   defineOptions({ name: 'User' })
 
@@ -107,6 +108,7 @@
   type UserListItem = Api.SystemManage.UserListItem
   const userStore = useUserStore()
   const { targetAppKey } = useManagedAppScope()
+  const { map: registerSourceLabelMap } = useDictionary('register_source')
   const canViewSystemRemark = computed(() => {
     const roles = (userStore.info?.roles || []) as string[]
     return roles.includes('R_SUPER')
@@ -258,19 +260,16 @@
         {
           prop: 'registerSource',
           label: '注册来源',
-          width: 100,
+          width: 120,
           formatter: (row: UserListItem) => {
-            const sourceMap: Record<
-              string,
-              { type: 'primary' | 'success' | 'warning' | 'info'; text: string }
-            > = {
-              admin: { type: 'primary', text: '管理员添加' },
-              self: { type: 'success', text: '自注册' },
-              invite: { type: 'warning', text: '邀请注册' }
+            const sourceTypeMap: Record<string, 'primary' | 'success' | 'warning' | 'info'> = {
+              admin: 'primary',
+              self: 'success',
+              invite: 'warning'
             }
             const sourceKey = row.registerSource || ''
-            const config = sourceMap[sourceKey] || { type: 'info', text: row.registerSource || '-' }
-            return h(ElTag, { type: config.type, size: 'small' }, () => config.text)
+            const dictLabel = registerSourceLabelMap.value[sourceKey] || sourceKey
+            return h(ElTag, { type: sourceTypeMap[sourceKey] || 'info', size: 'small' }, () => dictLabel || '-')
           }
         },
         {

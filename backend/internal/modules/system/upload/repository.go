@@ -1,4 +1,4 @@
-﻿package upload
+package upload
 
 import (
 	"context"
@@ -226,16 +226,29 @@ func (r *Repository) EnsureUploadKey(ctx context.Context, item *models.UploadKey
 	if item.Meta == nil {
 		item.Meta = models.MetaJSON{}
 	}
+	if item.ExtraSchema == nil {
+		item.ExtraSchema = models.MetaJSON{}
+	}
 	if item.AllowedMimeTypes == nil {
 		item.AllowedMimeTypes = models.StringList{}
+	}
+	if item.ClientAccept == nil {
+		item.ClientAccept = models.StringList{}
+	}
+	if strings.TrimSpace(item.UploadMode) == "" {
+		item.UploadMode = models.UploadModeAuto
 	}
 	if before != nil {
 		item.ID = before.ID
 		err = r.db.WithContext(ctx).Model(before).Updates(map[string]interface{}{
 			"bucket_id": item.BucketID, "name": item.Name, "path_template": item.PathTemplate,
 			"default_rule_key": item.DefaultRuleKey, "max_size_bytes": item.MaxSizeBytes,
-			"allowed_mime_types": item.AllowedMimeTypes, "visibility": item.Visibility,
-			"status": item.Status, "meta": item.Meta, "updated_at": time.Now(), "deleted_at": nil,
+			"allowed_mime_types": item.AllowedMimeTypes, "upload_mode": item.UploadMode,
+			"is_frontend_visible": item.IsFrontendVisible, "permission_key": item.PermissionKey,
+			"fallback_key": item.FallbackKey, "client_accept": item.ClientAccept,
+			"direct_size_threshold_bytes": item.DirectSizeThresholdBytes, "extra_schema": item.ExtraSchema,
+			"visibility": item.Visibility, "status": item.Status, "meta": item.Meta,
+			"updated_at": time.Now(), "deleted_at": nil,
 		}).Error
 	} else {
 		err = r.db.WithContext(ctx).Create(item).Error
@@ -292,13 +305,27 @@ func (r *Repository) EnsureUploadRule(ctx context.Context, item *models.UploadKe
 	if item.ProcessPipeline == nil {
 		item.ProcessPipeline = models.StringList{}
 	}
+	if item.ClientAccept == nil {
+		item.ClientAccept = models.StringList{}
+	}
+	if item.ExtraSchema == nil {
+		item.ExtraSchema = models.MetaJSON{}
+	}
+	if strings.TrimSpace(item.ModeOverride) == "" {
+		item.ModeOverride = models.UploadModeInherit
+	}
+	if strings.TrimSpace(item.VisibilityOverride) == "" {
+		item.VisibilityOverride = models.VisibilityOverrideInherit
+	}
 	if before != nil {
 		item.ID = before.ID
 		err = r.db.WithContext(ctx).Model(before).Updates(map[string]interface{}{
 			"name": item.Name, "sub_path": item.SubPath, "filename_strategy": item.FilenameStrategy,
 			"max_size_bytes": item.MaxSizeBytes, "allowed_mime_types": item.AllowedMimeTypes,
-			"process_pipeline": item.ProcessPipeline, "is_default": item.IsDefault,
-			"status": item.Status, "meta": item.Meta, "updated_at": time.Now(), "deleted_at": nil,
+			"process_pipeline": item.ProcessPipeline, "mode_override": item.ModeOverride,
+			"visibility_override": item.VisibilityOverride, "client_accept": item.ClientAccept,
+			"extra_schema": item.ExtraSchema, "is_default": item.IsDefault, "status": item.Status,
+			"meta": item.Meta, "updated_at": time.Now(), "deleted_at": nil,
 		}).Error
 	} else {
 		err = r.db.WithContext(ctx).Create(item).Error
@@ -540,7 +567,7 @@ func (r *Repository) loadDefaultConfig(ctx context.Context, tenantID string) (*R
 
 	var provider models.StorageProvider
 	if err := r.db.WithContext(ctx).
-		Where("tenant_id = ? AND is_default = ? AND deleted_at IS NULL", tenantID, true).
+		Where("tenant_id = ? AND is_default = ? AND status = ? AND deleted_at IS NULL", tenantID, true, models.UploadProviderStatusReady).
 		Order("updated_at DESC").
 		First(&provider).Error; err != nil {
 		return nil, err
@@ -551,7 +578,7 @@ func (r *Repository) loadDefaultConfig(ctx context.Context, tenantID string) (*R
 
 	var bucket models.StorageBucket
 	if err := r.db.WithContext(ctx).
-		Where("tenant_id = ? AND provider_id = ? AND deleted_at IS NULL", tenantID, provider.ID).
+		Where("tenant_id = ? AND provider_id = ? AND status = ? AND deleted_at IS NULL", tenantID, provider.ID, models.UploadProviderStatusReady).
 		Order("updated_at DESC").
 		First(&bucket).Error; err != nil {
 		return nil, err
@@ -559,7 +586,7 @@ func (r *Repository) loadDefaultConfig(ctx context.Context, tenantID string) (*R
 
 	var uploadKey models.UploadKey
 	if err := r.db.WithContext(ctx).
-		Where("tenant_id = ? AND bucket_id = ? AND deleted_at IS NULL", tenantID, bucket.ID).
+		Where("tenant_id = ? AND bucket_id = ? AND status = ? AND deleted_at IS NULL", tenantID, bucket.ID, models.UploadProviderStatusReady).
 		Order("updated_at DESC").
 		First(&uploadKey).Error; err != nil {
 		return nil, err
@@ -581,7 +608,7 @@ func (r *Repository) loadDefaultConfig(ctx context.Context, tenantID string) (*R
 func (r *Repository) loadResolvedConfigByKey(ctx context.Context, tenantID, key string) (*ResolvedConfig, error) {
 	var uploadKey models.UploadKey
 	if err := r.db.WithContext(ctx).
-		Where("tenant_id = ? AND key = ? AND deleted_at IS NULL", tenantID, key).
+		Where("tenant_id = ? AND key = ? AND status = ? AND deleted_at IS NULL", tenantID, key, models.UploadProviderStatusReady).
 		First(&uploadKey).Error; err != nil {
 		return nil, err
 	}
@@ -613,7 +640,7 @@ func (r *Repository) loadResolvedConfigByKey(ctx context.Context, tenantID, key 
 func (r *Repository) loadResolvedRule(ctx context.Context, tenantID string, uploadKey models.UploadKey) (*models.UploadKeyRule, error) {
 	var rule models.UploadKeyRule
 	ruleQuery := r.db.WithContext(ctx).
-		Where("tenant_id = ? AND upload_key_id = ? AND deleted_at IS NULL", tenantID, uploadKey.ID)
+		Where("tenant_id = ? AND upload_key_id = ? AND status = ? AND deleted_at IS NULL", tenantID, uploadKey.ID, models.UploadProviderStatusReady)
 	if uploadKey.DefaultRuleKey != "" {
 		ruleQuery = ruleQuery.Order(clause.Expr{SQL: "CASE WHEN rule_key = ? THEN 0 ELSE 1 END", Vars: []any{uploadKey.DefaultRuleKey}})
 	}
@@ -883,17 +910,24 @@ func snapshotUploadKeyForAudit(item *models.UploadKey) map[string]any {
 		return nil
 	}
 	return map[string]any{
-		"id":                 item.ID.String(),
-		"tenant_id":          item.TenantID,
-		"bucket_id":          item.BucketID.String(),
-		"key":                item.Key,
-		"name":               item.Name,
-		"path_template":      item.PathTemplate,
-		"default_rule_key":   item.DefaultRuleKey,
-		"max_size_bytes":     item.MaxSizeBytes,
-		"allowed_mime_types": item.AllowedMimeTypes,
-		"visibility":         item.Visibility,
-		"status":             item.Status,
+		"id":                          item.ID.String(),
+		"tenant_id":                   item.TenantID,
+		"bucket_id":                   item.BucketID.String(),
+		"key":                         item.Key,
+		"name":                        item.Name,
+		"path_template":               item.PathTemplate,
+		"default_rule_key":            item.DefaultRuleKey,
+		"max_size_bytes":              item.MaxSizeBytes,
+		"allowed_mime_types":          item.AllowedMimeTypes,
+		"upload_mode":                 item.UploadMode,
+		"is_frontend_visible":         item.IsFrontendVisible,
+		"permission_key":              item.PermissionKey,
+		"fallback_key":                item.FallbackKey,
+		"client_accept":               item.ClientAccept,
+		"direct_size_threshold_bytes": item.DirectSizeThresholdBytes,
+		"extra_schema":                item.ExtraSchema,
+		"visibility":                  item.Visibility,
+		"status":                      item.Status,
 	}
 }
 
@@ -940,18 +974,21 @@ func snapshotUploadRuleForAudit(item *models.UploadKeyRule) map[string]any {
 		return nil
 	}
 	return map[string]any{
-		"id":                 item.ID.String(),
-		"tenant_id":          item.TenantID,
-		"upload_key_id":      item.UploadKeyID.String(),
-		"rule_key":           item.RuleKey,
-		"name":               item.Name,
-		"sub_path":           item.SubPath,
-		"filename_strategy":  item.FilenameStrategy,
-		"max_size_bytes":     item.MaxSizeBytes,
-		"allowed_mime_types": item.AllowedMimeTypes,
-		"process_pipeline":   item.ProcessPipeline,
-		"is_default":         item.IsDefault,
-		"status":             item.Status,
+		"id":                  item.ID.String(),
+		"tenant_id":           item.TenantID,
+		"upload_key_id":       item.UploadKeyID.String(),
+		"rule_key":            item.RuleKey,
+		"name":                item.Name,
+		"sub_path":            item.SubPath,
+		"filename_strategy":   item.FilenameStrategy,
+		"max_size_bytes":      item.MaxSizeBytes,
+		"allowed_mime_types":  item.AllowedMimeTypes,
+		"process_pipeline":    item.ProcessPipeline,
+		"mode_override":       item.ModeOverride,
+		"visibility_override": item.VisibilityOverride,
+		"client_accept":       item.ClientAccept,
+		"extra_schema":        item.ExtraSchema,
+		"is_default":          item.IsDefault,
+		"status":              item.Status,
 	}
 }
-

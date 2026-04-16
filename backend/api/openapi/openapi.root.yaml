@@ -363,6 +363,10 @@ paths:
     $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}
   /dictionaries/{id}/items:
     $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}~1items
+  /dictionaries/{id}/items/{itemId}:
+    $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}~1items~1{itemId}
+  /media/upload-keys:
+    $ref: ./domains/media/paths.yaml#/paths/~1media~1upload-keys
   /media/upload:
     $ref: ./domains/media/paths.yaml#/paths/~1media~1upload
   /media/prepare:

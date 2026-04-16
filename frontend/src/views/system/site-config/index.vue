@@ -18,56 +18,6 @@
         </div>
       </AdminWorkspaceHero>
 
-      <ElCard class="branding-card" shadow="never">
-        <template #header>
-          <div class="branding-card__header">
-            <div>
-              <div class="branding-card__title">站点品牌预览</div>
-              <div class="branding-card__desc">
-                基于当前全局作用域的 site.name / site.logo / site.favicon；点击项可直接跳到编辑。
-              </div>
-            </div>
-            <ElTag size="small" type="info" effect="plain">仅全局作用域</ElTag>
-          </div>
-        </template>
-        <div class="branding-preview">
-          <div
-            v-for="item in brandingPreviewItems"
-            :key="item.key"
-            class="branding-item"
-            :class="{ 'is-missing': !item.hasValue }"
-            @click="openBrandingEdit(item)"
-          >
-            <div class="branding-item__media">
-              <template v-if="item.kind === 'image'">
-                <img
-                  v-if="item.value"
-                  :src="item.value"
-                  :alt="item.label"
-                  class="branding-item__img"
-                  loading="lazy"
-                />
-                <div v-else class="branding-item__placeholder">无图</div>
-              </template>
-              <template v-else>
-                <div class="branding-item__text">
-                  {{ item.value || '未设置' }}
-                </div>
-              </template>
-            </div>
-            <div class="branding-item__meta">
-              <div class="branding-item__label">{{ item.label }}</div>
-              <div class="branding-item__key">{{ item.key }}</div>
-            </div>
-            <div class="branding-item__cta">
-              <ElButton size="small" text type="primary">
-                {{ item.hasValue ? '编辑' : '去设置' }}
-              </ElButton>
-            </div>
-          </div>
-        </div>
-      </ElCard>
-
       <ElCard class="art-table-card site-config-main" shadow="never">
         <ElTabs v-model="activeTab" class="site-config-tabs">
           <!-- ═══ 配置项 ═══ -->
@@ -83,24 +33,14 @@
                   <ElRadioButton value="all">全部作用域</ElRadioButton>
                   <ElRadioButton value="app">指定应用</ElRadioButton>
                 </ElRadioGroup>
-                <ElSelect
+                <AppKeySelect
                   v-if="configScopeMode === 'app'"
                   v-model="selectedAppKey"
                   class="site-config-toolbar__app-select"
                   placeholder="选择或输入 app_key"
-                  filterable
                   allow-create
-                  clearable
-                  default-first-option
                   @change="onAppKeyChange"
-                >
-                  <ElOption
-                    v-for="k in knownAppKeys"
-                    :key="k"
-                    :label="k"
-                    :value="k"
-                  />
-                </ElSelect>
+                />
               </div>
               <div class="site-config-toolbar__group">
                 <ElInput
@@ -169,9 +109,10 @@
           </ElRadioGroup>
         </ElFormItem>
         <ElFormItem v-if="configEditor.scope === 'app'" label="app_key">
-          <ElInput
+          <AppKeySelect
             v-model="configEditor.form.app_key"
             :disabled="!!configEditor.editingId"
+            allow-create
             placeholder="如 admin / shop / mobile"
           />
         </ElFormItem>
@@ -374,14 +315,14 @@
     ElRadio,
     ElRadioButton,
     ElRadioGroup,
-    ElSelect,
     ElSwitch,
     ElTabPane,
     ElTabs,
     ElTag
   } from 'element-plus'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { uploadMediaWithPrepare } from '@/domains/upload/api'
+  import { describeMediaUploadPlan, uploadMediaWithPlan } from '@/domains/upload/api'
   import type { ColumnOption } from '@/types/component'
   import { useSiteConfigStore } from '@/store/modules/site-config'
   import {
@@ -404,14 +345,6 @@
   const selectedAppKey = ref<string>('')
   const configKeyword = ref('')
   const setKeyword = ref('')
-
-  const knownAppKeys = computed(() => {
-    const set = new Set<string>()
-    for (const item of store.configs) {
-      if (item.app_key) set.add(item.app_key)
-    }
-    return Array.from(set).sort()
-  })
 
   const configKeyOptions = computed(() => {
     const set = new Set<string>()
@@ -493,61 +426,6 @@
       { label: '配置集合', value: store.sets.length }
     ]
   })
-
-  // ── 品牌预览 ──────────────────────────────────────────────────────────────
-  interface BrandingPreviewItem {
-    key: string
-    label: string
-    kind: 'text' | 'image'
-    value: string
-    hasValue: boolean
-    record?: SiteConfigSummary
-  }
-
-  const BRANDING_KEYS: Array<{ key: string; label: string; kind: 'text' | 'image' }> = [
-    { key: 'site.name', label: '站点名称', kind: 'text' },
-    { key: 'site.logo', label: '站点 Logo', kind: 'image' },
-    { key: 'site.favicon', label: 'Favicon', kind: 'image' }
-  ]
-
-  const brandingPreviewItems = computed<BrandingPreviewItem[]>(() => {
-    const byKey = new Map<string, SiteConfigSummary>()
-    for (const r of store.configs) {
-      if (!r.app_key && !byKey.has(r.config_key)) byKey.set(r.config_key, r)
-    }
-    return BRANDING_KEYS.map((meta) => {
-      const record = byKey.get(meta.key)
-      const raw = (record?.config_value || {}) as Record<string, unknown>
-      let value = ''
-      if (meta.kind === 'image') {
-        value = typeof raw.url === 'string' ? raw.url : ''
-      } else {
-        value = typeof raw.value === 'string' ? raw.value : raw.value != null ? String(raw.value) : ''
-      }
-      return {
-        key: meta.key,
-        label: meta.label,
-        kind: meta.kind,
-        value,
-        hasValue: !!value,
-        record
-      }
-    })
-  })
-
-  function openBrandingEdit(item: BrandingPreviewItem) {
-    if (item.record) {
-      openConfigEdit(item.record)
-      return
-    }
-    // 未设置：打开新增并预填默认类型。
-    resetConfigEditor()
-    configEditor.scope = 'global'
-    configEditor.form.config_key = item.key
-    configEditor.form.label = item.label
-    configEditor.form.value_type = item.kind === 'image' ? 'image' : 'string'
-    configEditor.open = true
-  }
 
   // ── Configs 编辑器 ───────────────────────────────────────────────────────
 
@@ -660,9 +538,10 @@
     input.value = ''
     configEditor.imageUploading = true
     try {
-      const resp = await uploadMediaWithPrepare(file, { key: 'default' })
-      if (resp.url) {
-        configEditor.imageUrl = resp.url
+      const result = await uploadMediaWithPlan(file, { key: 'default' })
+      if (result.media.url) {
+        configEditor.imageUrl = result.media.url
+        ElMessage.success(`图片上传成功（${describeMediaUploadPlan(result.plan)}）`)
       } else {
         ElMessage.warning('上传成功但未返回 URL，请手动填写')
       }
@@ -1113,121 +992,6 @@
   .site-config-main {
     flex: 1;
     min-height: 0;
-  }
-
-  // ── 品牌预览卡 ───────────────────────────────────────────────────────
-  .branding-card {
-    :deep(.el-card__header) {
-      padding: 14px 18px;
-    }
-    :deep(.el-card__body) {
-      padding: 16px 18px 18px;
-    }
-  }
-
-  .branding-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .branding-card__title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--art-text-strong);
-  }
-
-  .branding-card__desc {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--art-text-muted);
-  }
-
-  .branding-preview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
-  }
-
-  .branding-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--art-border-color);
-    background: var(--art-bg-color);
-    cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
-
-    &:hover {
-      border-color: var(--el-color-primary);
-      box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
-    }
-
-    &.is-missing {
-      border-style: dashed;
-      background: var(--art-bg-soft);
-    }
-  }
-
-  .branding-item__media {
-    flex: 0 0 auto;
-    width: 64px;
-    height: 64px;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--art-bg-soft);
-  }
-
-  .branding-item__img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background:
-      linear-gradient(45deg, rgba(0, 0, 0, 0.04) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(-45deg, rgba(0, 0, 0, 0.04) 25%, transparent 25%) 0 0 / 8px 8px;
-  }
-
-  .branding-item__placeholder,
-  .branding-item__text {
-    font-size: 12px;
-    color: var(--art-text-soft);
-    text-align: center;
-    padding: 8px;
-    word-break: break-all;
-  }
-
-  .branding-item__text {
-    font-size: 14px;
-    color: var(--art-text-strong);
-    font-weight: 600;
-  }
-
-  .branding-item__meta {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .branding-item__label {
-    font-size: 13px;
-    color: var(--art-text-strong);
-    font-weight: 600;
-  }
-
-  .branding-item__key {
-    margin-top: 2px;
-    font-family: var(--el-font-family-monospace, monospace);
-    font-size: 11px;
-    color: var(--art-text-muted);
-  }
-
-  .branding-item__cta {
-    flex: 0 0 auto;
   }
 
   // ── 工具栏 ───────────────────────────────────────────────────────────

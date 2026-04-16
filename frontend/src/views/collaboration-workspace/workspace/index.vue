@@ -15,21 +15,12 @@
         :metrics="heroMetrics"
       >
         <div class="collaboration-workspace-hero-actions">
-          <ElSelect
+          <AppKeySelect
             v-model="selectedAppKey"
-            clearable
-            filterable
             placeholder="选择 App"
             class="collaboration-workspace-app-select"
             @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
+          />
           <ElButton
             v-action="'collaboration_workspace.manage'"
             type="primary"
@@ -108,6 +99,7 @@
 
 <script setup lang="ts">
   import { onMounted, watch } from 'vue'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
@@ -117,7 +109,6 @@
     fetchCreateCollaborationWorkspace,
     fetchUpdateCollaborationWorkspace
   } from '@/api/collaboration-workspace'
-  import { fetchGetApps } from '@/domains/governance/api'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
@@ -165,7 +156,6 @@
   }
 
   const dialogType = ref<DialogType>('add')
-  const appList = ref<Api.SystemManage.AppItem[]>([])
   const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const currentCollaborationWorkspaceData = ref<Partial<CollaborationWorkspaceListItem>>({})
@@ -206,12 +196,6 @@
       value: data.value.reduce((total, item) => total + resolveAdminUsers(item).length, 0)
     }
   ])
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
 
   const {
     columns,
@@ -356,11 +340,6 @@
     getData()
   }
 
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
-
   async function handleManagedAppChange(value?: string) {
     await setManagedAppKey(`${value || ''}`.trim())
   }
@@ -486,9 +465,6 @@
 
   onMounted(() => {
     selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
   })
 
   watch(

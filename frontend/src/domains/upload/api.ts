@@ -14,6 +14,10 @@ export type MediaListResponse = components['schemas']['MediaListResponse']
 export type MediaPrepareUploadRequest = components['schemas']['MediaPrepareUploadRequest']
 export type MediaPrepareUploadResponse = components['schemas']['MediaPrepareUploadResponse']
 export type MediaCompleteUploadRequest = components['schemas']['MediaCompleteUploadRequest']
+export type MediaVisibleUploadKey = components['schemas']['MediaVisibleUploadKey']
+export type MediaVisibleUploadRule = components['schemas']['MediaVisibleUploadRule']
+export type MediaVisibleUploadKeyListResponse =
+  components['schemas']['MediaVisibleUploadKeyListResponse']
 // 上传模式开关：
 //   - auto（默认）：调 /media/prepare，按服务端返回 mode 走 direct 或 relay；
 //   - direct：调 /media/prepare，但若服务端给的是 relay 直接抛错（用于强制验证 STS 链路）；
@@ -26,11 +30,33 @@ export type MediaUploadOptions = {
   rule?: string
   mode?: MediaUploadMode
   metadata?: Record<string, unknown>
+  visibleKeys?: MediaVisibleUploadKey[]
   signal?: AbortSignal
   onProgress?: (percent: number, event: ProgressEvent<EventTarget>) => void
   onFallback?: (prepare: MediaPrepareUploadResponse) => void
+  onResolved?: (plan: MediaUploadExecutionPlan) => void
+  onCompleted?: (result: MediaUploadExecutionResult) => void
 }
 export type MediaUploadTarget = string | MediaUploadOptions | undefined
+export type MediaResolvedUploadMode = 'direct' | 'relay'
+export type MediaResolvedVisibleUploadTarget = {
+  uploadKey?: MediaVisibleUploadKey
+  rule?: MediaVisibleUploadRule
+}
+export type MediaUploadExecutionPlan = {
+  requestedMode: MediaUploadMode
+  resolvedMode: MediaResolvedUploadMode
+  uploadKey?: string
+  ruleKey?: string
+  relayUrl?: string
+  fallbackUsed: boolean
+  prepare?: MediaPrepareUploadResponse
+  visibleTarget?: MediaResolvedVisibleUploadTarget
+}
+export type MediaUploadExecutionResult = {
+  media: MediaUploadResponse
+  plan: MediaUploadExecutionPlan
+}
 
 function normalizeBackendBaseUrl(value?: string): string {
   const raw = `${value || ''}`.trim()
@@ -54,7 +80,10 @@ function buildUploadHeaders(): Headers {
   const headers = new Headers()
   const accessToken = getHttpAccessToken()
   if (accessToken) {
-    headers.set('Authorization', accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`)
+    headers.set(
+      'Authorization',
+      accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
+    )
   }
 
   const authWorkspaceID = getCurrentAuthWorkspaceId()
@@ -96,8 +125,68 @@ function normalizeUploadOptions(target: MediaUploadTarget): MediaUploadOptions {
     ...target,
     key: `${target.key || ''}`.trim() || undefined,
     rule: `${target.rule || ''}`.trim() || undefined,
-    mode: target.mode || undefined
+    mode: target.mode || undefined,
+    visibleKeys: Array.isArray(target.visibleKeys) ? target.visibleKeys : undefined
   }
+}
+
+function pickVisibleUploadKey(
+  records: MediaVisibleUploadKey[],
+  requestedKey?: string
+): MediaVisibleUploadKey | undefined {
+  if (requestedKey) {
+    return records.find((item) => item.key === requestedKey)
+  }
+  if (records.length === 1) {
+    return records[0]
+  }
+  return records.find((item) => item.key === 'default')
+}
+
+function pickVisibleUploadRule(
+  uploadKey: MediaVisibleUploadKey | undefined,
+  requestedRule?: string
+): MediaVisibleUploadRule | undefined {
+  if (!uploadKey || !Array.isArray(uploadKey.rules) || uploadKey.rules.length === 0) {
+    return undefined
+  }
+  if (requestedRule) {
+    return uploadKey.rules.find((item) => item.ruleKey === requestedRule)
+  }
+  if (uploadKey.defaultRuleKey) {
+    const matched = uploadKey.rules.find((item) => item.ruleKey === uploadKey.defaultRuleKey)
+    if (matched) return matched
+  }
+  return uploadKey.rules.find((item) => item.isDefault) || uploadKey.rules[0]
+}
+
+export function resolveVisibleMediaUploadTarget(
+  records: MediaVisibleUploadKey[],
+  target: MediaUploadTarget = {}
+): MediaResolvedVisibleUploadTarget {
+  const options = normalizeUploadOptions(target)
+  const uploadKey = pickVisibleUploadKey(records, options.key)
+  return {
+    uploadKey,
+    rule: pickVisibleUploadRule(uploadKey, options.rule)
+  }
+}
+
+export function describeMediaUploadPlan(plan: MediaUploadExecutionPlan): string {
+  const modeLabel =
+    plan.resolvedMode === 'direct'
+      ? '前端直传'
+      : plan.fallbackUsed
+        ? '后端中转（已回退）'
+        : '后端中转'
+  const parts = [modeLabel]
+  if (plan.uploadKey) {
+    parts.push(`UploadKey: ${plan.uploadKey}`)
+  }
+  if (plan.ruleKey) {
+    parts.push(`Rule: ${plan.ruleKey}`)
+  }
+  return parts.join(' / ')
 }
 
 function xhrUpload(
@@ -141,6 +230,14 @@ function xhrUpload(
     }
     xhr.send(init.body)
   })
+}
+
+function emitResolvedPlan(options: MediaUploadOptions, plan: MediaUploadExecutionPlan) {
+  options.onResolved?.(plan)
+}
+
+function emitCompletedResult(options: MediaUploadOptions, result: MediaUploadExecutionResult) {
+  options.onCompleted?.(result)
 }
 
 async function uploadMediaByRelay(
@@ -191,6 +288,15 @@ export async function prepareMediaUpload(
       }
     })
   )
+}
+
+export async function listVisibleMediaUploadKeys(): Promise<MediaVisibleUploadKeyListResponse> {
+  return unwrap(v5Client.GET('/media/upload-keys'))
+}
+
+export async function fetchVisibleMediaUploadKeys(): Promise<MediaVisibleUploadKey[]> {
+  const response = await listVisibleMediaUploadKeys()
+  return Array.isArray(response.records) ? response.records : []
 }
 
 export async function completeMediaUpload(
@@ -269,17 +375,60 @@ export async function uploadMediaWithPrepare(
   file: File,
   target: MediaUploadTarget = {}
 ): Promise<MediaUploadResponse> {
+  const result = await uploadMediaWithPlan(file, target)
+  return result.media
+}
+
+export async function uploadMediaWithPlan(
+  file: File,
+  target: MediaUploadTarget = {}
+): Promise<MediaUploadExecutionResult> {
   const options = normalizeUploadOptions(target)
   const mode: MediaUploadMode = options.mode || 'auto'
+  const visibleTarget = Array.isArray(options.visibleKeys)
+    ? resolveVisibleMediaUploadTarget(options.visibleKeys, options)
+    : undefined
 
   // 强制中转：跳过 prepare，少一次 RTT。常用于禁用直传或快速回退。
   if (mode === 'relay') {
-    return uploadMediaByRelay(file, options)
+    const plan: MediaUploadExecutionPlan = {
+      requestedMode: mode,
+      resolvedMode: 'relay',
+      uploadKey: options.key,
+      ruleKey: options.rule,
+      relayUrl: '/api/v1/media/upload',
+      fallbackUsed: false,
+      visibleTarget
+    }
+    emitResolvedPlan(options, plan)
+    const media = await uploadMediaByRelay(file, options)
+    const result: MediaUploadExecutionResult = {
+      media,
+      plan
+    }
+    emitCompletedResult(options, result)
+    return result
   }
 
   const prepare = await prepareMediaUpload(file, options)
   if (prepare.mode === 'direct') {
-    return uploadMediaDirect(file, prepare, options)
+    const plan: MediaUploadExecutionPlan = {
+      requestedMode: mode,
+      resolvedMode: 'direct',
+      uploadKey: prepare.uploadKey || options.key,
+      ruleKey: prepare.ruleKey || options.rule,
+      fallbackUsed: prepare.fallbackUsed === true,
+      prepare,
+      visibleTarget
+    }
+    emitResolvedPlan(options, plan)
+    const media = await uploadMediaDirect(file, prepare, options)
+    const result: MediaUploadExecutionResult = {
+      media,
+      plan
+    }
+    emitCompletedResult(options, result)
+    return result
   }
 
   // 强制直传但服务端给的是 relay：抛错而非静默回退，让调用方知道直传不可用
@@ -289,7 +438,25 @@ export async function uploadMediaWithPrepare(
   }
 
   options.onFallback?.(prepare)
-  return uploadMediaByRelay(file, options, prepare.relayUrl || '/api/v1/media/upload')
+  const relayUrl = prepare.relayUrl || '/api/v1/media/upload'
+  const plan: MediaUploadExecutionPlan = {
+    requestedMode: mode,
+    resolvedMode: 'relay',
+    uploadKey: prepare.uploadKey || options.key,
+    ruleKey: prepare.ruleKey || options.rule,
+    relayUrl,
+    fallbackUsed: prepare.fallbackUsed === true,
+    prepare,
+    visibleTarget
+  }
+  emitResolvedPlan(options, plan)
+  const media = await uploadMediaByRelay(file, options, relayUrl)
+  const result: MediaUploadExecutionResult = {
+    media,
+    plan
+  }
+  emitCompletedResult(options, result)
+  return result
 }
 
 export async function listMedia(): Promise<MediaListResponse> {

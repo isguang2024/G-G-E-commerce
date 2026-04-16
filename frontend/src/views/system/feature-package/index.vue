@@ -226,9 +226,9 @@
   import { useRoute } from 'vue-router'
   import { useTable } from '@/hooks/core/useTable'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import { loadAppCatalog, type AppCatalogOption } from '@/domains/governance/app-catalog'
   import {
     fetchDeleteFeaturePackage,
-    fetchGetApps,
     fetchGetFeaturePackageImpactPreview,
     fetchGetFeaturePackageList,
     fetchGetFeaturePackageRelationTree
@@ -274,7 +274,7 @@
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
   const loadError = ref('')
-  const appOptions = ref<Api.SystemManage.AppItem[]>([])
+  const appOptions = ref<AppCatalogOption[]>([])
   const personalPackageCount = computed(
     () => data.value.filter((item) => item.workspaceScope === 'personal').length
   )
@@ -732,8 +732,7 @@
 
   void (async () => {
     try {
-      const result = await fetchGetApps()
-      appOptions.value = result.records || []
+      appOptions.value = await loadAppCatalog()
     } catch {
       appOptions.value = []
     }

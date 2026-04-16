@@ -1,5 +1,5 @@
 <template>
-  <div class="dictionary-page">
+  <div class="dictionary-page art-full-height">
     <div class="dictionary-layout">
       <!-- Left: Dict Type Panel -->
       <div class="dict-type-side">
@@ -49,34 +49,51 @@
 
 <style scoped lang="scss">
   .dictionary-page {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     height: 100%;
+    min-height: 0;
     padding: 16px;
     box-sizing: border-box;
+    overflow: hidden;
   }
 
   .dictionary-layout {
     display: flex;
+    flex: 1;
     height: 100%;
+    min-height: 0;
+    align-items: flex-start;
     gap: 16px;
+    overflow: hidden;
   }
 
   .dict-type-side {
-    width: 360px;
+    height: 100%;
+    width: 520px;
     flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .dict-item-main {
     flex: 1;
+    height: 100%;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .dict-item-empty {
     height: 100%;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--el-bg-color);
     border-radius: 4px;
     border: 1px solid var(--el-border-color-lighter);
+    overflow: hidden;
   }
 </style>

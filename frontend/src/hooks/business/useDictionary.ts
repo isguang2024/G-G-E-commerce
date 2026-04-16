@@ -7,6 +7,8 @@ import { logger } from '@/utils/logger'
 export interface DictOption {
   label: string
   value: string
+  description?: string
+  isDefault?: boolean
   extra?: Record<string, unknown>
 }
 
@@ -72,17 +74,22 @@ export function useDictionary(code: string): {
   options: Ref<DictOption[]>
   loading: Ref<boolean>
   map: ComputedRef<Record<string, string>>
+  defaultValue: ComputedRef<string>
 } {
   const options = ref<DictOption[]>([])
   const loading = ref(true)
 
   requestCodes([code]).then(() => {
     const items = cache.get(code) ?? []
-    options.value = items.map((item) => ({
-      label: item.label,
-      value: item.value,
-      extra: item.extra as Record<string, unknown> | undefined
-    }))
+    options.value = items
+      .map((item) => ({
+        label: item.label,
+        value: item.value,
+        description: item.description || '',
+        isDefault: Boolean(item.is_default),
+        extra: item.extra as Record<string, unknown> | undefined
+      }))
+      .sort((a, b) => Number(b.isDefault) - Number(a.isDefault))
     loading.value = false
   })
 
@@ -94,7 +101,11 @@ export function useDictionary(code: string): {
     return m
   })
 
-  return { options, loading, map }
+  const defaultValue = computed(
+    () => options.value.find((item) => item.isDefault)?.value || options.value[0]?.value || ''
+  )
+
+  return { options, loading, map, defaultValue }
 }
 
 // ─── useDictionaries ─────────────────────────────────────────────────────────
@@ -113,8 +124,10 @@ export function useDictionaries(codes: string[]): {
       result[code] = items.map((item) => ({
         label: item.label,
         value: item.value,
+        description: item.description || '',
+        isDefault: Boolean(item.is_default),
         extra: item.extra as Record<string, unknown> | undefined
-      }))
+      })).sort((a, b) => Number(b.isDefault) - Number(a.isDefault))
     }
     dictMap.value = result
     loading.value = false

@@ -61,8 +61,112 @@ components:
           type: string
         ruleKey:
           type: string
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
         fallbackUsed:
           type: boolean
+    MediaVisibleUploadRule:
+      type: object
+      required:
+      - ruleKey
+      - name
+      - uploadMode
+      - visibility
+      - clientAccept
+      - maxSizeBytes
+      - allowedMimeTypes
+      - isDefault
+      properties:
+        ruleKey:
+          type: string
+        name:
+          type: string
+        uploadMode:
+          type: string
+          enum:
+          - auto
+          - direct
+          - relay
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+        clientAccept:
+          type: array
+          items:
+            type: string
+        maxSizeBytes:
+          type: integer
+          format: int64
+        allowedMimeTypes:
+          type: array
+          items:
+            type: string
+        isDefault:
+          type: boolean
+    MediaVisibleUploadKey:
+      type: object
+      required:
+      - key
+      - name
+      - defaultRuleKey
+      - uploadMode
+      - visibility
+      - clientAccept
+      - maxSizeBytes
+      - directSizeThresholdBytes
+      - fallbackKey
+      - rules
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        defaultRuleKey:
+          type: string
+        uploadMode:
+          type: string
+          enum:
+          - auto
+          - direct
+          - relay
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+        clientAccept:
+          type: array
+          items:
+            type: string
+        maxSizeBytes:
+          type: integer
+          format: int64
+        directSizeThresholdBytes:
+          type: integer
+          format: int64
+        fallbackKey:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaVisibleUploadRule'
+    MediaVisibleUploadKeyListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaVisibleUploadKey'
+        total:
+          type: integer
     MediaCompleteUploadRequest:
       type: object
       required:

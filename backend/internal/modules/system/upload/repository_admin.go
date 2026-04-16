@@ -1,4 +1,4 @@
-﻿package upload
+package upload
 
 // repository_admin.go 提供上传配置中心管理面所需的 List/Get(by id)/Update/Delete 方法。
 // 与 EnsureProvider/EnsureBucket/EnsureUploadKey/EnsureUploadRule（按 key upsert）互补：
@@ -273,6 +273,18 @@ func (r *Repository) ListUploadKeys(ctx context.Context, tenantID string, bucket
 	return items, nil
 }
 
+func (r *Repository) ListFrontendVisibleUploadKeys(ctx context.Context, tenantID string) ([]models.UploadKey, error) {
+	tenantID = normalizeTenantID(tenantID)
+	var items []models.UploadKey
+	if err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND is_frontend_visible = ? AND status = ? AND deleted_at IS NULL", tenantID, true, models.UploadProviderStatusReady).
+		Order("updated_at DESC").
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 func (r *Repository) GetUploadKeyByID(ctx context.Context, tenantID string, id uuid.UUID) (*models.UploadKey, error) {
 	tenantID = normalizeTenantID(tenantID)
 	var item models.UploadKey
@@ -297,16 +309,23 @@ func (r *Repository) ListRulesByUploadKey(ctx context.Context, tenantID string, 
 }
 
 type UploadKeyUpdate struct {
-	BucketID         uuid.UUID
-	Key              string
-	Name             string
-	PathTemplate     string
-	DefaultRuleKey   string
-	MaxSizeBytes     int64
-	AllowedMimeTypes models.StringList
-	Visibility       string
-	Status           string
-	Meta             models.MetaJSON
+	BucketID                 uuid.UUID
+	Key                      string
+	Name                     string
+	PathTemplate             string
+	DefaultRuleKey           string
+	MaxSizeBytes             int64
+	AllowedMimeTypes         models.StringList
+	UploadMode               string
+	IsFrontendVisible        bool
+	PermissionKey            string
+	FallbackKey              string
+	ClientAccept             models.StringList
+	DirectSizeThresholdBytes int64
+	ExtraSchema              models.MetaJSON
+	Visibility               string
+	Status                   string
+	Meta                     models.MetaJSON
 }
 
 func (r *Repository) UpdateUploadKeyByID(ctx context.Context, tenantID string, id uuid.UUID, update UploadKeyUpdate) (*models.UploadKey, error) {
@@ -321,18 +340,33 @@ func (r *Repository) UpdateUploadKeyByID(ctx context.Context, tenantID string, i
 	if allowed == nil {
 		allowed = models.StringList{}
 	}
+	clientAccept := update.ClientAccept
+	if clientAccept == nil {
+		clientAccept = models.StringList{}
+	}
+	extraSchema := update.ExtraSchema
+	if extraSchema == nil {
+		extraSchema = models.MetaJSON{}
+	}
 	updates := map[string]any{
-		"bucket_id":          update.BucketID,
-		"key":                strings.TrimSpace(update.Key),
-		"name":               strings.TrimSpace(update.Name),
-		"path_template":      update.PathTemplate,
-		"default_rule_key":   strings.TrimSpace(update.DefaultRuleKey),
-		"max_size_bytes":     update.MaxSizeBytes,
-		"allowed_mime_types": allowed,
-		"visibility":         firstNonEmpty(update.Visibility, "public"),
-		"status":             firstNonEmpty(update.Status, models.UploadProviderStatusReady),
-		"meta":               update.Meta,
-		"updated_at":         now,
+		"bucket_id":                   update.BucketID,
+		"key":                         strings.TrimSpace(update.Key),
+		"name":                        strings.TrimSpace(update.Name),
+		"path_template":               update.PathTemplate,
+		"default_rule_key":            strings.TrimSpace(update.DefaultRuleKey),
+		"max_size_bytes":              update.MaxSizeBytes,
+		"allowed_mime_types":          allowed,
+		"upload_mode":                 firstNonEmpty(update.UploadMode, models.UploadModeAuto),
+		"is_frontend_visible":         update.IsFrontendVisible,
+		"permission_key":              strings.TrimSpace(update.PermissionKey),
+		"fallback_key":                strings.TrimSpace(update.FallbackKey),
+		"client_accept":               clientAccept,
+		"direct_size_threshold_bytes": update.DirectSizeThresholdBytes,
+		"extra_schema":                extraSchema,
+		"visibility":                  firstNonEmpty(update.Visibility, "public"),
+		"status":                      firstNonEmpty(update.Status, models.UploadProviderStatusReady),
+		"meta":                        update.Meta,
+		"updated_at":                  now,
 	}
 	if err := r.db.WithContext(ctx).
 		Model(&models.UploadKey{}).
@@ -373,16 +407,20 @@ func (r *Repository) GetUploadRuleByID(ctx context.Context, tenantID string, id 
 }
 
 type UploadRuleUpdate struct {
-	RuleKey          string
-	Name             string
-	SubPath          string
-	FilenameStrategy string
-	MaxSizeBytes     int64
-	AllowedMimeTypes models.StringList
-	ProcessPipeline  models.StringList
-	IsDefault        bool
-	Status           string
-	Meta             models.MetaJSON
+	RuleKey            string
+	Name               string
+	SubPath            string
+	FilenameStrategy   string
+	MaxSizeBytes       int64
+	AllowedMimeTypes   models.StringList
+	ProcessPipeline    models.StringList
+	ModeOverride       string
+	VisibilityOverride string
+	ClientAccept       models.StringList
+	ExtraSchema        models.MetaJSON
+	IsDefault          bool
+	Status             string
+	Meta               models.MetaJSON
 }
 
 func (r *Repository) UpdateUploadRuleByID(ctx context.Context, tenantID string, id uuid.UUID, update UploadRuleUpdate) (*models.UploadKeyRule, error) {
@@ -401,18 +439,30 @@ func (r *Repository) UpdateUploadRuleByID(ctx context.Context, tenantID string, 
 	if pipeline == nil {
 		pipeline = models.StringList{}
 	}
+	clientAccept := update.ClientAccept
+	if clientAccept == nil {
+		clientAccept = models.StringList{}
+	}
+	extraSchema := update.ExtraSchema
+	if extraSchema == nil {
+		extraSchema = models.MetaJSON{}
+	}
 	updates := map[string]any{
-		"rule_key":           strings.TrimSpace(update.RuleKey),
-		"name":               strings.TrimSpace(update.Name),
-		"sub_path":           update.SubPath,
-		"filename_strategy":  firstNonEmpty(update.FilenameStrategy, "uuid"),
-		"max_size_bytes":     update.MaxSizeBytes,
-		"allowed_mime_types": allowed,
-		"process_pipeline":   pipeline,
-		"is_default":         update.IsDefault,
-		"status":             firstNonEmpty(update.Status, models.UploadProviderStatusReady),
-		"meta":               update.Meta,
-		"updated_at":         now,
+		"rule_key":            strings.TrimSpace(update.RuleKey),
+		"name":                strings.TrimSpace(update.Name),
+		"sub_path":            update.SubPath,
+		"filename_strategy":   firstNonEmpty(update.FilenameStrategy, "uuid"),
+		"max_size_bytes":      update.MaxSizeBytes,
+		"allowed_mime_types":  allowed,
+		"process_pipeline":    pipeline,
+		"mode_override":       firstNonEmpty(update.ModeOverride, models.UploadModeInherit),
+		"visibility_override": firstNonEmpty(update.VisibilityOverride, models.VisibilityOverrideInherit),
+		"client_accept":       clientAccept,
+		"extra_schema":        extraSchema,
+		"is_default":          update.IsDefault,
+		"status":              firstNonEmpty(update.Status, models.UploadProviderStatusReady),
+		"meta":                update.Meta,
+		"updated_at":          now,
 	}
 	if err := r.db.WithContext(ctx).
 		Model(&models.UploadKeyRule{}).
@@ -489,4 +539,3 @@ func ConvertGormNotFound(err error) error {
 	}
 	return err
 }
-

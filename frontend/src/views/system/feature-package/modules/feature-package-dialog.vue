@@ -34,23 +34,13 @@
         </ElSelect>
       </ElFormItem>
       <ElFormItem label="适用 App" prop="appKeys">
-        <ElSelect
+        <AppKeySelect
           v-model="form.appKeys"
           multiple
-          filterable
           clearable
-          collapse-tags
-          collapse-tags-tooltip
           placeholder="不绑定 App 时，对所有 App 生效"
-          style="width: 100%"
-        >
-          <ElOption
-            v-for="app in appOptions"
-            :key="app.appKey"
-            :label="`${app.name} (${app.appKey})`"
-            :value="app.appKey"
-          />
-        </ElSelect>
+          :eager="false"
+        />
         <div class="form-note">不绑定 App 时，对所有 App 生效。</div>
       </ElFormItem>
       <ElFormItem label="状态" prop="status">
@@ -72,7 +62,8 @@
 
 <script setup lang="ts">
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import { fetchCreateFeaturePackage, fetchGetApps, fetchUpdateFeaturePackage } from '@/domains/governance/api'
+  import AppKeySelect from '@/components/business/app/AppKeySelect.vue'
+  import { fetchCreateFeaturePackage, fetchUpdateFeaturePackage } from '@/domains/governance/api'
 
   type PackageItem = Api.SystemManage.FeaturePackageItem
 
@@ -97,7 +88,6 @@
 
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
-  const appOptions = ref<Api.SystemManage.AppItem[]>([])
 
   const visible = computed({
     get: () => props.modelValue,
@@ -207,21 +197,6 @@
       }
     })
   }
-
-  watch(
-    () => visible.value,
-    async (value) => {
-      if (value && appOptions.value.length === 0) {
-        try {
-          const result = await fetchGetApps()
-          appOptions.value = result.records || []
-        } catch {
-          appOptions.value = []
-        }
-      }
-    },
-    { immediate: true }
-  )
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
     return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`

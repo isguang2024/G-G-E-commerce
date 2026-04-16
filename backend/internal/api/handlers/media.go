@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"context"
@@ -23,17 +23,26 @@ func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (
 	if req == nil || !req.File.Set {
 		return &gen.UploadMediaInternalServerError{Code: 500, Message: "缺少上传文件"}, nil
 	}
+	grantedKeys, err := grantedPermissionKeysFromContext(ctx, h.evaluator, userID)
+	if err != nil {
+		h.logger.Error("resolve upload permissions failed", zap.Error(err))
+		return &gen.UploadMediaInternalServerError{Code: 500, Message: "权限解析失败"}, nil
+	}
 
 	file := req.File.Value
 	record, err := h.uploadSvc.Upload(ctx, pkgLogger.TenantFromContext(ctx), &userID, upload.UploadInput{
-		Key:      optString(req.Key),
-		Rule:     optString(req.Rule),
-		Name:     file.Name,
-		File:     file.File,
-		Size:     file.Size,
-		MimeType: file.Header.Get("Content-Type"),
+		Key:                   optString(req.Key),
+		Rule:                  optString(req.Rule),
+		Name:                  file.Name,
+		File:                  file.File,
+		Size:                  file.Size,
+		MimeType:              file.Header.Get("Content-Type"),
+		GrantedPermissionKeys: grantedKeys,
 	})
 	if err != nil {
+		if errors.Is(err, upload.ErrUploadPermissionDenied) {
+			return &gen.UploadMediaUnauthorized{Code: 401, Message: "无权使用该上传配置"}, nil
+		}
 		h.logger.Error("upload media failed", zap.Error(err))
 		return &gen.UploadMediaInternalServerError{Code: 500, Message: err.Error()}, nil
 	}
@@ -50,7 +59,8 @@ func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (
 }
 
 func (h *APIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepareUploadRequest) (gen.PrepareMediaUploadRes, error) {
-	if _, ok := userIDFromContext(ctx); !ok {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
 		return &gen.PrepareMediaUploadUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
 	if h.uploadSvc == nil {
@@ -59,16 +69,25 @@ func (h *APIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepa
 	if req == nil {
 		return &gen.PrepareMediaUploadInternalServerError{Code: 500, Message: "缺少上传参数"}, nil
 	}
+	grantedKeys, err := grantedPermissionKeysFromContext(ctx, h.evaluator, userID)
+	if err != nil {
+		h.logger.Error("resolve upload permissions failed", zap.Error(err))
+		return &gen.PrepareMediaUploadInternalServerError{Code: 500, Message: "权限解析失败"}, nil
+	}
 
 	result, err := h.uploadSvc.PrepareUpload(ctx, pkgLogger.TenantFromContext(ctx), upload.PrepareUploadInput{
-		Key:      optString(req.Key),
-		Rule:     optString(req.Rule),
-		Name:     req.Filename,
-		Size:     req.Size,
-		MimeType: optString(req.MimeType),
-		Checksum: optString(req.Checksum),
+		Key:                   optString(req.Key),
+		Rule:                  optString(req.Rule),
+		Name:                  req.Filename,
+		Size:                  req.Size,
+		MimeType:              optString(req.MimeType),
+		Checksum:              optString(req.Checksum),
+		GrantedPermissionKeys: grantedKeys,
 	})
 	if err != nil {
+		if errors.Is(err, upload.ErrUploadPermissionDenied) {
+			return &gen.PrepareMediaUploadUnauthorized{Code: 401, Message: "无权使用该上传配置"}, nil
+		}
 		h.logger.Error("prepare media upload failed", zap.Error(err))
 		return &gen.PrepareMediaUploadInternalServerError{Code: 500, Message: err.Error()}, nil
 	}
@@ -99,6 +118,9 @@ func (h *APIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepa
 	if value := result.RuleKey; value != "" {
 		response.RuleKey = gen.NewOptString(value)
 	}
+	if value := result.Visibility; value != "" {
+		response.Visibility = gen.NewOptMediaPrepareUploadResponseVisibility(gen.MediaPrepareUploadResponseVisibility(value))
+	}
 
 	return response, nil
 }
@@ -114,18 +136,27 @@ func (h *APIHandler) CompleteMediaUpload(ctx context.Context, req *gen.MediaComp
 	if req == nil {
 		return &gen.CompleteMediaUploadInternalServerError{Code: 500, Message: "缺少上传参数"}, nil
 	}
+	grantedKeys, err := grantedPermissionKeysFromContext(ctx, h.evaluator, userID)
+	if err != nil {
+		h.logger.Error("resolve upload permissions failed", zap.Error(err))
+		return &gen.CompleteMediaUploadInternalServerError{Code: 500, Message: "权限解析失败"}, nil
+	}
 
 	record, err := h.uploadSvc.CompleteDirectUpload(ctx, pkgLogger.TenantFromContext(ctx), &userID, upload.CompleteDirectUploadInput{
-		Key:        optString(req.Key),
-		Rule:       optString(req.Rule),
-		Name:       req.Filename,
-		StorageKey: req.StorageKey,
-		Size:       req.Size,
-		MimeType:   optString(req.MimeType),
-		Checksum:   optString(req.Checksum),
-		ETag:       optString(req.Etag),
+		Key:                   optString(req.Key),
+		Rule:                  optString(req.Rule),
+		Name:                  req.Filename,
+		StorageKey:            req.StorageKey,
+		Size:                  req.Size,
+		MimeType:              optString(req.MimeType),
+		Checksum:              optString(req.Checksum),
+		ETag:                  optString(req.Etag),
+		GrantedPermissionKeys: grantedKeys,
 	})
 	if err != nil {
+		if errors.Is(err, upload.ErrUploadPermissionDenied) {
+			return &gen.CompleteMediaUploadUnauthorized{Code: 401, Message: "无权使用该上传配置"}, nil
+		}
 		h.logger.Error("complete media upload failed", zap.Error(err))
 		return &gen.CompleteMediaUploadInternalServerError{Code: 500, Message: err.Error()}, nil
 	}
@@ -138,6 +169,60 @@ func (h *APIHandler) CompleteMediaUpload(ctx context.Context, req *gen.MediaComp
 		MimeType:   record.MimeType,
 		Size:       record.Size,
 		CreatedAt:  record.CreatedAt,
+	}, nil
+}
+
+func (h *APIHandler) ListVisibleMediaUploadKeys(ctx context.Context) (gen.ListVisibleMediaUploadKeysRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return &gen.ListVisibleMediaUploadKeysUnauthorized{Code: 401, Message: "未认证"}, nil
+	}
+	if h.uploadSvc == nil {
+		return &gen.ListVisibleMediaUploadKeysInternalServerError{Code: 500, Message: "上传服务未就绪"}, nil
+	}
+	grantedKeys, err := grantedPermissionKeysFromContext(ctx, h.evaluator, userID)
+	if err != nil {
+		h.logger.Error("resolve upload permissions failed", zap.Error(err))
+		return &gen.ListVisibleMediaUploadKeysInternalServerError{Code: 500, Message: "权限解析失败"}, nil
+	}
+	items, err := h.uploadSvc.ListVisibleUploadKeys(ctx, pkgLogger.TenantFromContext(ctx), grantedKeys)
+	if err != nil {
+		h.logger.Error("list visible media upload keys failed", zap.Error(err))
+		return &gen.ListVisibleMediaUploadKeysInternalServerError{Code: 500, Message: err.Error()}, nil
+	}
+	records := make([]gen.MediaVisibleUploadKey, 0, len(items))
+	for i := range items {
+		item := items[i]
+		rules := make([]gen.MediaVisibleUploadRule, 0, len(item.Rules))
+		for j := range item.Rules {
+			rule := item.Rules[j]
+			rules = append(rules, gen.MediaVisibleUploadRule{
+				RuleKey:          rule.RuleKey,
+				Name:             rule.Name,
+				UploadMode:       gen.MediaVisibleUploadRuleUploadMode(rule.UploadMode),
+				Visibility:       gen.MediaVisibleUploadRuleVisibility(rule.Visibility),
+				ClientAccept:     append([]string(nil), rule.ClientAccept...),
+				MaxSizeBytes:     rule.MaxSizeBytes,
+				AllowedMimeTypes: append([]string(nil), rule.AllowedMimeTypes...),
+				IsDefault:        rule.IsDefault,
+			})
+		}
+		records = append(records, gen.MediaVisibleUploadKey{
+			Key:                      item.Key,
+			Name:                     item.Name,
+			DefaultRuleKey:           item.DefaultRuleKey,
+			UploadMode:               gen.MediaVisibleUploadKeyUploadMode(item.UploadMode),
+			Visibility:               gen.MediaVisibleUploadKeyVisibility(item.Visibility),
+			ClientAccept:             append([]string(nil), item.ClientAccept...),
+			MaxSizeBytes:             item.MaxSizeBytes,
+			DirectSizeThresholdBytes: item.DirectSizeThresholdBytes,
+			FallbackKey:              item.FallbackKey,
+			Rules:                    rules,
+		})
+	}
+	return &gen.MediaVisibleUploadKeyListResponse{
+		Records: records,
+		Total:   len(records),
 	}, nil
 }
 
@@ -194,4 +279,3 @@ func (h *APIHandler) DeleteMedia(ctx context.Context, params gen.DeleteMediaPara
 	}
 	return ok(), nil
 }
-
