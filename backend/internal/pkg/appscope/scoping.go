@@ -1,4 +1,4 @@
-package appscope
+﻿package appscope
 
 import (
 	"time"
@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/pkg/workspacefeaturebinding"
 )
 
 func Normalize(appKey string) string {
@@ -383,3 +383,4 @@ func intersectUUIDs(left []uuid.UUID, right []uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
+

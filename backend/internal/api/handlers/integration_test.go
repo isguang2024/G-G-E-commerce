@@ -1,4 +1,4 @@
-//go:build integration
+﻿//go:build integration
 
 // Package handlers_test — integration tests for the ogen bridge layer.
 //
@@ -35,12 +35,12 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/gg-ecommerce/backend/internal/api/router"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/api/router"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/password"
 )
 
 // ── test fixtures ─────────────────────────────────────────────────────────────
@@ -1253,3 +1253,4 @@ func TestIntegrationUploadKeysList(t *testing.T) {
 		t.Fatalf("upload/keys: expected 200, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
+

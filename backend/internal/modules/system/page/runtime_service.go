@@ -1,9 +1,9 @@
-package page
+﻿package page
 
 import (
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // ListRuntime returns runtime-visible pages for the given user and space.
@@ -82,3 +82,4 @@ func (s *service) applyManagedPageModel(
 	}
 	return filtered
 }
+

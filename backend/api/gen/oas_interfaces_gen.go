@@ -69,6 +69,14 @@ type DeleteRegisterEntryRes interface {
 	deleteRegisterEntryRes()
 }
 
+type DeleteSiteConfigRes interface {
+	deleteSiteConfigRes()
+}
+
+type DeleteSiteConfigSetRes interface {
+	deleteSiteConfigSetRes()
+}
+
 type DeleteStorageBucketRes interface {
 	deleteStorageBucketRes()
 }
@@ -221,6 +229,14 @@ type ListRegisterLogsRes interface {
 	listRegisterLogsRes()
 }
 
+type ListSiteConfigSetsRes interface {
+	listSiteConfigSetsRes()
+}
+
+type ListSiteConfigsRes interface {
+	listSiteConfigsRes()
+}
+
 type ListStaleApiEndpointsRes interface {
 	listStaleApiEndpointsRes()
 }
@@ -277,6 +293,10 @@ type RegisterRes interface {
 	registerRes()
 }
 
+type ResolveSiteConfigsRes interface {
+	resolveSiteConfigsRes()
+}
+
 type SaveDictItemsRes interface {
 	saveDictItemsRes()
 }
@@ -321,6 +341,18 @@ type UpdateRegisterEntryRes interface {
 	updateRegisterEntryRes()
 }
 
+type UpdateSiteConfigRes interface {
+	updateSiteConfigRes()
+}
+
+type UpdateSiteConfigSetItemsRes interface {
+	updateSiteConfigSetItemsRes()
+}
+
+type UpdateSiteConfigSetRes interface {
+	updateSiteConfigSetRes()
+}
+
 type UpdateStorageBucketRes interface {
 	updateStorageBucketRes()
 }
@@ -343,4 +375,12 @@ type UpdateUserRes interface {
 
 type UploadMediaRes interface {
 	uploadMediaRes()
+}
+
+type UpsertSiteConfigRes interface {
+	upsertSiteConfigRes()
+}
+
+type UpsertSiteConfigSetRes interface {
+	upsertSiteConfigSetRes()
 }

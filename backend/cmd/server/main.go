@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -12,13 +12,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/api/router"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/api/router"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 func main() {
@@ -163,3 +163,4 @@ func resolveServerTimeout(seconds int, fallback time.Duration) time.Duration {
 	}
 	return time.Duration(seconds) * time.Second
 }
+

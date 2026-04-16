@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
 )
 
 type fakePolicyRepo struct {
@@ -245,4 +245,5 @@ func TestPreviewLogPolicy_ReturnsDecisionAndMatchedPolicy(t *testing.T) {
 		t.Fatalf("policy = %+v, want matched policy", okResp.Policy)
 	}
 }
+
 

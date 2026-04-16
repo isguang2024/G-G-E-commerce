@@ -49,7 +49,7 @@
 ## 协作技能位置（Claude Code 与 Codex 共用）
 
 - 技能统一按用户目录全局技能读取（`~/.claude/skills/`、`~/.codex/skills/`）。
-- 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `gge/<skill-name>` 加载。
+  - 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `maben/<skill-name>` 加载。
 - 当仓库内技能与全局技能同名时，以全局技能为准。
 - 若需调整技能规则，优先修改全局技能，不要求回灌仓库副本。
 

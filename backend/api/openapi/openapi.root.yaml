@@ -1,4 +1,4 @@
-# openapi.root.yaml — Entry point for the OpenAPI spec.
+﻿# openapi.root.yaml — Entry point for the OpenAPI spec.
 # DO NOT add paths or schemas here directly.
 # - Paths    → domains/{domain}/paths.yaml
 # - Schemas  → components/common.yaml (or domains/{domain}/schemas.yaml)
@@ -10,7 +10,7 @@ openapi: 3.0.3
 info:
   title: GG E-commerce API
   version: 5.0.0
-  description: 'GGE 5.0 API contract. OpenAPI-first: this spec is the single source of truth.
+  description: 'MaBen 5.0 API contract. OpenAPI-first: this spec is the single source of truth.
 
     Go server code, TS client, permission_keys and api_endpoints are derived from here.
 
@@ -39,6 +39,7 @@ tags:
 - name: telemetry
 - name: observability
 - name: storage
+- name: siteconfig
 paths:
   /telemetry/logs:
     $ref: ./domains/telemetry/paths.yaml#/paths/~1telemetry~1logs
@@ -390,6 +391,18 @@ paths:
     $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1keys~1{id}~1rules
   /upload/rules/{ruleId}:
     $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1rules~1{ruleId}
+  /site-configs/resolve:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1resolve
+  /site-configs:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs
+  /site-configs/{id}:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1{id}
+  /site-configs/sets:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1sets
+  /site-configs/sets/{id}:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1sets~1{id}
+  /site-configs/sets/{id}/items:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1sets~1{id}~1items
 components:
   schemas:
     WorkspaceSummary:
@@ -546,6 +559,24 @@ components:
       $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyListResponse
     UploadKeySaveRequest:
       $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeySaveRequest
+    SiteConfigResolvedItem:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigResolvedItem
+    SiteConfigResolveResponse:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigResolveResponse
+    SiteConfigSummary:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSummary
+    SiteConfigListResponse:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigListResponse
+    SiteConfigSaveRequest:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSaveRequest
+    SiteConfigSetSummary:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSetSummary
+    SiteConfigSetListResponse:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSetListResponse
+    SiteConfigSetSaveRequest:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSetSaveRequest
+    SiteConfigSetItemsRequest:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSetItemsRequest
   responses:
     BadRequest:
       $ref: ./components/errors.yaml#/components/responses/BadRequest
@@ -562,3 +593,4 @@ components:
   securitySchemes:
     BearerAuth:
       $ref: ./components/security.yaml#/components/securitySchemes/BearerAuth
+

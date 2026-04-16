@@ -1,4 +1,4 @@
-package apperr
+﻿package apperr
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/auth"
 )
 
 // ErrPermissionDenied is returned by the OpenAPIPermission middleware when
@@ -243,3 +243,4 @@ func ErrorHandler(logger *zap.Logger) func(context.Context, http.ResponseWriter,
 		_ = json.NewEncoder(w).Encode(body)
 	}
 }
+

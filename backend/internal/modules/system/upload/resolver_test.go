@@ -1,10 +1,10 @@
-package upload
+﻿package upload
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 func TestResolveEffectiveConfigParsesRuleSuffixAndMergesRuleFields(t *testing.T) {
@@ -107,3 +107,4 @@ func TestParseUploadKey(t *testing.T) {
 		t.Fatalf("Rule = %q, want empty", parsed.Rule)
 	}
 }
+

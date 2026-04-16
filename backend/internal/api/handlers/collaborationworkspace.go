@@ -1,4 +1,4 @@
-// collaborationworkspace.go: ogen handler implementations for
+﻿// collaborationworkspace.go: ogen handler implementations for
 // /collaboration-workspaces/*.
 package handlers
 
@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func (h *APIHandler) ListCollaborationWorkspaces(ctx context.Context, params gen.ListCollaborationWorkspacesParams) (*gen.CollaborationWorkspaceList, error) {
@@ -180,3 +180,4 @@ func (h *APIHandler) SetCollaborationWorkspacePackages(ctx context.Context, req 
 }
 
 var _ = errors.New
+

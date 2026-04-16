@@ -1,4 +1,4 @@
-package role
+﻿package role
 
 import (
 	"errors"
@@ -9,13 +9,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/appscope"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/platformroleaccess"
 )
 
 var (
@@ -795,3 +795,4 @@ func filterUUIDSourceMap(sourceMap map[uuid.UUID][]uuid.UUID, allowed []uuid.UUI
 	}
 	return result
 }
+

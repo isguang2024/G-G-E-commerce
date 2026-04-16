@@ -1,4 +1,4 @@
-package router
+﻿package router
 
 import (
 	"context"
@@ -8,23 +8,23 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	apigen "github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/api/handlers"
-	"github.com/gg-ecommerce/backend/internal/api/middleware"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/register"
-	"github.com/gg-ecommerce/backend/internal/modules/system/social"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
-	pkgLogger "github.com/gg-ecommerce/backend/internal/pkg/logger"
-	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
-	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	apigen "github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/apperr"
+	"github.com/maben/backend/internal/api/handlers"
+	"github.com/maben/backend/internal/api/middleware"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/modules/system/apiendpoint"
+	"github.com/maben/backend/internal/modules/system/auth"
+	"github.com/maben/backend/internal/modules/system/register"
+	"github.com/maben/backend/internal/modules/system/social"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/apiendpointaccess"
+	pkgLogger "github.com/maben/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/pkg/openapidocs"
+	"github.com/maben/backend/internal/pkg/permission/evaluator"
+	"github.com/maben/backend/internal/pkg/permissionseed"
 )
 
 // SetupRouter 构建主 HTTP 路由。
@@ -461,6 +461,18 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.PUT("/upload/rules/:ruleId", ogenBridge)
 			authenticated.DELETE("/upload/rules/:ruleId", ogenBridge)
 
+			// ── site-config (全局 + 应用级合并，批量解析 / CRUD / 集合管理) ──
+			authenticated.GET("/site-configs/resolve", ogenBridge)
+			authenticated.GET("/site-configs", ogenBridge)
+			authenticated.POST("/site-configs", ogenBridge)
+			authenticated.PUT("/site-configs/:id", ogenBridge)
+			authenticated.DELETE("/site-configs/:id", ogenBridge)
+			authenticated.GET("/site-configs/sets", ogenBridge)
+			authenticated.POST("/site-configs/sets", ogenBridge)
+			authenticated.PUT("/site-configs/sets/:id", ogenBridge)
+			authenticated.DELETE("/site-configs/sets/:id", ogenBridge)
+			authenticated.PUT("/site-configs/sets/:id/items", ogenBridge)
+
 			// ── observability (audit / telemetry read-only queries) ────────
 			// 写入链路走异步 recorder/ingester；这里只暴露登录后的后台查询页用。
 			authenticated.GET("/observability/audit-logs", ogenBridge)
@@ -537,3 +549,4 @@ func findMissingPermissionKeys(db *gorm.DB, seed *permissionseed.OpenAPISeed) []
 	}
 	return missing
 }
+

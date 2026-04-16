@@ -1,4 +1,4 @@
-// user_subroutes.go: ogen handler implementations for user sub-routes.
+﻿// user_subroutes.go: ogen handler implementations for user sub-routes.
 // Phase 4: GetUserMenus, SetUserMenus, GetUserPackages, SetUserPackages,
 // GetUserPermissions, GetUserPermissionDiagnosis.
 package handlers
@@ -10,13 +10,13 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/appscope"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 // normalizeAppKeyStr mirrors appctx.NormalizeAppKey without the gin dependency.
@@ -486,3 +486,4 @@ func buildUserPermissionDiagnosisResult(permissionKey string) gen.UserPermission
 		RoleResults:                     []gen.UserPermissionRoleResult{},
 	}
 }
+

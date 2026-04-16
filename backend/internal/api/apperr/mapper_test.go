@@ -1,4 +1,4 @@
-package apperr_test
+﻿package apperr_test
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"github.com/ogen-go/ogen/ogenerrors"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/maben/backend/internal/api/apperr"
+	"github.com/maben/backend/internal/modules/system/auth"
 )
 
 type mapCase struct {
@@ -64,3 +64,4 @@ func TestMap(t *testing.T) {
 		})
 	}
 }
+

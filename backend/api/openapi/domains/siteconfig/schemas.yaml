@@ -1,0 +1,120 @@
+components:
+  schemas:
+    SiteConfigResolvedItem:
+      type: object
+      required: [value, source, value_type, sets]
+      properties:
+        value:
+          type: object
+          description: 配置值（JSON 对象；不同 value_type 约定不同字段，如 string/number/bool 用 value，image 用 url）
+          additionalProperties: true
+        source:
+          type: string
+          enum: [app, global, default]
+          description: 值的来源
+        value_type:
+          type: string
+          enum: [string, number, bool, image, json, svg]
+        sets:
+          type: array
+          description: 该 key 所属的集合编码列表
+          items: {type: string}
+    SiteConfigResolveResponse:
+      type: object
+      required: [items, version]
+      properties:
+        items:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SiteConfigResolvedItem'
+        version:
+          type: string
+          description: 请求指纹，用于前端缓存命中校验
+    SiteConfigSummary:
+      type: object
+      required: [id, tenant_id, app_key, config_key, value_type, status]
+      properties:
+        id: {type: string, format: uuid}
+        tenant_id: {type: string}
+        app_key: {type: string, description: 空字符串代表全局配置}
+        config_key: {type: string}
+        config_value:
+          type: object
+          additionalProperties: true
+        value_type:
+          type: string
+          enum: [string, number, bool, image, json, svg]
+        label: {type: string}
+        description: {type: string}
+        sort_order: {type: integer}
+        is_builtin: {type: boolean}
+        status: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    SiteConfigListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/SiteConfigSummary'}
+        total: {type: integer}
+    SiteConfigSaveRequest:
+      type: object
+      required: [config_key]
+      properties:
+        app_key:
+          type: string
+          description: 空字符串代表全局；非空为应用级
+        config_key: {type: string, maxLength: 150}
+        config_value:
+          type: object
+          additionalProperties: true
+        value_type:
+          type: string
+          enum: [string, number, bool, image, json, svg]
+        label: {type: string, maxLength: 200}
+        description: {type: string, maxLength: 500}
+        sort_order: {type: integer}
+        status: {type: string, enum: [normal, suspended]}
+    SiteConfigSetSummary:
+      type: object
+      required: [id, set_code, set_name, status, config_keys]
+      properties:
+        id: {type: string, format: uuid}
+        tenant_id: {type: string}
+        set_code: {type: string}
+        set_name: {type: string}
+        description: {type: string}
+        sort_order: {type: integer}
+        is_builtin: {type: boolean}
+        status: {type: string}
+        config_keys:
+          type: array
+          items: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    SiteConfigSetListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/SiteConfigSetSummary'}
+        total: {type: integer}
+    SiteConfigSetSaveRequest:
+      type: object
+      required: [set_code, set_name]
+      properties:
+        set_code: {type: string, maxLength: 100}
+        set_name: {type: string, maxLength: 200}
+        description: {type: string, maxLength: 500}
+        sort_order: {type: integer}
+        status: {type: string, enum: [normal, suspended]}
+    SiteConfigSetItemsRequest:
+      type: object
+      required: [config_keys]
+      properties:
+        config_keys:
+          type: array
+          items: {type: string}

@@ -1,9 +1,9 @@
-package upload
+﻿package upload
 
 import (
 	"strings"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const (
@@ -54,3 +54,4 @@ func (e OSSBucketEndpoints) PublicObjectURL(objectKey string) string {
 	}
 	return joinURLPath(baseURL, objectKey)
 }
+

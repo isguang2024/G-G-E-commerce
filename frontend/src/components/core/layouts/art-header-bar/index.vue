@@ -18,7 +18,7 @@
         <!-- 系统信息  -->
         <div class="flex-c c-p" @click="toHome" v-if="isTopMenu">
           <ArtLogo class="pl-4.5" />
-          <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ AppConfig.systemInfo.name }}</p>
+          <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ siteName }}</p>
         </div>
 
         <ArtLogo
@@ -163,6 +163,8 @@
   import { useMenuStore } from '@/domains/navigation/menu'
   import { useMessageStore } from '@/store/modules/message'
   import AppConfig from '@/config'
+  import { useSiteBranding } from '@/domains/site-config/branding'
+  const { name: siteName } = useSiteBranding()
   import { languageOptions } from '@/locales'
   import { mittBus } from '@/utils/sys'
   import { themeAnimation } from '@/utils/ui/animation'

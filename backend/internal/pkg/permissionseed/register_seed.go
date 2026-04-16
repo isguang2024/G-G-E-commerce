@@ -1,4 +1,4 @@
-package permissionseed
+﻿package permissionseed
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 // 注册体系常量。这些值会被 register/resolver 与 register/service 直接引用，
@@ -764,3 +764,4 @@ func ensureDemoAppPages(db *gorm.DB) error {
 		return err
 	}
 }
+

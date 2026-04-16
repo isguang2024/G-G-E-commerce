@@ -1,10 +1,10 @@
-package upload
+﻿package upload
 
 import (
 	"testing"
 	"time"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 func TestBuildRelativeDir(t *testing.T) {
@@ -63,3 +63,4 @@ func TestServiceHelpers(t *testing.T) {
 		t.Fatalf("joinURLPath(root, child) = %q, want /child", got)
 	}
 }
+

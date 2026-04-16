@@ -1,4 +1,4 @@
-// Package openapidocs serves the embedded OpenAPI spec and a minimal
+﻿// Package openapidocs serves the embedded OpenAPI spec and a minimal
 // Swagger UI page. The UI is intentionally a one-file CDN-backed HTML
 // shim — adding a vendored asset bundle is overkill while the spec is
 // still small. Mounted in router.SetupRouter at /swagger and /openapi.yaml.
@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	openapispec "github.com/gg-ecommerce/backend/api/openapi"
+	openapispec "github.com/maben/backend/api/openapi"
 )
 
 const swaggerHTML = `<!DOCTYPE html>
@@ -44,3 +44,4 @@ func Mount(r *gin.Engine) {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(swaggerHTML))
 	})
 }
+

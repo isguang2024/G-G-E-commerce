@@ -1,4 +1,4 @@
-// menu.go: ogen handler implementations for /menus/*.
+﻿// menu.go: ogen handler implementations for /menus/*.
 package handlers
 
 import (
@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func (h *APIHandler) GetMenuTree(ctx context.Context, params gen.GetMenuTreeParams) (*gen.MenuTreeResponse, error) {
@@ -262,4 +262,5 @@ func filterStringArray(value any) []string {
 	}
 	return result
 }
+
 

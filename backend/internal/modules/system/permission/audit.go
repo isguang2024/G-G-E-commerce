@@ -1,4 +1,4 @@
-package permission
+﻿package permission
 
 import (
 	"sort"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/permissionkey"
 )
 
 const (
@@ -278,3 +278,4 @@ func accumulatePermissionAuditSummary(summary *PermissionAuditSummary, profile P
 		summary.SuspectedDuplicateCount++
 	}
 }
+

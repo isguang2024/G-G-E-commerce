@@ -1,4 +1,4 @@
-package social
+﻿package social
 
 import (
 	"context"
@@ -18,11 +18,11 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/register"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/auth"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/register"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 const (
@@ -539,3 +539,4 @@ func firstNonEmpty(values ...string) string {
 	}
 	return ""
 }
+

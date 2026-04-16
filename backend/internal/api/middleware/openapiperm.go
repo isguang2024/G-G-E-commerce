@@ -1,4 +1,4 @@
-// Package middleware: openapiperm.go wires the ogen request pipeline into
+﻿// Package middleware: openapiperm.go wires the ogen request pipeline into
 // the permission evaluator. For every operation it looks up the
 // x-permission-key (carried into runtime via gen-permissions seed) and
 // invokes evaluator.Can. If a workspace UUID can be derived from the
@@ -14,11 +14,11 @@ import (
 	ogenmw "github.com/ogen-go/ogen/middleware"
 	"go.uber.org/zap"
 
-	apigen "github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/api/handlers"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
+	apigen "github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/apperr"
+	"github.com/maben/backend/internal/api/handlers"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/pkg/permission/evaluator"
 )
 
 // ErrPermissionDenied is now defined in apperr to avoid an import cycle.
@@ -123,3 +123,4 @@ func workspaceIDFromParams(params ogenmw.Parameters) (uuid.UUID, bool) {
 	}
 	return uuid.Nil, false
 }
+

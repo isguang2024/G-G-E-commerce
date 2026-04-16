@@ -1,11 +1,11 @@
-package system
+﻿package system
 
 import (
 	"strings"
 
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const fastEnterSettingKey = "ui.fast_enter"
@@ -349,3 +349,4 @@ func toIntDefault(value interface{}, fallback int) int {
 	}
 	return fallback
 }
+

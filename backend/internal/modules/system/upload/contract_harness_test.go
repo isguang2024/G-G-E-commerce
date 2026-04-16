@@ -1,10 +1,10 @@
-package upload_test
+﻿package upload_test
 
 import (
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload/uploadtest"
+	"github.com/maben/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/modules/system/upload/uploadtest"
 )
 
 func TestMemoryDriverContractHarness(t *testing.T) {
@@ -30,3 +30,4 @@ func TestMemoryDriverContractHarness(t *testing.T) {
 		SupportsObjectStat: false,
 	})
 }
+

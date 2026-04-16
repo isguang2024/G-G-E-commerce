@@ -1,4 +1,4 @@
-// Package audit 提供业务操作审计日志的写入服务。
+﻿// Package audit 提供业务操作审计日志的写入服务。
 //
 // 设计要点：
 //  1. 对外只暴露一个接口 Recorder + 一个事件结构体 Event，所有 handler / service
@@ -23,8 +23,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 // Event 是一次待写入的审计事件。调用方只需要填业务关心的字段：
@@ -747,3 +747,4 @@ func (Noop) Stats() Stats { return Stats{} }
 
 // Shutdown 总是立即返回 nil。
 func (Noop) Shutdown(_ context.Context) error { return nil }
+

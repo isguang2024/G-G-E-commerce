@@ -1,4 +1,4 @@
-package permission
+﻿package permission
 
 import (
 	"errors"
@@ -9,14 +9,14 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/permissionseed"
+	"github.com/maben/backend/internal/pkg/workspacefeaturebinding"
 )
 
 var (
@@ -1617,3 +1617,4 @@ func mergeUUIDs(groups ...[]uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
+

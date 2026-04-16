@@ -1,4 +1,4 @@
-package apiendpoint
+﻿package apiendpoint
 
 // registry.go contains the route-annotation registry that was formerly in
 // internal/pkg/apiregistry. All functionality is identical; the package was
@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // RouteMeta holds annotation metadata for a single registered route.
@@ -996,3 +996,4 @@ func IsFixedManagedRouteCode(code string) bool {
 	_, ok := fixedManagedCodeSet[strings.TrimSpace(code)]
 	return ok
 }
+

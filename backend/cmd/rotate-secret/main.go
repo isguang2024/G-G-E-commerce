@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	loggerpkg "github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/config"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/pkg/database"
+	loggerpkg "github.com/maben/backend/internal/pkg/logger"
 )
 
 type providerSecretRow struct {
@@ -196,3 +196,4 @@ func uploadSecretKeyID(value string) string {
 	}
 	return strings.TrimSpace(parts[2])
 }
+

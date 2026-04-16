@@ -1,12 +1,12 @@
-package register
+﻿package register
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/permissionseed"
 )
 
 // Resolver 负责把 (host, path) 解析为 EffectiveRegisterContext。
@@ -307,3 +307,4 @@ func readMetaString(meta systemmodels.MetaJSON, keys ...string) string {
 	}
 	return ""
 }
+

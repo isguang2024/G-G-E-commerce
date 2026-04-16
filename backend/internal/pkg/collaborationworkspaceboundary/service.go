@@ -1,12 +1,12 @@
-package collaborationworkspaceboundary
+﻿package collaborationworkspaceboundary
 
 import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
 )
 
 type Snapshot struct {
@@ -945,3 +945,4 @@ func resolveAppKey(appKey ...string) string {
 	}
 	return appctx.NormalizeAppKey(appKey[0])
 }
+

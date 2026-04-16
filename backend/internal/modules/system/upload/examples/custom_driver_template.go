@@ -1,9 +1,9 @@
-package examples
+﻿package examples
 
 import (
 	"context"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/modules/system/upload"
 )
 
 // CustomDriverTemplate 展示一个最小自定义 driver 骨架。
@@ -52,3 +52,4 @@ func unsupported(driverName, operation string) error {
 		Message:   "capability is not supported by this driver",
 	}
 }
+

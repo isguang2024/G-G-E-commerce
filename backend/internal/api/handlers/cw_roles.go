@@ -1,4 +1,4 @@
-// cw_roles.go — ogen handler implementations for CW role CRUD.
+﻿// cw_roles.go — ogen handler implementations for CW role CRUD.
 package handlers
 
 import (
@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 // ─── ListCurrentCollaborationWorkspaceRoles ───────────────────────────────────
@@ -154,3 +154,4 @@ func (h *APIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params
 	}
 	return &gen.CollaborationWorkspaceRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
 }
+

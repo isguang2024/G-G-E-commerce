@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"encoding/json"
 
-	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/maben/backend/api/gen"
 )
 
 func optSystemMetaToMap(src gen.OptSystemMeta) map[string]interface{} {
@@ -116,3 +116,4 @@ func optIntValue(v int) gen.OptInt {
 		Set:   true,
 	}
 }
+

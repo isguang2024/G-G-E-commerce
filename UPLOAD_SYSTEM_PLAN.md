@@ -1,4 +1,4 @@
-# 文件上传系统 + 配置中心 — 实施计划书
+﻿# 文件上传系统 + 配置中心 — 实施计划书
 
 > 版本：v1.0  ｜  日期：2026-04-16  ｜  状态：规划定稿，尚未启动执行
 > 任务主键：`tsk_01KP930A1038SPNGAMZ912`（项目：`prj_01KP87XR1XEA58497KYTV8`）
@@ -7,7 +7,7 @@
 
 ## 0. TL;DR（一页纸结论）
 
-- **做一件事**：把 GGE 现有散落的上传代码，统一成一个「配置中心 + 上传服务 + 前端 SDK」三件套，对外只暴露一个稳定的「Key」。
+- **做一件事**：把 MaBen 现有散落的上传代码，统一成一个「配置中心 + 上传服务 + 前端 SDK」三件套，对外只暴露一个稳定的「Key」。
 - **统一心智模型**：`Provider → Bucket → UploadKey → UploadKeyRule` 四级，上游越静态（基础设施），下游越业务（规则）。其中 **UploadKey 是容器（大 Key），Rule 是可组合子策略（小 Key）**，这是整个系统的锚点。
 - **统一调用方式**：前端永远只写 `upload('ABC')` 或 `upload('ABC.avatar')`，后端所有校验/处理/落盘/回调全部由配置驱动。
 - **支持全场景**：本地盘 / 阿里云 OSS / 腾讯云 COS / S3 兼容；直传（STS / Presigned / POST Policy）+ 中转（relay）两种形态共存；多租户 + AK/SK 加密 + 默认 Key 回退。
@@ -222,7 +222,7 @@ FE ◄──(2) { public_url, record_id }
 ### 阶段 2 — 数据层与密钥管理（代码基线）
 - **任务树根**：`nd_01KP930A1BTNJZ7DW6XDNG`
 - **输出**：
-  - `config.go` + `GGE_UPLOAD_*` ENV + config.yaml 样例；
+  - `config.go` + `MaBen_UPLOAD_*` ENV + config.yaml 样例；
   - 5 表设计 + goose up/down 迁移 + seed 内置数据；
   - Models（含 JSON 包装类型）+ Repository 层（含 builtin 注册、缓存层、审计）；
   - `SecretCipher`（AES-256-GCM + 版本前缀 + 轮换 CLI + 解密缓存 + 泄露应急手册）。
@@ -350,3 +350,4 @@ FE ◄──(2) { public_url, record_id }
 ---
 
 _本文档由 Claude 基于 Task Tree 自动生成并持续同步；如 Task Tree 结构变动，请重新导出。_
+

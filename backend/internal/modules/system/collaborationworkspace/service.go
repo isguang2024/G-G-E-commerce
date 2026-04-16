@@ -1,4 +1,4 @@
-package collaborationworkspace
+﻿package collaborationworkspace
 
 import (
 	"errors"
@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 var ErrCollaborationWorkspaceNotFound = errors.New("协作空间不存在")
@@ -744,3 +744,4 @@ func normalizeWorkspaceCodeComponent(value string) string {
 	}
 	return strings.Trim(builder.String(), "-")
 }
+

@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"errors"
@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	"github.com/maben/backend/internal/modules/system/models"
+	spaceutil "github.com/maben/backend/internal/modules/system/space"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -1519,3 +1519,4 @@ func normalizeRoutePath(path string) string {
 	}
 	return normalized
 }
+

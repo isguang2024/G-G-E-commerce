@@ -1,4 +1,4 @@
-package user
+﻿package user
 
 import (
 	"errors"
@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 type UserRepository interface {
@@ -3016,3 +3016,4 @@ func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissio
 	return r.db.Unscoped().Where("permission_key = ? AND endpoint_code = ?", permissionKey, endpointCode).
 		Delete(&APIEndpointPermissionBinding{}).Error
 }
+

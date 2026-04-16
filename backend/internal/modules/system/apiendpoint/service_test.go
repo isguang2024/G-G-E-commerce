@@ -1,4 +1,4 @@
-package apiendpoint
+﻿package apiendpoint
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestResolveEndpointCodeForSavePreservesExistingCode(t *testing.T) {
@@ -47,3 +47,4 @@ func TestResolveEndpointCodeForSaveDerivesCodeOnCreate(t *testing.T) {
 var _ = http.MethodGet
 var _ = user.APIEndpoint{}
 var _ = uuid.New
+

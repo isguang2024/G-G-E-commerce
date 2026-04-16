@@ -1247,6 +1247,48 @@ func encodeUpdateRoleRequest(
 	return nil
 }
 
+func encodeUpdateSiteConfigRequest(
+	req *SiteConfigSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateSiteConfigSetRequest(
+	req *SiteConfigSetSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateSiteConfigSetItemsRequest(
+	req *SiteConfigSetItemsRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeUpdateStorageBucketRequest(
 	req *StorageBucketSaveRequest,
 	r *http.Request,
@@ -1369,5 +1411,33 @@ func encodeUploadMediaRequest(
 		return nil
 	})
 	ht.SetCloserBody(r, body, mime.FormatMediaType(contentType, map[string]string{"boundary": boundary}))
+	return nil
+}
+
+func encodeUpsertSiteConfigRequest(
+	req *SiteConfigSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpsertSiteConfigSetRequest(
+	req *SiteConfigSetSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
 	return nil
 }

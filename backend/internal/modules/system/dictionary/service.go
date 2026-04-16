@@ -1,4 +1,4 @@
-package dictionary
+﻿package dictionary
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 var (
@@ -387,3 +387,4 @@ func (s *Service) EnsureBuiltinDicts(ctx context.Context) error {
 	}
 	return nil
 }
+

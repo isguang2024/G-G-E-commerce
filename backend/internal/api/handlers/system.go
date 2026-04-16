@@ -1,4 +1,4 @@
-// system.go — Phase 4 ogen handlers for the system app/space domain.
+﻿// system.go — Phase 4 ogen handlers for the system app/space domain.
 // Hooks into the already-injected appSvc and spaceSvc.
 package handlers
 
@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	appmod "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	spacemod "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	appmod "github.com/maben/backend/internal/modules/system/app"
+	spacemod "github.com/maben/backend/internal/modules/system/space"
 )
 
 // -------- apps --------
@@ -488,3 +488,4 @@ func systemMenuSpaceHostBindingItemsFromModels(items []spacemod.HostBindingRecor
 	}
 	return out
 }
+

@@ -1,4 +1,4 @@
-package system
+﻿package system
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 type inboxSummary struct {
@@ -3469,3 +3469,4 @@ func packageRecipientRuleLabel(packageKey, source string) string {
 func membershipRecipientRuleLabel(label string) string {
 	return strings.TrimSpace(label) + " · membership_identity"
 }
+

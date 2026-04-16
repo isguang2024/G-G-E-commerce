@@ -1,4 +1,4 @@
-// page.go: ogen handler implementations for /pages/* and runtime/sync.
+﻿// page.go: ogen handler implementations for /pages/* and runtime/sync.
 package handlers
 
 import (
@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/page"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/page"
 )
 
 func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.PageListResponse, error) {
@@ -629,3 +629,4 @@ func pageSaveResultSpaceKeys(meta map[string]interface{}) []string {
 		return nil
 	}
 }
+

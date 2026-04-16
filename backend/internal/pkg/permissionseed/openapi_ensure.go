@@ -1,4 +1,4 @@
-// openapi_ensure.go — idempotent runtime upsert of every permission_key
+﻿// openapi_ensure.go — idempotent runtime upsert of every permission_key
 // referenced by the OpenAPI spec. Runs at startup (after goose migrations
 // and after EnsureDefaultPermissionKeys) so any operationId added to
 // openapi.yaml automatically materialises a permission_keys row without
@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 // EnsureOpenAPIPermissionKeys upserts every distinct permission_key found in
@@ -93,3 +93,4 @@ func deriveDisplayName(summary, key string) string {
 	}
 	return key
 }
+

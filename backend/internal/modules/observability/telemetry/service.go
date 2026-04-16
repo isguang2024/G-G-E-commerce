@@ -1,4 +1,4 @@
-// Package telemetry 负责前端批量上报的日志摄取。
+﻿// Package telemetry 负责前端批量上报的日志摄取。
 //
 // 设计动机：
 //  1. /telemetry/logs 的流量完全由前端决定，恶意刷请求或 SPA bug 都可能导致
@@ -20,9 +20,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 // Entry 是一条待摄取的前端日志。字段对齐 openapi TelemetryLogEntry。
@@ -506,3 +506,4 @@ func (s *service) shouldPersistByPolicy(entry *Entry) bool {
 		return true
 	}
 }
+

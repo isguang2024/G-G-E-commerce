@@ -191,3 +191,16 @@
 - 阿里云 relay 节点还没达到 `>5MB multipart + abort + 并发上传` 的验收线，不能关；下一步要么补 multipart，要么收窄节点验收标准。
 - 旧接口 deprecation 层还差后端旧路径与响应 header，当前只是保留了前端兼容入口；如果要完成该节点，必须把后端兼容层一并补齐。
 - 阶段 3 还剩 Driver 指标/中间件、动态开关，以及腾讯云 / S3 兼容 driver；阶段 5 还剩管理端 UI 和 E2E，这些都是真正未完成的尾项。
+
+## 2026-04-16 迁移与种子整理
+
+### 本次改动
+- 重构 `backend/cmd/migrate/main.go` 的执行顺序，把 `schema finalizers`、`default seeds`、`runtime sync` 三段拆开，复用统一任务执行器，避免迁移入口继续把结构修正、默认数据和运行时同步混在一起。
+- 收敛上传默认 seed：`backend/internal/modules/system/upload/service.go` 改为内置上传场景声明式初始化，保留 `media.default`、`user.avatar`、`doc.attachment`、`editor.inline` 这些真实基线，不再用“示例”注释组织这段逻辑。
+- 站点配置默认值改回脚手架语义：`site.name` 统一为 `MaBen Admin`，描述和版权文案去掉电商定制表述，保持与当前项目定位一致。
+- 已完成 `go test ./...` 与 `pnpm exec vue-tsc --noEmit`，当前迁移入口和种子整理后编译通过。
+
+### 下次方向
+- `00001_permission_seed_baseline.sql` 仍然是历史补丁型基线迁移，后续如果确认线上状态已稳定，可以评估是否把这类“热修复回放”再归档说明，避免继续堆叠历史语义。
+- 上传 seed 里 `doc.attachment` 目前还属于可用但未被前端直接消费的基线能力；如果后续脚手架确定不内置文档上传，可继续收缩到更小的默认面。
+- 目前 `cmd/migrate` 仍承担部分运行时同步职责；如果后续继续收口，可以再把 OpenAPI/权限快照同步拆成更明确的启动阶段或独立命令。

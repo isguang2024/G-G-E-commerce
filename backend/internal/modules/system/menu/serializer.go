@@ -1,9 +1,9 @@
-package menu
+﻿package menu
 
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func BuildRuntimeTreeMaps(tree []*user.Menu) []gin.H {
@@ -16,3 +16,4 @@ func BuildRuntimeTreeMaps(tree []*user.Menu) []gin.H {
 	}
 	return result
 }
+

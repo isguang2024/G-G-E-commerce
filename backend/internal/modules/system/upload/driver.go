@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const (
@@ -244,3 +244,4 @@ func newCapabilityUnsupported(driverName, capability string) error {
 		Message:   "capability is not supported by this driver",
 	}
 }
+

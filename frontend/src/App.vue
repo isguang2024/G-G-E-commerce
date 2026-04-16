@@ -14,6 +14,7 @@
   import { toggleTransition } from './utils/ui/animation'
   import { checkStorageCompatibility } from './utils/storage'
   import { initializeTheme } from './hooks/core/useTheme'
+  import { initSiteBranding } from '@/domains/site-config/branding'
   import { onBeforeMount, onMounted } from 'vue'
 
   const userStore = useUserStore()
@@ -33,5 +34,7 @@
     checkStorageCompatibility()
     toggleTransition(false)
     systemUpgrade()
+    // 异步加载站点品牌配置（name/logo/favicon），失败时静默维持默认。
+    void initSiteBranding()
   })
 </script>

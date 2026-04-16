@@ -1457,6 +1457,136 @@ func decodeDeleteRoleParams(args [1]string, argsEscaped bool, r *http.Request) (
 	return params, nil
 }
 
+// DeleteSiteConfigParams is parameters of deleteSiteConfig operation.
+type DeleteSiteConfigParams struct {
+	ID uuid.UUID
+}
+
+func unpackDeleteSiteConfigParams(packed middleware.Parameters) (params DeleteSiteConfigParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteSiteConfigParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteSiteConfigParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// DeleteSiteConfigSetParams is parameters of deleteSiteConfigSet operation.
+type DeleteSiteConfigSetParams struct {
+	ID uuid.UUID
+}
+
+func unpackDeleteSiteConfigSetParams(packed middleware.Parameters) (params DeleteSiteConfigSetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteSiteConfigSetParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteSiteConfigSetParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteStorageBucketParams is parameters of deleteStorageBucket operation.
 type DeleteStorageBucketParams struct {
 	ID uuid.UUID
@@ -12349,6 +12479,71 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
+// ListSiteConfigsParams is parameters of listSiteConfigs operation.
+type ListSiteConfigsParams struct {
+	// 应用 key；留空仅返回全局；`__all__` 返回所有作用域.
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackListSiteConfigsParams(packed middleware.Parameters) (params ListSiteConfigsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeListSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListSiteConfigsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListStaleApiEndpointsParams is parameters of listStaleApiEndpoints operation.
 type ListStaleApiEndpointsParams struct {
 	Current OptInt `json:",omitempty,omitzero"`
@@ -14834,6 +15029,175 @@ func decodeRemovePermissionActionEndpointParams(args [2]string, argsEscaped bool
 		return params, &ogenerrors.DecodeParamError{
 			Name: "endpointCode",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ResolveSiteConfigsParams is parameters of resolveSiteConfigs operation.
+type ResolveSiteConfigsParams struct {
+	// 应用 key；留空仅解析全局配置.
+	AppKey OptString `json:",omitempty,omitzero"`
+	// 逗号分隔的 config_key 列表.
+	Keys OptString `json:",omitempty,omitzero"`
+	// 逗号分隔的集合编码列表；集合内的 key 会自动展开到查询.
+	SetCodes OptString `json:",omitempty,omitzero"`
+}
+
+func unpackResolveSiteConfigsParams(packed middleware.Parameters) (params ResolveSiteConfigsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "keys",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Keys = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "set_codes",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.SetCodes = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeResolveSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Request) (params ResolveSiteConfigsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: keys.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "keys",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotKeysVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotKeysVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Keys.SetTo(paramsDotKeysVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "keys",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: set_codes.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "set_codes",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSetCodesVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSetCodesVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.SetCodes.SetTo(paramsDotSetCodesVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "set_codes",
+			In:   "query",
 			Err:  err,
 		}
 	}
@@ -17942,6 +18306,201 @@ func unpackUpdateRoleParams(packed middleware.Parameters) (params UpdateRolePara
 }
 
 func decodeUpdateRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateRoleParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateSiteConfigParams is parameters of updateSiteConfig operation.
+type UpdateSiteConfigParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateSiteConfigParams(packed middleware.Parameters) (params UpdateSiteConfigParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateSiteConfigParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateSiteConfigParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateSiteConfigSetParams is parameters of updateSiteConfigSet operation.
+type UpdateSiteConfigSetParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateSiteConfigSetParams(packed middleware.Parameters) (params UpdateSiteConfigSetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateSiteConfigSetParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateSiteConfigSetParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateSiteConfigSetItemsParams is parameters of updateSiteConfigSetItems operation.
+type UpdateSiteConfigSetItemsParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateSiteConfigSetItemsParams(packed middleware.Parameters) (params UpdateSiteConfigSetItemsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateSiteConfigSetItemsParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateSiteConfigSetItemsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

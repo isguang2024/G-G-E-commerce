@@ -1,4 +1,4 @@
-// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
+﻿// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
 // (feature package, permission, menu, page).
 package handlers
 
@@ -11,10 +11,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/page"
-	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/page"
+	"github.com/maben/backend/internal/modules/system/permission"
 )
 
 // -------- feature package --------
@@ -270,3 +270,4 @@ func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageA
 	}
 	return &out, nil
 }
+

@@ -1,9 +1,9 @@
-package app
+﻿package app
 
 import (
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 func TestSaveHostBindingRequiresExplicitAppKey(t *testing.T) {
@@ -121,3 +121,4 @@ func TestNormalizeGovernanceMetaPreservesUnknownKeys(t *testing.T) {
 		t.Fatalf("meta[feature_flags] = %#v, want dropped", meta["feature_flags"])
 	}
 }
+

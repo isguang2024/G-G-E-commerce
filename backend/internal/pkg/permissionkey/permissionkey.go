@@ -86,6 +86,8 @@ var mappings = map[string]Mapping{
 	"system.upload.config:manage":                                {Key: "system.upload.config.manage", ResourceCode: "upload", ActionCode: "manage", Name: "上传配置管理", Description: "允许管理存储 Provider / Bucket / UploadKey / Rule 配置", ContextType: "personal"},
 	"system.media:view":                                          {Key: "system.media.view", ResourceCode: "upload", ActionCode: "view", Name: "查看媒体文件", Description: "允许查看媒体文件列表", ContextType: "personal"},
 	"system.media:manage":                                        {Key: "system.media.manage", ResourceCode: "upload", ActionCode: "manage", Name: "管理媒体文件", Description: "允许上传、删除媒体文件", ContextType: "personal"},
+	"system.site_config:view":                                    {Key: "system.site_config.view", ResourceCode: "site_config", ActionCode: "view", Name: "查询站点配置项（管理端）", Description: "允许查询站点配置项列表", ContextType: "personal"},
+	"system.site_config:manage":                                  {Key: "system.site_config.manage", ResourceCode: "site_config", ActionCode: "manage", Name: "管理站点配置项", Description: "允许新增、更新、删除站点配置项和集合", ContextType: "personal"},
 }
 
 func Normalize(key string) string {

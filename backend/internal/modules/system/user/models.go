@@ -1,9 +1,9 @@
-package user
+﻿package user
 
 import (
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type MetaJSON = models.MetaJSON
@@ -53,3 +53,4 @@ type RoleKeyPermission struct {
 	RoleID uuid.UUID `json:"role_id"`
 	KeyID  uuid.UUID `json:"action_id"`
 }
+

@@ -1,4 +1,4 @@
-package register
+﻿package register
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/auth"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/workspace"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 // ErrPublicRegisterDisabled 公开注册被策略/入口禁用。
@@ -238,3 +238,4 @@ func truncate(s string, max int) string {
 
 // 避免 uuid 未使用时的 lint 误报
 var _ = uuid.Nil
+

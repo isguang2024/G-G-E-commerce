@@ -1,11 +1,11 @@
-package menu
+﻿package menu
 
 import (
 	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 // GetTree returns the menu tree, optionally filtered to only menus visible
@@ -93,3 +93,4 @@ func (s *menuService) filterTreeByMenuIDs(nodes []*user.Menu, visible map[uuid.U
 	}
 	return out
 }
+

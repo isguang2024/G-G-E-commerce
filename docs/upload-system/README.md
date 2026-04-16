@@ -1,4 +1,4 @@
-# 上传系统
+﻿# 上传系统
 
 > 单文档收口。原先的 `spec.md / architecture.md / review.md / adr-summary.md / api-reference.md / frontend-integration.md / extensibility.md / ops-runbook.md / inventory.md / legacy-migration.md / release-plan.md / custom-driver-ftp-example.md / adrs/*` 已合并到本文件，删除其它 md 不会再丢任何上下文。
 
@@ -275,7 +275,7 @@ package myftp
 
 import (
     "context"
-    "github.com/gg-ecommerce/backend/internal/modules/system/upload"
+    "github.com/maben/backend/internal/modules/system/upload"
 )
 
 type Driver struct{}
@@ -476,3 +476,4 @@ pnpm run build
 - **直传开关**：前端 `mode = 'auto' | 'direct' | 'relay'` 可强制
 - **审计闭环**：`CreateRecord` 落库即写 `system.upload.record.create` 事件
 - **未完成**（保留扩展空间）：multipart 分片、Rule 后台 UI、运营统计页、E2E、JSONSchema 表单
+

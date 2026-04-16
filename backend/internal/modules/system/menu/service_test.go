@@ -1,12 +1,12 @@
-package menu
+﻿package menu
 
 import (
 	"testing"
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestMergeSystemMenuIDsIncludesJWTAndPublicMenus(t *testing.T) {
@@ -107,3 +107,4 @@ func TestValidateMenuPromoteTargetRejectsSelfAndDescendants(t *testing.T) {
 		t.Fatalf("validateMenuPromoteTarget() should reject descendants as target")
 	}
 }
+

@@ -1,4 +1,4 @@
-// system_register.go: 注册体系后台 CRUD handler（入口 / 策略 / 注册记录）。
+﻿// system_register.go: 注册体系后台 CRUD handler（入口 / 策略 / 注册记录）。
 package handlers
 
 import (
@@ -13,12 +13,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/register"
-	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/apperr"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/register"
+	usermodel "github.com/maben/backend/internal/modules/system/user"
 )
 
 // ── helpers ──────────────────────────────────────────────────────────────
@@ -632,3 +632,4 @@ func (h *APIHandler) ListRegisterLogs(ctx context.Context, params gen.ListRegist
 }
 
 var _ = uuid.Nil
+

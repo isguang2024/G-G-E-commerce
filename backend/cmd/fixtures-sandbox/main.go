@@ -1,4 +1,4 @@
-// Package main 提供 GGE 多租户 SaaS 沙箱测试夹具。
+﻿// Package main 提供 MaBen 多租户 SaaS 沙箱测试夹具。
 //
 // 职责：为 /system/message、/collaboration-workspace/message、/system/access-trace 等
 // 高风险页面的 E2E 深度回归创建**可识别、可回收**的种子数据，避免污染真实消息流。
@@ -25,10 +25,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/config"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 const (
@@ -219,3 +219,4 @@ func purgeSandbox(db *gorm.DB, lg *zap.Logger) error {
 		return nil
 	})
 }
+

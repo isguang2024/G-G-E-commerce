@@ -1,4 +1,4 @@
-package telemetry
+﻿package telemetry
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
 )
 
 // newTestService 构造一个不依赖真实 DB / worker 的 *service，用于 Stats() 相关测试。
@@ -177,3 +177,4 @@ func TestIngesterPolicy_NilEngineAllowAll(t *testing.T) {
 		t.Fatalf("Stats = %+v, want policy_dropped=0 accepted=2", stats)
 	}
 }
+

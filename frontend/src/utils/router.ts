@@ -12,6 +12,7 @@ import type {
   Router
 } from 'vue-router'
 import AppConfig from '@/config'
+import { getSiteName } from '@/domains/site-config/branding'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { $t } from '@/locales'
@@ -39,7 +40,7 @@ export const setPageTitle = (to: RouteLocationNormalized): void => {
   const { title } = to.meta
   if (title) {
     setTimeout(() => {
-      document.title = `${formatMenuTitle(String(title))} - ${AppConfig.systemInfo.name}`
+      document.title = `${formatMenuTitle(String(title))} - ${getSiteName()}`
     }, 150)
   }
 }

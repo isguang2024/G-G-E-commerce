@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 func (h *APIHandler) ListLogPolicies(ctx context.Context, params gen.ListLogPoliciesParams) (gen.ListLogPoliciesRes, error) {
@@ -440,3 +440,4 @@ func isConflictError(err error) bool {
 	lower := strings.ToLower(err.Error())
 	return strings.Contains(lower, "duplicate key") || strings.Contains(lower, "unique constraint")
 }
+

@@ -1,4 +1,4 @@
-// cwcurrent.go — Phase 4 ogen handlers for current/my collaboration workspace
+﻿// cwcurrent.go — Phase 4 ogen handlers for current/my collaboration workspace
 // basic operations (list, get, members CRUD). Hooks into cwSvc + cwMemberRepo.
 package handlers
 
@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 // resolveCurrentCwID returns the current collaboration workspace ID for the
@@ -131,3 +131,4 @@ func (h *APIHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 	}
 	return ok(), nil
 }
+

@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"sort"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/permissionkey"
 )
 
 func TestResolveRuntimeMenuInheritedAccessDeniesWhenMountedMenuIsMissing(t *testing.T) {
@@ -164,3 +164,4 @@ func TestIntersectVisibleMenusByPermissionKey(t *testing.T) {
 		assertContainsAll(t, result, ghostID, plainID)
 	})
 }
+

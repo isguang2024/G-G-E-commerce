@@ -1,4 +1,4 @@
-package router
+﻿package router
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	"github.com/maben/backend/internal/pkg/permissionseed"
 )
 
 var (
@@ -120,3 +120,4 @@ func expectedBridge(accessMode string) string {
 		return ""
 	}
 }
+

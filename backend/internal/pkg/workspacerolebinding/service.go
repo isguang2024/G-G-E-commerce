@@ -1,4 +1,4 @@
-package workspacerolebinding
+﻿package workspacerolebinding
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type PersonalRoleRow struct {
@@ -533,3 +533,4 @@ func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
+

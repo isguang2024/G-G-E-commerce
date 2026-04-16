@@ -1,4 +1,4 @@
-package featurepackage
+﻿package featurepackage
 
 import (
 	"errors"
@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/appscope"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
 )
 
 func (s *service) ListVersions(id uuid.UUID, current, size int) ([]user.FeaturePackageVersion, int64, error) {
@@ -328,3 +328,4 @@ func intFromSnapshot(value interface{}, fallback int) int {
 		return fallback
 	}
 }
+

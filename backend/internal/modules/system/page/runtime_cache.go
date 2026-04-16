@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"errors"
@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	spaceutil "github.com/maben/backend/internal/modules/system/space"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 const runtimePageCacheTTL = 24 * time.Hour
@@ -1142,3 +1142,4 @@ func resolveMenuAccessMode(
 		return "permission"
 	}
 }
+

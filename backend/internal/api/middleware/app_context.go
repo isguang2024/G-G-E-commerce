@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"strings"
@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	spacepkg "github.com/maben/backend/internal/modules/system/space"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
 )
 
 const (
@@ -112,3 +112,4 @@ func headerUUID(value string) *uuid.UUID {
 	}
 	return &parsed
 }
+

@@ -1,4 +1,4 @@
-// featurepackage.go: ogen handler implementations for /feature-packages/*.
+﻿// featurepackage.go: ogen handler implementations for /feature-packages/*.
 package handlers
 
 import (
@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
-	permissionrefresh "github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/featurepackage"
+	permissionrefresh "github.com/maben/backend/internal/pkg/permissionrefresh"
 )
 
 func (h *APIHandler) ListFeaturePackages(ctx context.Context, params gen.ListFeaturePackagesParams) (*gen.FeaturePackageList, error) {
@@ -310,3 +310,4 @@ func featurePackageMutationResultFromStats(stats *permissionrefresh.RefreshStats
 		},
 	}
 }
+

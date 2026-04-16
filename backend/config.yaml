@@ -1,4 +1,4 @@
-# G&G E-commerce Backend Configuration
+﻿# G&G E-commerce Backend Configuration
 
 env: development
 
@@ -34,7 +34,7 @@ minio:
   access_key_id: "minioadmin"
   secret_access_key: "minioadmin"
   use_ssl: false
-  bucket_name: "gg-ecommerce"
+  bucket_name: "maben"
 
 jwt:
   secret: "your-secret-key-change-in-production"  # 生产环境请修改为强随机字符串
@@ -57,3 +57,4 @@ upload:
   secret_master_keys: []
   secret_cache_ttl_seconds: 300
   secret_current_key_id: "local"
+

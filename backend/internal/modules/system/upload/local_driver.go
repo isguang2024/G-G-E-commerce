@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type LocalDriverConfig struct {
@@ -229,3 +229,4 @@ func (d *LocalDriver) resolveStoragePath(storageKey string) (string, error) {
 	}
 	return targetPath, nil
 }
+

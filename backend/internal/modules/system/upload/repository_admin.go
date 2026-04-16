@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 // repository_admin.go 提供上传配置中心管理面所需的 List/Get(by id)/Update/Delete 方法。
 // 与 EnsureProvider/EnsureBucket/EnsureUploadKey/EnsureUploadRule（按 key upsert）互补：
@@ -13,8 +13,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // ---------- StorageProvider ----------
@@ -489,3 +489,4 @@ func ConvertGormNotFound(err error) error {
 	}
 	return err
 }
+

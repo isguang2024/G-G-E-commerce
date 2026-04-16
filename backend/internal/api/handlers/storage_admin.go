@@ -1,4 +1,4 @@
-// storage_admin.go — ogen handlers for the upload configuration center
+﻿// storage_admin.go — ogen handlers for the upload configuration center
 // (storage providers / buckets / upload keys / upload key rules).
 //
 // All operations live under the single permission key `system.upload.config.manage`
@@ -20,10 +20,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	pkgLogger "github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/upload"
+	pkgLogger "github.com/maben/backend/internal/pkg/logger"
 )
 
 // ---------- providers ----------
@@ -830,3 +830,4 @@ func filterByStatus[T statusGetter](items []T, status string) []T {
 	}
 	return filtered
 }
+

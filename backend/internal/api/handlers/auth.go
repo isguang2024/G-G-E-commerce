@@ -1,4 +1,4 @@
-// auth.go: ogen Handler implementations for the /auth/* OpenAPI surface.
+﻿// auth.go: ogen Handler implementations for the /auth/* OpenAPI surface.
 // First slice of the auth domain migration: login (public) + me (token).
 // The legacy gin handlers in internal/modules/system/auth/handler.go remain
 // behind /api/v1 until every operation here is mounted via the ogen bridge.
@@ -18,12 +18,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/apperr"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/register"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/apperr"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/auth"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/register"
 )
 
 // CtxClientIP carries the originating client IP from the gin bridge into
@@ -747,3 +747,4 @@ func errorCodeOf(err error) string {
 func strconvItoa(n int) string {
 	return strconv.Itoa(n)
 }
+

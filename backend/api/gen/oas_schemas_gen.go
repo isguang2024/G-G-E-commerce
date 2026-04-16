@@ -2719,6 +2719,22 @@ type DeleteRegisterEntryNoContent struct{}
 
 func (*DeleteRegisterEntryNoContent) deleteRegisterEntryRes() {}
 
+type DeleteSiteConfigNotFound Error
+
+func (*DeleteSiteConfigNotFound) deleteSiteConfigRes() {}
+
+type DeleteSiteConfigOK Error
+
+func (*DeleteSiteConfigOK) deleteSiteConfigRes() {}
+
+type DeleteSiteConfigSetNotFound Error
+
+func (*DeleteSiteConfigSetNotFound) deleteSiteConfigSetRes() {}
+
+type DeleteSiteConfigSetOK Error
+
+func (*DeleteSiteConfigSetOK) deleteSiteConfigSetRes() {}
+
 type DeleteUserForbidden Error
 
 func (*DeleteUserForbidden) deleteUserRes() {}
@@ -4316,29 +4332,37 @@ func (s *Error) SetDetails(val OptNilErrorDetails) {
 	s.Details = val
 }
 
-func (*Error) createDictTypeRes()          {}
-func (*Error) createRegisterEntryRes()     {}
-func (*Error) deleteLoginPageTemplateRes() {}
-func (*Error) deleteRegisterEntryRes()     {}
-func (*Error) exchangeSocialTokenRes()     {}
-func (*Error) explainPermissionsRes()      {}
-func (*Error) getAuthMeRes()               {}
-func (*Error) getCurrentWorkspaceRes()     {}
-func (*Error) getDictTypeRes()             {}
-func (*Error) getDictsByCodesRes()         {}
-func (*Error) getLoginPageContextRes()     {}
-func (*Error) getRegisterContextRes()      {}
-func (*Error) getRoleRes()                 {}
-func (*Error) listDictItemsRes()           {}
-func (*Error) listDictTypesRes()           {}
-func (*Error) listMyWorkspacesRes()        {}
-func (*Error) listRegisterEntriesRes()     {}
-func (*Error) listRegisterLogsRes()        {}
-func (*Error) logoutRes()                  {}
-func (*Error) refreshTokenRes()            {}
-func (*Error) registerRes()                {}
-func (*Error) silentSSOCallbackRes()       {}
-func (*Error) updateRegisterEntryRes()     {}
+func (*Error) createDictTypeRes()           {}
+func (*Error) createRegisterEntryRes()      {}
+func (*Error) deleteLoginPageTemplateRes()  {}
+func (*Error) deleteRegisterEntryRes()      {}
+func (*Error) exchangeSocialTokenRes()      {}
+func (*Error) explainPermissionsRes()       {}
+func (*Error) getAuthMeRes()                {}
+func (*Error) getCurrentWorkspaceRes()      {}
+func (*Error) getDictTypeRes()              {}
+func (*Error) getDictsByCodesRes()          {}
+func (*Error) getLoginPageContextRes()      {}
+func (*Error) getRegisterContextRes()       {}
+func (*Error) getRoleRes()                  {}
+func (*Error) listDictItemsRes()            {}
+func (*Error) listDictTypesRes()            {}
+func (*Error) listMyWorkspacesRes()         {}
+func (*Error) listRegisterEntriesRes()      {}
+func (*Error) listRegisterLogsRes()         {}
+func (*Error) listSiteConfigSetsRes()       {}
+func (*Error) listSiteConfigsRes()          {}
+func (*Error) logoutRes()                   {}
+func (*Error) refreshTokenRes()             {}
+func (*Error) registerRes()                 {}
+func (*Error) resolveSiteConfigsRes()       {}
+func (*Error) silentSSOCallbackRes()        {}
+func (*Error) updateRegisterEntryRes()      {}
+func (*Error) updateSiteConfigRes()         {}
+func (*Error) updateSiteConfigSetItemsRes() {}
+func (*Error) updateSiteConfigSetRes()      {}
+func (*Error) upsertSiteConfigRes()         {}
+func (*Error) upsertSiteConfigSetRes()      {}
 
 // Ref: #/components/schemas/Error-2
 type Error2 struct {
@@ -14157,6 +14181,236 @@ func (o OptPermissionGroupItem) Or(d PermissionGroupItem) PermissionGroupItem {
 	return d
 }
 
+// NewOptSiteConfigSaveRequestConfigValue returns new OptSiteConfigSaveRequestConfigValue with value set to v.
+func NewOptSiteConfigSaveRequestConfigValue(v SiteConfigSaveRequestConfigValue) OptSiteConfigSaveRequestConfigValue {
+	return OptSiteConfigSaveRequestConfigValue{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSaveRequestConfigValue is optional SiteConfigSaveRequestConfigValue.
+type OptSiteConfigSaveRequestConfigValue struct {
+	Value SiteConfigSaveRequestConfigValue
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSaveRequestConfigValue was set.
+func (o OptSiteConfigSaveRequestConfigValue) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSaveRequestConfigValue) Reset() {
+	var v SiteConfigSaveRequestConfigValue
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSaveRequestConfigValue) SetTo(v SiteConfigSaveRequestConfigValue) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSaveRequestConfigValue) Get() (v SiteConfigSaveRequestConfigValue, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSaveRequestConfigValue) Or(d SiteConfigSaveRequestConfigValue) SiteConfigSaveRequestConfigValue {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteConfigSaveRequestStatus returns new OptSiteConfigSaveRequestStatus with value set to v.
+func NewOptSiteConfigSaveRequestStatus(v SiteConfigSaveRequestStatus) OptSiteConfigSaveRequestStatus {
+	return OptSiteConfigSaveRequestStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSaveRequestStatus is optional SiteConfigSaveRequestStatus.
+type OptSiteConfigSaveRequestStatus struct {
+	Value SiteConfigSaveRequestStatus
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSaveRequestStatus was set.
+func (o OptSiteConfigSaveRequestStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSaveRequestStatus) Reset() {
+	var v SiteConfigSaveRequestStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSaveRequestStatus) SetTo(v SiteConfigSaveRequestStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSaveRequestStatus) Get() (v SiteConfigSaveRequestStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSaveRequestStatus) Or(d SiteConfigSaveRequestStatus) SiteConfigSaveRequestStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteConfigSaveRequestValueType returns new OptSiteConfigSaveRequestValueType with value set to v.
+func NewOptSiteConfigSaveRequestValueType(v SiteConfigSaveRequestValueType) OptSiteConfigSaveRequestValueType {
+	return OptSiteConfigSaveRequestValueType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSaveRequestValueType is optional SiteConfigSaveRequestValueType.
+type OptSiteConfigSaveRequestValueType struct {
+	Value SiteConfigSaveRequestValueType
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSaveRequestValueType was set.
+func (o OptSiteConfigSaveRequestValueType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSaveRequestValueType) Reset() {
+	var v SiteConfigSaveRequestValueType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSaveRequestValueType) SetTo(v SiteConfigSaveRequestValueType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSaveRequestValueType) Get() (v SiteConfigSaveRequestValueType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSaveRequestValueType) Or(d SiteConfigSaveRequestValueType) SiteConfigSaveRequestValueType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteConfigSetSaveRequestStatus returns new OptSiteConfigSetSaveRequestStatus with value set to v.
+func NewOptSiteConfigSetSaveRequestStatus(v SiteConfigSetSaveRequestStatus) OptSiteConfigSetSaveRequestStatus {
+	return OptSiteConfigSetSaveRequestStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSetSaveRequestStatus is optional SiteConfigSetSaveRequestStatus.
+type OptSiteConfigSetSaveRequestStatus struct {
+	Value SiteConfigSetSaveRequestStatus
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSetSaveRequestStatus was set.
+func (o OptSiteConfigSetSaveRequestStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSetSaveRequestStatus) Reset() {
+	var v SiteConfigSetSaveRequestStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSetSaveRequestStatus) SetTo(v SiteConfigSetSaveRequestStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSetSaveRequestStatus) Get() (v SiteConfigSetSaveRequestStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSetSaveRequestStatus) Or(d SiteConfigSetSaveRequestStatus) SiteConfigSetSaveRequestStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteConfigSummaryConfigValue returns new OptSiteConfigSummaryConfigValue with value set to v.
+func NewOptSiteConfigSummaryConfigValue(v SiteConfigSummaryConfigValue) OptSiteConfigSummaryConfigValue {
+	return OptSiteConfigSummaryConfigValue{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSummaryConfigValue is optional SiteConfigSummaryConfigValue.
+type OptSiteConfigSummaryConfigValue struct {
+	Value SiteConfigSummaryConfigValue
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSummaryConfigValue was set.
+func (o OptSiteConfigSummaryConfigValue) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSummaryConfigValue) Reset() {
+	var v SiteConfigSummaryConfigValue
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSummaryConfigValue) SetTo(v SiteConfigSummaryConfigValue) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSummaryConfigValue) Get() (v SiteConfigSummaryConfigValue, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSummaryConfigValue) Or(d SiteConfigSummaryConfigValue) SiteConfigSummaryConfigValue {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSocialTokenExchangeResponseUser returns new OptSocialTokenExchangeResponseUser with value set to v.
 func NewOptSocialTokenExchangeResponseUser(v SocialTokenExchangeResponseUser) OptSocialTokenExchangeResponseUser {
 	return OptSocialTokenExchangeResponseUser{
@@ -21742,6 +21996,974 @@ func (s *SilentSSORequest) SetTargetPath(val OptString) {
 // SetNavigationSpaceKey sets the value of NavigationSpaceKey.
 func (s *SilentSSORequest) SetNavigationSpaceKey(val OptString) {
 	s.NavigationSpaceKey = val
+}
+
+// Ref: #/components/schemas/SiteConfigListResponse
+type SiteConfigListResponse struct {
+	Records []SiteConfigSummary `json:"records"`
+	Total   int                 `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SiteConfigListResponse) GetRecords() []SiteConfigSummary {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteConfigListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SiteConfigListResponse) SetRecords(val []SiteConfigSummary) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteConfigListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*SiteConfigListResponse) listSiteConfigsRes() {}
+
+// Ref: #/components/schemas/SiteConfigResolveResponse
+type SiteConfigResolveResponse struct {
+	Items SiteConfigResolveResponseItems `json:"items"`
+	// 请求指纹，用于前端缓存命中校验.
+	Version string `json:"version"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteConfigResolveResponse) GetItems() SiteConfigResolveResponseItems {
+	return s.Items
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteConfigResolveResponse) GetVersion() string {
+	return s.Version
+}
+
+// SetItems sets the value of Items.
+func (s *SiteConfigResolveResponse) SetItems(val SiteConfigResolveResponseItems) {
+	s.Items = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteConfigResolveResponse) SetVersion(val string) {
+	s.Version = val
+}
+
+func (*SiteConfigResolveResponse) resolveSiteConfigsRes() {}
+
+type SiteConfigResolveResponseItems map[string]SiteConfigResolvedItem
+
+func (s *SiteConfigResolveResponseItems) init() SiteConfigResolveResponseItems {
+	m := *s
+	if m == nil {
+		m = map[string]SiteConfigResolvedItem{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/SiteConfigResolvedItem
+type SiteConfigResolvedItem struct {
+	// 配置值（JSON 对象；不同 value_type 约定不同字段，如 string/number/bool 用
+	// value，image 用 url）.
+	Value SiteConfigResolvedItemValue `json:"value"`
+	// 值的来源.
+	Source    SiteConfigResolvedItemSource    `json:"source"`
+	ValueType SiteConfigResolvedItemValueType `json:"value_type"`
+	// 该 key 所属的集合编码列表.
+	Sets []string `json:"sets"`
+}
+
+// GetValue returns the value of Value.
+func (s *SiteConfigResolvedItem) GetValue() SiteConfigResolvedItemValue {
+	return s.Value
+}
+
+// GetSource returns the value of Source.
+func (s *SiteConfigResolvedItem) GetSource() SiteConfigResolvedItemSource {
+	return s.Source
+}
+
+// GetValueType returns the value of ValueType.
+func (s *SiteConfigResolvedItem) GetValueType() SiteConfigResolvedItemValueType {
+	return s.ValueType
+}
+
+// GetSets returns the value of Sets.
+func (s *SiteConfigResolvedItem) GetSets() []string {
+	return s.Sets
+}
+
+// SetValue sets the value of Value.
+func (s *SiteConfigResolvedItem) SetValue(val SiteConfigResolvedItemValue) {
+	s.Value = val
+}
+
+// SetSource sets the value of Source.
+func (s *SiteConfigResolvedItem) SetSource(val SiteConfigResolvedItemSource) {
+	s.Source = val
+}
+
+// SetValueType sets the value of ValueType.
+func (s *SiteConfigResolvedItem) SetValueType(val SiteConfigResolvedItemValueType) {
+	s.ValueType = val
+}
+
+// SetSets sets the value of Sets.
+func (s *SiteConfigResolvedItem) SetSets(val []string) {
+	s.Sets = val
+}
+
+// 值的来源.
+type SiteConfigResolvedItemSource string
+
+const (
+	SiteConfigResolvedItemSourceApp     SiteConfigResolvedItemSource = "app"
+	SiteConfigResolvedItemSourceGlobal  SiteConfigResolvedItemSource = "global"
+	SiteConfigResolvedItemSourceDefault SiteConfigResolvedItemSource = "default"
+)
+
+// AllValues returns all SiteConfigResolvedItemSource values.
+func (SiteConfigResolvedItemSource) AllValues() []SiteConfigResolvedItemSource {
+	return []SiteConfigResolvedItemSource{
+		SiteConfigResolvedItemSourceApp,
+		SiteConfigResolvedItemSourceGlobal,
+		SiteConfigResolvedItemSourceDefault,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigResolvedItemSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigResolvedItemSourceApp:
+		return []byte(s), nil
+	case SiteConfigResolvedItemSourceGlobal:
+		return []byte(s), nil
+	case SiteConfigResolvedItemSourceDefault:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigResolvedItemSource) UnmarshalText(data []byte) error {
+	switch SiteConfigResolvedItemSource(data) {
+	case SiteConfigResolvedItemSourceApp:
+		*s = SiteConfigResolvedItemSourceApp
+		return nil
+	case SiteConfigResolvedItemSourceGlobal:
+		*s = SiteConfigResolvedItemSourceGlobal
+		return nil
+	case SiteConfigResolvedItemSourceDefault:
+		*s = SiteConfigResolvedItemSourceDefault
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// 配置值（JSON 对象；不同 value_type 约定不同字段，如 string/number/bool 用
+// value，image 用 url）.
+type SiteConfigResolvedItemValue map[string]jx.Raw
+
+func (s *SiteConfigResolvedItemValue) init() SiteConfigResolvedItemValue {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type SiteConfigResolvedItemValueType string
+
+const (
+	SiteConfigResolvedItemValueTypeString SiteConfigResolvedItemValueType = "string"
+	SiteConfigResolvedItemValueTypeNumber SiteConfigResolvedItemValueType = "number"
+	SiteConfigResolvedItemValueTypeBool   SiteConfigResolvedItemValueType = "bool"
+	SiteConfigResolvedItemValueTypeImage  SiteConfigResolvedItemValueType = "image"
+	SiteConfigResolvedItemValueTypeJSON   SiteConfigResolvedItemValueType = "json"
+	SiteConfigResolvedItemValueTypeSVG    SiteConfigResolvedItemValueType = "svg"
+)
+
+// AllValues returns all SiteConfigResolvedItemValueType values.
+func (SiteConfigResolvedItemValueType) AllValues() []SiteConfigResolvedItemValueType {
+	return []SiteConfigResolvedItemValueType{
+		SiteConfigResolvedItemValueTypeString,
+		SiteConfigResolvedItemValueTypeNumber,
+		SiteConfigResolvedItemValueTypeBool,
+		SiteConfigResolvedItemValueTypeImage,
+		SiteConfigResolvedItemValueTypeJSON,
+		SiteConfigResolvedItemValueTypeSVG,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigResolvedItemValueType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigResolvedItemValueTypeString:
+		return []byte(s), nil
+	case SiteConfigResolvedItemValueTypeNumber:
+		return []byte(s), nil
+	case SiteConfigResolvedItemValueTypeBool:
+		return []byte(s), nil
+	case SiteConfigResolvedItemValueTypeImage:
+		return []byte(s), nil
+	case SiteConfigResolvedItemValueTypeJSON:
+		return []byte(s), nil
+	case SiteConfigResolvedItemValueTypeSVG:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigResolvedItemValueType) UnmarshalText(data []byte) error {
+	switch SiteConfigResolvedItemValueType(data) {
+	case SiteConfigResolvedItemValueTypeString:
+		*s = SiteConfigResolvedItemValueTypeString
+		return nil
+	case SiteConfigResolvedItemValueTypeNumber:
+		*s = SiteConfigResolvedItemValueTypeNumber
+		return nil
+	case SiteConfigResolvedItemValueTypeBool:
+		*s = SiteConfigResolvedItemValueTypeBool
+		return nil
+	case SiteConfigResolvedItemValueTypeImage:
+		*s = SiteConfigResolvedItemValueTypeImage
+		return nil
+	case SiteConfigResolvedItemValueTypeJSON:
+		*s = SiteConfigResolvedItemValueTypeJSON
+		return nil
+	case SiteConfigResolvedItemValueTypeSVG:
+		*s = SiteConfigResolvedItemValueTypeSVG
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/SiteConfigSaveRequest
+type SiteConfigSaveRequest struct {
+	// 空字符串代表全局；非空为应用级.
+	AppKey      OptString                           `json:"app_key"`
+	ConfigKey   string                              `json:"config_key"`
+	ConfigValue OptSiteConfigSaveRequestConfigValue `json:"config_value"`
+	ValueType   OptSiteConfigSaveRequestValueType   `json:"value_type"`
+	Label       OptString                           `json:"label"`
+	Description OptString                           `json:"description"`
+	SortOrder   OptInt                              `json:"sort_order"`
+	Status      OptSiteConfigSaveRequestStatus      `json:"status"`
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SiteConfigSaveRequest) GetAppKey() OptString {
+	return s.AppKey
+}
+
+// GetConfigKey returns the value of ConfigKey.
+func (s *SiteConfigSaveRequest) GetConfigKey() string {
+	return s.ConfigKey
+}
+
+// GetConfigValue returns the value of ConfigValue.
+func (s *SiteConfigSaveRequest) GetConfigValue() OptSiteConfigSaveRequestConfigValue {
+	return s.ConfigValue
+}
+
+// GetValueType returns the value of ValueType.
+func (s *SiteConfigSaveRequest) GetValueType() OptSiteConfigSaveRequestValueType {
+	return s.ValueType
+}
+
+// GetLabel returns the value of Label.
+func (s *SiteConfigSaveRequest) GetLabel() OptString {
+	return s.Label
+}
+
+// GetDescription returns the value of Description.
+func (s *SiteConfigSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *SiteConfigSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteConfigSaveRequest) GetStatus() OptSiteConfigSaveRequestStatus {
+	return s.Status
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SiteConfigSaveRequest) SetAppKey(val OptString) {
+	s.AppKey = val
+}
+
+// SetConfigKey sets the value of ConfigKey.
+func (s *SiteConfigSaveRequest) SetConfigKey(val string) {
+	s.ConfigKey = val
+}
+
+// SetConfigValue sets the value of ConfigValue.
+func (s *SiteConfigSaveRequest) SetConfigValue(val OptSiteConfigSaveRequestConfigValue) {
+	s.ConfigValue = val
+}
+
+// SetValueType sets the value of ValueType.
+func (s *SiteConfigSaveRequest) SetValueType(val OptSiteConfigSaveRequestValueType) {
+	s.ValueType = val
+}
+
+// SetLabel sets the value of Label.
+func (s *SiteConfigSaveRequest) SetLabel(val OptString) {
+	s.Label = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SiteConfigSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *SiteConfigSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteConfigSaveRequest) SetStatus(val OptSiteConfigSaveRequestStatus) {
+	s.Status = val
+}
+
+type SiteConfigSaveRequestConfigValue map[string]jx.Raw
+
+func (s *SiteConfigSaveRequestConfigValue) init() SiteConfigSaveRequestConfigValue {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type SiteConfigSaveRequestStatus string
+
+const (
+	SiteConfigSaveRequestStatusNormal    SiteConfigSaveRequestStatus = "normal"
+	SiteConfigSaveRequestStatusSuspended SiteConfigSaveRequestStatus = "suspended"
+)
+
+// AllValues returns all SiteConfigSaveRequestStatus values.
+func (SiteConfigSaveRequestStatus) AllValues() []SiteConfigSaveRequestStatus {
+	return []SiteConfigSaveRequestStatus{
+		SiteConfigSaveRequestStatusNormal,
+		SiteConfigSaveRequestStatusSuspended,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSaveRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSaveRequestStatusNormal:
+		return []byte(s), nil
+	case SiteConfigSaveRequestStatusSuspended:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSaveRequestStatus) UnmarshalText(data []byte) error {
+	switch SiteConfigSaveRequestStatus(data) {
+	case SiteConfigSaveRequestStatusNormal:
+		*s = SiteConfigSaveRequestStatusNormal
+		return nil
+	case SiteConfigSaveRequestStatusSuspended:
+		*s = SiteConfigSaveRequestStatusSuspended
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteConfigSaveRequestValueType string
+
+const (
+	SiteConfigSaveRequestValueTypeString SiteConfigSaveRequestValueType = "string"
+	SiteConfigSaveRequestValueTypeNumber SiteConfigSaveRequestValueType = "number"
+	SiteConfigSaveRequestValueTypeBool   SiteConfigSaveRequestValueType = "bool"
+	SiteConfigSaveRequestValueTypeImage  SiteConfigSaveRequestValueType = "image"
+	SiteConfigSaveRequestValueTypeJSON   SiteConfigSaveRequestValueType = "json"
+	SiteConfigSaveRequestValueTypeSVG    SiteConfigSaveRequestValueType = "svg"
+)
+
+// AllValues returns all SiteConfigSaveRequestValueType values.
+func (SiteConfigSaveRequestValueType) AllValues() []SiteConfigSaveRequestValueType {
+	return []SiteConfigSaveRequestValueType{
+		SiteConfigSaveRequestValueTypeString,
+		SiteConfigSaveRequestValueTypeNumber,
+		SiteConfigSaveRequestValueTypeBool,
+		SiteConfigSaveRequestValueTypeImage,
+		SiteConfigSaveRequestValueTypeJSON,
+		SiteConfigSaveRequestValueTypeSVG,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSaveRequestValueType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSaveRequestValueTypeString:
+		return []byte(s), nil
+	case SiteConfigSaveRequestValueTypeNumber:
+		return []byte(s), nil
+	case SiteConfigSaveRequestValueTypeBool:
+		return []byte(s), nil
+	case SiteConfigSaveRequestValueTypeImage:
+		return []byte(s), nil
+	case SiteConfigSaveRequestValueTypeJSON:
+		return []byte(s), nil
+	case SiteConfigSaveRequestValueTypeSVG:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSaveRequestValueType) UnmarshalText(data []byte) error {
+	switch SiteConfigSaveRequestValueType(data) {
+	case SiteConfigSaveRequestValueTypeString:
+		*s = SiteConfigSaveRequestValueTypeString
+		return nil
+	case SiteConfigSaveRequestValueTypeNumber:
+		*s = SiteConfigSaveRequestValueTypeNumber
+		return nil
+	case SiteConfigSaveRequestValueTypeBool:
+		*s = SiteConfigSaveRequestValueTypeBool
+		return nil
+	case SiteConfigSaveRequestValueTypeImage:
+		*s = SiteConfigSaveRequestValueTypeImage
+		return nil
+	case SiteConfigSaveRequestValueTypeJSON:
+		*s = SiteConfigSaveRequestValueTypeJSON
+		return nil
+	case SiteConfigSaveRequestValueTypeSVG:
+		*s = SiteConfigSaveRequestValueTypeSVG
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/SiteConfigSetItemsRequest
+type SiteConfigSetItemsRequest struct {
+	ConfigKeys []string `json:"config_keys"`
+}
+
+// GetConfigKeys returns the value of ConfigKeys.
+func (s *SiteConfigSetItemsRequest) GetConfigKeys() []string {
+	return s.ConfigKeys
+}
+
+// SetConfigKeys sets the value of ConfigKeys.
+func (s *SiteConfigSetItemsRequest) SetConfigKeys(val []string) {
+	s.ConfigKeys = val
+}
+
+// Ref: #/components/schemas/SiteConfigSetListResponse
+type SiteConfigSetListResponse struct {
+	Records []SiteConfigSetSummary `json:"records"`
+	Total   int                    `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SiteConfigSetListResponse) GetRecords() []SiteConfigSetSummary {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteConfigSetListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SiteConfigSetListResponse) SetRecords(val []SiteConfigSetSummary) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteConfigSetListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*SiteConfigSetListResponse) listSiteConfigSetsRes() {}
+
+// Ref: #/components/schemas/SiteConfigSetSaveRequest
+type SiteConfigSetSaveRequest struct {
+	SetCode     string                            `json:"set_code"`
+	SetName     string                            `json:"set_name"`
+	Description OptString                         `json:"description"`
+	SortOrder   OptInt                            `json:"sort_order"`
+	Status      OptSiteConfigSetSaveRequestStatus `json:"status"`
+}
+
+// GetSetCode returns the value of SetCode.
+func (s *SiteConfigSetSaveRequest) GetSetCode() string {
+	return s.SetCode
+}
+
+// GetSetName returns the value of SetName.
+func (s *SiteConfigSetSaveRequest) GetSetName() string {
+	return s.SetName
+}
+
+// GetDescription returns the value of Description.
+func (s *SiteConfigSetSaveRequest) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *SiteConfigSetSaveRequest) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteConfigSetSaveRequest) GetStatus() OptSiteConfigSetSaveRequestStatus {
+	return s.Status
+}
+
+// SetSetCode sets the value of SetCode.
+func (s *SiteConfigSetSaveRequest) SetSetCode(val string) {
+	s.SetCode = val
+}
+
+// SetSetName sets the value of SetName.
+func (s *SiteConfigSetSaveRequest) SetSetName(val string) {
+	s.SetName = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SiteConfigSetSaveRequest) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *SiteConfigSetSaveRequest) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteConfigSetSaveRequest) SetStatus(val OptSiteConfigSetSaveRequestStatus) {
+	s.Status = val
+}
+
+type SiteConfigSetSaveRequestStatus string
+
+const (
+	SiteConfigSetSaveRequestStatusNormal    SiteConfigSetSaveRequestStatus = "normal"
+	SiteConfigSetSaveRequestStatusSuspended SiteConfigSetSaveRequestStatus = "suspended"
+)
+
+// AllValues returns all SiteConfigSetSaveRequestStatus values.
+func (SiteConfigSetSaveRequestStatus) AllValues() []SiteConfigSetSaveRequestStatus {
+	return []SiteConfigSetSaveRequestStatus{
+		SiteConfigSetSaveRequestStatusNormal,
+		SiteConfigSetSaveRequestStatusSuspended,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSetSaveRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSetSaveRequestStatusNormal:
+		return []byte(s), nil
+	case SiteConfigSetSaveRequestStatusSuspended:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSetSaveRequestStatus) UnmarshalText(data []byte) error {
+	switch SiteConfigSetSaveRequestStatus(data) {
+	case SiteConfigSetSaveRequestStatusNormal:
+		*s = SiteConfigSetSaveRequestStatusNormal
+		return nil
+	case SiteConfigSetSaveRequestStatusSuspended:
+		*s = SiteConfigSetSaveRequestStatusSuspended
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/SiteConfigSetSummary
+type SiteConfigSetSummary struct {
+	ID          uuid.UUID   `json:"id"`
+	TenantID    OptString   `json:"tenant_id"`
+	SetCode     string      `json:"set_code"`
+	SetName     string      `json:"set_name"`
+	Description OptString   `json:"description"`
+	SortOrder   OptInt      `json:"sort_order"`
+	IsBuiltin   OptBool     `json:"is_builtin"`
+	Status      string      `json:"status"`
+	ConfigKeys  []string    `json:"config_keys"`
+	CreatedAt   OptDateTime `json:"created_at"`
+	UpdatedAt   OptDateTime `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteConfigSetSummary) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *SiteConfigSetSummary) GetTenantID() OptString {
+	return s.TenantID
+}
+
+// GetSetCode returns the value of SetCode.
+func (s *SiteConfigSetSummary) GetSetCode() string {
+	return s.SetCode
+}
+
+// GetSetName returns the value of SetName.
+func (s *SiteConfigSetSummary) GetSetName() string {
+	return s.SetName
+}
+
+// GetDescription returns the value of Description.
+func (s *SiteConfigSetSummary) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *SiteConfigSetSummary) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *SiteConfigSetSummary) GetIsBuiltin() OptBool {
+	return s.IsBuiltin
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteConfigSetSummary) GetStatus() string {
+	return s.Status
+}
+
+// GetConfigKeys returns the value of ConfigKeys.
+func (s *SiteConfigSetSummary) GetConfigKeys() []string {
+	return s.ConfigKeys
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteConfigSetSummary) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteConfigSetSummary) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteConfigSetSummary) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *SiteConfigSetSummary) SetTenantID(val OptString) {
+	s.TenantID = val
+}
+
+// SetSetCode sets the value of SetCode.
+func (s *SiteConfigSetSummary) SetSetCode(val string) {
+	s.SetCode = val
+}
+
+// SetSetName sets the value of SetName.
+func (s *SiteConfigSetSummary) SetSetName(val string) {
+	s.SetName = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SiteConfigSetSummary) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *SiteConfigSetSummary) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *SiteConfigSetSummary) SetIsBuiltin(val OptBool) {
+	s.IsBuiltin = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteConfigSetSummary) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetConfigKeys sets the value of ConfigKeys.
+func (s *SiteConfigSetSummary) SetConfigKeys(val []string) {
+	s.ConfigKeys = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteConfigSetSummary) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteConfigSetSummary) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+func (*SiteConfigSetSummary) updateSiteConfigSetItemsRes() {}
+func (*SiteConfigSetSummary) updateSiteConfigSetRes()      {}
+func (*SiteConfigSetSummary) upsertSiteConfigSetRes()      {}
+
+// Ref: #/components/schemas/SiteConfigSummary
+type SiteConfigSummary struct {
+	ID       uuid.UUID `json:"id"`
+	TenantID string    `json:"tenant_id"`
+	// 空字符串代表全局配置.
+	AppKey      string                          `json:"app_key"`
+	ConfigKey   string                          `json:"config_key"`
+	ConfigValue OptSiteConfigSummaryConfigValue `json:"config_value"`
+	ValueType   SiteConfigSummaryValueType      `json:"value_type"`
+	Label       OptString                       `json:"label"`
+	Description OptString                       `json:"description"`
+	SortOrder   OptInt                          `json:"sort_order"`
+	IsBuiltin   OptBool                         `json:"is_builtin"`
+	Status      string                          `json:"status"`
+	CreatedAt   OptDateTime                     `json:"created_at"`
+	UpdatedAt   OptDateTime                     `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteConfigSummary) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetTenantID returns the value of TenantID.
+func (s *SiteConfigSummary) GetTenantID() string {
+	return s.TenantID
+}
+
+// GetAppKey returns the value of AppKey.
+func (s *SiteConfigSummary) GetAppKey() string {
+	return s.AppKey
+}
+
+// GetConfigKey returns the value of ConfigKey.
+func (s *SiteConfigSummary) GetConfigKey() string {
+	return s.ConfigKey
+}
+
+// GetConfigValue returns the value of ConfigValue.
+func (s *SiteConfigSummary) GetConfigValue() OptSiteConfigSummaryConfigValue {
+	return s.ConfigValue
+}
+
+// GetValueType returns the value of ValueType.
+func (s *SiteConfigSummary) GetValueType() SiteConfigSummaryValueType {
+	return s.ValueType
+}
+
+// GetLabel returns the value of Label.
+func (s *SiteConfigSummary) GetLabel() OptString {
+	return s.Label
+}
+
+// GetDescription returns the value of Description.
+func (s *SiteConfigSummary) GetDescription() OptString {
+	return s.Description
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *SiteConfigSummary) GetSortOrder() OptInt {
+	return s.SortOrder
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *SiteConfigSummary) GetIsBuiltin() OptBool {
+	return s.IsBuiltin
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteConfigSummary) GetStatus() string {
+	return s.Status
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteConfigSummary) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteConfigSummary) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteConfigSummary) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetTenantID sets the value of TenantID.
+func (s *SiteConfigSummary) SetTenantID(val string) {
+	s.TenantID = val
+}
+
+// SetAppKey sets the value of AppKey.
+func (s *SiteConfigSummary) SetAppKey(val string) {
+	s.AppKey = val
+}
+
+// SetConfigKey sets the value of ConfigKey.
+func (s *SiteConfigSummary) SetConfigKey(val string) {
+	s.ConfigKey = val
+}
+
+// SetConfigValue sets the value of ConfigValue.
+func (s *SiteConfigSummary) SetConfigValue(val OptSiteConfigSummaryConfigValue) {
+	s.ConfigValue = val
+}
+
+// SetValueType sets the value of ValueType.
+func (s *SiteConfigSummary) SetValueType(val SiteConfigSummaryValueType) {
+	s.ValueType = val
+}
+
+// SetLabel sets the value of Label.
+func (s *SiteConfigSummary) SetLabel(val OptString) {
+	s.Label = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SiteConfigSummary) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *SiteConfigSummary) SetSortOrder(val OptInt) {
+	s.SortOrder = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *SiteConfigSummary) SetIsBuiltin(val OptBool) {
+	s.IsBuiltin = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteConfigSummary) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteConfigSummary) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteConfigSummary) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+func (*SiteConfigSummary) updateSiteConfigRes() {}
+func (*SiteConfigSummary) upsertSiteConfigRes() {}
+
+type SiteConfigSummaryConfigValue map[string]jx.Raw
+
+func (s *SiteConfigSummaryConfigValue) init() SiteConfigSummaryConfigValue {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type SiteConfigSummaryValueType string
+
+const (
+	SiteConfigSummaryValueTypeString SiteConfigSummaryValueType = "string"
+	SiteConfigSummaryValueTypeNumber SiteConfigSummaryValueType = "number"
+	SiteConfigSummaryValueTypeBool   SiteConfigSummaryValueType = "bool"
+	SiteConfigSummaryValueTypeImage  SiteConfigSummaryValueType = "image"
+	SiteConfigSummaryValueTypeJSON   SiteConfigSummaryValueType = "json"
+	SiteConfigSummaryValueTypeSVG    SiteConfigSummaryValueType = "svg"
+)
+
+// AllValues returns all SiteConfigSummaryValueType values.
+func (SiteConfigSummaryValueType) AllValues() []SiteConfigSummaryValueType {
+	return []SiteConfigSummaryValueType{
+		SiteConfigSummaryValueTypeString,
+		SiteConfigSummaryValueTypeNumber,
+		SiteConfigSummaryValueTypeBool,
+		SiteConfigSummaryValueTypeImage,
+		SiteConfigSummaryValueTypeJSON,
+		SiteConfigSummaryValueTypeSVG,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSummaryValueType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSummaryValueTypeString:
+		return []byte(s), nil
+	case SiteConfigSummaryValueTypeNumber:
+		return []byte(s), nil
+	case SiteConfigSummaryValueTypeBool:
+		return []byte(s), nil
+	case SiteConfigSummaryValueTypeImage:
+		return []byte(s), nil
+	case SiteConfigSummaryValueTypeJSON:
+		return []byte(s), nil
+	case SiteConfigSummaryValueTypeSVG:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSummaryValueType) UnmarshalText(data []byte) error {
+	switch SiteConfigSummaryValueType(data) {
+	case SiteConfigSummaryValueTypeString:
+		*s = SiteConfigSummaryValueTypeString
+		return nil
+	case SiteConfigSummaryValueTypeNumber:
+		*s = SiteConfigSummaryValueTypeNumber
+		return nil
+	case SiteConfigSummaryValueTypeBool:
+		*s = SiteConfigSummaryValueTypeBool
+		return nil
+	case SiteConfigSummaryValueTypeImage:
+		*s = SiteConfigSummaryValueTypeImage
+		return nil
+	case SiteConfigSummaryValueTypeJSON:
+		*s = SiteConfigSummaryValueTypeJSON
+		return nil
+	case SiteConfigSummaryValueTypeSVG:
+		*s = SiteConfigSummaryValueTypeSVG
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Ref: #/components/schemas/SocialTokenExchangeRequest

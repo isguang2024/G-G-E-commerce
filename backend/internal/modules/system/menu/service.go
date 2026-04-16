@@ -1,4 +1,4 @@
-package menu
+﻿package menu
 
 import (
 	"errors"
@@ -11,15 +11,15 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	page "github.com/gg-ecommerce/backend/internal/modules/system/page"
-	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	"github.com/maben/backend/internal/api/dto"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	"github.com/maben/backend/internal/modules/system/models"
+	page "github.com/maben/backend/internal/modules/system/page"
+	spaceutil "github.com/maben/backend/internal/modules/system/space"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/platformroleaccess"
 )
 
 var (
@@ -1076,3 +1076,4 @@ func normalizeManagedMenuPath(path string) string {
 	}
 	return normalized
 }
+

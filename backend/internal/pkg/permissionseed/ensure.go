@@ -1,4 +1,4 @@
-package permissionseed
+﻿package permissionseed
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	usermodel "github.com/maben/backend/internal/modules/system/user"
 )
 
 func EnsureDefaultAPIEndpointCategories(db *gorm.DB) error {
@@ -366,3 +366,4 @@ func uniqueStrings(values []string) []string {
 	}
 	return result
 }
+

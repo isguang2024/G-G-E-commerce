@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
 
-	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/maben/backend/api/gen"
 )
 
 // SecurityHandler implements gen.SecurityHandler.
@@ -25,3 +25,4 @@ func (SecurityHandler) HandleBearerAuth(ctx context.Context, _ gen.OperationName
 	_ = t.Token
 	return ctx, nil
 }
+

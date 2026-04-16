@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"bytes"
@@ -16,9 +16,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type auditRecorderSpy struct {
@@ -498,3 +498,4 @@ func TestResolvedConfigCacheLogWarnAndMalformedPayload(t *testing.T) {
 	cache.logWarn("test")
 	cache.handleInvalidationPayload("not-json")
 }
+

@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 var ErrUploadKeyNotFound = errors.New("upload key not found")
@@ -187,3 +187,4 @@ func (r *Repository) GetUploadRuleByKey(ctx context.Context, tenantID string, up
 	}
 	return &rule, nil
 }
+

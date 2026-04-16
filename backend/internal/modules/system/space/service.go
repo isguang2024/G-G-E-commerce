@@ -1,4 +1,4 @@
-package space
+﻿package space
 
 import (
 	"errors"
@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
 )
 
 type SpaceRecord struct {
@@ -1009,3 +1009,4 @@ func firstNonEmptyString(values ...string) string {
 	}
 	return ""
 }
+

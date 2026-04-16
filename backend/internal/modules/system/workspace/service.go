@@ -1,4 +1,4 @@
-package workspace
+﻿package workspace
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type Summary struct {
@@ -387,3 +387,4 @@ func uuidPtr(value uuid.UUID) *uuid.UUID {
 	target := value
 	return &target
 }
+

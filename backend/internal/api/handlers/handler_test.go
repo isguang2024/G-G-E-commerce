@@ -1,4 +1,4 @@
-// Package handlers_test provides smoke tests for the ogen bridge layer.
+﻿// Package handlers_test provides smoke tests for the ogen bridge layer.
 // These tests verify that HTTP requests correctly route through ogen →
 // APIHandler and return expected status codes and response shapes.
 //
@@ -20,18 +20,18 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	apigen "github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/handlers"
-	"github.com/gg-ecommerce/backend/internal/api/middleware"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	apigen "github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/handlers"
+	"github.com/maben/backend/internal/api/middleware"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/modules/system/apiendpoint"
+	"github.com/maben/backend/internal/modules/system/auth"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/apiendpointaccess"
+	"github.com/maben/backend/internal/pkg/permission/evaluator"
+	"github.com/maben/backend/internal/pkg/permissionseed"
 )
 
 // noopEvaluator implements evaluator.Evaluator. Can always returns true so the
@@ -406,3 +406,4 @@ func TestSmokeAuthMeWithoutTokenReturns401(t *testing.T) {
 		t.Fatalf("want 401, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
+

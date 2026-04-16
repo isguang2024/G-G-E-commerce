@@ -1,9 +1,9 @@
-package apiendpoint
+﻿package apiendpoint
 
 import (
 	"strings"
 
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/pkg/permissionkey"
 )
 
 const (
@@ -149,3 +149,4 @@ func isGlobalJWTEndpoint(endpointPath string) bool {
 		return false
 	}
 }
+

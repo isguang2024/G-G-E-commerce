@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // DB 数据库实例
@@ -187,6 +187,10 @@ func AutoMigrate() error {
 		// 数据字典
 		&models.DictType{},
 		&models.DictItem{},
+		// 站点配置中心
+		&models.SiteConfig{},
+		&models.SiteConfigSet{},
+		&models.SiteConfigSetItem{},
 	)
 
 	if err != nil {
@@ -882,3 +886,4 @@ func ensureAPIEndpointAppColumns(db *gorm.DB) error {
 	}
 	return nil
 }
+

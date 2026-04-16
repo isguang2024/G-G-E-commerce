@@ -1,4 +1,4 @@
-package navigation
+﻿package navigation
 
 import (
 	"fmt"
@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
-	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	menupkg "github.com/maben/backend/internal/modules/system/menu"
+	"github.com/maben/backend/internal/modules/system/models"
+	pagepkg "github.com/maben/backend/internal/modules/system/page"
+	spacepkg "github.com/maben/backend/internal/modules/system/space"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 type Manifest struct {
@@ -194,3 +194,4 @@ func (s *service) buildVersionStamp(appKey, spaceKey string, menuCount, managedP
 	}
 	return fmt.Sprintf("%s:%s:%d:%d:%d", appKey, spaceKey, menuCount, managedPageCount, candidates[0].Unix())
 }
+

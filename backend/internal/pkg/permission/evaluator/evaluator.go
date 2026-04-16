@@ -1,5 +1,5 @@
-// Package evaluator is the single entry point for permission decisions in
-// GGE 5.0. The final permission set for a member in a workspace is the
+﻿// Package evaluator is the single entry point for permission decisions in
+// MaBen 5.0. The final permission set for a member in a workspace is the
 // intersection of:
 //
 //  1. Permission keys exposed by the feature packages bound to the workspace
@@ -407,3 +407,4 @@ WHERE wfp.workspace_id = ?
 	}
 	return out, nil
 }
+

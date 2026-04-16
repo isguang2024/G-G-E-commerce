@@ -1,4 +1,4 @@
-// message.go — Phase 4: ogen handler implementations for the message domain.
+﻿// message.go — Phase 4: ogen handler implementations for the message domain.
 // Covers 19 operations: inbox, templates, senders, recipient-groups, dispatch.
 package handlers
 
@@ -12,10 +12,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
+	systemmod "github.com/maben/backend/internal/modules/system/system"
 )
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -499,3 +499,4 @@ func (h *APIHandler) GetMessageDispatchRecord(ctx context.Context, params gen.Ge
 	}
 	return mapJSON[*gen.MessageDispatchRecord](detail)
 }
+

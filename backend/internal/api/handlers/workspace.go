@@ -1,4 +1,4 @@
-// Package handlers contains ogen Handler implementations for the v5
+﻿// Package handlers contains ogen Handler implementations for the v5
 // OpenAPI-first API. Each handler is the single entry point for one
 // generated operation interface; legacy Gin handlers are removed as
 // each domain migrates over.
@@ -13,35 +13,36 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
-	"github.com/gg-ecommerce/backend/internal/modules/system/app"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/collaborationworkspace"
-	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
-	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
-	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/navigation"
-	"github.com/gg-ecommerce/backend/internal/modules/system/page"
-	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
-	"github.com/gg-ecommerce/backend/internal/modules/system/register"
-	"github.com/gg-ecommerce/backend/internal/modules/system/role"
-	"github.com/gg-ecommerce/backend/internal/modules/system/social"
-	"github.com/gg-ecommerce/backend/internal/modules/system/space"
-	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/modules/system/apiendpoint"
+	"github.com/maben/backend/internal/modules/system/app"
+	"github.com/maben/backend/internal/modules/system/auth"
+	"github.com/maben/backend/internal/modules/system/collaborationworkspace"
+	"github.com/maben/backend/internal/modules/system/dictionary"
+	"github.com/maben/backend/internal/modules/system/featurepackage"
+	"github.com/maben/backend/internal/modules/system/menu"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/navigation"
+	"github.com/maben/backend/internal/modules/system/page"
+	"github.com/maben/backend/internal/modules/system/permission"
+	"github.com/maben/backend/internal/modules/system/register"
+	"github.com/maben/backend/internal/modules/system/role"
+	"github.com/maben/backend/internal/modules/system/siteconfig"
+	"github.com/maben/backend/internal/modules/system/social"
+	"github.com/maben/backend/internal/modules/system/space"
+	systemmod "github.com/maben/backend/internal/modules/system/system"
+	"github.com/maben/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/workspace"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/permission/evaluator"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/platformroleaccess"
 )
 
 // ctxKey is the request-scoped key carrying the authenticated account id
@@ -101,6 +102,8 @@ type APIHandler struct {
 	uploadSvc        upload.Service
 	// 数据字典
 	dictSvc *dictionary.Service
+	// 站点配置中心
+	siteConfigSvc siteconfig.Service
 	// 业务审计 Recorder（异步写 audit_logs 表，失败走日志而非返回错误）。
 	// 由 router.SetupRouter 注入；关闭审计时传 audit.Noop{}。
 	audit audit.Recorder
@@ -281,6 +284,10 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 	h.socialSvc = social.NewService(db, h.authSvc, userRepo, registerResolver, cfg.JWT.Secret, logger)
 	h.uploadSvc = upload.NewService(upload.NewRepository(db).WithAuditRecorder(auditRecorder), cfg, logger)
 	h.dictSvc = dictionary.NewService(db, logger)
+	h.siteConfigSvc = siteconfig.NewService(siteconfig.NewRepository(db), cfg, logger)
+	if cache := h.siteConfigSvc.Cache(); cache != nil {
+		cache.Start(context.Background())
+	}
 	return h
 }
 
@@ -470,3 +477,4 @@ func summaryFromService(item workspace.Summary) gen.WorkspaceSummary {
 	}
 	return out
 }
+

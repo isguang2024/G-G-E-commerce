@@ -1,4 +1,4 @@
-// repair-workspaces 一次性修复命令：把旧 user / collaboration_workspaces / collaboration_workspace_members
+﻿// repair-workspaces 一次性修复命令：把旧 user / collaboration_workspaces / collaboration_workspace_members
 // 数据回填进 V5 canonical 的 workspaces / workspace_members 表。
 //
 // V5 运行时已不再做读路径自动 backfill，迁移期/历史库使用本命令做一次性补齐。
@@ -9,10 +9,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/workspace"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 func main() {
@@ -37,3 +37,4 @@ func main() {
 	}
 	zlog.Info("Workspace repair completed.")
 }
+

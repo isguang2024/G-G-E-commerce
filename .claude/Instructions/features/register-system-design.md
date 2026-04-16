@@ -1,4 +1,4 @@
-# 注册体系设计文档（三层模型）
+﻿# 注册体系设计文档（三层模型）
 
 > 版本：v2 · 日期：2026-04-09 · 状态：设计已确认，待进入实施计划
 >
@@ -370,7 +370,7 @@ sort_order = 0
   "require_captcha": false,
   "auto_login": true,
   "agreement_version": "v1",
-  "brand_info": { "app_name": "GGE", "logo_url": "..." },
+  "brand_info": { "app_name": "MaBen", "logo_url": "..." },
   "field_schema": {
     "username": { "required": true, "min": 3, "max": 32 },
     "password": { "required": true, "min": 8 },
@@ -633,3 +633,4 @@ OpenAPI spec 作为契约真相，所有长度 / 格式 / 必填写入 schema。
 ---
 
 > 本文档经用户确认后进入 Plan 模式，产出精确到函数签名与字段类型的实施计划。
+

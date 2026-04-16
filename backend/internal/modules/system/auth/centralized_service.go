@@ -1,4 +1,4 @@
-package auth
+﻿package auth
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 const (
@@ -356,3 +356,4 @@ func hostMatchesBinding(targetHost, targetHostname, bindingHost string) bool {
 	}
 	return normalizeHostname(normalizedBindingHost) == targetHostname
 }
+

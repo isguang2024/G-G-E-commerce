@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"sort"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const (
@@ -233,3 +233,4 @@ func uniqueSortedStrings(items []string) []string {
 	sort.Strings(result)
 	return result
 }
+

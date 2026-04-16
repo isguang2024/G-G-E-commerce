@@ -1,14 +1,14 @@
-package main
+﻿package main
 
 import (
 	"os"
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 func fail(logger *zap.Logger, message string, fields ...zap.Field) {
@@ -141,3 +141,4 @@ func main() {
 		zap.String("next_step_3", "启动服务器: go run cmd/server/main.go"),
 	)
 }
+

@@ -1842,6 +1842,106 @@
       "access_mode": "authenticated"
     },
     {
+      "operation_id": "listSiteConfigs",
+      "method": "get",
+      "path": "/site-configs",
+      "permission_key": "system.site_config.view",
+      "summary": "查询站点配置项（管理端）",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "upsertSiteConfig",
+      "method": "post",
+      "path": "/site-configs",
+      "permission_key": "system.site_config.manage",
+      "summary": "新增或更新站点配置项",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "resolveSiteConfigs",
+      "method": "get",
+      "path": "/site-configs/resolve",
+      "permission_key": "",
+      "summary": "批量解析站点配置（全局+应用级合并）",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "listSiteConfigSets",
+      "method": "get",
+      "path": "/site-configs/sets",
+      "permission_key": "system.site_config.view",
+      "summary": "查询站点配置集合",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "upsertSiteConfigSet",
+      "method": "post",
+      "path": "/site-configs/sets",
+      "permission_key": "system.site_config.manage",
+      "summary": "新增或更新配置集合",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteSiteConfigSet",
+      "method": "delete",
+      "path": "/site-configs/sets/{id}",
+      "permission_key": "system.site_config.manage",
+      "summary": "删除配置集合",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateSiteConfigSet",
+      "method": "put",
+      "path": "/site-configs/sets/{id}",
+      "permission_key": "system.site_config.manage",
+      "summary": "更新配置集合",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateSiteConfigSetItems",
+      "method": "put",
+      "path": "/site-configs/sets/{id}/items",
+      "permission_key": "system.site_config.manage",
+      "summary": "整体替换集合包含的 config_key 列表",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteSiteConfig",
+      "method": "delete",
+      "path": "/site-configs/{id}",
+      "permission_key": "system.site_config.manage",
+      "summary": "删除站点配置项",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateSiteConfig",
+      "method": "put",
+      "path": "/site-configs/{id}",
+      "permission_key": "system.site_config.manage",
+      "summary": "更新站点配置项",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listStorageBuckets",
       "method": "get",
       "path": "/storage/buckets",

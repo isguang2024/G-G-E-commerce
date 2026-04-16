@@ -1,4 +1,4 @@
-package navigation
+﻿package navigation
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
-	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/api/dto"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	menupkg "github.com/maben/backend/internal/modules/system/menu"
+	"github.com/maben/backend/internal/modules/system/models"
+	pagepkg "github.com/maben/backend/internal/modules/system/page"
+	spacepkg "github.com/maben/backend/internal/modules/system/space"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
@@ -434,3 +434,4 @@ var (
 	_ pagepkg.Service     = (*stubPageService)(nil)
 	_ spacepkg.Service    = (*stubSpaceService)(nil)
 )
+

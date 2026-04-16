@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	osscredentials "github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const (
@@ -674,3 +674,4 @@ func getMetaInt64(meta models.MetaJSON, key string, fallback int64) int64 {
 	}
 	return fallback
 }
+

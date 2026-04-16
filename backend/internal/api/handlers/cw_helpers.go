@@ -1,4 +1,4 @@
-// cw_helpers.go — shared helpers for CW boundary handlers.
+﻿// cw_helpers.go — shared helpers for CW boundary handlers.
 package handlers
 
 import (
@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 // ─── context helpers ──────────────────────────────────────────────────────────
@@ -251,3 +251,4 @@ func cwDefaultString(value, fallback string) string {
 	}
 	return value
 }
+

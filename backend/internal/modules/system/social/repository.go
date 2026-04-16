@@ -1,4 +1,4 @@
-package social
+﻿package social
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 const defaultTenantID = "default"
@@ -156,3 +156,4 @@ func (r *Repository) DeleteByID(
 		Where("tenant_id = ? AND id = ? AND user_id = ? AND deleted_at IS NULL", normalizeTenantID(tenantID), id, userID).
 		Delete(&systemmodels.UserSocialAccount{}).Error
 }
+

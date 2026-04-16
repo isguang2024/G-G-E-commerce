@@ -1,4 +1,4 @@
-package menu
+﻿package menu
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestMenuToRuntimeMapPreservesFalseIsEnable(t *testing.T) {
@@ -39,3 +39,4 @@ func TestMenuToRuntimeMapPreservesFalseIsEnable(t *testing.T) {
 		t.Fatalf("isHide = %#v, want true", value)
 	}
 }
+

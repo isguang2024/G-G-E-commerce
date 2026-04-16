@@ -1,11 +1,11 @@
-package main
+﻿package main
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/upload"
 )
 
 func TestUploadSecretKeyID(t *testing.T) {
@@ -40,3 +40,4 @@ func TestShouldRotateSecret(t *testing.T) {
 		t.Fatalf("shouldRotateSecret() = false for old key id")
 	}
 }
+

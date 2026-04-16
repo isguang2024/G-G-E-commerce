@@ -1,4 +1,4 @@
-package auth
+﻿package auth
 
 import (
 	"strings"
@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/jwt"
+	"github.com/maben/backend/internal/api/legacyresp"
+	"github.com/maben/backend/internal/modules/system/models"
+	workspacepkg "github.com/maben/backend/internal/modules/system/workspace"
+	"github.com/maben/backend/internal/pkg/jwt"
 )
 
 const authWorkspaceHeader = "X-Auth-Workspace-Id"
@@ -113,3 +113,4 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 	}
 	c.Set("collaboration_workspace_id", "")
 }
+

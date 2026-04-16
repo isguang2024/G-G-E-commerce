@@ -1,4 +1,4 @@
-package dictionary
+﻿package dictionary
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // Repository handles all DB operations for DictType and DictItem.
@@ -191,3 +191,4 @@ func (r *Repository) DeleteItemsByTypeID(ctx context.Context, typeID uuid.UUID) 
 		Where("dict_type_id = ? AND tenant_id = ?", typeID, "default").
 		Delete(&models.DictItem{}).Error
 }
+

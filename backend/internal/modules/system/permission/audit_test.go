@@ -1,11 +1,11 @@
-package permission
+﻿package permission
 
 import (
 	"testing"
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestBuildPermissionAuditProfileForUnusedKey(t *testing.T) {
@@ -70,3 +70,4 @@ func TestBuildPermissionDuplicateProfilesForSameContextDuplicate(t *testing.T) {
 		t.Fatalf("pattern = %q, want %q", profile.Pattern, permissionDuplicatePatternSuspectedDuplicate)
 	}
 }
+

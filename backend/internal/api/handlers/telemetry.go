@@ -1,12 +1,12 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
 	"encoding/json"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 // IngestTelemetryLogs 实现前端日志批量上报端点。
@@ -83,3 +83,4 @@ func mapAnyToContext(v gen.TelemetryLogEntryContext) map[string]any {
 	}
 	return out
 }
+

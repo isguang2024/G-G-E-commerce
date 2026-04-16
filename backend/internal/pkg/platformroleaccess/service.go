@@ -1,4 +1,4 @@
-package platformroleaccess
+﻿package platformroleaccess
 
 import (
 	"strings"
@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
 )
 
 var (
@@ -570,3 +570,4 @@ func resolveAppKey(appKey ...string) string {
 	}
 	return appctx.NormalizeAppKey(appKey[0])
 }
+

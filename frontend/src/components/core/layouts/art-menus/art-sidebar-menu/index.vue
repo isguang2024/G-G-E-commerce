@@ -84,7 +84,7 @@
               opacity: !menuOpen ? 0 : 1
             }"
           >
-            {{ AppConfig.systemInfo.name }}
+            {{ siteName }}
           </p>
         </div>
 
@@ -131,6 +131,8 @@
 
 <script setup lang="ts">
   import AppConfig from '@/config'
+  import { useSiteBranding } from '@/domains/site-config/branding'
+  const { name: siteName } = useSiteBranding()
   import { useSettingStore } from '@/store/modules/setting'
   import { MenuTypeEnum, MenuWidth } from '@/enums/appEnum'
   import { useMenuStore } from '@/domains/navigation/menu'

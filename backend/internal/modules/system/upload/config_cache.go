@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/maben/backend/internal/config"
 )
 
 const (
@@ -321,3 +321,4 @@ func compactStrings(items []string) []string {
 	}
 	return result
 }
+

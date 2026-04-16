@@ -1,4 +1,4 @@
-// observability_prometheus_test.go: 覆盖 GetObservabilityMetricsPrometheus 的
+﻿// observability_prometheus_test.go: 覆盖 GetObservabilityMetricsPrometheus 的
 // 两条接受标准——「格式符合 openmetrics」与「Noop 全零仍可抓取」。
 // 放在 handlers 包内（非 _test 包）以直接访问未导出 audit 字段，避免搭一套
 // gin + evaluator 中间件脚手架仅为了验证一段字符串输出。
@@ -12,9 +12,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
 )
 
 // TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401 —— 未登录上下文应返回 401。
@@ -113,3 +113,4 @@ func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
 		}
 	}
 }
+

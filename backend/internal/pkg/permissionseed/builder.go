@@ -1,4 +1,4 @@
-package permissionseed
+﻿package permissionseed
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	apiendpointpkg "github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
+	apiendpointpkg "github.com/maben/backend/internal/modules/system/apiendpoint"
 )
 
 type DeploymentBuilder struct {
@@ -172,3 +172,4 @@ func NormalizeRouteModule(path string) string {
 	}
 	return segments[len(segments)-1]
 }
+

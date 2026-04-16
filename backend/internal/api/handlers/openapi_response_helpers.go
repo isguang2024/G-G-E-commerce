@@ -1,13 +1,13 @@
-package handlers
+﻿package handlers
 
 import (
 	"strings"
 	"time"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	permissionpkg "github.com/gg-ecommerce/backend/internal/modules/system/permission"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/models"
+	permissionpkg "github.com/maben/backend/internal/modules/system/permission"
+	"github.com/maben/backend/internal/modules/system/user"
 	"github.com/google/uuid"
 )
 
@@ -602,3 +602,4 @@ func featurePackageMenuItemsFromModels(items []user.Menu) []gen.FeaturePackageMe
 	}
 	return out
 }
+

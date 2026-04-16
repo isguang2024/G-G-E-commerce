@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	pkgLogger "github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/upload"
+	pkgLogger "github.com/maben/backend/internal/pkg/logger"
 )
 
 func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (gen.UploadMediaRes, error) {
@@ -194,3 +194,4 @@ func (h *APIHandler) DeleteMedia(ctx context.Context, params gen.DeleteMediaPara
 	}
 	return ok(), nil
 }
+

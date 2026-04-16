@@ -1,11 +1,11 @@
-package featurepackage
+﻿package featurepackage
 
 import (
 	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func (s *service) ListRiskAudits(id uuid.UUID, current, size int) ([]user.RiskOperationAudit, int64, error) {
@@ -50,3 +50,4 @@ func (s *service) recordRiskAudit(
 	}
 	return s.db.Create(item).Error
 }
+

@@ -1,11 +1,11 @@
-package legacyresp
+﻿package legacyresp
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/maben/backend/internal/api/dto"
 )
 
 const (
@@ -57,3 +57,4 @@ func TokenBadFormat(c *gin.Context, message string) {
 func Internal(c *gin.Context, message string) {
 	Write(c, http.StatusInternalServerError, CodeInternal, message)
 }
+

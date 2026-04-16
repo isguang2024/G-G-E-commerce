@@ -1,4 +1,4 @@
-// observability.go: /observability/* handler 实现。
+﻿// observability.go: /observability/* handler 实现。
 //
 // audit_logs / telemetry_logs 只支持只读查询，写入链路由异步 Recorder / Ingester
 // 负责。本 handler 直接用 h.db 查询，不新增 service 层：
@@ -20,10 +20,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 const (
@@ -621,3 +621,4 @@ func jsonBytesToRawMap(buf []byte) (map[string]jx.Raw, bool) {
 
 // ensure time package is kept on the import even when ogen renames internal fields.
 var _ = time.Time{}
+

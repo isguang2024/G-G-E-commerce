@@ -1,4 +1,4 @@
-package permissionrefresh
+﻿package permissionrefresh
 
 import (
 	"database/sql"
@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/platformroleaccess"
+	"github.com/maben/backend/internal/pkg/workspacefeaturebinding"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 type Service interface {
@@ -511,3 +511,4 @@ func dedupeStrings(items []string) []string {
 	}
 	return result
 }
+

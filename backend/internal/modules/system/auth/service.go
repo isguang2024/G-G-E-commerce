@@ -1,4 +1,4 @@
-package auth
+﻿package auth
 
 import (
 	"errors"
@@ -9,11 +9,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/jwt"
-	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/jwt"
+	"github.com/maben/backend/internal/pkg/password"
 )
 
 var (
@@ -307,3 +307,4 @@ func (s *authService) BuildLoginResponse(u *user.User) (*dto.LoginResponse, erro
 		User:         userInfo,
 	}, nil
 }
+

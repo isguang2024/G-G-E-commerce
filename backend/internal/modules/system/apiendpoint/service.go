@@ -1,4 +1,4 @@
-package apiendpoint
+﻿package apiendpoint
 
 import (
 	"errors"
@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/apiendpointaccess"
 )
 
 var (
@@ -938,4 +938,5 @@ func normalizeUnregisteredScanConfig(raw models.MetaJSON) UnregisteredScanConfig
 	}
 	return result
 }
+
 

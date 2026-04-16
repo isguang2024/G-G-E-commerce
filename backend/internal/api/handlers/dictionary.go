@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/dictionary"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // ─── ListDictTypes ───────────────────────────────────────────────────────────
@@ -306,3 +306,4 @@ func mapDictItemSummary(item models.DictItem) gen.DictItemSummary {
 		SortOrder: gen.NewOptInt(item.SortOrder),
 	}
 }
+

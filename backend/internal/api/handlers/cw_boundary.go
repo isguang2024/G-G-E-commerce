@@ -1,4 +1,4 @@
-// cw_boundary.go — ogen handler implementations for CW boundary role grid
+﻿// cw_boundary.go — ogen handler implementations for CW boundary role grid
 // (packages, menus, actions) and workspace-level menus/actions.
 package handlers
 
@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/appscope"
 )
 
 // ─── GetCurrentCollaborationWorkspaceBoundaryRolePackages ─────────────────────
@@ -403,3 +403,4 @@ func (h *APIHandler) SetCollaborationWorkspaceActions(ctx context.Context, req *
 	}
 	return ok(), nil
 }
+

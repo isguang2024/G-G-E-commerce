@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/maben/backend/internal/config"
 )
 
 func TestSecretCipherEncryptDecrypt(t *testing.T) {
@@ -90,3 +90,4 @@ func TestSecretCacheSetUpdatesAndEvicts(t *testing.T) {
 		t.Fatalf("secret cache should evict oldest entry when over capacity")
 	}
 }
+

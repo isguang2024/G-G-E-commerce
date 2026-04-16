@@ -1,4 +1,4 @@
-package space
+﻿package space
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 const (
@@ -509,3 +509,4 @@ func currentContextAppKey(c *gin.Context) string {
 	}
 	return normalizeAppKey(c.GetString("app_key"))
 }
+

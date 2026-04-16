@@ -1,7 +1,7 @@
-/**
+﻿/**
  * v5 OpenAPI-first client.
  *
- * 这是 GGE 5.0 重构后的唯一前端 API 入口骨架。所有走 ogen 生成的后端
+ * 这是 MaBen 5.0 重构后的唯一前端 API 入口骨架。所有走 ogen 生成的后端
  * 端点（即 backend/api/openapi/openapi.yaml 中声明的 operation）从这里
  * 调用，类型由 schema.d.ts 自动派生，不再手写 axios 接口类型。
  *
@@ -141,3 +141,4 @@ v5Client.use({
 })
 
 export { SKIP_WORKSPACE_CONTEXT_HEADER }
+

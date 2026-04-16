@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type appSecurityProfile struct {
@@ -268,3 +268,4 @@ func toString(value interface{}) string {
 		return ""
 	}
 }
+

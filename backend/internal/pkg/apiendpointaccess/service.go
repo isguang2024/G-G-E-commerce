@@ -1,4 +1,4 @@
-package apiendpointaccess
+﻿package apiendpointaccess
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/api/legacyresp"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type EndpointMeta struct {
@@ -178,3 +178,4 @@ func endpointStatusCode(status string) int {
 		return 0
 	}
 }
+

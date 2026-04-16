@@ -1,4 +1,4 @@
-package register
+﻿package register
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 // Repository 封装注册体系表的只读/写操作。
@@ -111,3 +111,4 @@ func (r *Repository) ListFeaturePackagesByKeysForEntry(ctx context.Context, keys
 
 // IsNotFound helper.
 func IsNotFound(err error) bool { return errors.Is(err, gorm.ErrRecordNotFound) }
+

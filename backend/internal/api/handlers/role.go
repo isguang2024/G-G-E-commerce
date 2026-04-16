@@ -1,4 +1,4 @@
-// role.go: ogen Handler implementations for the /roles/* OpenAPI surface.
+﻿// role.go: ogen Handler implementations for the /roles/* OpenAPI surface.
 // Phase 4 — role domain migration. Mirrors the legacy gin handler in
 // internal/modules/system/role/handler.go but speaks the typed gen schemas.
 package handlers
@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/role"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/role"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 const roleTimeLayout = "2006-01-02 15:04:05"
@@ -312,4 +312,5 @@ func uuidIDsFromRequest(req *gen.UUIDListRequest) []uuid.UUID {
 	}
 	return req.Ids
 }
+
 

@@ -1,6 +1,6 @@
-# 日志与可观测性规范（Logging Spec）
+﻿# 日志与可观测性规范（Logging Spec）
 
-> GGE 全栈日志系统的真源文档。覆盖后端结构化日志、请求链路 ID 透传、业务审计日志、
+> MaBen 全栈日志系统的真源文档。覆盖后端结构化日志、请求链路 ID 透传、业务审计日志、
 > 前端统一 logger 与批量上报、OpenAPI `/telemetry/logs` 摄取端点。
 >
 > **约束范围**：任何新 handler / service / Vue 页面必须按本规范落地。整改老代码时遵循
@@ -710,7 +710,7 @@ scrape_configs:
 groups:
   - name: gge-observability
     rules:
-      - alert: GGEAuditDroppingEvents
+      - alert: MaBenAuditDroppingEvents
         expr: increase(audit_events_dropped_total[15m]) > 0
         for: 1m
         labels:
@@ -718,7 +718,7 @@ groups:
         annotations:
           summary: "audit recorder dropping events ({{ $labels.instance }})"
           runbook: "docs/guides/logging-spec.md#7-5"
-      - alert: GGEAuditQueueDeepWater
+      - alert: MaBenAuditQueueDeepWater
         # 乘法而不是除法避免 queue_capacity=0 时 DIV/0
         expr: avg_over_time(audit_queue_depth[5m]) > 0.8 * audit_queue_capacity
         for: 5m
@@ -757,3 +757,4 @@ groups:
 - `backend/internal/api/apperr/codes.go` — 错误码唯一真源
 - `frontend/src/utils/logger/index.ts` — 前端 logger 单例与脱敏
 - `frontend/src/utils/http/error.ts` — HTTP 错误统一上报与 toast 策略
+

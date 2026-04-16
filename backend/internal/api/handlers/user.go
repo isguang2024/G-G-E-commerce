@@ -1,4 +1,4 @@
-// user.go: ogen Handler implementations for the /users/* OpenAPI surface.
+﻿// user.go: ogen Handler implementations for the /users/* OpenAPI surface.
 // Phase 4 slice 5 — user domain migration (step 1: read-only list + get).
 // Legacy gin handlers under internal/modules/system/user/handler.go remain
 // mounted for not-yet-migrated operations; they will be removed once every
@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 const (
@@ -432,4 +432,5 @@ func roleRefsFromModels(roles []models.Role) []gen.UserRoleRef {
 	}
 	return out
 }
+
 

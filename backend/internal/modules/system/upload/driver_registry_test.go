@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type stubDriver struct {
@@ -108,3 +108,4 @@ func TestDriverRegistryMustRegisterPanicsOnDuplicate(t *testing.T) {
 	}()
 	registry.MustRegister("stub", factory)
 }
+

@@ -1,4 +1,4 @@
-package permissionseed
+﻿package permissionseed
 
 import (
 	"crypto/sha1"
@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	usermodel "github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/permissionkey"
 )
 
 type PermissionKeySeed struct {
@@ -214,6 +214,8 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 		newPermissionKeySeed("system.upload.config", "manage", "上传配置管理", "允许管理存储 Provider / Bucket / UploadKey / Rule 配置"),
 		newPermissionKeySeed("system.media", "view", "查看媒体文件", "允许查看媒体文件列表"),
 		newPermissionKeySeed("system.media", "manage", "管理媒体文件", "允许上传、删除媒体文件"),
+		newPermissionKeySeed("system.site_config", "view", "查询站点配置项（管理端）", "允许查询站点配置项列表"),
+		newPermissionKeySeed("system.site_config", "manage", "管理站点配置项", "允许新增、更新、删除站点配置项和集合"),
 	}
 	for i := range items {
 		items[i].ID = StableID("permission-key", items[i].Key)
@@ -427,6 +429,16 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 			SortOrder:   230,
 			IsBuiltin:   true,
 		},
+		{
+			GroupType:   "module",
+			Code:        "site_config",
+			Name:        "站点配置管理",
+			NameEn:      "Site Config Management",
+			Description: "站点配置项、配置集合与多应用作用域管理",
+			Status:      "normal",
+			SortOrder:   235,
+			IsBuiltin:   true,
+		},
 	}
 }
 
@@ -443,8 +455,8 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemAccount", "RegisterEntry", "RegisterLog", "LoginPageTemplate", "SystemIntegration", "ApiEndpoint", "MessageManage", "Dictionary", "SystemLog", "AuditLog", "TelemetryLog", "LogPolicies", "SystemFile", "UploadConfig", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
-			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_log.read", "system.dictionary.view", "system.dictionary.manage", "system.upload.config.manage", "system.media.view", "system.media.manage"},
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemAccount", "RegisterEntry", "RegisterLog", "LoginPageTemplate", "SystemIntegration", "ApiEndpoint", "MessageManage", "SystemConfig", "Dictionary", "SiteConfig", "SystemLog", "AuditLog", "TelemetryLog", "LogPolicies", "SystemFile", "UploadConfig", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
+			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_log.read", "system.dictionary.view", "system.dictionary.manage", "system.site_config.view", "system.site_config.manage", "system.upload.config.manage", "system.media.view", "system.media.manage"},
 		},
 		{
 			PackageKey:     "platform_admin.menu_manage",
@@ -471,7 +483,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      3,
-			MenuNames:      []string{"System", "SystemAccess", "FeaturePackage", "SystemIntegration", "ApiEndpoint", "MessageManage", "Dictionary"},
+			MenuNames:      []string{"System", "SystemAccess", "FeaturePackage", "SystemIntegration", "ApiEndpoint", "MessageManage", "SystemConfig", "Dictionary"},
 			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "feature_package.manage", "feature_package.assign_collaboration_workspace"},
 		},
 		{
@@ -532,6 +544,7 @@ func DefaultMenus() []MenuSeed {
 		{Name: "SystemIntegration", ParentName: "System", Path: "integration", Component: "", Title: "开放接口与消息", Icon: "ri:link-m", SortOrder: 4, Meta: metaSuperAdmin},
 		{Name: "SystemLog", ParentName: "System", Path: "log", Component: "", Title: "日志记录", Icon: "ri:file-list-3-line", SortOrder: 5, Meta: metaSuperAdmin},
 		{Name: "SystemFile", ParentName: "System", Path: "file", Component: "", Title: "文件管理", Icon: "ri:folder-upload-line", SortOrder: 6, Meta: metaSuperAdmin},
+		{Name: "SystemConfig", ParentName: "System", Kind: systemmodels.MenuKindDirectory, Path: "config", Component: "", Title: "配置中心", Icon: "ri:settings-3-line", SortOrder: 7, Meta: metaSuperAdmin},
 		{Name: "Role", ParentName: "SystemAccess", Path: "/system/role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
 		{Name: "User", ParentName: "SystemAccess", Path: "/system/user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
 		{Name: "CollaborationWorkspaceManage", ParentName: "CollaborationWorkspaceRoot", Path: "workspaces", Component: "/collaboration-workspace/workspace", Title: "协作空间管理", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "accessMode": "permission", "requiredAction": "collaboration_workspace.manage"}},
@@ -541,7 +554,8 @@ func DefaultMenus() []MenuSeed {
 		{Name: "ActionPermission", ParentName: "SystemAccess", Path: "/system/action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "ApiEndpoint", ParentName: "SystemIntegration", Path: "/system/api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "Dictionary", ParentName: "SystemIntegration", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "Dictionary", ParentName: "SystemConfig", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "SiteConfig", ParentName: "SystemConfig", Path: "/system/site-config", Component: "/system/site-config", Title: "站点配置", SortOrder: 2, PermissionKey: "system.site_config.view", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"system.site_config.view"}, "keepAlive": true}},
 		{Name: "AuditLog", ParentName: "SystemLog", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 1, PermissionKey: "observability.audit.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.audit.read"}, "keepAlive": true}},
 		{Name: "TelemetryLog", ParentName: "SystemLog", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 2, PermissionKey: "observability.telemetry.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.telemetry.read"}, "keepAlive": true}},
 		{Name: "LogPolicies", ParentName: "SystemLog", Path: "/system/log-policies", Component: "/system/log-policies", Title: "日志策略", SortOrder: 3, PermissionKey: "observability.policy.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.policy.read"}, "keepAlive": true}},
@@ -1070,3 +1084,4 @@ func newPermissionKeySeed(resourceCode, actionCode, name, description string) Pe
 		IsBuiltin:        true,
 	}
 }
+

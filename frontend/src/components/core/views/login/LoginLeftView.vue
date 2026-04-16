@@ -3,7 +3,7 @@
   <div class="login-left-view">
     <div class="logo">
       <ArtLogo class="icon" size="46" />
-      <h1 class="title">{{ AppConfig.systemInfo.name }}</h1>
+      <h1 class="title">{{ siteName }}</h1>
     </div>
 
     <div class="left-img">
@@ -69,11 +69,14 @@
   import AppConfig from '@/config'
   import loginIcon from '@imgs/svg/login_icon.svg'
   import { themeAnimation } from '@/utils/ui/animation'
+  import { useSiteBranding } from '@/domains/site-config/branding'
 
   // 定义 props
   defineProps<{
     hideContent?: boolean // 是否隐藏内容，只显示 logo
   }>()
+
+  const { name: siteName } = useSiteBranding()
 </script>
 
 <style lang="scss" scoped>

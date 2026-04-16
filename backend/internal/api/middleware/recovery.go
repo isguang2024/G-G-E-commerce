@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"runtime/debug"
@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
+	"github.com/maben/backend/internal/api/legacyresp"
 )
 
 // Recovery 恢复中间件：捕获 handler 里的 panic，写入 Error 级日志并返回 500。
@@ -30,3 +30,4 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 		c.Next()
 	}
 }
+

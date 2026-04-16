@@ -1,4 +1,4 @@
-package uploadtest
+﻿package uploadtest
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
+	"github.com/maben/backend/internal/modules/system/upload"
 )
 
 type DriverFactory func(t *testing.T) upload.Driver
@@ -202,3 +202,4 @@ func unsupported(driverName, operation string) error {
 		Message:   "capability is not supported by this driver",
 	}
 }
+

@@ -3,6 +3,7 @@ import { useAppContextStore } from '@/domains/app-runtime/context'
 import { useMenuStore } from '@/domains/navigation/menu'
 import { useWorktabStore } from '@/domains/navigation/worktab'
 import AppConfig from '@/config'
+import { getSiteName } from '@/domains/site-config/branding'
 import { useUserStore } from '@/domains/auth/store'
 import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 import { resetRouterState, resetRouterStateNow } from '@/domains/navigation/runtime/reset-handlers'
@@ -279,7 +280,7 @@ export async function finalizeAuthenticatedSession(
 }
 
 export function showLoginSuccessNotice(displayName: string, t: (key: string) => string): void {
-  const systemName = AppConfig.systemInfo.name
+  const systemName = getSiteName()
   setTimeout(() => {
     ElNotification({
       title: t('login.success.title'),

@@ -1,4 +1,4 @@
-package user
+﻿package user
 
 import (
 	"errors"
@@ -8,14 +8,14 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/password"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/api/dto"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -621,3 +621,4 @@ func menuAccessMode(meta map[string]interface{}) string {
 		return "permission"
 	}
 }
+

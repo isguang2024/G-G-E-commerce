@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"flag"
@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
-	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/pkg/password"
 )
 
 func main() {
@@ -135,3 +135,4 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 
 	return nil
 }
+

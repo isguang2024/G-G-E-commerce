@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // PreviewBreadcrumb returns the resolved breadcrumb chain for a page.
@@ -189,3 +189,4 @@ func reverseBreadcrumbItems(items []BreadcrumbPreviewItem) {
 		items[left], items[right] = items[right], items[left]
 	}
 }
+

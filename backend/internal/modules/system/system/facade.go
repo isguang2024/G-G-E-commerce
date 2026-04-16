@@ -1,4 +1,4 @@
-// facade.go keeps the remaining message facade plus exported view-page service
+﻿// facade.go keeps the remaining message facade plus exported view-page service
 // helpers used by ogen handlers.
 package system
 
@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
+	cachepkg "github.com/maben/backend/internal/pkg/cache"
 )
 
 // Facade currently only wraps the message service while the remaining
@@ -147,3 +147,4 @@ func toComponentPath(filePath string) string {
 	}
 	return normalized
 }
+

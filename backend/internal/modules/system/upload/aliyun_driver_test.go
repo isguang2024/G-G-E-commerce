@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	stsclient "github.com/alibabacloud-go/sts-20150401/v2/client"
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type fakeOSSBucketAPI struct {
@@ -213,3 +213,4 @@ func TestAliyunOSSDriverPrepareDirectUploadWithSTS(t *testing.T) {
 		t.Fatalf("policy conditions should not be empty")
 	}
 }
+

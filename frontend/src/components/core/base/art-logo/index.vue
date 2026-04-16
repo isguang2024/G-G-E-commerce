@@ -1,11 +1,15 @@
 <!-- 系统logo -->
 <template>
   <div class="flex-cc">
-    <img :style="logoStyle" src="@imgs/common/logo.webp" alt="logo" class="w-full h-full" />
+    <img :style="logoStyle" :src="logoSrc" alt="logo" class="w-full h-full" />
   </div>
 </template>
 
 <script setup lang="ts">
+  import { computed } from 'vue'
+  import defaultLogo from '@imgs/common/logo.webp'
+  import { useSiteBranding } from '@/domains/site-config/branding'
+
   defineOptions({ name: 'ArtLogo' })
 
   interface Props {
@@ -17,5 +21,7 @@
     size: 36
   })
 
+  const { logo } = useSiteBranding()
+  const logoSrc = computed(() => logo.value || defaultLogo)
   const logoStyle = computed(() => ({ width: `${props.size}px` }))
 </script>

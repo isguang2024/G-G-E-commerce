@@ -1,11 +1,11 @@
-package menu
+﻿package menu
 
 import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 // menuToRuntimeMap converts a Menu model to the runtime navigation JSON shape.
@@ -105,3 +105,4 @@ func filterStringArray(value any) []string {
 	}
 	return result
 }
+

@@ -1,4 +1,4 @@
-package appctx
+﻿package appctx
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 const (
@@ -72,3 +72,4 @@ func CurrentAppKey(c *gin.Context) string {
 	}
 	return RequestAppKey(c)
 }
+

@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"crypto/sha256"
@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/legacyresp"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/pkg/jwt"
+	"github.com/maben/backend/internal/api/legacyresp"
+	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/jwt"
 )
 
 // JWTAuth JWT 认证中间件
@@ -106,3 +106,4 @@ func hashAPIKey(apiKey string) string {
 	sum := sha256.Sum256([]byte(strings.TrimSpace(apiKey)))
 	return hex.EncodeToString(sum[:])
 }
+

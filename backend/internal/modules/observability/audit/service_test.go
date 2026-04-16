@@ -1,4 +1,4 @@
-package audit
+﻿package audit
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/google/uuid"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/pkg/logger"
 )
 
 func newAsyncTestService(cfg Config) *service {
@@ -635,3 +635,4 @@ func TestRecorderPolicy_NilEngineAllowAll(t *testing.T) {
 		t.Fatalf("stats = %+v, want accepted=1 policy_dropped=0", stats)
 	}
 }
+

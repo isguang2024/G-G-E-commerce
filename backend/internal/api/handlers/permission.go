@@ -1,4 +1,4 @@
-// permission.go: ogen handler implementations for /permission-actions/*.
+﻿// permission.go: ogen handler implementations for /permission-actions/*.
 package handlers
 
 import (
@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/api/dto"
 )
 
 func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.PermissionActionList, error) {
@@ -195,3 +195,4 @@ func (h *APIHandler) ListPermissionActionBatchTemplates(ctx context.Context) (*g
 	}
 	return &gen.PermissionActionBatchTemplateList{Records: permissionBatchTemplateItemsFromModels(list), Total: int64(len(list))}, nil
 }
+

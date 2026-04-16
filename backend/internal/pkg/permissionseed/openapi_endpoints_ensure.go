@@ -1,4 +1,4 @@
-// openapi_endpoints_ensure.go — idempotent startup upsert of api_endpoints
+﻿// openapi_endpoints_ensure.go — idempotent startup upsert of api_endpoints
 // and api_endpoint_permission_bindings derived from openapi_seed.json.
 //
 // Design goals:
@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 // EnsureOpenAPIEndpoints upserts one api_endpoints row per operation in the
@@ -304,4 +304,5 @@ func loadCategoryMap(db *gorm.DB) (map[string]uuid.UUID, error) {
 	}
 	return m, nil
 }
+
 

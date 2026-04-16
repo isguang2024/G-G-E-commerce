@@ -1,4 +1,4 @@
-package router
+﻿package router
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 type appHealthItem struct {
@@ -80,3 +80,4 @@ func registerAppHealthRoutes(r *gin.Engine, db *gorm.DB, logger *zap.Logger) {
 		})
 	})
 }
+

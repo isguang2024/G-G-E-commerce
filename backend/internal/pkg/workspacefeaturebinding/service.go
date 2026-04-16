@@ -1,4 +1,4 @@
-package workspacefeaturebinding
+﻿package workspacefeaturebinding
 
 import (
 	"errors"
@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 func ListPersonalPackageIDsByUserID(db *gorm.DB, userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
@@ -198,3 +198,4 @@ func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
+

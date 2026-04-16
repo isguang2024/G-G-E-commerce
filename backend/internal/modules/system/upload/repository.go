@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 var defaultTenantID = "default"
@@ -954,3 +954,4 @@ func snapshotUploadRuleForAudit(item *models.UploadKeyRule) map[string]any {
 		"status":             item.Status,
 	}
 }
+

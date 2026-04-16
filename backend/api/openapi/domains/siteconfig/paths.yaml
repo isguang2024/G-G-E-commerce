@@ -1,0 +1,277 @@
+paths:
+  /site-configs/resolve:
+    get:
+      operationId: resolveSiteConfigs
+      summary: 批量解析站点配置（全局+应用级合并）
+      tags: [siteconfig]
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: authenticated
+      parameters:
+        - name: app_key
+          in: query
+          description: 应用 key；留空仅解析全局配置
+          schema: {type: string}
+        - name: keys
+          in: query
+          description: 逗号分隔的 config_key 列表
+          schema: {type: string}
+        - name: set_codes
+          in: query
+          description: 逗号分隔的集合编码列表；集合内的 key 会自动展开到查询
+          schema: {type: string}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigResolveResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /site-configs:
+    get:
+      operationId: listSiteConfigs
+      summary: 查询站点配置项（管理端）
+      tags: [siteconfig]
+      x-permission-key: system.site_config.view
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          description: 应用 key；留空仅返回全局；`__all__` 返回所有作用域
+          schema: {type: string}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    post:
+      operationId: upsertSiteConfig
+      summary: 新增或更新站点配置项
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/SiteConfigSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSummary'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /site-configs/{id}:
+    put:
+      operationId: updateSiteConfig
+      summary: 更新站点配置项
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/SiteConfigSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSummary'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    delete:
+      operationId: deleteSiteConfig
+      summary: 删除站点配置项
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /site-configs/sets:
+    get:
+      operationId: listSiteConfigSets
+      summary: 查询站点配置集合
+      tags: [siteconfig]
+      x-permission-key: system.site_config.view
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSetListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    post:
+      operationId: upsertSiteConfigSet
+      summary: 新增或更新配置集合
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/SiteConfigSetSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSetSummary'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /site-configs/sets/{id}:
+    put:
+      operationId: updateSiteConfigSet
+      summary: 更新配置集合
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/SiteConfigSetSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSetSummary'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+    delete:
+      operationId: deleteSiteConfigSet
+      summary: 删除配置集合
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}
+  /site-configs/sets/{id}/items:
+    put:
+      operationId: updateSiteConfigSetItems
+      summary: 整体替换集合包含的 config_key 列表
+      tags: [siteconfig]
+      x-permission-key: system.site_config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/SiteConfigSetItemsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/SiteConfigSetSummary'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema: {$ref: '../../components/common.yaml#/components/schemas/Error'}

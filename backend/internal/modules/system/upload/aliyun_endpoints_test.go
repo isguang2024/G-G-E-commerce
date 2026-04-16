@@ -1,9 +1,9 @@
-package upload
+﻿package upload
 
 import (
 	"testing"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 func TestResolveOSSBucketEndpoints(t *testing.T) {
@@ -40,3 +40,4 @@ func TestResolveOSSBucketEndpointsFallbacks(t *testing.T) {
 		t.Fatalf("PublicObjectURL() fallback = %q", endpoints.PublicObjectURL("demo.png"))
 	}
 }
+

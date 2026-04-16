@@ -1,12 +1,12 @@
-package upload
+﻿package upload
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/models"
 	"github.com/google/uuid"
 )
 
@@ -182,3 +182,4 @@ func TestNewLocalResolvedConfigCacheUsesDefaultTTL(t *testing.T) {
 		t.Fatalf("cache.ttl = %v, want %v", cache.ttl, uploadConfigCacheTTLDefault)
 	}
 }
+

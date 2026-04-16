@@ -1,11 +1,11 @@
-package permissionseed
+﻿package permissionseed
 
 import (
 	"errors"
 
 	"gorm.io/gorm"
 
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 )
 
 const GitHubProviderKey = "github"
@@ -48,3 +48,4 @@ func EnsureSocialAuthProviders(db *gorm.DB) error {
 		return err
 	}
 }
+

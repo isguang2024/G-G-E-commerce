@@ -1,4 +1,4 @@
-// cw_member.go — ogen handler implementations for CW member role management.
+﻿// cw_member.go — ogen handler implementations for CW member role management.
 package handlers
 
 import (
@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 // ─── GetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
@@ -101,3 +101,4 @@ func (h *APIHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	}
 	return ok(), nil
 }
+

@@ -1,4 +1,4 @@
-module github.com/gg-ecommerce/backend
+module github.com/maben/backend
 
 go 1.25.0
 

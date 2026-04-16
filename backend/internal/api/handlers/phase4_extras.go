@@ -1,4 +1,4 @@
-// phase4_extras.go — Phase 4 ogen handlers for the small leftover endpoints
+﻿// phase4_extras.go — Phase 4 ogen handlers for the small leftover endpoints
 // that have a clean service boundary: system fast-enter, view-pages, and the
 // two simplest user sub-routes (collaboration workspaces, refresh snapshot).
 package handlers
@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
+	"github.com/maben/backend/api/gen"
+	systemmod "github.com/maben/backend/internal/modules/system/system"
 )
 
 // ── system fast-enter ───────────────────────────────────────────────────────
@@ -181,3 +181,4 @@ func (h *APIHandler) RefreshUserPermissionSnapshot(ctx context.Context, params g
 	}
 	return ok(), nil
 }
+

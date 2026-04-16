@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 import (
 	"container/list"
@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/maben/backend/internal/config"
 )
 
 const (
@@ -237,3 +237,4 @@ func (c *secretCache) Set(key, value string) {
 	c.order.Remove(tail)
 	delete(c.items, tail.Value.(*secretCacheEntry).key)
 }
+

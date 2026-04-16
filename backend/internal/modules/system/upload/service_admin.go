@@ -1,4 +1,4 @@
-package upload
+﻿package upload
 
 // service_admin.go exposes admin-facing CRUD facade for Provider / Bucket / UploadKey / Rule
 // plus a Provider connectivity probe used by the storage_admin handler.
@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // AdminAPI groups the management-plane operations the API handler needs.
@@ -433,3 +433,4 @@ func (s *service) UpdateRule(ctx context.Context, tenantID string, id uuid.UUID,
 func (s *service) DeleteRule(ctx context.Context, tenantID string, id uuid.UUID) error {
 	return s.repo.DeleteUploadRule(ctx, tenantID, id)
 }
+

@@ -1,4 +1,4 @@
-package page
+﻿package page
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 // ListUnregistered returns page candidates found in the frontend views directory
@@ -435,3 +435,4 @@ func isManagedViewComponent(component string) bool {
 		return true
 	}
 }
+

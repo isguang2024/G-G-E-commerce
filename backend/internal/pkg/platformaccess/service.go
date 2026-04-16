@@ -1,4 +1,4 @@
-package platformaccess
+﻿package platformaccess
 
 import (
 	"strings"
@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
-	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
-	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
+	"github.com/maben/backend/internal/modules/system/models"
+	appctx "github.com/maben/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/pkg/appscope"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -848,3 +848,4 @@ func resolveAppKey(appKey ...string) string {
 	}
 	return appctx.NormalizeAppKey(appKey[0])
 }
+

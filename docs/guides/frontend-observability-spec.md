@@ -1,6 +1,6 @@
-# 前端可观测性规范（Frontend Observability Spec）
+﻿# 前端可观测性规范（Frontend Observability Spec）
 
-> 统一 GGE 多租户 SaaS 平台前端的三件事：
+> 统一 MaBen 多租户 SaaS 平台前端的三件事：
 > 1. 关键结果区的 `data-testid` 命名约定（供 E2E/手工观测用）
 > 2. 前端表单错误语义（`el-form-item` + `data-testid` + 后端结构化 error）
 > 3. 后端结构化 `error.code` / `error.details.field` 扩展指南
@@ -440,3 +440,4 @@ logger.warn('register-entry.validate_failed', { field: 'code', reason: 'required
 - `backend/internal/api/apperr/codes.go`——错误码唯一真源
 - `frontend/src/utils/http/error.ts`——前端全局错误显示策略（`showCodes`/`hideCodes`）
 - `frontend/src/utils/logger/index.ts`——前端 logger 单例、批量传输、脱敏实现
+

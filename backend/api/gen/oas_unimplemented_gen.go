@@ -418,6 +418,24 @@ func (UnimplementedHandler) DeleteRole(ctx context.Context, params DeleteRolePar
 	return r, ht.ErrNotImplemented
 }
 
+// DeleteSiteConfig implements deleteSiteConfig operation.
+//
+// 删除站点配置项.
+//
+// DELETE /site-configs/{id}
+func (UnimplementedHandler) DeleteSiteConfig(ctx context.Context, params DeleteSiteConfigParams) (r DeleteSiteConfigRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteSiteConfigSet implements deleteSiteConfigSet operation.
+//
+// 删除配置集合.
+//
+// DELETE /site-configs/sets/{id}
+func (UnimplementedHandler) DeleteSiteConfigSet(ctx context.Context, params DeleteSiteConfigSetParams) (r DeleteSiteConfigSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // DeleteStorageBucket implements deleteStorageBucket operation.
 //
 // 删除桶（软删）.
@@ -1590,6 +1608,24 @@ func (UnimplementedHandler) ListRuntimePages(ctx context.Context, params ListRun
 	return r, ht.ErrNotImplemented
 }
 
+// ListSiteConfigSets implements listSiteConfigSets operation.
+//
+// 查询站点配置集合.
+//
+// GET /site-configs/sets
+func (UnimplementedHandler) ListSiteConfigSets(ctx context.Context) (r ListSiteConfigSetsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListSiteConfigs implements listSiteConfigs operation.
+//
+// 查询站点配置项（管理端）.
+//
+// GET /site-configs
+func (UnimplementedHandler) ListSiteConfigs(ctx context.Context, params ListSiteConfigsParams) (r ListSiteConfigsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListStaleApiEndpoints implements listStaleApiEndpoints operation.
 //
 // 获取失效 API 列表.
@@ -1786,6 +1822,15 @@ func (UnimplementedHandler) RemoveCurrentCollaborationWorkspaceMember(ctx contex
 //
 // DELETE /permission-actions/{id}/endpoints/{endpointCode}
 func (UnimplementedHandler) RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ResolveSiteConfigs implements resolveSiteConfigs operation.
+//
+// 批量解析站点配置（全局+应用级合并）.
+//
+// GET /site-configs/resolve
+func (UnimplementedHandler) ResolveSiteConfigs(ctx context.Context, params ResolveSiteConfigsParams) (r ResolveSiteConfigsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2257,6 +2302,33 @@ func (UnimplementedHandler) UpdateRole(ctx context.Context, req *RoleUpdateReque
 	return r, ht.ErrNotImplemented
 }
 
+// UpdateSiteConfig implements updateSiteConfig operation.
+//
+// 更新站点配置项.
+//
+// PUT /site-configs/{id}
+func (UnimplementedHandler) UpdateSiteConfig(ctx context.Context, req *SiteConfigSaveRequest, params UpdateSiteConfigParams) (r UpdateSiteConfigRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateSiteConfigSet implements updateSiteConfigSet operation.
+//
+// 更新配置集合.
+//
+// PUT /site-configs/sets/{id}
+func (UnimplementedHandler) UpdateSiteConfigSet(ctx context.Context, req *SiteConfigSetSaveRequest, params UpdateSiteConfigSetParams) (r UpdateSiteConfigSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateSiteConfigSetItems implements updateSiteConfigSetItems operation.
+//
+// 整体替换集合包含的 config_key 列表.
+//
+// PUT /site-configs/sets/{id}/items
+func (UnimplementedHandler) UpdateSiteConfigSetItems(ctx context.Context, req *SiteConfigSetItemsRequest, params UpdateSiteConfigSetItemsParams) (r UpdateSiteConfigSetItemsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // UpdateStorageBucket implements updateStorageBucket operation.
 //
 // 更新桶.
@@ -2308,5 +2380,23 @@ func (UnimplementedHandler) UpdateUser(ctx context.Context, req *UserUpdateReque
 //
 // POST /media/upload
 func (UnimplementedHandler) UploadMedia(ctx context.Context, req *UploadMediaReq) (r UploadMediaRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpsertSiteConfig implements upsertSiteConfig operation.
+//
+// 新增或更新站点配置项.
+//
+// POST /site-configs
+func (UnimplementedHandler) UpsertSiteConfig(ctx context.Context, req *SiteConfigSaveRequest) (r UpsertSiteConfigRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpsertSiteConfigSet implements upsertSiteConfigSet operation.
+//
+// 新增或更新配置集合.
+//
+// POST /site-configs/sets
+func (UnimplementedHandler) UpsertSiteConfigSet(ctx context.Context, req *SiteConfigSetSaveRequest) (r UpsertSiteConfigSetRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

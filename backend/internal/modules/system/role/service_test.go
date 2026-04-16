@@ -1,4 +1,4 @@
-package role
+﻿package role
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/modules/system/user"
 )
 
 func TestNormalizeAppKeysRemovesBlankAndDeduplicates(t *testing.T) {
@@ -80,3 +80,4 @@ func TestEnsureRoleEffectiveInAppRejectsOutOfScopeApp(t *testing.T) {
 		t.Fatalf("ensureRoleEffectiveInApp(out of scope) error = %v, want %v", err, ErrRoleAppScopeMismatch)
 	}
 }
+

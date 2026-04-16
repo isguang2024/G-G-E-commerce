@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/system/models"
 )
 
 var (
@@ -87,6 +87,11 @@ type service struct {
 	localRoot  string
 	publicBase string
 	registry   *DriverRegistry
+}
+
+type uploadSeedSpec struct {
+	UploadKey models.UploadKey
+	Rules     []models.UploadKeyRule
 }
 
 func NewService(repo *Repository, cfg *config.Config, logger *zap.Logger) Service {
@@ -170,7 +175,7 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 	provider := &models.StorageProvider{
 		TenantID:    defaultTenantID,
 		ProviderKey: defaultProviderKey,
-		Name:        "Local Public Storage",
+		Name:        "默认本地公共存储",
 		Driver:      models.UploadProviderDriverLocal,
 		BaseURL:     s.publicBase,
 		IsDefault:   true,
@@ -189,7 +194,7 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		TenantID:      defaultTenantID,
 		ProviderID:    storedProvider.ID,
 		BucketKey:     defaultBucketKey,
-		Name:          "Public Media",
+		Name:          "公共媒体桶",
 		BucketName:    defaultBucketKey,
 		BasePath:      defaultBucketKey,
 		PublicBaseURL: joinURLPath(s.publicBase, defaultBucketKey),
@@ -209,7 +214,7 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		TenantID:         defaultTenantID,
 		BucketID:         storedBucket.ID,
 		Key:              defaultUploadKey,
-		Name:             "Default Media Upload",
+		Name:             "默认媒体上传",
 		PathTemplate:     "{yyyy}/{mm}/{dd}",
 		DefaultRuleKey:   defaultRuleKey,
 		MaxSizeBytes:     defaultMaxFileSize,
@@ -230,7 +235,7 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		TenantID:         defaultTenantID,
 		UploadKeyID:      storedKey.ID,
 		RuleKey:          defaultRuleKey,
-		Name:             "Default Image Rule",
+		Name:             "默认图片规则",
 		SubPath:          "images",
 		FilenameStrategy: "uuid",
 		MaxSizeBytes:     defaultMaxFileSize,
@@ -243,134 +248,125 @@ func (s *service) EnsureDefaultSeeds(ctx context.Context) error {
 		return err
 	}
 
-	// --- 示例：头像上传 UploadKey + Rule ---
-	avatarKey := &models.UploadKey{
-		TenantID:         defaultTenantID,
-		BucketID:         storedBucket.ID,
-		Key:              "user.avatar",
-		Name:             "用户头像上传",
-		PathTemplate:     "avatars/{yyyy}/{mm}",
-		DefaultRuleKey:   "avatar",
-		MaxSizeBytes:     2 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
-		Visibility:       "public",
-		Status:           models.UploadProviderStatusReady,
+	// 内置上传 seed：只保留脚手架默认会用到的上传场景。
+	seeds := []uploadSeedSpec{
+		{
+			UploadKey: models.UploadKey{
+				Key:              "user.avatar",
+				Name:             "用户头像上传",
+				PathTemplate:     "avatars/{yyyy}/{mm}",
+				DefaultRuleKey:   "avatar",
+				MaxSizeBytes:     2 * 1024 * 1024,
+				AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
+				Visibility:       "public",
+			},
+			Rules: []models.UploadKeyRule{
+				{
+					RuleKey:          "avatar",
+					Name:             "头像图片规则",
+					SubPath:          "avatar",
+					FilenameStrategy: "uuid",
+					MaxSizeBytes:     2 * 1024 * 1024,
+					AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
+					ProcessPipeline:  models.StringList{},
+					IsDefault:        true,
+				},
+			},
+		},
+		{
+			UploadKey: models.UploadKey{
+				Key:              "doc.attachment",
+				Name:             "文档附件上传",
+				PathTemplate:     "docs/{yyyy}/{mm}",
+				DefaultRuleKey:   "pdf",
+				MaxSizeBytes:     50 * 1024 * 1024,
+				AllowedMimeTypes: models.StringList{"application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+				Visibility:       "private",
+			},
+			Rules: []models.UploadKeyRule{
+				{
+					RuleKey:          "pdf",
+					Name:             "PDF 文档规则",
+					SubPath:          "pdf",
+					FilenameStrategy: "original",
+					MaxSizeBytes:     50 * 1024 * 1024,
+					AllowedMimeTypes: models.StringList{"application/pdf"},
+					ProcessPipeline:  models.StringList{},
+					IsDefault:        true,
+				},
+				{
+					RuleKey:          "office",
+					Name:             "Office 文档规则",
+					SubPath:          "office",
+					FilenameStrategy: "original",
+					MaxSizeBytes:     30 * 1024 * 1024,
+					AllowedMimeTypes: models.StringList{"application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+					ProcessPipeline:  models.StringList{},
+					IsDefault:        false,
+				},
+			},
+		},
+		{
+			UploadKey: models.UploadKey{
+				Key:              "editor.inline",
+				Name:             "富文本编辑器图片",
+				PathTemplate:     "editor/{yyyy}/{mm}/{dd}",
+				DefaultRuleKey:   "editor-image",
+				MaxSizeBytes:     5 * 1024 * 1024,
+				AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
+				Visibility:       "public",
+			},
+			Rules: []models.UploadKeyRule{
+				{
+					RuleKey:          "editor-image",
+					Name:             "编辑器图片规则",
+					SubPath:          "img",
+					FilenameStrategy: "uuid",
+					MaxSizeBytes:     5 * 1024 * 1024,
+					AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
+					ProcessPipeline:  models.StringList{},
+					IsDefault:        true,
+				},
+			},
+		},
 	}
-	if err := s.repo.EnsureUploadKey(ctx, avatarKey); err != nil {
-		return err
-	}
-	storedAvatarKey, err := s.repo.GetUploadKeyByKey(ctx, defaultTenantID, avatarKey.Key)
-	if err != nil {
-		return err
-	}
-	avatarRule := &models.UploadKeyRule{
-		TenantID:         defaultTenantID,
-		UploadKeyID:      storedAvatarKey.ID,
-		RuleKey:          "avatar",
-		Name:             "头像图片规则",
-		SubPath:          "avatar",
-		FilenameStrategy: "uuid",
-		MaxSizeBytes:     2 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp"},
-		ProcessPipeline:  models.StringList{},
-		IsDefault:        true,
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadRule(ctx, avatarRule); err != nil {
-		return err
-	}
-
-	// --- 示例：文档上传 UploadKey + 两条 Rule ---
-	docKey := &models.UploadKey{
-		TenantID:         defaultTenantID,
-		BucketID:         storedBucket.ID,
-		Key:              "doc.attachment",
-		Name:             "文档附件上传",
-		PathTemplate:     "docs/{yyyy}/{mm}",
-		DefaultRuleKey:   "pdf",
-		MaxSizeBytes:     50 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-		Visibility:       "private",
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadKey(ctx, docKey); err != nil {
-		return err
-	}
-	storedDocKey, err := s.repo.GetUploadKeyByKey(ctx, defaultTenantID, docKey.Key)
-	if err != nil {
-		return err
-	}
-	pdfRule := &models.UploadKeyRule{
-		TenantID:         defaultTenantID,
-		UploadKeyID:      storedDocKey.ID,
-		RuleKey:          "pdf",
-		Name:             "PDF 文档规则",
-		SubPath:          "pdf",
-		FilenameStrategy: "original",
-		MaxSizeBytes:     50 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"application/pdf"},
-		ProcessPipeline:  models.StringList{},
-		IsDefault:        true,
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadRule(ctx, pdfRule); err != nil {
-		return err
-	}
-	officeRule := &models.UploadKeyRule{
-		TenantID:         defaultTenantID,
-		UploadKeyID:      storedDocKey.ID,
-		RuleKey:          "office",
-		Name:             "Office 文档规则",
-		SubPath:          "office",
-		FilenameStrategy: "original",
-		MaxSizeBytes:     30 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-		ProcessPipeline:  models.StringList{},
-		IsDefault:        false,
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadRule(ctx, officeRule); err != nil {
-		return err
-	}
-
-	// --- 示例：富文本编辑器内联图片 UploadKey ---
-	editorImageKey := &models.UploadKey{
-		TenantID:         defaultTenantID,
-		BucketID:         storedBucket.ID,
-		Key:              "editor.inline",
-		Name:             "富文本编辑器图片",
-		PathTemplate:     "editor/{yyyy}/{mm}/{dd}",
-		DefaultRuleKey:   "editor-image",
-		MaxSizeBytes:     5 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
-		Visibility:       "public",
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadKey(ctx, editorImageKey); err != nil {
-		return err
-	}
-	storedEditorKey, err := s.repo.GetUploadKeyByKey(ctx, defaultTenantID, editorImageKey.Key)
-	if err != nil {
-		return err
-	}
-	editorImageRule := &models.UploadKeyRule{
-		TenantID:         defaultTenantID,
-		UploadKeyID:      storedEditorKey.ID,
-		RuleKey:          "editor-image",
-		Name:             "编辑器图片规则",
-		SubPath:          "img",
-		FilenameStrategy: "uuid",
-		MaxSizeBytes:     5 * 1024 * 1024,
-		AllowedMimeTypes: models.StringList{"image/jpeg", "image/png", "image/webp", "image/gif"},
-		ProcessPipeline:  models.StringList{},
-		IsDefault:        true,
-		Status:           models.UploadProviderStatusReady,
-	}
-	if err := s.repo.EnsureUploadRule(ctx, editorImageRule); err != nil {
-		return err
+	for _, seed := range seeds {
+		if err := s.ensureUploadSeed(ctx, storedBucket.ID, seed); err != nil {
+			return err
+		}
 	}
 
 	return os.MkdirAll(filepath.Join(s.localRoot, storedBucket.BasePath), 0o755)
+}
+
+func (s *service) ensureUploadSeed(ctx context.Context, bucketID uuid.UUID, spec uploadSeedSpec) error {
+	key := spec.UploadKey
+	key.TenantID = defaultTenantID
+	key.BucketID = bucketID
+	if strings.TrimSpace(key.Status) == "" {
+		key.Status = models.UploadProviderStatusReady
+	}
+	if err := s.repo.EnsureUploadKey(ctx, &key); err != nil {
+		return err
+	}
+
+	storedKey, err := s.repo.GetUploadKeyByKey(ctx, defaultTenantID, key.Key)
+	if err != nil {
+		return err
+	}
+
+	for _, ruleSpec := range spec.Rules {
+		rule := ruleSpec
+		rule.TenantID = defaultTenantID
+		rule.UploadKeyID = storedKey.ID
+		if strings.TrimSpace(rule.Status) == "" {
+			rule.Status = models.UploadProviderStatusReady
+		}
+		if err := s.repo.EnsureUploadRule(ctx, &rule); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *service) Upload(ctx context.Context, tenantID string, userID *uuid.UUID, input UploadInput) (*models.UploadRecord, error) {

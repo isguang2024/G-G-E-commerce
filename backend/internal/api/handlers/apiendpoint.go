@@ -1,4 +1,4 @@
-// apiendpoint.go — Phase 5 ogen handlers for the api-endpoints domain.
+﻿// apiendpoint.go — Phase 5 ogen handlers for the api-endpoints domain.
 package handlers
 
 import (
@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
-	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/apiendpoint"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/permissionseed"
 )
 
 // ─── local mapping helpers ────────────────────────────────────────────────────
@@ -503,3 +503,4 @@ func apiEndpointOverviewCategoryCountsFromModel(items []apiendpoint.EndpointCate
 	}
 	return out
 }
+

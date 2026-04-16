@@ -1,4 +1,4 @@
-package featurepackage
+﻿package featurepackage
 
 import (
 	"errors"
@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/api/dto"
+	apppkg "github.com/maben/backend/internal/modules/system/app"
+	"github.com/maben/backend/internal/modules/system/models"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
 )
 
 var (
@@ -857,3 +857,4 @@ func containsString(values []string, target string) bool {
 	}
 	return false
 }
+

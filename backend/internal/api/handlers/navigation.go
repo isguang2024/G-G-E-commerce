@@ -1,4 +1,4 @@
-// navigation.go: ogen Handler for /runtime/navigation.
+﻿// navigation.go: ogen Handler for /runtime/navigation.
 // Phase 4 — navigation domain migration. Compiles the runtime manifest via
 // the existing navigation.Compiler and converts the gin.H payload into the
 // generated NavigationManifest schema.
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/maben/backend/api/gen"
 )
 
 func (h *APIHandler) GetNavigation(ctx context.Context, params gen.GetNavigationParams) (*gen.NavigationManifest, error) {
@@ -80,3 +80,4 @@ func (h *APIHandler) GetNavigation(ctx context.Context, params gen.GetNavigation
 	}
 	return out, nil
 }
+

@@ -13,26 +13,27 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
-	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/audit"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/logpolicy"
-	"github.com/gg-ecommerce/backend/internal/modules/observability/telemetry"
-	"github.com/gg-ecommerce/backend/internal/modules/system/dictionary"
-	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
-	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
-	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
-	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
-	"github.com/gg-ecommerce/backend/internal/pkg/logger"
-	"github.com/gg-ecommerce/backend/internal/pkg/password"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	apirouter "github.com/maben/backend/internal/api/router"
+	"github.com/maben/backend/internal/config"
+	"github.com/maben/backend/internal/modules/observability/audit"
+	"github.com/maben/backend/internal/modules/observability/logpolicy"
+	"github.com/maben/backend/internal/modules/observability/telemetry"
+	"github.com/maben/backend/internal/modules/system/dictionary"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/modules/system/siteconfig"
+	space "github.com/maben/backend/internal/modules/system/space"
+	systemservice "github.com/maben/backend/internal/modules/system/system"
+	"github.com/maben/backend/internal/modules/system/upload"
+	usermodel "github.com/maben/backend/internal/modules/system/user"
+	"github.com/maben/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/maben/backend/internal/pkg/database"
+	"github.com/maben/backend/internal/pkg/logger"
+	"github.com/maben/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/pkg/permissionkey"
+	"github.com/maben/backend/internal/pkg/permissionrefresh"
+	"github.com/maben/backend/internal/pkg/permissionseed"
+	"github.com/maben/backend/internal/pkg/platformaccess"
+	"github.com/maben/backend/internal/pkg/platformroleaccess"
 )
 
 func main() {
@@ -78,157 +79,97 @@ func main() {
 		logger.Fatal("Migration failed", zap.Error(err))
 	}
 
-	if err := ensureFeaturePackageAppKeysColumn(); err != nil {
-		logger.Fatal("Failed to ensure feature_packages app_keys column", zap.Error(err))
-	}
-	if err := ensureAuditLogMonthlyPartitions(logger); err != nil {
-		logger.Fatal("Failed to ensure audit_logs monthly partitions", zap.Error(err))
-	}
-	if err := logpolicy.EnsureCompliancePolicies(context.Background(), logpolicy.NewRepository(database.DB)); err != nil {
-		logger.Fatal("Failed to ensure log policy compliance seeds", zap.Error(err))
+	if err := runRequiredMigrationTasks(logger, "schema-finalizers", []migrationTask{
+		{
+			Name: "feature_packages.app_keys",
+			Run: func(logger *zap.Logger) error {
+				return ensureFeaturePackageAppKeysColumn()
+			},
+		},
+		{
+			Name: "audit_logs.monthly_partitions",
+			Run: func(logger *zap.Logger) error {
+				return ensureAuditLogMonthlyPartitions(logger)
+			},
+		},
+		{
+			Name: "log_policy.compliance_defaults",
+			Run: func(logger *zap.Logger) error {
+				return logpolicy.EnsureCompliancePolicies(context.Background(), logpolicy.NewRepository(database.DB))
+			},
+		},
+	}); err != nil {
+		logger.Fatal("Required migration task failed", zap.Error(err))
 	}
 
 	logger.Info("Database migration completed successfully!")
 
 	logger.Info("Using final workspace schema and canonical permission seeds")
 
-	// 初始化默认角色
-	if err := initDefaultRolesNoScope(logger); err != nil {
-		logger.Warn("Failed to initialize default roles", zap.Error(err))
-	} else {
-		logger.Info("Default roles initialized successfully")
-	}
-
-	// 初始化默认管理员
-	if err := initDefaultAdmin(logger); err != nil {
-		logger.Warn("Failed to initialize default admin", zap.Error(err))
-	} else {
-		logger.Info("Default admin initialized successfully")
-	}
-
-	// 初始化默认菜单空间
-	if err := initDefaultMenuSpaces(logger); err != nil {
-		logger.Warn("Failed to initialize default menu spaces", zap.Error(err))
-	} else {
-		logger.Info("Default menu spaces initialized successfully")
-	}
-
-	// 初始化默认菜单
-	if err := initDefaultMenusNoScope(logger); err != nil {
-		logger.Warn("Failed to initialize default menus", zap.Error(err))
-	} else {
-		logger.Info("Default menus initialized successfully")
-	}
-
-	if err := initDefaultPages(logger); err != nil {
-		logger.Warn("Failed to initialize default pages", zap.Error(err))
-	} else {
-		logger.Info("Default pages initialized successfully")
-	}
-
-	if err := initDefaultPermissionGroups(logger); err != nil {
-		logger.Warn("Failed to initialize default permission groups", zap.Error(err))
-	} else {
-		logger.Info("Default permission groups initialized successfully")
-	}
-
-	if err := initDefaultPermissionKeysNoScope(logger); err != nil {
-		logger.Warn("Failed to initialize permission keys", zap.Error(err))
-	} else {
-		logger.Info("Permission keys initialized successfully")
-	}
-
-	if err := initDefaultFeaturePackages(logger); err != nil {
-		logger.Warn("Failed to initialize feature packages", zap.Error(err))
-	} else {
-		logger.Info("Feature packages initialized successfully")
-	}
-
-	if err := initDefaultFeaturePackageBundles(logger); err != nil {
-		logger.Warn("Failed to initialize feature package bundles", zap.Error(err))
-	} else {
-		logger.Info("Feature package bundles initialized successfully")
-	}
-
-	if err := ensureAccessTraceNavigationSeed(); err != nil {
-		logger.Warn("Failed to initialize access trace navigation seed", zap.Error(err))
-	} else {
-		logger.Info("Access trace navigation seed initialized successfully")
-	}
-
-	if err := initDefaultRoleFeaturePackages(logger); err != nil {
-		logger.Warn("Failed to initialize default role feature packages", zap.Error(err))
-	} else {
-		logger.Info("Default role feature packages initialized successfully")
-	}
-
-	if err := permissionseed.EnsureRegisterSystemSeeds(database.DB); err != nil {
-		logger.Warn("Failed to initialize register system seeds", zap.Error(err))
-	} else {
-		logger.Info("Register system seeds initialized successfully")
-	}
-
-	if err := permissionseed.EnsureSocialAuthProviders(database.DB); err != nil {
-		logger.Warn("Failed to initialize social auth providers", zap.Error(err))
-	} else {
-		logger.Info("Social auth providers initialized successfully")
-	}
-
-	if err := upload.EnsureDefaultSeeds(context.Background(), upload.NewRepository(database.DB), logger); err != nil {
-		logger.Warn("Failed to initialize upload system seeds", zap.Error(err))
-	} else {
-		logger.Info("Upload system seeds initialized successfully")
-	}
-
-	// 初始化内置字典
 	dictSvc := dictionary.NewService(database.DB, logger)
-	if err := dictSvc.EnsureBuiltinDicts(context.Background()); err != nil {
-		logger.Warn("Failed to initialize builtin dictionaries", zap.Error(err))
-	} else {
-		logger.Info("Builtin dictionaries initialized successfully")
-	}
+	runOptionalMigrationTasks(logger, "default-seeds", []migrationTask{
+		{Name: "default.roles", Run: initDefaultRolesNoScope},
+		{Name: "default.admin", Run: initDefaultAdmin},
+		{Name: "default.menu_spaces", Run: initDefaultMenuSpaces},
+		{Name: "default.menus", Run: initDefaultMenusNoScope},
+		{Name: "default.pages", Run: initDefaultPages},
+		{Name: "default.permission_groups", Run: initDefaultPermissionGroups},
+		{Name: "default.permission_keys", Run: initDefaultPermissionKeysNoScope},
+		{Name: "default.feature_packages", Run: initDefaultFeaturePackages},
+		{Name: "default.feature_package_bundles", Run: initDefaultFeaturePackageBundles},
+		{
+			Name: "default.access_trace_navigation",
+			Run: func(logger *zap.Logger) error {
+				return ensureAccessTraceNavigationSeed()
+			},
+		},
+		{Name: "default.role_feature_packages", Run: initDefaultRoleFeaturePackages},
+		{
+			Name: "default.register_system",
+			Run: func(logger *zap.Logger) error {
+				return permissionseed.EnsureRegisterSystemSeeds(database.DB)
+			},
+		},
+		{
+			Name: "default.social_auth_providers",
+			Run: func(logger *zap.Logger) error {
+				return permissionseed.EnsureSocialAuthProviders(database.DB)
+			},
+		},
+		{
+			Name: "default.upload",
+			Run: func(logger *zap.Logger) error {
+				return upload.EnsureDefaultSeeds(context.Background(), upload.NewRepository(database.DB), logger)
+			},
+		},
+		{
+			Name: "default.site_config",
+			Run: func(logger *zap.Logger) error {
+				return siteconfig.SeedDefaults(context.Background(), database.DB, logger)
+			},
+		},
+		{
+			Name: "default.builtin_dictionaries",
+			Run: func(logger *zap.Logger) error {
+				return dictSvc.EnsureBuiltinDicts(context.Background())
+			},
+		},
+		{Name: "default.api_endpoint_categories", Run: initDefaultAPIEndpointCategories},
+		{Name: "default.message_templates", Run: seedDefaultMessageTemplates},
+		{Name: "default.fast_enter", Run: ensureDefaultFastEnterConfig},
+	})
 
-	if err := initDefaultAPIEndpointCategories(logger); err != nil {
-		logger.Warn("Failed to initialize api endpoint categories", zap.Error(err))
-	} else {
-		logger.Info("API endpoint categories initialized successfully")
-	}
-
-	if err := initOpenAPIEndpoints(logger); err != nil {
-		logger.Warn("Failed to auto-register OpenAPI endpoints", zap.Error(err))
-	} else {
-		logger.Info("OpenAPI endpoints auto-registered successfully")
-	}
-
-	if err := seedDefaultMessageTemplates(logger); err != nil {
-		logger.Warn("Failed to initialize default message templates", zap.Error(err))
-	} else {
-		logger.Info("Default message templates initialized successfully")
-	}
-
-	if err := ensureDefaultFastEnterConfig(logger); err != nil {
-		logger.Warn("Failed to initialize default fast enter config", zap.Error(err))
-	} else {
-		logger.Info("Default fast enter config initialized successfully")
-	}
-
-	if err := syncAPIRegistry(logger, cfg); err != nil {
-		logger.Warn("Failed to sync API registry", zap.Error(err))
-	} else {
-		logger.Info("API registry synchronized successfully")
-	}
-
-	if err := syncCanonicalPermissionKeys(logger); err != nil {
-		logger.Warn("Failed to sync canonical permission keys", zap.Error(err))
-	} else {
-		logger.Info("Canonical permission keys synchronized successfully")
-	}
-
-	if err := refreshDefaultAccessSnapshots(logger); err != nil {
-		logger.Warn("Failed to refresh default access snapshots", zap.Error(err))
-	} else {
-		logger.Info("Default access snapshots refreshed successfully")
-	}
+	runOptionalMigrationTasks(logger, "runtime-sync", []migrationTask{
+		{Name: "sync.openapi_endpoints", Run: initOpenAPIEndpoints},
+		{
+			Name: "sync.api_registry",
+			Run: func(logger *zap.Logger) error {
+				return syncAPIRegistry(logger, cfg)
+			},
+		},
+		{Name: "sync.canonical_permission_keys", Run: syncCanonicalPermissionKeys},
+		{Name: "sync.default_access_snapshots", Run: refreshDefaultAccessSnapshots},
+	})
 
 	logger.Info("Migration completed successfully")
 }
@@ -258,6 +199,34 @@ func resetPublicSchema(logger *zap.Logger) error {
 type migrationTask struct {
 	Name string
 	Run  func(logger *zap.Logger) error
+}
+
+func runRequiredMigrationTasks(logger *zap.Logger, phase string, tasks []migrationTask) error {
+	if len(tasks) == 0 {
+		return nil
+	}
+	logger.Info("Running required migration tasks", zap.String("phase", phase), zap.Int("count", len(tasks)))
+	for _, task := range tasks {
+		if err := task.Run(logger); err != nil {
+			return fmt.Errorf("%s: %w", task.Name, err)
+		}
+		logger.Info("Required migration task completed", zap.String("phase", phase), zap.String("task", task.Name))
+	}
+	return nil
+}
+
+func runOptionalMigrationTasks(logger *zap.Logger, phase string, tasks []migrationTask) {
+	if len(tasks) == 0 {
+		return
+	}
+	logger.Info("Running optional migration tasks", zap.String("phase", phase), zap.Int("count", len(tasks)))
+	for _, task := range tasks {
+		if err := task.Run(logger); err != nil {
+			logger.Warn("Migration task failed", zap.String("phase", phase), zap.String("task", task.Name), zap.Error(err))
+			continue
+		}
+		logger.Info("Migration task completed", zap.String("phase", phase), zap.String("task", task.Name))
+	}
 }
 
 func ensureAccessTraceNavigationSeed() error {

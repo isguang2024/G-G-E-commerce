@@ -1,6 +1,6 @@
-# backend/CLAUDE.md
+﻿# backend/CLAUDE.md
 
-Backend-specific guidance for the GGE Go service. Read `AGENTS.md`,
+Backend-specific guidance for the MaBen Go service. Read `AGENTS.md`,
 `docs/project-framework.md`, `docs/frontend-guideline.md` first for the shared rules.
 If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
@@ -122,3 +122,4 @@ lands in the wrong group in the admin UI.
 - Do NOT write tenant-unaware queries; every query must filter on
   `tenant_id` (currently always `default`).
 - Do NOT hand-edit `openapi_seed.json` — it is regenerated from the spec.
+
