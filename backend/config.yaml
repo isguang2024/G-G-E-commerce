@@ -44,3 +44,16 @@ jwt:
 log:
   level: "info"
   output: "stdout"
+
+upload:
+  local_root: "./data/uploads"
+  public_base_url: "/uploads"
+  default_tenant_id: "default"
+  default_provider_key: "local-public"
+  default_bucket_key: "public-media"
+  default_upload_key: "media.default"
+  default_rule_key: "image"
+  max_file_size_bytes: 10485760
+  secret_master_keys: []
+  secret_cache_ttl_seconds: 300
+  secret_current_key_id: "local"

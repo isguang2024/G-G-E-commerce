@@ -7,6 +7,8 @@ paths:
       tags:
       - media
       x-permission-key: system.media.manage
+      x-tenant-scoped: true
+      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -15,9 +17,83 @@ paths:
             schema:
               type: object
               properties:
+                key:
+                  type: string
+                rule:
+                  type: string
                 file:
                   type: string
                   format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/MediaUploadResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /media/prepare:
+    post:
+      operationId: prepareMediaUpload
+      summary: 准备媒体上传
+      tags:
+      - media
+      x-permission-key: system.media.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/MediaPrepareUploadRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/MediaPrepareUploadResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /media/complete:
+    post:
+      operationId: completeMediaUpload
+      summary: 完成媒体直传
+      tags:
+      - media
+      x-permission-key: system.media.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/MediaCompleteUploadRequest'
       responses:
         '200':
           description: OK
@@ -44,6 +120,8 @@ paths:
       tags:
       - media
       x-permission-key: system.media.view
+      x-tenant-scoped: true
+      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -71,6 +149,8 @@ paths:
       tags:
       - media
       x-permission-key: system.media.manage
+      x-tenant-scoped: true
+      x-app-scope: none
       x-access-mode: permission
       parameters:
       - name: id

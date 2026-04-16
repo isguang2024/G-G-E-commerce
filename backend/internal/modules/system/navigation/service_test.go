@@ -355,6 +355,13 @@ func (s *stubAppService) GetCurrent(host, requestedAppKey string) (*apppkg.Curre
 	}, nil
 }
 
+func (s *stubAppService) GetAppPreflight(appKey, requestHost string) (*apppkg.AppPreflightResponse, error) {
+	return &apppkg.AppPreflightResponse{
+		AppKey:      appKey,
+		RequestHost: requestHost,
+	}, nil
+}
+
 func (s *stubAppService) SaveApp(req *apppkg.SaveAppRequest) (*apppkg.AppRecord, error) {
 	return nil, fmt.Errorf("unexpected SaveApp call")
 }

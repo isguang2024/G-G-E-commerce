@@ -932,6 +932,26 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "completeMediaUpload",
+      "method": "post",
+      "path": "/media/complete",
+      "permission_key": "system.media.manage",
+      "summary": "完成媒体直传",
+      "tags": "media",
+      "api_category": "media",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "prepareMediaUpload",
+      "method": "post",
+      "path": "/media/prepare",
+      "permission_key": "system.media.manage",
+      "summary": "准备媒体上传",
+      "tags": "media",
+      "api_category": "media",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "uploadMedia",
       "method": "post",
       "path": "/media/upload",
@@ -1822,6 +1842,116 @@
       "access_mode": "authenticated"
     },
     {
+      "operation_id": "listStorageBuckets",
+      "method": "get",
+      "path": "/storage/buckets",
+      "permission_key": "system.upload.config.manage",
+      "summary": "列出存储桶",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createStorageBucket",
+      "method": "post",
+      "path": "/storage/buckets",
+      "permission_key": "system.upload.config.manage",
+      "summary": "创建存储桶",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteStorageBucket",
+      "method": "delete",
+      "path": "/storage/buckets/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "删除桶（软删）",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getStorageBucket",
+      "method": "get",
+      "path": "/storage/buckets/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "查看桶详情",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateStorageBucket",
+      "method": "put",
+      "path": "/storage/buckets/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "更新桶",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listStorageProviders",
+      "method": "get",
+      "path": "/storage/providers",
+      "permission_key": "system.upload.config.manage",
+      "summary": "列出存储 Provider",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createStorageProvider",
+      "method": "post",
+      "path": "/storage/providers",
+      "permission_key": "system.upload.config.manage",
+      "summary": "创建存储 Provider",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteStorageProvider",
+      "method": "delete",
+      "path": "/storage/providers/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "删除 Provider（软删）",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getStorageProvider",
+      "method": "get",
+      "path": "/storage/providers/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "查看 Provider 详情",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateStorageProvider",
+      "method": "put",
+      "path": "/storage/providers/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "更新 Provider",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "testStorageProvider",
+      "method": "post",
+      "path": "/storage/providers/{id}/test",
+      "permission_key": "system.upload.config.manage",
+      "summary": "测试 Provider 健康",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "listAppHostBindings",
       "method": "get",
       "path": "/system/app-host-bindings",
@@ -2131,6 +2261,96 @@
       "tags": "telemetry",
       "api_category": "telemetry",
       "access_mode": "public"
+    },
+    {
+      "operation_id": "listUploadKeys",
+      "method": "get",
+      "path": "/upload/keys",
+      "permission_key": "system.upload.config.manage",
+      "summary": "列出 UploadKey",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createUploadKey",
+      "method": "post",
+      "path": "/upload/keys",
+      "permission_key": "system.upload.config.manage",
+      "summary": "创建 UploadKey",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteUploadKey",
+      "method": "delete",
+      "path": "/upload/keys/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "删除 UploadKey（软删）",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUploadKey",
+      "method": "get",
+      "path": "/upload/keys/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "查看 UploadKey 详情（含 rules）",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateUploadKey",
+      "method": "put",
+      "path": "/upload/keys/{id}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "更新 UploadKey",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listUploadKeyRules",
+      "method": "get",
+      "path": "/upload/keys/{id}/rules",
+      "permission_key": "system.upload.config.manage",
+      "summary": "列出 UploadKey 的 Rules",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createUploadKeyRule",
+      "method": "post",
+      "path": "/upload/keys/{id}/rules",
+      "permission_key": "system.upload.config.manage",
+      "summary": "给 UploadKey 创建 Rule",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteUploadKeyRule",
+      "method": "delete",
+      "path": "/upload/rules/{ruleId}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "删除 Rule（软删）",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateUploadKeyRule",
+      "method": "put",
+      "path": "/upload/rules/{ruleId}",
+      "permission_key": "system.upload.config.manage",
+      "summary": "更新 Rule",
+      "tags": "storage",
+      "api_category": "storage",
+      "access_mode": "permission"
     },
     {
       "operation_id": "listUsers",

@@ -1,0 +1,429 @@
+# domains/storage_admin/paths.yaml
+# 上传配置中心管理面 API：
+# - /storage/providers/...  Provider CRUD + 健康检查
+# - /storage/buckets/...    Bucket CRUD
+# - /upload/keys/...        UploadKey CRUD + 内嵌 rules 子资源
+# - /upload/rules/{ruleId}  Rule 单独操作
+# 全部 system.upload.config.manage 权限。
+paths:
+  /storage/providers:
+    get:
+      operationId: listStorageProviders
+      summary: 列出存储 Provider
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [ready, disabled, error]}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageProviderListResponse'
+        '401': {$ref: '../../components/errors.yaml#/components/responses/Unauthorized'}
+    post:
+      operationId: createStorageProvider
+      summary: 创建存储 Provider
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/StorageProviderSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageProviderSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../../components/errors.yaml#/components/responses/Unauthorized'}
+  /storage/providers/{id}:
+    get:
+      operationId: getStorageProvider
+      summary: 查看 Provider 详情
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageProviderSummary'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    put:
+      operationId: updateStorageProvider
+      summary: 更新 Provider
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/StorageProviderSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageProviderSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    delete:
+      operationId: deleteStorageProvider
+      summary: 删除 Provider（软删）
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+  /storage/providers/{id}/test:
+    post:
+      operationId: testStorageProvider
+      summary: 测试 Provider 健康
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageProviderTestResponse'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+
+  /storage/buckets:
+    get:
+      operationId: listStorageBuckets
+      summary: 列出存储桶
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: provider_id, in: query, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [ready, disabled]}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageBucketListResponse'
+        '401': {$ref: '../../components/errors.yaml#/components/responses/Unauthorized'}
+    post:
+      operationId: createStorageBucket
+      summary: 创建存储桶
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/StorageBucketSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageBucketSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+  /storage/buckets/{id}:
+    get:
+      operationId: getStorageBucket
+      summary: 查看桶详情
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageBucketSummary'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    put:
+      operationId: updateStorageBucket
+      summary: 更新桶
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/StorageBucketSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/StorageBucketSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    delete:
+      operationId: deleteStorageBucket
+      summary: 删除桶（软删）
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+
+  /upload/keys:
+    get:
+      operationId: listUploadKeys
+      summary: 列出 UploadKey
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: bucket_id, in: query, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [ready, disabled]}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeyListResponse'
+        '401': {$ref: '../../components/errors.yaml#/components/responses/Unauthorized'}
+    post:
+      operationId: createUploadKey
+      summary: 创建 UploadKey
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/UploadKeySaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeySummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+  /upload/keys/{id}:
+    get:
+      operationId: getUploadKey
+      summary: 查看 UploadKey 详情（含 rules）
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeyDetail'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    put:
+      operationId: updateUploadKey
+      summary: 更新 UploadKey
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/UploadKeySaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeySummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    delete:
+      operationId: deleteUploadKey
+      summary: 删除 UploadKey（软删）
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+  /upload/keys/{id}/rules:
+    get:
+      operationId: listUploadKeyRules
+      summary: 列出 UploadKey 的 Rules
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeyRuleListResponse'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    post:
+      operationId: createUploadKeyRule
+      summary: 给 UploadKey 创建 Rule
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/UploadKeyRuleSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeyRuleSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+  /upload/rules/{ruleId}:
+    put:
+      operationId: updateUploadKeyRule
+      summary: 更新 Rule
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: ruleId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/UploadKeyRuleSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/UploadKeyRuleSummary'
+        '400': {$ref: '../../components/errors.yaml#/components/responses/BadRequest'}
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}
+    delete:
+      operationId: deleteUploadKeyRule
+      summary: 删除 Rule（软删）
+      tags: [storage]
+      x-permission-key: system.upload.config.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - {name: ruleId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '404': {$ref: '../../components/errors.yaml#/components/responses/NotFound'}

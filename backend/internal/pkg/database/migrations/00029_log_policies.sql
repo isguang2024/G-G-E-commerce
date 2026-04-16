@@ -1,4 +1,4 @@
-﻿-- +goose Up
+-- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS log_policies (
     id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -34,6 +34,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/social"
 	"github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
+	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
@@ -97,6 +98,7 @@ type APIHandler struct {
 	registerResolver *register.Resolver
 	registerSvc      *register.Service
 	socialSvc        social.Service
+	uploadSvc        upload.Service
 	// 数据字典
 	dictSvc *dictionary.Service
 	// 业务审计 Recorder（异步写 audit_logs 表，失败走日志而非返回错误）。
@@ -277,6 +279,7 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		logger,
 	)
 	h.socialSvc = social.NewService(db, h.authSvc, userRepo, registerResolver, cfg.JWT.Secret, logger)
+	h.uploadSvc = upload.NewService(upload.NewRepository(db).WithAuditRecorder(auditRecorder), cfg, logger)
 	h.dictSvc = dictionary.NewService(db, logger)
 	return h
 }

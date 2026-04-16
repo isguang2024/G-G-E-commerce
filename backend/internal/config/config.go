@@ -20,6 +20,7 @@ type Config struct {
 	Log       LogConfig       `mapstructure:"log"`
 	Audit     AuditConfig     `mapstructure:"audit"`
 	Telemetry TelemetryConfig `mapstructure:"telemetry"`
+	Upload    UploadConfig    `mapstructure:"upload"`
 }
 
 // ServerConfig 服务器配置
@@ -132,6 +133,21 @@ type TelemetryConfig struct {
 	PayloadMaxBytes  int  `mapstructure:"payload_max_bytes"`
 }
 
+// UploadConfig 控制上传系统的默认行为与密钥管理。
+type UploadConfig struct {
+	LocalRoot          string   `mapstructure:"local_root"`
+	PublicBaseURL      string   `mapstructure:"public_base_url"`
+	DefaultTenantID    string   `mapstructure:"default_tenant_id"`
+	DefaultProviderKey string   `mapstructure:"default_provider_key"`
+	DefaultBucketKey   string   `mapstructure:"default_bucket_key"`
+	DefaultUploadKey   string   `mapstructure:"default_upload_key"`
+	DefaultRuleKey     string   `mapstructure:"default_rule_key"`
+	MaxFileSizeBytes   int64    `mapstructure:"max_file_size_bytes"`
+	SecretMasterKeys   []string `mapstructure:"secret_master_keys"`
+	SecretCacheTTL     int      `mapstructure:"secret_cache_ttl_seconds"`
+	SecretCurrentKeyID string   `mapstructure:"secret_current_key_id"`
+}
+
 // Load 加载配置
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
@@ -142,6 +158,7 @@ func Load() (*Config, error) {
 	viper.AddConfigPath("../../configs")
 
 	viper.SetEnvPrefix("GG")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	setDefaults()
@@ -201,6 +218,18 @@ func setDefaults() {
 	viper.SetDefault("telemetry.session_rate_limit", 60)
 	viper.SetDefault("telemetry.ip_rate_limit", 600)
 	viper.SetDefault("telemetry.payload_max_bytes", 8192)
+
+	viper.SetDefault("upload.local_root", "./data/uploads")
+	viper.SetDefault("upload.public_base_url", "/uploads")
+	viper.SetDefault("upload.default_tenant_id", "default")
+	viper.SetDefault("upload.default_provider_key", "local-public")
+	viper.SetDefault("upload.default_bucket_key", "public-media")
+	viper.SetDefault("upload.default_upload_key", "media.default")
+	viper.SetDefault("upload.default_rule_key", "image")
+	viper.SetDefault("upload.max_file_size_bytes", 10*1024*1024)
+	viper.SetDefault("upload.secret_master_keys", []string{})
+	viper.SetDefault("upload.secret_cache_ttl_seconds", 300)
+	viper.SetDefault("upload.secret_current_key_id", "local")
 }
 
 func (c *Config) Validate() error {
@@ -215,6 +244,15 @@ func (c *Config) Validate() error {
 	}
 	if c.Server.ReadTimeout < 0 || c.Server.WriteTimeout < 0 || c.Server.IdleTimeout < 0 {
 		return fmt.Errorf("server 超时配置不能为负数")
+	}
+	if strings.TrimSpace(c.Upload.LocalRoot) == "" {
+		return fmt.Errorf("upload.local_root 不能为空")
+	}
+	if c.Upload.MaxFileSizeBytes < 0 {
+		return fmt.Errorf("upload.max_file_size_bytes 不能为负数")
+	}
+	if c.Upload.SecretCacheTTL < 0 {
+		return fmt.Errorf("upload.secret_cache_ttl_seconds 不能为负数")
 	}
 	return nil
 }

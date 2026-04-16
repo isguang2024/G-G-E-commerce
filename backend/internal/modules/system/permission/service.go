@@ -1373,7 +1373,20 @@ func deriveContextType(permissionKey, moduleCode string) string {
 func validatePermissionContext(permissionKey, moduleCode, contextType string) error {
 	targetKey := canonicalPermissionKey(permissionKey)
 	targetModule := strings.TrimSpace(moduleCode)
-	targetContext := normalizeContextType(contextType, deriveContextType(targetKey, targetModule))
+	rawContext := strings.TrimSpace(contextType)
+	if rawContext != "" && rawContext != "personal" && rawContext != "collaboration" && rawContext != "common" && rawContext != "platform" {
+		return fmt.Errorf("%w: context_type 仅支持 personal、collaboration、common", ErrPermissionContextInvalid)
+	}
+	if rawContext == "platform" && deriveReservedContextType(targetKey) == "" && deriveModuleWorkspaceBoundary(targetModule) == "" {
+		return fmt.Errorf("%w: context_type=platform 仅允许平台保留命名空间或平台模块使用", ErrPermissionContextInvalid)
+	}
+
+	normalizedInput := rawContext
+	if rawContext == "platform" {
+		normalizedInput = "personal"
+	}
+
+	targetContext := normalizeContextType(normalizedInput, deriveContextType(targetKey, targetModule))
 	if targetContext == "" {
 		return fmt.Errorf("%w: context_type 仅支持 personal、collaboration、common", ErrPermissionContextInvalid)
 	}

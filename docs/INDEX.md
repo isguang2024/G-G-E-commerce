@@ -21,6 +21,7 @@
 | 查命令 | [guides/commands.md](guides/commands.md) |
 | 查数据库/迁移/seed | [guides/database.md](guides/database.md) |
 | 查权限模型 | [guides/permission-system.md](guides/permission-system.md) |
+| 新增系统模块 | [guides/new-module-checklist.md](guides/new-module-checklist.md) |
 | 查专题手册 | [guides/README.md](guides/README.md) |
 
 ## 文档分层

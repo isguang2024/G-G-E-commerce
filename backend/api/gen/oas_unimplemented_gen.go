@@ -76,6 +76,15 @@ func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) 
 	return r, ht.ErrNotImplemented
 }
 
+// CompleteMediaUpload implements completeMediaUpload operation.
+//
+// 完成媒体直传.
+//
+// POST /media/complete
+func (UnimplementedHandler) CompleteMediaUpload(ctx context.Context, req *MediaCompleteUploadRequest) (r CompleteMediaUploadRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateApiEndpointCategory implements createApiEndpointCategory operation.
 //
 // 创建 API 分类.
@@ -229,6 +238,42 @@ func (UnimplementedHandler) CreateRole(ctx context.Context, req *RoleCreateReque
 	return r, ht.ErrNotImplemented
 }
 
+// CreateStorageBucket implements createStorageBucket operation.
+//
+// 创建存储桶.
+//
+// POST /storage/buckets
+func (UnimplementedHandler) CreateStorageBucket(ctx context.Context, req *StorageBucketSaveRequest) (r CreateStorageBucketRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateStorageProvider implements createStorageProvider operation.
+//
+// 创建存储 Provider.
+//
+// POST /storage/providers
+func (UnimplementedHandler) CreateStorageProvider(ctx context.Context, req *StorageProviderSaveRequest) (r CreateStorageProviderRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateUploadKey implements createUploadKey operation.
+//
+// 创建 UploadKey.
+//
+// POST /upload/keys
+func (UnimplementedHandler) CreateUploadKey(ctx context.Context, req *UploadKeySaveRequest) (r CreateUploadKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateUploadKeyRule implements createUploadKeyRule operation.
+//
+// 给 UploadKey 创建 Rule.
+//
+// POST /upload/keys/{id}/rules
+func (UnimplementedHandler) CreateUploadKeyRule(ctx context.Context, req *UploadKeyRuleSaveRequest, params CreateUploadKeyRuleParams) (r CreateUploadKeyRuleRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateUser implements createUser operation.
 //
 // 创建用户.
@@ -370,6 +415,42 @@ func (UnimplementedHandler) DeleteRegisterEntry(ctx context.Context, params Dele
 //
 // DELETE /roles/{id}
 func (UnimplementedHandler) DeleteRole(ctx context.Context, params DeleteRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteStorageBucket implements deleteStorageBucket operation.
+//
+// 删除桶（软删）.
+//
+// DELETE /storage/buckets/{id}
+func (UnimplementedHandler) DeleteStorageBucket(ctx context.Context, params DeleteStorageBucketParams) (r DeleteStorageBucketRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteStorageProvider implements deleteStorageProvider operation.
+//
+// 删除 Provider（软删）.
+//
+// DELETE /storage/providers/{id}
+func (UnimplementedHandler) DeleteStorageProvider(ctx context.Context, params DeleteStorageProviderParams) (r DeleteStorageProviderRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteUploadKey implements deleteUploadKey operation.
+//
+// 删除 UploadKey（软删）.
+//
+// DELETE /upload/keys/{id}
+func (UnimplementedHandler) DeleteUploadKey(ctx context.Context, params DeleteUploadKeyParams) (r DeleteUploadKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteUploadKeyRule implements deleteUploadKeyRule operation.
+//
+// 删除 Rule（软删）.
+//
+// DELETE /upload/rules/{ruleId}
+func (UnimplementedHandler) DeleteUploadKeyRule(ctx context.Context, params DeleteUploadKeyRuleParams) (r DeleteUploadKeyRuleRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -955,6 +1036,24 @@ func (UnimplementedHandler) GetRolePackages(ctx context.Context, params GetRoleP
 	return r, ht.ErrNotImplemented
 }
 
+// GetStorageBucket implements getStorageBucket operation.
+//
+// 查看桶详情.
+//
+// GET /storage/buckets/{id}
+func (UnimplementedHandler) GetStorageBucket(ctx context.Context, params GetStorageBucketParams) (r GetStorageBucketRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetStorageProvider implements getStorageProvider operation.
+//
+// 查看 Provider 详情.
+//
+// GET /storage/providers/{id}
+func (UnimplementedHandler) GetStorageProvider(ctx context.Context, params GetStorageProviderParams) (r GetStorageProviderRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetSystemViewPages implements getSystemViewPages operation.
 //
 // 获取页面文件映射.
@@ -970,6 +1069,15 @@ func (UnimplementedHandler) GetSystemViewPages(ctx context.Context, params GetSy
 //
 // GET /observability/telemetry-logs/{id}
 func (UnimplementedHandler) GetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (r GetTelemetryLogRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetUploadKey implements getUploadKey operation.
+//
+// 查看 UploadKey 详情（含 rules）.
+//
+// GET /upload/keys/{id}
+func (UnimplementedHandler) GetUploadKey(ctx context.Context, params GetUploadKeyParams) (r GetUploadKeyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1491,6 +1599,24 @@ func (UnimplementedHandler) ListStaleApiEndpoints(ctx context.Context, params Li
 	return r, ht.ErrNotImplemented
 }
 
+// ListStorageBuckets implements listStorageBuckets operation.
+//
+// 列出存储桶.
+//
+// GET /storage/buckets
+func (UnimplementedHandler) ListStorageBuckets(ctx context.Context, params ListStorageBucketsParams) (r ListStorageBucketsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListStorageProviders implements listStorageProviders operation.
+//
+// 列出存储 Provider.
+//
+// GET /storage/providers
+func (UnimplementedHandler) ListStorageProviders(ctx context.Context, params ListStorageProvidersParams) (r ListStorageProvidersRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListTelemetryLogs implements listTelemetryLogs operation.
 //
 // 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
@@ -1516,6 +1642,24 @@ func (UnimplementedHandler) ListUnregisteredApiEndpoints(ctx context.Context, pa
 //
 // GET /pages/unregistered
 func (UnimplementedHandler) ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (r *PageUnregisteredListResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListUploadKeyRules implements listUploadKeyRules operation.
+//
+// 列出 UploadKey 的 Rules.
+//
+// GET /upload/keys/{id}/rules
+func (UnimplementedHandler) ListUploadKeyRules(ctx context.Context, params ListUploadKeyRulesParams) (r ListUploadKeyRulesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListUploadKeys implements listUploadKeys operation.
+//
+// 列出 UploadKey.
+//
+// GET /upload/keys
+func (UnimplementedHandler) ListUploadKeys(ctx context.Context, params ListUploadKeysParams) (r ListUploadKeysRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1561,6 +1705,15 @@ func (UnimplementedHandler) MarkInboxRead(ctx context.Context, params MarkInboxR
 //
 // POST /messages/inbox/read-all
 func (UnimplementedHandler) MarkInboxReadAll(ctx context.Context) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// PrepareMediaUpload implements prepareMediaUpload operation.
+//
+// 准备媒体上传.
+//
+// POST /media/prepare
+func (UnimplementedHandler) PrepareMediaUpload(ctx context.Context, req *MediaPrepareUploadRequest) (r PrepareMediaUploadRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1906,6 +2059,15 @@ func (UnimplementedHandler) SyncPages(ctx context.Context, params SyncPagesParam
 	return r, ht.ErrNotImplemented
 }
 
+// TestStorageProvider implements testStorageProvider operation.
+//
+// 测试 Provider 健康.
+//
+// POST /storage/providers/{id}/test
+func (UnimplementedHandler) TestStorageProvider(ctx context.Context, params TestStorageProviderParams) (r TestStorageProviderRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // UpdateApiEndpoint implements updateApiEndpoint operation.
 //
 // 更新 API 注册项.
@@ -2092,6 +2254,42 @@ func (UnimplementedHandler) UpdateRegisterEntry(ctx context.Context, req *Regist
 //
 // PUT /roles/{id}
 func (UnimplementedHandler) UpdateRole(ctx context.Context, req *RoleUpdateRequest, params UpdateRoleParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateStorageBucket implements updateStorageBucket operation.
+//
+// 更新桶.
+//
+// PUT /storage/buckets/{id}
+func (UnimplementedHandler) UpdateStorageBucket(ctx context.Context, req *StorageBucketSaveRequest, params UpdateStorageBucketParams) (r UpdateStorageBucketRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateStorageProvider implements updateStorageProvider operation.
+//
+// 更新 Provider.
+//
+// PUT /storage/providers/{id}
+func (UnimplementedHandler) UpdateStorageProvider(ctx context.Context, req *StorageProviderSaveRequest, params UpdateStorageProviderParams) (r UpdateStorageProviderRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateUploadKey implements updateUploadKey operation.
+//
+// 更新 UploadKey.
+//
+// PUT /upload/keys/{id}
+func (UnimplementedHandler) UpdateUploadKey(ctx context.Context, req *UploadKeySaveRequest, params UpdateUploadKeyParams) (r UpdateUploadKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateUploadKeyRule implements updateUploadKeyRule operation.
+//
+// 更新 Rule.
+//
+// PUT /upload/rules/{ruleId}
+func (UnimplementedHandler) UpdateUploadKeyRule(ctx context.Context, req *UploadKeyRuleSaveRequest, params UpdateUploadKeyRuleParams) (r UpdateUploadKeyRuleRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

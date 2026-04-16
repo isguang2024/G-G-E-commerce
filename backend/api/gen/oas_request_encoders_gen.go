@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
+	"github.com/ogen-go/ogen/conv"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/uri"
 )
@@ -86,6 +87,20 @@ func encodeBatchUpdatePermissionActionsRequest(
 
 func encodeCleanupStaleApiEndpointsRequest(
 	req *CleanupStaleRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCompleteMediaUploadRequest(
+	req *MediaCompleteUploadRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -336,6 +351,62 @@ func encodeCreateRoleRequest(
 	return nil
 }
 
+func encodeCreateStorageBucketRequest(
+	req *StorageBucketSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateStorageProviderRequest(
+	req *StorageProviderSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateUploadKeyRequest(
+	req *UploadKeySaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateUploadKeyRuleRequest(
+	req *UploadKeyRuleSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeCreateUserRequest(
 	req *UserCreateRequest,
 	r *http.Request,
@@ -422,6 +493,20 @@ func encodeIngestTelemetryLogsRequest(
 
 func encodeLoginRequest(
 	req *LoginRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodePrepareMediaUploadRequest(
+	req *MediaPrepareUploadRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -1162,6 +1247,62 @@ func encodeUpdateRoleRequest(
 	return nil
 }
 
+func encodeUpdateStorageBucketRequest(
+	req *StorageBucketSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateStorageProviderRequest(
+	req *StorageProviderSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateUploadKeyRequest(
+	req *UploadKeySaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateUploadKeyRuleRequest(
+	req *UploadKeyRuleSaveRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeUpdateUserRequest(
 	req *UserUpdateRequest,
 	r *http.Request,
@@ -1184,6 +1325,38 @@ func encodeUploadMediaRequest(
 	request := req
 
 	q := uri.NewFormEncoder(map[string]string{})
+	{
+		// Encode "key" form field.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := request.Key.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "rule" form field.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "rule",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := request.Rule.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "encode query")
+		}
+	}
 	body, boundary := ht.CreateMultipartBody(func(w *multipart.Writer) error {
 		if val, ok := request.File.Get(); ok {
 			if err := val.WriteMultipart("file", w); err != nil {

@@ -2888,6 +2888,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/media/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 准备媒体上传 */
+        post: operations["prepareMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 完成媒体直传 */
+        post: operations["completeMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/media": {
         parameters: {
             query?: never;
@@ -2917,6 +2951,170 @@ export interface paths {
         post?: never;
         /** 删除媒体资源 */
         delete: operations["deleteMedia"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出存储 Provider */
+        get: operations["listStorageProviders"];
+        put?: never;
+        /** 创建存储 Provider */
+        post: operations["createStorageProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看 Provider 详情 */
+        get: operations["getStorageProvider"];
+        /** 更新 Provider */
+        put: operations["updateStorageProvider"];
+        post?: never;
+        /** 删除 Provider（软删） */
+        delete: operations["deleteStorageProvider"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/providers/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 测试 Provider 健康 */
+        post: operations["testStorageProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出存储桶 */
+        get: operations["listStorageBuckets"];
+        put?: never;
+        /** 创建存储桶 */
+        post: operations["createStorageBucket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/buckets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看桶详情 */
+        get: operations["getStorageBucket"];
+        /** 更新桶 */
+        put: operations["updateStorageBucket"];
+        post?: never;
+        /** 删除桶（软删） */
+        delete: operations["deleteStorageBucket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出 UploadKey */
+        get: operations["listUploadKeys"];
+        put?: never;
+        /** 创建 UploadKey */
+        post: operations["createUploadKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload/keys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看 UploadKey 详情（含 rules） */
+        get: operations["getUploadKey"];
+        /** 更新 UploadKey */
+        put: operations["updateUploadKey"];
+        post?: never;
+        /** 删除 UploadKey（软删） */
+        delete: operations["deleteUploadKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload/keys/{id}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出 UploadKey 的 Rules */
+        get: operations["listUploadKeyRules"];
+        put?: never;
+        /** 给 UploadKey 创建 Rule */
+        post: operations["createUploadKeyRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload/rules/{ruleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新 Rule */
+        put: operations["updateUploadKeyRule"];
+        post?: never;
+        /** 删除 Rule（软删） */
+        delete: operations["deleteUploadKeyRule"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3453,6 +3651,194 @@ export interface components {
             details?: {
                 [key: string]: unknown;
             } | null;
+        };
+        StorageProviderSummary: {
+            /** Format: uuid */
+            id: string;
+            provider_key: string;
+            name: string;
+            /** @enum {string} */
+            driver: "local" | "aliyun_oss";
+            endpoint?: string;
+            region?: string;
+            base_url?: string;
+            access_key_masked?: string;
+            secret_key_masked?: string;
+            is_default: boolean;
+            /** @enum {string} */
+            status: "ready" | "disabled" | "error";
+            extra?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        StorageProviderListResponse: {
+            records: components["schemas"]["StorageProviderSummary"][];
+            total: number;
+        };
+        StorageProviderSaveRequest: {
+            provider_key: string;
+            name: string;
+            /** @enum {string} */
+            driver: "local" | "aliyun_oss";
+            endpoint?: string;
+            region?: string;
+            base_url?: string;
+            /** @description 明文，留空保留原值 */
+            access_key?: string;
+            /** @description 明文，留空保留原值 */
+            secret_key?: string;
+            is_default?: boolean;
+            /** @enum {string} */
+            status?: "ready" | "disabled";
+            extra?: {
+                [key: string]: unknown;
+            };
+        };
+        StorageProviderTestResponse: {
+            ok: boolean;
+            message?: string;
+            latency_ms?: number;
+        };
+        StorageBucketSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            provider_id: string;
+            provider_key?: string;
+            bucket_key: string;
+            name: string;
+            bucket_name: string;
+            base_path?: string;
+            public_base_url?: string;
+            is_public: boolean;
+            /** @enum {string} */
+            status: "ready" | "disabled";
+            extra?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        StorageBucketListResponse: {
+            records: components["schemas"]["StorageBucketSummary"][];
+            total: number;
+        };
+        StorageBucketSaveRequest: {
+            /** Format: uuid */
+            provider_id: string;
+            bucket_key: string;
+            name: string;
+            bucket_name: string;
+            base_path?: string;
+            public_base_url?: string;
+            is_public?: boolean;
+            /** @enum {string} */
+            status?: "ready" | "disabled";
+            extra?: {
+                [key: string]: unknown;
+            };
+        };
+        UploadKeyRuleSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            upload_key_id: string;
+            rule_key: string;
+            name: string;
+            sub_path?: string;
+            /** @enum {string} */
+            filename_strategy: "uuid" | "original";
+            /** Format: int64 */
+            max_size_bytes?: number;
+            allowed_mime_types?: string[];
+            process_pipeline?: string[];
+            is_default: boolean;
+            /** @enum {string} */
+            status: "ready" | "disabled";
+            meta?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        UploadKeyRuleSaveRequest: {
+            rule_key: string;
+            name: string;
+            sub_path?: string;
+            /** @enum {string} */
+            filename_strategy?: "uuid" | "original";
+            /** Format: int64 */
+            max_size_bytes?: number;
+            allowed_mime_types?: string[];
+            process_pipeline?: string[];
+            is_default?: boolean;
+            /** @enum {string} */
+            status?: "ready" | "disabled";
+            meta?: {
+                [key: string]: unknown;
+            };
+        };
+        UploadKeyRuleListResponse: {
+            records: components["schemas"]["UploadKeyRuleSummary"][];
+            total: number;
+        };
+        UploadKeySummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bucket_id: string;
+            bucket_key?: string;
+            key: string;
+            name: string;
+            path_template?: string;
+            default_rule_key?: string;
+            /** Format: int64 */
+            max_size_bytes?: number;
+            allowed_mime_types?: string[];
+            /** @enum {string} */
+            visibility: "public" | "private";
+            /** @enum {string} */
+            status: "ready" | "disabled";
+            meta?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        UploadKeyDetail: components["schemas"]["UploadKeySummary"] & {
+            rules: components["schemas"]["UploadKeyRuleSummary"][];
+        };
+        UploadKeyListResponse: {
+            records: components["schemas"]["UploadKeySummary"][];
+            total: number;
+        };
+        UploadKeySaveRequest: {
+            /** Format: uuid */
+            bucket_id: string;
+            key: string;
+            name: string;
+            path_template?: string;
+            default_rule_key?: string;
+            /** Format: int64 */
+            max_size_bytes?: number;
+            allowed_mime_types?: string[];
+            /** @enum {string} */
+            visibility?: "public" | "private";
+            /** @enum {string} */
+            status?: "ready" | "disabled";
+            meta?: {
+                [key: string]: unknown;
+            };
         };
         /**
          * @description 日志级别；顺序与后端 zap 对齐。
@@ -5739,10 +6125,67 @@ export interface components {
             items: components["schemas"]["DictItemSaveRequest"][];
         };
         MediaUploadResponse: {
+            /** Format: uuid */
+            id: string;
+            filename: string;
+            storageKey: string;
             url: string;
+            mimeType: string;
+            /** Format: int64 */
+            size: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MediaPrepareUploadRequest: {
+            key?: string;
+            rule?: string;
+            filename: string;
+            mimeType?: string;
+            /** Format: int64 */
+            size: number;
+            checksum?: string;
+        };
+        MediaPrepareUploadResponse: {
+            /** @enum {string} */
+            mode: "relay" | "direct";
+            method?: string;
+            url?: string;
+            relayUrl?: string;
+            headers?: {
+                [key: string]: string;
+            };
+            form?: {
+                [key: string]: string;
+            };
+            storageKey: string;
+            filename: string;
+            contentType: string;
+            uploadKey: string;
+            ruleKey?: string;
+            fallbackUsed: boolean;
+        };
+        MediaCompleteUploadRequest: {
+            key?: string;
+            rule?: string;
+            filename: string;
+            storageKey: string;
+            mimeType?: string;
+            /** Format: int64 */
+            size: number;
+            checksum?: string;
+            etag?: string;
         };
         MediaItem: {
-            [key: string]: unknown;
+            /** Format: uuid */
+            id: string;
+            filename: string;
+            storageKey: string;
+            url: string;
+            mimeType: string;
+            /** Format: int64 */
+            size: number;
+            /** Format: date-time */
+            createdAt: string;
         };
         MediaListResponse: {
             records: components["schemas"]["MediaItem"][];
@@ -12242,9 +12685,95 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": {
+                    key?: string;
+                    rule?: string;
                     /** Format: binary */
                     file?: string;
                 };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    prepareMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaPrepareUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaPrepareUploadResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    completeMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaCompleteUploadRequest"];
             };
         };
         responses: {
@@ -12353,6 +12882,500 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    listStorageProviders: {
+        parameters: {
+            query?: {
+                status?: "ready" | "disabled" | "error";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageProviderListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createStorageProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageProviderSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageProviderSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getStorageProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageProviderSummary"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateStorageProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageProviderSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageProviderSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteStorageProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    testStorageProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageProviderTestResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listStorageBuckets: {
+        parameters: {
+            query?: {
+                provider_id?: string;
+                status?: "ready" | "disabled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageBucketListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createStorageBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageBucketSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageBucketSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    getStorageBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageBucketSummary"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateStorageBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageBucketSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageBucketSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteStorageBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listUploadKeys: {
+        parameters: {
+            query?: {
+                bucket_id?: string;
+                status?: "ready" | "disabled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeyListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createUploadKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadKeySaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeySummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    getUploadKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeyDetail"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateUploadKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadKeySaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeySummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteUploadKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listUploadKeyRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeyRuleListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createUploadKeyRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadKeyRuleSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeyRuleSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateUploadKeyRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadKeyRuleSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadKeyRuleSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteUploadKeyRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
 }

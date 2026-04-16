@@ -58,6 +58,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	r.Use(middleware.Recovery(logger))
 	r.Use(middleware.AppContext(db))
 	r.Use(middleware.DynamicAppSecurity(db, logger, cfg.Env))
+	r.Static("/uploads", "./data/uploads")
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -171,7 +172,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	socialHandler := social.NewHTTPHandler(socialSvc, logger)
 	r.GET("/api/v1/auth/oauth/:provider/authorize", socialHandler.Authorize)
 	r.GET("/api/v1/auth/oauth/:provider/callback", socialHandler.Callback)
-	r.POST("/api/v1/auth/social/exchange", socialHandler.Exchange)
 
 	v1 := r.Group("/api/v1")
 	v1.Use(endpointAccessService.RequireActiveEndpoint())
@@ -180,6 +180,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 		v1.POST("/auth/login", publicBridge)
 		v1.POST("/auth/register", publicBridge)
 		v1.POST("/auth/refresh", publicBridge)
+		v1.POST("/auth/social/exchange", publicBridge)
 		v1.POST("/auth/callback/exchange", publicBridge)
 		v1.GET("/auth/register-context", publicBridge)
 		v1.GET("/auth/login-page-context", publicBridge)
@@ -400,10 +401,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.POST("/system/register-entries", ogenBridge)
 			authenticated.PUT("/system/register-entries/:id", ogenBridge)
 			authenticated.DELETE("/system/register-entries/:id", ogenBridge)
-			authenticated.GET("/system/register-policies", ogenBridge)
-			authenticated.POST("/system/register-policies", ogenBridge)
-			authenticated.PUT("/system/register-policies/:code", ogenBridge)
-			authenticated.DELETE("/system/register-policies/:code", ogenBridge)
 			authenticated.GET("/system/login-page-templates", ogenBridge)
 			authenticated.POST("/system/login-page-templates", ogenBridge)
 			authenticated.PUT("/system/login-page-templates/:templateKey", ogenBridge)
@@ -437,6 +434,32 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.POST("/media/upload", ogenBridge)
 			authenticated.GET("/media", ogenBridge)
 			authenticated.DELETE("/media/:id", ogenBridge)
+			authenticated.POST("/media/prepare", ogenBridge)
+			authenticated.POST("/media/complete", ogenBridge)
+
+			// ── upload config (storage_admin) ─────────────────────────────
+			// Provider / Bucket / UploadKey / Rule 管理面，统一权限
+			// system.upload.config.manage。
+			authenticated.GET("/storage/providers", ogenBridge)
+			authenticated.POST("/storage/providers", ogenBridge)
+			authenticated.GET("/storage/providers/:id", ogenBridge)
+			authenticated.PUT("/storage/providers/:id", ogenBridge)
+			authenticated.DELETE("/storage/providers/:id", ogenBridge)
+			authenticated.POST("/storage/providers/:id/test", ogenBridge)
+			authenticated.GET("/storage/buckets", ogenBridge)
+			authenticated.POST("/storage/buckets", ogenBridge)
+			authenticated.GET("/storage/buckets/:id", ogenBridge)
+			authenticated.PUT("/storage/buckets/:id", ogenBridge)
+			authenticated.DELETE("/storage/buckets/:id", ogenBridge)
+			authenticated.GET("/upload/keys", ogenBridge)
+			authenticated.POST("/upload/keys", ogenBridge)
+			authenticated.GET("/upload/keys/:id", ogenBridge)
+			authenticated.PUT("/upload/keys/:id", ogenBridge)
+			authenticated.DELETE("/upload/keys/:id", ogenBridge)
+			authenticated.GET("/upload/keys/:id/rules", ogenBridge)
+			authenticated.POST("/upload/keys/:id/rules", ogenBridge)
+			authenticated.PUT("/upload/rules/:ruleId", ogenBridge)
+			authenticated.DELETE("/upload/rules/:ruleId", ogenBridge)
 
 			// ── observability (audit / telemetry read-only queries) ────────
 			// 写入链路走异步 recorder/ingester；这里只暴露登录后的后台查询页用。
@@ -446,9 +469,15 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 			authenticated.GET("/observability/audit-logs/:id", ogenBridge)
 			authenticated.GET("/observability/telemetry-logs", ogenBridge)
 			authenticated.GET("/observability/telemetry-logs/:id", ogenBridge)
+			authenticated.GET("/observability/log-policies", ogenBridge)
+			authenticated.POST("/observability/log-policies", ogenBridge)
+			authenticated.POST("/observability/log-policies/preview", ogenBridge)
+			authenticated.PATCH("/observability/log-policies/:id", ogenBridge)
+			authenticated.DELETE("/observability/log-policies/:id", ogenBridge)
 			authenticated.GET("/observability/trace/:request_id", ogenBridge)
 			// /observability/metrics: 进程内 Recorder/Ingester 运行时指标，无参数。
 			authenticated.GET("/observability/metrics", ogenBridge)
+			authenticated.GET("/observability/metrics/prometheus", ogenBridge)
 		}
 
 		open := r.Group("/open/v1")

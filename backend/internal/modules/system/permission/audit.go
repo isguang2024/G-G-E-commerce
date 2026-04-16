@@ -207,18 +207,20 @@ func normalizePermissionAuditResource(value string) string {
 		target = strings.TrimPrefix(target, "system_")
 	case strings.HasPrefix(target, "personal_"):
 		target = strings.TrimPrefix(target, "personal_")
+	case strings.HasPrefix(target, "collaboration_workspace_"):
+		target = strings.TrimPrefix(target, "collaboration_workspace_")
 	}
 	return target
 }
 
 func normalizePermissionAuditContext(contextType, permissionKey string) string {
-	target := strings.TrimSpace(contextType)
+	target := normalizeContextType(contextType, "")
 	if target != "" {
 		return target
 	}
-	mapping := permissionkey.FromKey(permissionKey)
-	if strings.TrimSpace(mapping.ContextType) != "" {
-		return strings.TrimSpace(mapping.ContextType)
+	target = normalizeContextType("", deriveContextType(permissionKey, ""))
+	if target != "" {
+		return target
 	}
 	return "collaboration"
 }

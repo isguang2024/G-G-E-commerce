@@ -9,6 +9,10 @@ type CleanupStaleApiEndpointsRes interface {
 	cleanupStaleApiEndpointsRes()
 }
 
+type CompleteMediaUploadRes interface {
+	completeMediaUploadRes()
+}
+
 type CreateApiEndpointCategoryRes interface {
 	createApiEndpointCategoryRes()
 }
@@ -23,6 +27,22 @@ type CreateLogPolicyRes interface {
 
 type CreateRegisterEntryRes interface {
 	createRegisterEntryRes()
+}
+
+type CreateStorageBucketRes interface {
+	createStorageBucketRes()
+}
+
+type CreateStorageProviderRes interface {
+	createStorageProviderRes()
+}
+
+type CreateUploadKeyRes interface {
+	createUploadKeyRes()
+}
+
+type CreateUploadKeyRuleRes interface {
+	createUploadKeyRuleRes()
 }
 
 type CreateUserRes interface {
@@ -47,6 +67,22 @@ type DeleteMediaRes interface {
 
 type DeleteRegisterEntryRes interface {
 	deleteRegisterEntryRes()
+}
+
+type DeleteStorageBucketRes interface {
+	deleteStorageBucketRes()
+}
+
+type DeleteStorageProviderRes interface {
+	deleteStorageProviderRes()
+}
+
+type DeleteUploadKeyRes interface {
+	deleteUploadKeyRes()
+}
+
+type DeleteUploadKeyRuleRes interface {
+	deleteUploadKeyRuleRes()
 }
 
 type DeleteUserRes interface {
@@ -117,8 +153,20 @@ type GetRoleRes interface {
 	getRoleRes()
 }
 
+type GetStorageBucketRes interface {
+	getStorageBucketRes()
+}
+
+type GetStorageProviderRes interface {
+	getStorageProviderRes()
+}
+
 type GetTelemetryLogRes interface {
 	getTelemetryLogRes()
+}
+
+type GetUploadKeyRes interface {
+	getUploadKeyRes()
 }
 
 type GetUserRes interface {
@@ -177,12 +225,28 @@ type ListStaleApiEndpointsRes interface {
 	listStaleApiEndpointsRes()
 }
 
+type ListStorageBucketsRes interface {
+	listStorageBucketsRes()
+}
+
+type ListStorageProvidersRes interface {
+	listStorageProvidersRes()
+}
+
 type ListTelemetryLogsRes interface {
 	listTelemetryLogsRes()
 }
 
 type ListUnregisteredApiEndpointsRes interface {
 	listUnregisteredApiEndpointsRes()
+}
+
+type ListUploadKeyRulesRes interface {
+	listUploadKeyRulesRes()
+}
+
+type ListUploadKeysRes interface {
+	listUploadKeysRes()
 }
 
 type ListUsersRes interface {
@@ -195,6 +259,10 @@ type LoginRes interface {
 
 type LogoutRes interface {
 	logoutRes()
+}
+
+type PrepareMediaUploadRes interface {
+	prepareMediaUploadRes()
 }
 
 type PreviewLogPolicyRes interface {
@@ -225,6 +293,10 @@ type SyncApiEndpointsRes interface {
 	syncApiEndpointsRes()
 }
 
+type TestStorageProviderRes interface {
+	testStorageProviderRes()
+}
+
 type UpdateApiEndpointCategoryRes interface {
 	updateApiEndpointCategoryRes()
 }
@@ -247,6 +319,22 @@ type UpdateLogPolicyRes interface {
 
 type UpdateRegisterEntryRes interface {
 	updateRegisterEntryRes()
+}
+
+type UpdateStorageBucketRes interface {
+	updateStorageBucketRes()
+}
+
+type UpdateStorageProviderRes interface {
+	updateStorageProviderRes()
+}
+
+type UpdateUploadKeyRes interface {
+	updateUploadKeyRes()
+}
+
+type UpdateUploadKeyRuleRes interface {
+	updateUploadKeyRuleRes()
 }
 
 type UpdateUserRes interface {

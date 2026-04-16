@@ -12,6 +12,7 @@
 | [social-oauth-github.md](social-oauth-github.md) | 配置 GitHub OAuth |
 | [frontend-observability-spec.md](frontend-observability-spec.md) | 前端可观测性与 `data-testid` 规范 |
 | [logging-spec.md](logging-spec.md) | 日志与审计相关约束 |
+| [new-module-checklist.md](new-module-checklist.md) | 新增系统模块完整接入（迁移/种子/权限/菜单/功能包） |
 
 ## 如何选文档
 

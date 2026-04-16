@@ -1,0 +1,197 @@
+# domains/storage_admin/schemas.yaml
+# 上传配置中心 (Provider/Bucket/UploadKey/UploadKeyRule) 的管理面 schema。
+# 所有 Provider 的 access_key / secret_key 在写入时为明文，
+# 服务端使用 AES-256-GCM 加密落库；返回时统一 mask 为 "AB****YZ"。
+components:
+  schemas:
+    StorageProviderSummary:
+      type: object
+      required: [id, provider_key, name, driver, status, is_default]
+      properties:
+        id: {type: string, format: uuid}
+        provider_key: {type: string}
+        name: {type: string}
+        driver: {type: string, enum: [local, aliyun_oss]}
+        endpoint: {type: string}
+        region: {type: string}
+        base_url: {type: string}
+        access_key_masked: {type: string}
+        secret_key_masked: {type: string}
+        is_default: {type: boolean}
+        status: {type: string, enum: [ready, disabled, error]}
+        extra: {type: object, additionalProperties: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    StorageProviderListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/StorageProviderSummary'}
+        total: {type: integer}
+    StorageProviderSaveRequest:
+      type: object
+      required: [provider_key, name, driver]
+      properties:
+        provider_key: {type: string, maxLength: 100}
+        name: {type: string, maxLength: 200}
+        driver: {type: string, enum: [local, aliyun_oss]}
+        endpoint: {type: string, maxLength: 500}
+        region: {type: string, maxLength: 100}
+        base_url: {type: string, maxLength: 500}
+        access_key: {type: string, description: '明文，留空保留原值'}
+        secret_key: {type: string, description: '明文，留空保留原值'}
+        is_default: {type: boolean}
+        status: {type: string, enum: [ready, disabled]}
+        extra: {type: object, additionalProperties: true}
+    StorageProviderTestResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok: {type: boolean}
+        message: {type: string}
+        latency_ms: {type: integer}
+
+    StorageBucketSummary:
+      type: object
+      required: [id, provider_id, bucket_key, name, bucket_name, is_public, status]
+      properties:
+        id: {type: string, format: uuid}
+        provider_id: {type: string, format: uuid}
+        provider_key: {type: string}
+        bucket_key: {type: string}
+        name: {type: string}
+        bucket_name: {type: string}
+        base_path: {type: string}
+        public_base_url: {type: string}
+        is_public: {type: boolean}
+        status: {type: string, enum: [ready, disabled]}
+        extra: {type: object, additionalProperties: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    StorageBucketListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/StorageBucketSummary'}
+        total: {type: integer}
+    StorageBucketSaveRequest:
+      type: object
+      required: [provider_id, bucket_key, name, bucket_name]
+      properties:
+        provider_id: {type: string, format: uuid}
+        bucket_key: {type: string, maxLength: 100}
+        name: {type: string, maxLength: 200}
+        bucket_name: {type: string, maxLength: 200}
+        base_path: {type: string, maxLength: 500}
+        public_base_url: {type: string, maxLength: 500}
+        is_public: {type: boolean}
+        status: {type: string, enum: [ready, disabled]}
+        extra: {type: object, additionalProperties: true}
+
+    UploadKeyRuleSummary:
+      type: object
+      required: [id, upload_key_id, rule_key, name, filename_strategy, is_default, status]
+      properties:
+        id: {type: string, format: uuid}
+        upload_key_id: {type: string, format: uuid}
+        rule_key: {type: string}
+        name: {type: string}
+        sub_path: {type: string}
+        filename_strategy: {type: string, enum: [uuid, original]}
+        max_size_bytes: {type: integer, format: int64}
+        allowed_mime_types:
+          type: array
+          items: {type: string}
+        process_pipeline:
+          type: array
+          items: {type: string}
+        is_default: {type: boolean}
+        status: {type: string, enum: [ready, disabled]}
+        meta: {type: object, additionalProperties: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    UploadKeyRuleSaveRequest:
+      type: object
+      required: [rule_key, name]
+      properties:
+        rule_key: {type: string, maxLength: 150}
+        name: {type: string, maxLength: 200}
+        sub_path: {type: string, maxLength: 255}
+        filename_strategy: {type: string, enum: [uuid, original]}
+        max_size_bytes: {type: integer, format: int64}
+        allowed_mime_types:
+          type: array
+          items: {type: string}
+        process_pipeline:
+          type: array
+          items: {type: string}
+        is_default: {type: boolean}
+        status: {type: string, enum: [ready, disabled]}
+        meta: {type: object, additionalProperties: true}
+
+    UploadKeySummary:
+      type: object
+      required: [id, bucket_id, key, name, status, visibility]
+      properties:
+        id: {type: string, format: uuid}
+        bucket_id: {type: string, format: uuid}
+        bucket_key: {type: string}
+        key: {type: string}
+        name: {type: string}
+        path_template: {type: string}
+        default_rule_key: {type: string}
+        max_size_bytes: {type: integer, format: int64}
+        allowed_mime_types:
+          type: array
+          items: {type: string}
+        visibility: {type: string, enum: [public, private]}
+        status: {type: string, enum: [ready, disabled]}
+        meta: {type: object, additionalProperties: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    UploadKeyDetail:
+      allOf:
+        - $ref: '#/components/schemas/UploadKeySummary'
+        - type: object
+          required: [rules]
+          properties:
+            rules:
+              type: array
+              items: {$ref: '#/components/schemas/UploadKeyRuleSummary'}
+    UploadKeyListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/UploadKeySummary'}
+        total: {type: integer}
+    UploadKeySaveRequest:
+      type: object
+      required: [bucket_id, key, name]
+      properties:
+        bucket_id: {type: string, format: uuid}
+        key: {type: string, maxLength: 150}
+        name: {type: string, maxLength: 200}
+        path_template: {type: string, maxLength: 500}
+        default_rule_key: {type: string, maxLength: 150}
+        max_size_bytes: {type: integer, format: int64}
+        allowed_mime_types:
+          type: array
+          items: {type: string}
+        visibility: {type: string, enum: [public, private]}
+        status: {type: string, enum: [ready, disabled]}
+        meta: {type: object, additionalProperties: true}
+
+    UploadKeyRuleListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/UploadKeyRuleSummary'}
+        total: {type: integer}

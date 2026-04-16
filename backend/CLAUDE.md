@@ -96,6 +96,19 @@ go test -tags integration ./internal/api/handlers/...
 Frontend consumes the generated TS client under `frontend/src/api/v5/`.
 Re-run the generator there and replace any hand-written axios calls.
 
+## How to add a complete system module
+
+If you're adding a new **management page** (not just a single endpoint),
+the full checklist is in `docs/guides/new-module-checklist.md`. It covers:
+
+1. Migration → Model → OpenAPI spec → permission key mapping →
+   permission key seed → module group → menu seed → feature package
+   binding → code gen → handler/service → frontend page → verify.
+
+Key invariant: `permissionkey.go` mapping's `ResourceCode` must equal
+the `ModuleGroup.Code` in `seeds.go`, otherwise the permission key
+lands in the wrong group in the admin UI.
+
 ## Anti-patterns
 
 - Do NOT re-introduce a legacy Gin module shell

@@ -165,3 +165,29 @@
 ### 下次方向
 - 如果继续给注册策略做减法，下一步应评估 `target_home_path` 是否需要常驻表单，还是降级为高级项，避免“注册后去向”继续暴露过多实现细节。
 - `register-entry` 与 `register-policy` 目前仍保留模板卡片式入口；如果后续要继续收紧，可以把“预设模板”再收成下拉或轻量向导。
+
+## 2026-04-16 上传系统基础设施与媒体上传链路落地
+
+### 本次改动
+- 新增上传系统 5 张核心表与模型：`storage_providers`、`storage_buckets`、`upload_keys`、`upload_key_rules`、`upload_records`，并接入 AutoMigrate 与默认 seed，形成可用的本地上传配置基座。
+- 打通媒体上传后端链路：`/media/upload`、`/media`、`/media/{id}` 现在落到真实上传服务，文件写入 `data/uploads`，返回结构化媒体元数据，并通过 `/uploads` 静态路由对外访问。
+- 补齐上传配置与密钥基础设施：新增 `upload` 配置段、环境变量映射、默认值与校验；实现 AES-256-GCM 版 `SecretCipher`、版本化密文前缀与解密缓存，为后续 Provider 密钥加密接入预留稳定接口。
+- 前端新增统一上传 SDK 与 `useUpload`，WangEditor 不再手拼旧接口，改为走统一媒体上传入口；同时完成 OpenAPI bundle/ogen/前端 `gen:api` 刷新。
+- 顺手修复仓库里阻塞全量测试的历史断层：路由桥接对账、权限上下文判定、导航测试桩接口漂移，保证当前分支 `go test ./...` 与前端构建均通过。
+
+### 下次方向
+- 如果要继续兑现任务树里的“配置中心”，下一步应补 Provider/Bucket/UploadKey/Rule 的管理 API 与管理端页面，而不是继续把默认配置硬编码在 seed 上。
+- 直传、分片、处理管道、多云驱动（OSS/COS/S3）和 E2E/运维文档仍未落地；这些是独立阶段工作，应该按真实范围继续拆分推进，不应在任务树里一次性伪完成。
+
+## 2026-04-16 上传系统阶段 3/4/5 第二轮收口
+
+### 本次改动
+- 补齐直传主链：新增 `/media/prepare`、`/media/complete` 契约与 handler，`UploadService` 支持 prepare/direct-complete 两段式流程，前端上传 SDK 改为统一走 `prepare -> direct/relay -> complete`。
+- 前端 SDK 收口了字符串简写 key、对象参数、直传进度/取消与 WangEditor 集成；旧 `uploadMedia` 入口仍保留，作为迁移期兼容封装继续存在。
+- 为阶段 3 新增自定义 driver 支撑物：最小模板代码、contract harness、自测以及 FTP/SFTP 占位示例文档，并把安全约束写入扩展文档。
+- 本轮执行并通过 `go test ./internal/modules/system/upload/...`、`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit`、`pnpm run build`。
+
+### 下次方向
+- 阿里云 relay 节点还没达到 `>5MB multipart + abort + 并发上传` 的验收线，不能关；下一步要么补 multipart，要么收窄节点验收标准。
+- 旧接口 deprecation 层还差后端旧路径与响应 header，当前只是保留了前端兼容入口；如果要完成该节点，必须把后端兼容层一并补齐。
+- 阶段 3 还剩 Driver 指标/中间件、动态开关，以及腾讯云 / S3 兼容 driver；阶段 5 还剩管理端 UI 和 E2E，这些都是真正未完成的尾项。

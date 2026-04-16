@@ -1195,3 +1195,61 @@ func TestIntegrationAuditLogStatsDefaultWindow(t *testing.T) {
 		t.Errorf("stats default window: expected buckets array, got %T", resp["buckets"])
 	}
 }
+
+// ── upload config (storage_admin) smoke ──────────────────────────────────────
+//
+// 这一组只验「super_admin 拿到 token 后能进去管理面 List 端点」，不依赖具体的
+// Provider/Bucket/Key 行 —— 空数据库返回 200 + 空数组也算通过。CRUD 写入路径
+// 由单独的 service 单测兜底，这里只确认：
+//
+//  1. 路由已挂载（/storage/providers /storage/buckets /upload/keys）；
+//  2. system.upload.config.manage 权限对 super_admin 不被拒；
+//  3. 鉴权层正确把无 token 请求拦在外面。
+//
+// 任何 5xx 都直接 fatal —— 表示 handler 本身 panic 或 service 没接好。
+
+func TestIntegrationStorageProvidersList(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+	w := integDo(http.MethodGet, "/api/v1/storage/providers", nil, integBearerHeader(integToken))
+	if w.Code >= 500 {
+		t.Fatalf("storage/providers: 5xx %d — body: %s", w.Code, w.Body.String())
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("storage/providers: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestIntegrationStorageProvidersListNoToken(t *testing.T) {
+	w := integDo(http.MethodGet, "/api/v1/storage/providers", nil, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("storage/providers no token: expected 401, got %d", w.Code)
+	}
+}
+
+func TestIntegrationStorageBucketsList(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+	w := integDo(http.MethodGet, "/api/v1/storage/buckets", nil, integBearerHeader(integToken))
+	if w.Code >= 500 {
+		t.Fatalf("storage/buckets: 5xx %d — body: %s", w.Code, w.Body.String())
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("storage/buckets: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestIntegrationUploadKeysList(t *testing.T) {
+	if integToken == "" {
+		t.Skip("integToken not set — TestIntegrationLogin must run first")
+	}
+	w := integDo(http.MethodGet, "/api/v1/upload/keys", nil, integBearerHeader(integToken))
+	if w.Code >= 500 {
+		t.Fatalf("upload/keys: 5xx %d — body: %s", w.Code, w.Body.String())
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload/keys: expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+}

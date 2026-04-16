@@ -22,6 +22,7 @@ import (
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
+	"github.com/gg-ecommerce/backend/internal/modules/system/upload"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
@@ -171,6 +172,12 @@ func main() {
 		logger.Warn("Failed to initialize social auth providers", zap.Error(err))
 	} else {
 		logger.Info("Social auth providers initialized successfully")
+	}
+
+	if err := upload.EnsureDefaultSeeds(context.Background(), upload.NewRepository(database.DB), logger); err != nil {
+		logger.Warn("Failed to initialize upload system seeds", zap.Error(err))
+	} else {
+		logger.Info("Upload system seeds initialized successfully")
 	}
 
 	// 初始化内置字典

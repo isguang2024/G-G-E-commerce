@@ -3,16 +3,146 @@
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
+    MediaPrepareUploadRequest:
+      type: object
+      required:
+      - filename
+      - size
+      properties:
+        key:
+          type: string
+        rule:
+          type: string
+        filename:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        checksum:
+          type: string
+    MediaPrepareUploadResponse:
+      type: object
+      required:
+      - mode
+      - storageKey
+      - filename
+      - contentType
+      - uploadKey
+      - fallbackUsed
+      properties:
+        mode:
+          type: string
+          enum:
+          - relay
+          - direct
+        method:
+          type: string
+        url:
+          type: string
+        relayUrl:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        form:
+          type: object
+          additionalProperties:
+            type: string
+        storageKey:
+          type: string
+        filename:
+          type: string
+        contentType:
+          type: string
+        uploadKey:
+          type: string
+        ruleKey:
+          type: string
+        fallbackUsed:
+          type: boolean
+    MediaCompleteUploadRequest:
+      type: object
+      required:
+      - filename
+      - storageKey
+      - size
+      properties:
+        key:
+          type: string
+        rule:
+          type: string
+        filename:
+          type: string
+        storageKey:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        checksum:
+          type: string
+        etag:
+          type: string
     MediaUploadResponse:
       type: object
       required:
+      - id
+      - filename
+      - storageKey
       - url
+      - mimeType
+      - size
+      - createdAt
       properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        storageKey:
+          type: string
         url:
           type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
     MediaItem:
       type: object
-      additionalProperties: true
+      required:
+      - id
+      - filename
+      - storageKey
+      - url
+      - mimeType
+      - size
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        storageKey:
+          type: string
+        url:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
     MediaListResponse:
       type: object
       required:

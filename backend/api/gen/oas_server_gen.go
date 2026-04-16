@@ -50,6 +50,12 @@ type Handler interface {
 	//
 	// POST /permission-actions/cleanup-unused
 	CleanupUnusedPermissionActions(ctx context.Context) (*PermissionActionCleanupResult, error)
+	// CompleteMediaUpload implements completeMediaUpload operation.
+	//
+	// 完成媒体直传.
+	//
+	// POST /media/complete
+	CompleteMediaUpload(ctx context.Context, req *MediaCompleteUploadRequest) (CompleteMediaUploadRes, error)
 	// CreateApiEndpointCategory implements createApiEndpointCategory operation.
 	//
 	// 创建 API 分类.
@@ -152,6 +158,30 @@ type Handler interface {
 	//
 	// POST /roles
 	CreateRole(ctx context.Context, req *RoleCreateRequest) (*RoleCreateResult, error)
+	// CreateStorageBucket implements createStorageBucket operation.
+	//
+	// 创建存储桶.
+	//
+	// POST /storage/buckets
+	CreateStorageBucket(ctx context.Context, req *StorageBucketSaveRequest) (CreateStorageBucketRes, error)
+	// CreateStorageProvider implements createStorageProvider operation.
+	//
+	// 创建存储 Provider.
+	//
+	// POST /storage/providers
+	CreateStorageProvider(ctx context.Context, req *StorageProviderSaveRequest) (CreateStorageProviderRes, error)
+	// CreateUploadKey implements createUploadKey operation.
+	//
+	// 创建 UploadKey.
+	//
+	// POST /upload/keys
+	CreateUploadKey(ctx context.Context, req *UploadKeySaveRequest) (CreateUploadKeyRes, error)
+	// CreateUploadKeyRule implements createUploadKeyRule operation.
+	//
+	// 给 UploadKey 创建 Rule.
+	//
+	// POST /upload/keys/{id}/rules
+	CreateUploadKeyRule(ctx context.Context, req *UploadKeyRuleSaveRequest, params CreateUploadKeyRuleParams) (CreateUploadKeyRuleRes, error)
 	// CreateUser implements createUser operation.
 	//
 	// 创建用户.
@@ -248,6 +278,30 @@ type Handler interface {
 	//
 	// DELETE /roles/{id}
 	DeleteRole(ctx context.Context, params DeleteRoleParams) (*MutationResult, error)
+	// DeleteStorageBucket implements deleteStorageBucket operation.
+	//
+	// 删除桶（软删）.
+	//
+	// DELETE /storage/buckets/{id}
+	DeleteStorageBucket(ctx context.Context, params DeleteStorageBucketParams) (DeleteStorageBucketRes, error)
+	// DeleteStorageProvider implements deleteStorageProvider operation.
+	//
+	// 删除 Provider（软删）.
+	//
+	// DELETE /storage/providers/{id}
+	DeleteStorageProvider(ctx context.Context, params DeleteStorageProviderParams) (DeleteStorageProviderRes, error)
+	// DeleteUploadKey implements deleteUploadKey operation.
+	//
+	// 删除 UploadKey（软删）.
+	//
+	// DELETE /upload/keys/{id}
+	DeleteUploadKey(ctx context.Context, params DeleteUploadKeyParams) (DeleteUploadKeyRes, error)
+	// DeleteUploadKeyRule implements deleteUploadKeyRule operation.
+	//
+	// 删除 Rule（软删）.
+	//
+	// DELETE /upload/rules/{ruleId}
+	DeleteUploadKeyRule(ctx context.Context, params DeleteUploadKeyRuleParams) (DeleteUploadKeyRuleRes, error)
 	// DeleteUser implements deleteUser operation.
 	//
 	// 删除用户.
@@ -644,6 +698,18 @@ type Handler interface {
 	//
 	// GET /roles/{id}/packages
 	GetRolePackages(ctx context.Context, params GetRolePackagesParams) (*RolePackagesResponse, error)
+	// GetStorageBucket implements getStorageBucket operation.
+	//
+	// 查看桶详情.
+	//
+	// GET /storage/buckets/{id}
+	GetStorageBucket(ctx context.Context, params GetStorageBucketParams) (GetStorageBucketRes, error)
+	// GetStorageProvider implements getStorageProvider operation.
+	//
+	// 查看 Provider 详情.
+	//
+	// GET /storage/providers/{id}
+	GetStorageProvider(ctx context.Context, params GetStorageProviderParams) (GetStorageProviderRes, error)
 	// GetSystemViewPages implements getSystemViewPages operation.
 	//
 	// 获取页面文件映射.
@@ -656,6 +722,12 @@ type Handler interface {
 	//
 	// GET /observability/telemetry-logs/{id}
 	GetTelemetryLog(ctx context.Context, params GetTelemetryLogParams) (GetTelemetryLogRes, error)
+	// GetUploadKey implements getUploadKey operation.
+	//
+	// 查看 UploadKey 详情（含 rules）.
+	//
+	// GET /upload/keys/{id}
+	GetUploadKey(ctx context.Context, params GetUploadKeyParams) (GetUploadKeyRes, error)
 	// GetUser implements getUser operation.
 	//
 	// 获取用户详情.
@@ -1003,6 +1075,18 @@ type Handler interface {
 	//
 	// GET /api-endpoints/stale
 	ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error)
+	// ListStorageBuckets implements listStorageBuckets operation.
+	//
+	// 列出存储桶.
+	//
+	// GET /storage/buckets
+	ListStorageBuckets(ctx context.Context, params ListStorageBucketsParams) (ListStorageBucketsRes, error)
+	// ListStorageProviders implements listStorageProviders operation.
+	//
+	// 列出存储 Provider.
+	//
+	// GET /storage/providers
+	ListStorageProviders(ctx context.Context, params ListStorageProvidersParams) (ListStorageProvidersRes, error)
 	// ListTelemetryLogs implements listTelemetryLogs operation.
 	//
 	// 按 level / event / session_id / actor_id / request_id / 时间段过滤分页查询
@@ -1022,6 +1106,18 @@ type Handler interface {
 	//
 	// GET /pages/unregistered
 	ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (*PageUnregisteredListResponse, error)
+	// ListUploadKeyRules implements listUploadKeyRules operation.
+	//
+	// 列出 UploadKey 的 Rules.
+	//
+	// GET /upload/keys/{id}/rules
+	ListUploadKeyRules(ctx context.Context, params ListUploadKeyRulesParams) (ListUploadKeyRulesRes, error)
+	// ListUploadKeys implements listUploadKeys operation.
+	//
+	// 列出 UploadKey.
+	//
+	// GET /upload/keys
+	ListUploadKeys(ctx context.Context, params ListUploadKeysParams) (ListUploadKeysRes, error)
 	// ListUsers implements listUsers operation.
 	//
 	// 获取用户列表（分页 + 多条件筛选）.
@@ -1052,6 +1148,12 @@ type Handler interface {
 	//
 	// POST /messages/inbox/read-all
 	MarkInboxReadAll(ctx context.Context) (*MutationResult, error)
+	// PrepareMediaUpload implements prepareMediaUpload operation.
+	//
+	// 准备媒体上传.
+	//
+	// POST /media/prepare
+	PrepareMediaUpload(ctx context.Context, req *MediaPrepareUploadRequest) (PrepareMediaUploadRes, error)
 	// PreviewLogPolicy implements previewLogPolicy operation.
 	//
 	// 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。.
@@ -1280,6 +1382,12 @@ type Handler interface {
 	//
 	// POST /pages/sync
 	SyncPages(ctx context.Context, params SyncPagesParams) (*PageSyncResult, error)
+	// TestStorageProvider implements testStorageProvider operation.
+	//
+	// 测试 Provider 健康.
+	//
+	// POST /storage/providers/{id}/test
+	TestStorageProvider(ctx context.Context, params TestStorageProviderParams) (TestStorageProviderRes, error)
 	// UpdateApiEndpoint implements updateApiEndpoint operation.
 	//
 	// 更新 API 注册项.
@@ -1406,6 +1514,30 @@ type Handler interface {
 	//
 	// PUT /roles/{id}
 	UpdateRole(ctx context.Context, req *RoleUpdateRequest, params UpdateRoleParams) (*MutationResult, error)
+	// UpdateStorageBucket implements updateStorageBucket operation.
+	//
+	// 更新桶.
+	//
+	// PUT /storage/buckets/{id}
+	UpdateStorageBucket(ctx context.Context, req *StorageBucketSaveRequest, params UpdateStorageBucketParams) (UpdateStorageBucketRes, error)
+	// UpdateStorageProvider implements updateStorageProvider operation.
+	//
+	// 更新 Provider.
+	//
+	// PUT /storage/providers/{id}
+	UpdateStorageProvider(ctx context.Context, req *StorageProviderSaveRequest, params UpdateStorageProviderParams) (UpdateStorageProviderRes, error)
+	// UpdateUploadKey implements updateUploadKey operation.
+	//
+	// 更新 UploadKey.
+	//
+	// PUT /upload/keys/{id}
+	UpdateUploadKey(ctx context.Context, req *UploadKeySaveRequest, params UpdateUploadKeyParams) (UpdateUploadKeyRes, error)
+	// UpdateUploadKeyRule implements updateUploadKeyRule operation.
+	//
+	// 更新 Rule.
+	//
+	// PUT /upload/rules/{ruleId}
+	UpdateUploadKeyRule(ctx context.Context, req *UploadKeyRuleSaveRequest, params UpdateUploadKeyRuleParams) (UpdateUploadKeyRuleRes, error)
 	// UpdateUser implements updateUser operation.
 	//
 	// 更新用户.

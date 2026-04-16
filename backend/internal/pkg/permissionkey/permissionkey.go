@@ -83,6 +83,9 @@ var mappings = map[string]Mapping{
 	"collaboration_workspace:configure_action_boundary_current":  {Key: "collaboration_workspace.boundary.manage", ResourceCode: "collaboration_workspace", ActionCode: "configure_action_boundary", Name: "当前协作空间功能边界管理", Description: "允许在当前协作空间上下文中查看和配置本协作空间的功能边界", ContextType: "collaboration"},
 	"system_permission:manage_action_registry":                   {Key: "system.permission.manage", ResourceCode: "permission_key", ActionCode: "manage", Name: "功能权限管理", Description: "允许查看和维护功能权限", ContextType: "personal"},
 	"system_permission:assign_role_action":                       {Key: "system.role.assign_action", ResourceCode: "role", ActionCode: "assign_action", Name: "配置角色功能权限", Description: "允许为角色配置功能权限", ContextType: "personal"},
+	"system.upload.config:manage":                                {Key: "system.upload.config.manage", ResourceCode: "upload", ActionCode: "manage", Name: "上传配置管理", Description: "允许管理存储 Provider / Bucket / UploadKey / Rule 配置", ContextType: "personal"},
+	"system.media:view":                                          {Key: "system.media.view", ResourceCode: "upload", ActionCode: "view", Name: "查看媒体文件", Description: "允许查看媒体文件列表", ContextType: "personal"},
+	"system.media:manage":                                        {Key: "system.media.manage", ResourceCode: "upload", ActionCode: "manage", Name: "管理媒体文件", Description: "允许上传、删除媒体文件", ContextType: "personal"},
 }
 
 func Normalize(key string) string {

@@ -179,6 +179,11 @@ func AutoMigrate() error {
 		&models.SocialAuthProvider{},
 		&models.UserSocialAccount{},
 		&models.SocialOAuthState{},
+		&models.StorageProvider{},
+		&models.StorageBucket{},
+		&models.UploadKey{},
+		&models.UploadKeyRule{},
+		&models.UploadRecord{},
 		// 数据字典
 		&models.DictType{},
 		&models.DictItem{},

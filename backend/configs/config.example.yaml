@@ -66,3 +66,16 @@ telemetry:
   session_rate_limit: 60 # 单 session 每秒允许写入条数
   ip_rate_limit: 600     # 单客户端 IP 每秒允许写入条数
   payload_max_bytes: 8192
+
+upload:
+  local_root: "./data/uploads"
+  public_base_url: "/uploads"
+  default_tenant_id: "default"
+  default_provider_key: "local-public"
+  default_bucket_key: "public-media"
+  default_upload_key: "media.default"
+  default_rule_key: "image"
+  max_file_size_bytes: 10485760
+  secret_master_keys: []
+  secret_cache_ttl_seconds: 300
+  secret_current_key_id: "local"

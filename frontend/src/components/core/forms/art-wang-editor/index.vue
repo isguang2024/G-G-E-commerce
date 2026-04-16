@@ -22,8 +22,8 @@
   import { onBeforeUnmount, onMounted, shallowRef, computed } from 'vue'
   import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
   import { ElMessage } from 'element-plus'
-  import { useUserStore } from '@/domains/auth/store'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
+  import { uploadMediaWithPrepare } from '@/domains/upload/api'
 
   defineOptions({ name: 'ArtWangEditor' })
 
@@ -71,7 +71,6 @@
 
   // 编辑器实例
   const editorRef = shallowRef<IDomEditor>()
-  const userStore = useUserStore()
 
   // 常量配置
   const DEFAULT_UPLOAD_CONFIG = {
@@ -80,12 +79,6 @@
     fieldName: 'file',
     allowedFileTypes: ['image/*']
   } as const
-
-  // 计算属性：上传服务器地址
-  const uploadServer = computed(
-    () =>
-      props.uploadConfig?.server || `${import.meta.env.VITE_API_URL}/api/common/upload/wangeditor`
-  )
 
   // 合并上传配置
   const mergedUploadConfig = computed(() => ({
@@ -124,9 +117,20 @@
         maxFileSize: mergedUploadConfig.value.maxFileSize,
         maxNumberOfFiles: mergedUploadConfig.value.maxNumberOfFiles,
         allowedFileTypes: mergedUploadConfig.value.allowedFileTypes,
-        server: uploadServer.value,
-        headers: {
-          Authorization: userStore.accessToken
+        async customUpload(file: File, insertFn: (url: string, alt?: string, href?: string) => void) {
+          const uploaded = await uploadMediaWithPrepare(file, { key: 'editor.inline' })
+          const url = `${uploaded?.url || ''}`.trim()
+          if (!url) {
+            throw new Error('上传响应缺少 url')
+          }
+          insertFn(url, file.name, url)
+        },
+        customInsert(res: any, insertFn: (url: string, alt?: string, href?: string) => void) {
+          const url = res?.url
+          if (!url) {
+            throw new Error('上传响应缺少 url')
+          }
+          insertFn(url, '', url)
         },
         onSuccess() {
           ElMessage.success(`图片上传成功 ${emojiText[200]}`)

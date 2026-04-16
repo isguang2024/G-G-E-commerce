@@ -38,6 +38,7 @@ tags:
 - name: dictionary
 - name: telemetry
 - name: observability
+- name: storage
 paths:
   /telemetry/logs:
     $ref: ./domains/telemetry/paths.yaml#/paths/~1telemetry~1logs
@@ -363,10 +364,32 @@ paths:
     $ref: ./domains/dictionary/paths.yaml#/paths/~1dictionaries~1{id}~1items
   /media/upload:
     $ref: ./domains/media/paths.yaml#/paths/~1media~1upload
+  /media/prepare:
+    $ref: ./domains/media/paths.yaml#/paths/~1media~1prepare
+  /media/complete:
+    $ref: ./domains/media/paths.yaml#/paths/~1media~1complete
   /media:
     $ref: ./domains/media/paths.yaml#/paths/~1media
   /media/{id}:
     $ref: ./domains/media/paths.yaml#/paths/~1media~1{id}
+  /storage/providers:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1storage~1providers
+  /storage/providers/{id}:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1storage~1providers~1{id}
+  /storage/providers/{id}/test:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1storage~1providers~1{id}~1test
+  /storage/buckets:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1storage~1buckets
+  /storage/buckets/{id}:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1storage~1buckets~1{id}
+  /upload/keys:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1keys
+  /upload/keys/{id}:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1keys~1{id}
+  /upload/keys/{id}/rules:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1keys~1{id}~1rules
+  /upload/rules/{ruleId}:
+    $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1rules~1{ruleId}
 components:
   schemas:
     WorkspaceSummary:
@@ -495,6 +518,34 @@ components:
       $ref: ./components/common.yaml#/components/schemas/ViewPagesResponse
     Error:
       $ref: ./components/common.yaml#/components/schemas/Error
+    StorageProviderSummary:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageProviderSummary
+    StorageProviderListResponse:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageProviderListResponse
+    StorageProviderSaveRequest:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageProviderSaveRequest
+    StorageProviderTestResponse:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageProviderTestResponse
+    StorageBucketSummary:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageBucketSummary
+    StorageBucketListResponse:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageBucketListResponse
+    StorageBucketSaveRequest:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/StorageBucketSaveRequest
+    UploadKeyRuleSummary:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyRuleSummary
+    UploadKeyRuleSaveRequest:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyRuleSaveRequest
+    UploadKeyRuleListResponse:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyRuleListResponse
+    UploadKeySummary:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeySummary
+    UploadKeyDetail:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyDetail
+    UploadKeyListResponse:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeyListResponse
+    UploadKeySaveRequest:
+      $ref: ./domains/storage_admin/schemas.yaml#/components/schemas/UploadKeySaveRequest
   responses:
     BadRequest:
       $ref: ./components/errors.yaml#/components/responses/BadRequest
