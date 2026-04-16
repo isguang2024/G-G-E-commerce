@@ -120,7 +120,7 @@ APP 入口解析固定为：
 
 ### 5.2 API 链路
 
-- API 一律 OpenAPI-first：先改 `backend/api/openapi/`，再 bundle、ogen、前端 `pnpm run gen:api`，最后修 handler/service/frontend 调用。
+- API 一律 OpenAPI-first：先改 `backend/api/openapi/`，再 bundle、ogen、gen-permissions、**重启后端**、前端 `pnpm run gen:api`，最后修 sub-handler/service 与前端调用。
 - 禁止手改 `backend/api/gen/` 与 `frontend/src/api/v5/` 生成产物。
 - 权限判断只走 `backend/internal/pkg/permission/evaluator`。
 
@@ -146,8 +146,8 @@ APP 入口解析固定为：
 
 强制链路：
 1. 先改 OpenAPI / model
-2. 再刷新生成物
-3. 再改 handler / service / frontend
+2. 再刷新生成物（含 gen-permissions），并重启后端让 seed 生效
+3. 再改 sub-handler / service / frontend
 4. 最后跑 go test 与 vue-tsc
 
 完成标准：

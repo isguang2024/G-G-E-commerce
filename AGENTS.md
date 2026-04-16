@@ -20,7 +20,7 @@
 - 新模块 / 新表 / 新接口在评审时必须显式回答：**是否带 tenant_id、是否在仓储层强制过滤**。
 - API 一律走 OpenAPI-first：spec 即真相，先改 `backend/api/openapi/`，再刷新生成物，再写实现；不允许手写 router/dto 绕开 ogen 生成。
 - `backend/api/gen/` 与 `frontend/src/api/v5/`（当前包含 `client.ts`、`types.ts`、`schema.d.ts`、`error-codes.ts`）属于生成产物，禁止手改生成文件本体；业务封装只能写在生成层之外。
-- 权限判断一律走 `backend/internal/pkg/permission/evaluator`，不允许在 handler / service 内散写权限交集逻辑。
+- 权限判断一律走 `backend/internal/pkg/permission/evaluator`，不允许在 sub-handler / service 内散写权限交集逻辑。
 - 前端已接真实接口；任何后端契约变更必须同步更新 OpenAPI spec、后端生成代码与前端生成 client。
 
 ## API 变更固定步骤
