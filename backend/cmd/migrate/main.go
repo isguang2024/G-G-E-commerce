@@ -160,6 +160,8 @@ func main() {
 	})
 
 	runOptionalMigrationTasks(logger, "runtime-sync", []migrationTask{
+		{Name: "sync.consolidate_permission_keys", Run: consolidatePermissionKeys},
+		{Name: "sync.prune_feature_package_keys", Run: pruneBuiltinFeaturePackageKeys},
 		{Name: "sync.openapi_endpoints", Run: initOpenAPIEndpoints},
 		{
 			Name: "sync.api_registry",
@@ -760,11 +762,8 @@ func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 		if strings.TrimSpace(item.Code) == "" {
 			updates["code"] = permissionseed.StableID("permission-action-code", mapping.Key).String()
 		}
-		if strings.TrimSpace(item.ModuleCode) == "" {
-			if moduleCode := strings.TrimSpace(mapping.ResourceCode); moduleCode != "" {
-				updates["module_code"] = moduleCode
-			}
-		}
+		// ModuleCode 由 permission_groups JOIN 计算得出（model 字段 gorm:"-"），
+		// 不是 permission_keys 的直接列，无需也无法写入。
 		if len(updates) == 0 {
 			continue
 		}
@@ -801,6 +800,158 @@ func rebindAPIBindingPermissionKey(fromKey, toKey string) error {
 	return database.DB.
 		Where("permission_key = ? AND deleted_at IS NULL", fromKey).
 		Delete(&usermodel.APIEndpointPermissionBinding{}).Error
+}
+
+// consolidatePermissionKeys 将历史遗留、已拆分过细的 permission_key 合并到新的
+// 规范 key 上。合并对由 permissionKeyConsolidations() 维护，任务会幂等执行：
+//
+//  1. 将 feature_package_keys / user_action_permissions / role_disabled_actions /
+//     collaboration_workspace_blocked_actions 的 action_id 从旧 key 重绑到新 key。
+//  2. 将 api_endpoint_permission_bindings.permission_key 的值重写。
+//  3. 将 ui_pages.permission_key 的值重写。
+//  4. 软删除旧 permission_keys 行。
+//
+// 新 key 必须已由 default.permission_keys（EnsureDefaultPermissionKeys /
+// EnsureOpenAPIPermissionKeys）落库；找不到新 key 时跳过并 warn 而不阻塞启动。
+func consolidatePermissionKeys(logger *zap.Logger) error {
+	pairs := permissionKeyConsolidations()
+	mergedPairs := 0
+	for _, pair := range pairs {
+		fromKey := strings.TrimSpace(pair.From)
+		toKey := strings.TrimSpace(pair.To)
+		if fromKey == "" || toKey == "" || fromKey == toKey {
+			continue
+		}
+
+		var legacy usermodel.PermissionKey
+		err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", fromKey).First(&legacy).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("lookup legacy permission key %s: %w", fromKey, err)
+		}
+
+		var canonical usermodel.PermissionKey
+		err = database.DB.Where("permission_key = ? AND deleted_at IS NULL", toKey).First(&canonical).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("canonical permission key missing, skip consolidation",
+				zap.String("from", fromKey), zap.String("to", toKey))
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("lookup canonical permission key %s: %w", toKey, err)
+		}
+
+		if err := rebindPermissionKeyReferences(legacy.ID, canonical.ID); err != nil {
+			return fmt.Errorf("rebind references %s->%s: %w", fromKey, toKey, err)
+		}
+
+		if err := rebindAPIBindingPermissionKey(fromKey, toKey); err != nil {
+			return fmt.Errorf("rebind api bindings %s->%s: %w", fromKey, toKey, err)
+		}
+
+		if err := database.DB.Exec(
+			`UPDATE ui_pages SET permission_key = ?, updated_at = ?
+			 WHERE permission_key = ? AND deleted_at IS NULL`,
+			toKey, time.Now(), fromKey,
+		).Error; err != nil {
+			return fmt.Errorf("rewrite ui_pages permission_key %s->%s: %w", fromKey, toKey, err)
+		}
+
+		if err := database.DB.Delete(&legacy).Error; err != nil {
+			return fmt.Errorf("soft delete legacy permission key %s: %w", fromKey, err)
+		}
+
+		mergedPairs++
+		logger.Info("consolidated permission key",
+			zap.String("from", fromKey), zap.String("to", toKey))
+	}
+	logger.Info("permission key consolidation applied", zap.Int("pairs", mergedPairs))
+	return nil
+}
+
+// pruneBuiltinFeaturePackageKeys 将 IsBuiltin=true 功能包的 feature_package_keys
+// 对齐到 DefaultFeaturePackages 里声明的 PermissionKeys 集合，删除声明之外的 action_id。
+// 必要性：EnsureDefaultFeaturePackages 只追加不剪枝，seed 调整后的历史残留会污染
+// 包定义；合并权限键时我们重新切分了平台管理员的包拓扑，必须剪枝才能得到干净结果。
+// 仅对 seed 里显式列出 PermissionKeys 的 builtin 包生效；PermissionKeys 为空视为
+// 不做限制，保留现有绑定。
+func pruneBuiltinFeaturePackageKeys(logger *zap.Logger) error {
+	packages := permissionseed.DefaultFeaturePackages()
+	totalDeleted := int64(0)
+	for _, seed := range packages {
+		if !seed.IsBuiltin {
+			continue
+		}
+		if len(seed.PermissionKeys) == 0 {
+			continue
+		}
+
+		var pkg usermodel.FeaturePackage
+		err := database.DB.Where("package_key = ? AND deleted_at IS NULL", seed.PackageKey).First(&pkg).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("lookup feature package %s: %w", seed.PackageKey, err)
+		}
+
+		var desiredKeys []usermodel.PermissionKey
+		if err := database.DB.
+			Where("permission_key IN ? AND deleted_at IS NULL", seed.PermissionKeys).
+			Find(&desiredKeys).Error; err != nil {
+			return fmt.Errorf("load desired permission keys for %s: %w", seed.PackageKey, err)
+		}
+		desiredIDs := make([]uuid.UUID, 0, len(desiredKeys))
+		for _, k := range desiredKeys {
+			desiredIDs = append(desiredIDs, k.ID)
+		}
+		if len(desiredIDs) == 0 {
+			continue
+		}
+
+		result := database.DB.Exec(
+			`DELETE FROM feature_package_keys WHERE package_id = ? AND action_id NOT IN ?`,
+			pkg.ID, desiredIDs,
+		)
+		if result.Error != nil {
+			return fmt.Errorf("prune feature_package_keys for %s: %w", seed.PackageKey, result.Error)
+		}
+		if result.RowsAffected > 0 {
+			logger.Info("pruned feature_package_keys",
+				zap.String("package_key", seed.PackageKey),
+				zap.Int64("deleted", result.RowsAffected))
+			totalDeleted += result.RowsAffected
+		}
+	}
+	logger.Info("feature_package_keys prune applied", zap.Int64("deleted", totalDeleted))
+	return nil
+}
+
+// permissionKeyConsolidations 声明一次性合并规则：legacy_key -> canonical_key。
+// 任何后续的权限键合并都集中在这里维护，避免散落在迁移代码各处。
+func permissionKeyConsolidations() []struct{ From, To string } {
+	return []struct{ From, To string }{
+		{From: "observability.audit.read", To: "observability.log.read"},
+		{From: "observability.telemetry.read", To: "observability.log.read"},
+		{From: "system.register_log.read", To: "observability.log.read"},
+		{From: "observability.policy.read", To: "observability.policy.manage"},
+		{From: "observability.policy.write", To: "observability.policy.manage"},
+		{From: "user.list", To: "system.user.manage"},
+		{From: "user.read", To: "system.user.manage"},
+		{From: "user.get", To: "system.user.manage"},
+		{From: "user.create", To: "system.user.manage"},
+		{From: "user.update", To: "system.user.manage"},
+		{From: "user.delete", To: "system.user.manage"},
+		{From: "user.assign_role", To: "system.user.manage"},
+		{From: "system.user.assign_role", To: "system.user.manage"},
+		{From: "system.role.assign_menu", To: "system.role.assign"},
+		{From: "system.role.assign_action", To: "system.role.assign"},
+		{From: "system.role.assign_data", To: "system.role.assign"},
+		{From: "system.register_entry.read", To: "system.register_entry.manage"},
+		{From: "system.register_entry.write", To: "system.register_entry.manage"},
+	}
 }
 
 func countPermissionKeyReferences(actionID uuid.UUID, permissionKey string) (int64, error) {
@@ -1763,6 +1914,21 @@ func initOpenAPIEndpoints(logger *zap.Logger) error {
 		return err
 	}
 	logger.Info("OpenAPI-derived permission bindings ensured", zap.Int("created", bound))
+
+	// P2-3: 孤儿 permission_keys 扫描。permission_keys 表里没被任何 binding
+	// 引用且非 builtin 的 key 通常是历史遗留或 spec 里被摘掉了的 op。只 warn
+	// 不阻塞启动 —— 运维可以按这个列表做清理。
+	orphans, err := permissionseed.ScanOrphanedPermissionKeys(database.DB)
+	if err != nil {
+		// 扫描失败不应挡住 migrate；记 warn 让运维看到即可。
+		logger.Warn("orphan permission_keys scan failed", zap.Error(err))
+	} else if len(orphans) > 0 {
+		logger.Warn("orphan permission_keys (no api_endpoint_permission_bindings reference)",
+			zap.Strings("keys", orphans),
+			zap.Int("count", len(orphans)))
+	} else {
+		logger.Info("orphan permission_keys scan: clean")
+	}
 	return nil
 }
 
@@ -1908,11 +2074,12 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 }
 
 func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {
-	// 迁移 CLI 只需要路由定义来生成 permission seed，不涉及请求处理；
+	// 构建一次完整 router 触发 mountOpenAPIBridgeRoutes 的挂载校验
+	// （radix tree 冲突 / access_mode 非法等都会在这里 fail-fast），
+	// 保证 CLI 阶段就暴露 spec 错误，而不是 HTTP 服务跑起来后才发现。
 	// 显式传 Noop 跳过审计/遥测的异步 worker + channel。
-	router := apirouter.SetupRouter(cfg, logger, database.DB, audit.Noop{}, telemetry.Noop{})
-	builder := permissionseed.NewDeploymentBuilder(database.DB, logger, router).
-		WithCoreDefaults()
+	_ = apirouter.SetupRouter(cfg, logger, database.DB, audit.Noop{}, telemetry.Noop{})
+	builder := permissionseed.NewDeploymentBuilder(database.DB, logger).WithCoreDefaults()
 	builder.LogSummary()
 	return nil
 }

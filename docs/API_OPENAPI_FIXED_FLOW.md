@@ -4,7 +4,7 @@
 
 如果只记一句话，按下面这条链执行：
 
-`model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → gin bridge/router → handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
+`model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → restart backend → router/bridge check → sub-handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
 
 ## 1. 简版顺序
 
@@ -18,12 +18,13 @@
 6. `lint`
 7. `ogen`
 8. `gen-permissions`
-9. `gin bridge/router`
-10. `handler/service`
-11. `frontend gen:api`
-12. `frontend API 封装`
-13. `UI`
-14. `build/test/browser verify`
+9. `restart backend`
+10. `router/bridge check`
+11. `sub-handler/service`
+12. `frontend gen:api`
+13. `frontend API 封装`
+14. `UI`
+15. `build/test/browser verify`
 
 ### 1.2 一句话解释
 
@@ -33,8 +34,9 @@
 - `OpenAPI spec`：后端与前端共享的唯一契约真相源。
 - `bundle/lint/ogen`：把多文件 spec 收敛成最终契约并生成后端产物。
 - `gen-permissions`：从 OpenAPI 扩展字段派生 `permission_keys / api_endpoints / bindings`。
-- `gin bridge/router`：**自动**。`openapi_seed.json` 生成后，后端启动时由 `mountOpenAPIBridgeRoutes` 循环挂载到 Gin 的认证 / 权限 / endpoint-status 分组；不需要手工往 `router.go` 加行。
-- `handler/service`：基于最新生成物实现业务逻辑，不手改生成代码。
+- `restart backend`：**硬性检查点**。`openapi_seed.json` 在 `router` 初始化时只读一次并缓存为路由↔权限键映射；合并 / 重命名 / 删除权限键后若不重启，旧映射继续生效，会出现"DB 已对齐但接口 403"的假权限故障。
+- `router/bridge check`：**自动挂载 + 覆盖率核对**。seed 驱动的 `mountOpenAPIBridgeRoutes` 已经把每条 operation 挂到 Gin 分组；这一步只做核对（跑 `go test ./internal/api/router`），仅当引入非 OpenAPI 入口时才需要手动往 `router.go` 加行。
+- `sub-handler/service`：按 domain 拆分到 `internal/api/handlers/{domain}.go` + `{domain}_handler.go`，基于最新生成物实现业务逻辑，不手改生成代码，也不回退到 god `APIHandler` 堆方法。
 - `frontend gen:api`：刷新前端类型与 client 契约。
 - `frontend API 封装`：在生成层之外写业务调用封装。
 - `UI`：页面、弹窗、表单、列表、状态切换、错误提示联调。
@@ -157,9 +159,36 @@
 - router 已自动桥接（seed 驱动）
 - 但权限注册表和 API 注册表不同步
 
-## 2.7 gin bridge / router
+## 2.7 restart backend
 
-本仓库的“API 网关配置”不是单独一套外部网关文件，而是：
+这是本仓库从真实事故里沉淀出来的硬性检查点，不可跳。
+
+背景：
+
+- `openapi_seed.json` 在 `router` 初始化时读入一次，产物是"路由 → 权限键 / access_mode"的进程级映射
+- 中间件判定权限时走这张映射，而**不是**每次请求都重读 seed
+- 因此任何权限键的合并、重命名、删除，在 DB 对齐之后**仍会被缓存的旧映射拦截**，直到进程重启才真正生效
+
+触发重启的典型场景：
+
+- 跑过 `cmd/migrate` 做了 `consolidatePermissionKeys` 之类的合并
+- 跑过 `make api` 刷新 `openapi_seed.json`（哪怕只是新增了一条 operation）
+- 改动了 `x-permission-key` / `x-access-mode` / `x-app-scope`
+
+操作：
+
+- dev：重启 `go run ./cmd/server` / `air` / IDE 调试进程
+- 容器：`docker compose restart backend` 或等价命令
+
+不重启会观察到的症状：
+
+- 新 key 已写入 DB，旧 key 已软删 / rebind 完成
+- 但前端仍 403，后端日志打 `permission denied: <old-key>`
+- 重启后 403 立刻消失——排查前务必先确认这一步
+
+## 2.8 router / bridge check
+
+本仓库的"API 网关配置"不是单独一套外部网关文件，而是：
 
 - OpenAPI 扩展字段（`x-access-mode`、`x-permission-key`、`x-app-scope` 等）
 - `router.go` 顶部注册的全局 middleware 分组（RequestID / Logger /
@@ -167,7 +196,7 @@
   permission middleware）
 - 启动期由 seed 驱动的自动挂载（`mountOpenAPIBridgeRoutes`）
 
-**这一步是自动的**。跑完 `make api` 之后：
+**这一步默认自动，只做覆盖率核对**。重启后端之后：
 
 - `backend/internal/pkg/permissionseed/openapi_seed.json` 已经包含每条
   operation 的 `method / path / access_mode`
@@ -176,7 +205,7 @@
   挂到对应的 Gin group（`public` → 不过 JWT；`authenticated` /
   `permission` → 过 JWT，`permission` 再过权限 middleware）
 - `router.go` 不再保存每条业务路由的显式 `authenticated.GET(..., ogenBridge)`
-  行；只有 `/health`、`/uploads`、OAuth 回调等**非 OpenAPI** 路由仍然显式注册
+  行；只有 `/health`、`/uploads`、OAuth 回调、WebSocket 等**非 OpenAPI** 路由仍然显式注册
 
 因此新增 API 后要检查的不是"router.go 有没有加行"，而是：
 
@@ -186,11 +215,23 @@
   （该测试构造空 gin.Engine、跑一次 seed 驱动注册、对比 seed 和实际
   `engine.Routes()`；任何漏项、多项、错配、radix tree 冲突都会失败）
 
-## 2.8 handler / service
+需要**手工改 `router.go`** 的只有这几种情况：
 
-生成后再写：
+- 新增 `/health`、`/metrics` 之类的非契约探针
+- 新增文件下载 / WebSocket / SSE 等不走 ogen 的端点
+- 新增 OAuth / 回调等 public 直通路径
 
-- handler
+## 2.9 sub-handler / service
+
+`internal/api/handlers/` 已完成 "god handler" 拆分。每个 domain 自己持有：
+
+- `{domain}_handler.go`：sub-handler struct + 构造函数，仅持有该域最小依赖集
+- `{domain}.go`：所有 receiver 为 `*{domain}APIHandler` 的 op 实现
+- `workspace.go`：`APIHandler` 主结构体，只负责嵌入所有 sub-handler + `NewAPIHandler`
+
+生成后按这个结构写：
+
+- sub-handler
 - service
 - repository
 - mapper / helper
@@ -199,8 +240,10 @@
 
 - 基于最新 `backend/api/gen/` 实现
 - 不允许继续依赖旧字段名、旧响应结构、旧签名
+- **禁止**把新 op 堆回 `APIHandler`；新 op 必须归到某个域的 sub-handler
+- 两个 sub-handler 出现同名方法会编译歧义，这是信号：域边界错了，重新划分
 
-## 2.9 frontend gen:api
+## 2.10 frontend gen:api
 
 后端契约变更后，必须继续执行：
 
@@ -220,7 +263,7 @@
 
 - `frontend/src/api/v5/` 为生成层，禁止手改
 
-## 2.10 frontend API 封装
+## 2.11 frontend API 封装
 
 UI 不直接散用生成 client。
 
@@ -236,7 +279,7 @@ UI 不直接散用生成 client。
 - 列表响应归一化
 - 业务态兜底
 
-## 2.11 UI
+## 2.12 UI
 
 最后才进入页面层：
 
@@ -257,7 +300,7 @@ UI 不直接散用生成 client。
 - runtime navigation
 - 切换入口与 landing
 
-## 2.12 build / test / browser verify
+## 2.13 build / test / browser verify
 
 最少校验项：
 
@@ -314,11 +357,13 @@ UI 不直接散用生成 client。
 
 最常见的漏项是：
 
-- 只改 handler，没改 OpenAPI
+- 只改 sub-handler，没改 OpenAPI
 - 跑了 ogen，没跑前端 `gen:api`
 - 改了受控 API，但没跑 `gen-permissions`，权限注册表和 API 注册表不同步
 - 改了 spec 但忘记跑生成链（`make api`），旧 seed 还在 `openapi_seed.json` 里，启动时自动挂载的 Gin 路由集合还停留在旧版本
+- **跑完 `gen-permissions` 或 `cmd/migrate` 合并权限键后忘记重启后端**，DB 已经对齐但缓存里还是旧映射，接口一律 403
 - 默认数据写进 migration，而不是 seed / ensure
+- 把新 op 堆回 god `APIHandler`，绕过 sub-handler 拆分
 - UI 直接写死类型，没有吃生成 schema
 - 只过编译，没有做浏览器验证
 
@@ -326,4 +371,4 @@ UI 不直接散用生成 client。
 
 团队内部如果只保留一条短句，建议固定成：
 
-`先定模型和数据，再定 OpenAPI；先刷新生成物和权限种子（gin bridge/router 随 seed 在启动时自动挂载），再实现 handler；最后刷新前端类型、补 API 封装、做 UI 和联调验证。`
+`先定模型和数据，再定 OpenAPI；先刷新生成物和权限种子，再重启后端让 seed 生效，再按 domain 写 sub-handler；最后刷新前端类型、补 API 封装、做 UI 和联调验证。`

@@ -19,7 +19,7 @@ import (
 
 // -------- feature package --------
 
-func (h *APIHandler) RollbackFeaturePackage(ctx context.Context, req *gen.RollbackRequest, params gen.RollbackFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *extrasAPIHandler) RollbackFeaturePackage(ctx context.Context, req *gen.RollbackRequest, params gen.RollbackFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
 	if req == nil {
 		return featurePackageMutationResultFromStats(nil), nil
 	}
@@ -35,7 +35,7 @@ func (h *APIHandler) RollbackFeaturePackage(ctx context.Context, req *gen.Rollba
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageRelationTree(ctx context.Context, params gen.GetFeaturePackageRelationTreeParams) (*gen.FeaturePackageRelationTree, error) {
+func (h *extrasAPIHandler) GetFeaturePackageRelationTree(ctx context.Context, params gen.GetFeaturePackageRelationTreeParams) (*gen.FeaturePackageRelationTree, error) {
 	tree, err := h.featurePkgSvc.GetRelationTree(optString(params.WorkspaceScope), optString(params.Keyword))
 	if err != nil {
 		h.logger.Error("get feature package relation tree failed", zap.Error(err))
@@ -112,7 +112,7 @@ func buildRelationNodes(raw []map[string]interface{}) []gen.FeaturePackageRelati
 
 // -------- permission --------
 
-func (h *APIHandler) BatchUpdatePermissionActions(ctx context.Context, req *gen.PermissionActionBatchUpdateRequest) (*gen.PermissionActionBatchUpdateResult, error) {
+func (h *extrasAPIHandler) BatchUpdatePermissionActions(ctx context.Context, req *gen.PermissionActionBatchUpdateRequest) (*gen.PermissionActionBatchUpdateResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -147,7 +147,7 @@ func (h *APIHandler) BatchUpdatePermissionActions(ctx context.Context, req *gen.
 	}, nil
 }
 
-func (h *APIHandler) CreatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest) (*gen.IDResult, error) {
+func (h *extrasAPIHandler) CreatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest) (*gen.IDResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -168,7 +168,7 @@ func (h *APIHandler) CreatePermissionActionGroup(ctx context.Context, req *gen.P
 	return &gen.IDResult{ID: item.ID}, nil
 }
 
-func (h *APIHandler) UpdatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest, params gen.UpdatePermissionActionGroupParams) (*gen.MutationResult, error) {
+func (h *extrasAPIHandler) UpdatePermissionActionGroup(ctx context.Context, req *gen.PermissionActionGroupSaveRequest, params gen.UpdatePermissionActionGroupParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -188,7 +188,7 @@ func (h *APIHandler) UpdatePermissionActionGroup(ctx context.Context, req *gen.P
 	return ok(), nil
 }
 
-func (h *APIHandler) DeletePermissionActionGroup(ctx context.Context, params gen.DeletePermissionActionGroupParams) (*gen.MutationResult, error) {
+func (h *extrasAPIHandler) DeletePermissionActionGroup(ctx context.Context, params gen.DeletePermissionActionGroupParams) (*gen.MutationResult, error) {
 	if err := h.permSvc.DeleteGroup(params.ID); err != nil {
 		h.logger.Error("delete permission group failed", zap.Error(err))
 		return nil, err
@@ -196,7 +196,7 @@ func (h *APIHandler) DeletePermissionActionGroup(ctx context.Context, params gen
 	return ok(), nil
 }
 
-func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req *gen.PermissionActionBatchTemplateSaveRequest) (*gen.PermissionActionBatchTemplateItem, error) {
+func (h *extrasAPIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req *gen.PermissionActionBatchTemplateSaveRequest) (*gen.PermissionActionBatchTemplateItem, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -222,7 +222,7 @@ func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req 
 
 // -------- menu --------
 
-func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMenuDeletePreviewParams) (*gen.MenuDeletePreviewResponse, error) {
+func (h *extrasAPIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMenuDeletePreviewParams) (*gen.MenuDeletePreviewResponse, error) {
 	preview, err := h.menuSvc.DeletePreview(params.ID, "", nil)
 	if err != nil {
 		h.logger.Error("get menu delete preview failed", zap.Error(err))
@@ -239,7 +239,7 @@ func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMen
 
 // -------- page --------
 
-func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageAccessTraceParams) (*gen.PageAccessTraceResponse, error) {
+func (h *extrasAPIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageAccessTraceParams) (*gen.PageAccessTraceResponse, error) {
 	req := &page.AccessTraceRequest{
 		AppKey: strings.TrimSpace(params.AppKey),
 		UserID: params.UserID.String(),

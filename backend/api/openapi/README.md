@@ -31,8 +31,49 @@
 
 Windows 下可用 `update-openapi.bat` 做后端链路刷新，但前端 `gen:api` 仍需单独执行。
 
+## 生成之后的完整 pipeline
+
+`make api` 只是整条闭环的前半段。完整 15 阶段顺序（出自 `../../docs/API_OPENAPI_FIXED_FLOW.md`）：
+
+```
+① model/domain
+② migration
+③ seed/ensure
+④ OpenAPI spec           ← 本目录
+⑤ bundle
+⑥ lint
+⑦ ogen
+⑧ gen-permissions        ← 产出 internal/pkg/permissionseed/openapi_seed.json
+⑨ restart backend        ← 硬性检查点，不可跳
+⑩ router/bridge check   ← 自动挂载 + go test ./internal/api/router
+⑪ sub-handler/service    ← internal/api/handlers/{domain}.go
+⑫ frontend gen:api
+⑬ frontend API 封装
+⑭ UI
+⑮ build/test/browser verify
+```
+
+### 为什么 ⑨ restart backend 不可跳
+
+- `openapi_seed.json` 在后端 `router` 初始化时**只读一次**，产出"路由 → 权限键 / access_mode"的进程级缓存
+- 中间件 `openapiperm.go` 查这份缓存做拦截，不会每次请求回源
+- 因此合并 / 重命名 / 删除权限键后，DB 对齐但**缓存仍是旧的**，接口一律 403
+- 典型触发：跑完 `cmd/migrate` 的 `consolidatePermissionKeys`、或 `make api` 改了 `x-permission-key`
+- 操作：`docker compose restart backend` 或重启 `go run ./cmd/server`
+
+### 改 `x-permission-key` 的协同清单
+
+只要你改了 `x-permission-key` 或 `x-access-mode`，以下四处必须同步：
+
+1. `backend/api/openapi/domains/{domain}/paths.yaml`（本目录）
+2. `backend/internal/pkg/permissionkey/permissionkey.go` 的 legacy→canonical 映射
+3. `backend/internal/pkg/permissionseed/seeds.go` 的 `DefaultPermissionKeys` / feature package 绑定
+4. `backend/cmd/migrate/main.go` 的 `consolidatePermissionKeys` 任务（合并 / 改名 / 删除场景）
+
+跑完 `make api` + `cmd/migrate` 后**必须重启后端**，否则出现 403 先检查是否遗漏了重启。
+
 ## 阅读顺序
 
 1. 先看 `../../docs/API_OPENAPI_FIXED_FLOW.md`
 2. 再回到本目录改 spec
-3. 最后对照 `internal/api/handlers/` 与前端调用收口实现
+3. 最后对照 `internal/api/handlers/{domain}.go` 与前端调用收口实现（sub-handler 按 domain 拆分）

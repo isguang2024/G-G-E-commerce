@@ -15,7 +15,7 @@ import (
 
 // ─── ListDictTypes ───────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListDictTypes(ctx context.Context, params gen.ListDictTypesParams) (gen.ListDictTypesRes, error) {
+func (h *dictionaryAPIHandler) ListDictTypes(ctx context.Context, params gen.ListDictTypesParams) (gen.ListDictTypesRes, error) {
 	current := 1
 	if v, ok := params.Current.Get(); ok {
 		current = v
@@ -64,7 +64,7 @@ func (h *APIHandler) ListDictTypes(ctx context.Context, params gen.ListDictTypes
 
 // ─── CreateDictType ──────────────────────────────────────────────────────────
 
-func (h *APIHandler) CreateDictType(ctx context.Context, req *gen.DictTypeSaveRequest) (gen.CreateDictTypeRes, error) {
+func (h *dictionaryAPIHandler) CreateDictType(ctx context.Context, req *gen.DictTypeSaveRequest) (gen.CreateDictTypeRes, error) {
 	status := ""
 	if v, ok := req.Status.Get(); ok {
 		status = string(v)
@@ -93,7 +93,7 @@ func (h *APIHandler) CreateDictType(ctx context.Context, req *gen.DictTypeSaveRe
 
 // ─── GetDictType ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetDictType(ctx context.Context, params gen.GetDictTypeParams) (gen.GetDictTypeRes, error) {
+func (h *dictionaryAPIHandler) GetDictType(ctx context.Context, params gen.GetDictTypeParams) (gen.GetDictTypeRes, error) {
 	dt, items, err := h.dictSvc.GetType(ctx, params.ID)
 	if err != nil {
 		if errors.Is(err, dictionary.ErrTypeNotFound) {
@@ -125,7 +125,7 @@ func (h *APIHandler) GetDictType(ctx context.Context, params gen.GetDictTypePara
 
 // ─── UpdateDictType ──────────────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateDictType(ctx context.Context, req *gen.DictTypeSaveRequest, params gen.UpdateDictTypeParams) (gen.UpdateDictTypeRes, error) {
+func (h *dictionaryAPIHandler) UpdateDictType(ctx context.Context, req *gen.DictTypeSaveRequest, params gen.UpdateDictTypeParams) (gen.UpdateDictTypeRes, error) {
 	status := ""
 	if v, ok := req.Status.Get(); ok {
 		status = string(v)
@@ -157,7 +157,7 @@ func (h *APIHandler) UpdateDictType(ctx context.Context, req *gen.DictTypeSaveRe
 
 // ─── DeleteDictType ──────────────────────────────────────────────────────────
 
-func (h *APIHandler) DeleteDictType(ctx context.Context, params gen.DeleteDictTypeParams) (gen.DeleteDictTypeRes, error) {
+func (h *dictionaryAPIHandler) DeleteDictType(ctx context.Context, params gen.DeleteDictTypeParams) (gen.DeleteDictTypeRes, error) {
 	if err := h.dictSvc.DeleteType(ctx, params.ID); err != nil {
 		if errors.Is(err, dictionary.ErrTypeNotFound) {
 			e := gen.DeleteDictTypeNotFound(gen.Error{Code: 404, Message: err.Error()})
@@ -178,7 +178,7 @@ func (h *APIHandler) DeleteDictType(ctx context.Context, params gen.DeleteDictTy
 
 // ─── ListDictItems ───────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListDictItems(ctx context.Context, params gen.ListDictItemsParams) (gen.ListDictItemsRes, error) {
+func (h *dictionaryAPIHandler) ListDictItems(ctx context.Context, params gen.ListDictItemsParams) (gen.ListDictItemsRes, error) {
 	items, err := h.dictSvc.ListItems(ctx, params.ID)
 	if err != nil {
 		if errors.Is(err, dictionary.ErrTypeNotFound) {
@@ -197,7 +197,7 @@ func (h *APIHandler) ListDictItems(ctx context.Context, params gen.ListDictItems
 
 // ─── SaveDictItems ───────────────────────────────────────────────────────────
 
-func (h *APIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchSaveRequest, params gen.SaveDictItemsParams) (gen.SaveDictItemsRes, error) {
+func (h *dictionaryAPIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchSaveRequest, params gen.SaveDictItemsParams) (gen.SaveDictItemsRes, error) {
 	inputs := make([]dictionary.DictItemInput, len(req.Items))
 	for i, item := range req.Items {
 		status := ""
@@ -253,7 +253,7 @@ func (h *APIHandler) SaveDictItems(ctx context.Context, req *gen.DictItemsBatchS
 	return &result, nil
 }
 
-func (h *APIHandler) CreateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.CreateDictItemParams) (gen.CreateDictItemRes, error) {
+func (h *dictionaryAPIHandler) CreateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.CreateDictItemParams) (gen.CreateDictItemRes, error) {
 	item, err := h.dictSvc.CreateItem(ctx, params.ID, toDictItemInput(*req))
 	if err != nil {
 		if errors.Is(err, dictionary.ErrTypeNotFound) {
@@ -274,7 +274,7 @@ func (h *APIHandler) CreateDictItem(ctx context.Context, req *gen.DictItemSaveRe
 	return &summary, nil
 }
 
-func (h *APIHandler) UpdateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.UpdateDictItemParams) (gen.UpdateDictItemRes, error) {
+func (h *dictionaryAPIHandler) UpdateDictItem(ctx context.Context, req *gen.DictItemSaveRequest, params gen.UpdateDictItemParams) (gen.UpdateDictItemRes, error) {
 	item, err := h.dictSvc.UpdateItem(ctx, params.ID, params.ItemId, toDictItemInput(*req))
 	if err != nil {
 		if errors.Is(err, dictionary.ErrItemNotFound) || errors.Is(err, dictionary.ErrTypeNotFound) {
@@ -296,7 +296,7 @@ func (h *APIHandler) UpdateDictItem(ctx context.Context, req *gen.DictItemSaveRe
 	return &summary, nil
 }
 
-func (h *APIHandler) DeleteDictItem(ctx context.Context, params gen.DeleteDictItemParams) (gen.DeleteDictItemRes, error) {
+func (h *dictionaryAPIHandler) DeleteDictItem(ctx context.Context, params gen.DeleteDictItemParams) (gen.DeleteDictItemRes, error) {
 	if err := h.dictSvc.DeleteItem(ctx, params.ID, params.ItemId); err != nil {
 		if errors.Is(err, dictionary.ErrItemNotFound) || errors.Is(err, dictionary.ErrTypeNotFound) {
 			e := gen.DeleteDictItemNotFound(gen.Error{Code: 404, Message: err.Error()})
@@ -317,7 +317,7 @@ func (h *APIHandler) DeleteDictItem(ctx context.Context, params gen.DeleteDictIt
 
 // ─── GetDictsByCodes ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetDictsByCodes(ctx context.Context, params gen.GetDictsByCodesParams) (gen.GetDictsByCodesRes, error) {
+func (h *dictionaryAPIHandler) GetDictsByCodes(ctx context.Context, params gen.GetDictsByCodesParams) (gen.GetDictsByCodesRes, error) {
 	codes := strings.Split(params.Codes, ",")
 	// Trim whitespace
 	cleaned := make([]string, 0, len(codes))

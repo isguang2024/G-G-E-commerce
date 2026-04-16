@@ -146,6 +146,14 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "message", Name: "消息", NameEn: "Message", SortOrder: 130, Status: "normal"},
 		{Code: "navigation", Name: "菜单运行时", NameEn: "Navigation Runtime", SortOrder: 140, Status: "normal"},
 		{Code: "workspace", Name: "工作空间", NameEn: "Workspace", SortOrder: 150, Status: "normal"},
+		// 以下 4 条是 P1-3 补齐：历史上只靠手工 UPDATE 或运行时 UI 插入，新库 migrate
+		// 后会缺失。配合 pathSegmentCategoryAlias（openapi_endpoints_ensure.go）里
+		// dictionaries/observability/telemetry/site-configs 的映射，让 ensure 阶段
+		// 能把这些路径首次 insert 时就落到正确桶（而不是 "uncategorized"）。
+		{Code: "menu_backup", Name: "菜单备份", NameEn: "Menu Backup", SortOrder: 160, Status: "normal"},
+		{Code: "observability", Name: "可观测", NameEn: "Observability", SortOrder: 170, Status: "normal"},
+		{Code: "dictionary", Name: "字典", NameEn: "Dictionary", SortOrder: 180, Status: "normal"},
+		{Code: "site_config", Name: "站点配置", NameEn: "Site Config", SortOrder: 190, Status: "normal"},
 		{Code: "uncategorized", Name: "未分类", NameEn: "Uncategorized", SortOrder: 999, Status: "normal"},
 	}
 	for i := range items {
@@ -156,25 +164,10 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 
 func DefaultPermissionKeys() []PermissionKeySeed {
 	items := []PermissionKeySeed{
-		newPermissionKeySeed("role", "list", "查看角色列表", "允许查看角色列表"),
-		newPermissionKeySeed("role", "get", "查看角色详情", "允许查看角色详情"),
-		newPermissionKeySeed("role", "create", "创建角色", "允许创建角色"),
-		newPermissionKeySeed("role", "update", "更新角色", "允许更新角色"),
-		newPermissionKeySeed("role", "delete", "删除角色", "允许删除角色"),
-		newPermissionKeySeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限"),
-		newPermissionKeySeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限"),
-		newPermissionKeySeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限"),
-		newPermissionKeySeed("permission_key", "list", "查看功能权限列表", "允许查看功能权限列表"),
-		newPermissionKeySeed("permission_key", "get", "查看功能权限详情", "允许查看功能权限详情"),
-		newPermissionKeySeed("permission_key", "create", "创建功能权限", "允许创建功能权限"),
-		newPermissionKeySeed("permission_key", "update", "更新功能权限", "允许更新功能权限"),
-		newPermissionKeySeed("permission_key", "delete", "删除功能权限", "允许删除功能权限"),
-		newPermissionKeySeed("user", "list", "查看用户列表", "允许查看用户列表"),
-		newPermissionKeySeed("user", "get", "查看用户详情", "允许查看用户详情"),
-		newPermissionKeySeed("user", "create", "创建用户", "允许创建用户"),
-		newPermissionKeySeed("user", "update", "更新用户", "允许更新用户"),
-		newPermissionKeySeed("user", "delete", "删除用户", "允许删除用户"),
-		newPermissionKeySeed("user", "assign_role", "分配用户角色", "允许为用户分配角色"),
+		newPermissionKeySeed("role", "manage", "角色管理", "允许查看和维护角色"),
+		newPermissionKeySeed("role", "assign", "配置角色权限", "允许为角色配置菜单、功能、数据权限"),
+		newPermissionKeySeed("permission_key", "manage", "功能权限管理", "允许查看和维护功能权限"),
+		newPermissionKeySeed("user", "manage", "用户管理", "允许查看和维护用户"),
 		newPermissionKeySeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树"),
 		newPermissionKeySeed("menu", "create", "创建菜单", "允许创建菜单"),
 		newPermissionKeySeed("menu", "update", "更新菜单", "允许更新菜单"),
@@ -216,6 +209,9 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 		newPermissionKeySeed("system.media", "manage", "管理媒体文件", "允许上传、删除媒体文件"),
 		newPermissionKeySeed("system.site_config", "view", "查询站点配置项（管理端）", "允许查询站点配置项列表"),
 		newPermissionKeySeed("system.site_config", "manage", "管理站点配置项", "允许新增、更新、删除站点配置项和集合"),
+		newPermissionKeySeed("observability.log", "read", "查看日志", "允许查看审计日志、前端遥测以及注册记录"),
+		newPermissionKeySeed("observability.policy", "manage", "日志策略管理", "允许查看和维护日志策略"),
+		newPermissionKeySeed("system.register_entry", "manage", "注册入口管理", "允许查看和维护注册入口、登录页模板"),
 	}
 	for i := range items {
 		items[i].ID = StableID("permission-key", items[i].Key)
@@ -439,6 +435,16 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 			SortOrder:   235,
 			IsBuiltin:   true,
 		},
+		{
+			GroupType:   "module",
+			Code:        "observability",
+			Name:        "可观测管理",
+			NameEn:      "Observability Management",
+			Description: "审计日志、前端遥测、注册记录以及日志策略管理",
+			Status:      "normal",
+			SortOrder:   240,
+			IsBuiltin:   true,
+		},
 	}
 }
 
@@ -455,8 +461,8 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemAccount", "RegisterEntry", "RegisterLog", "LoginPageTemplate", "SystemIntegration", "ApiEndpoint", "MessageManage", "SystemConfig", "Dictionary", "SiteConfig", "SystemLog", "AuditLog", "TelemetryLog", "LogPolicies", "SystemFile", "UploadConfig", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
-			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage", "system.register_entry.read", "system.register_entry.write", "system.register_log.read", "system.dictionary.view", "system.dictionary.manage", "system.site_config.view", "system.site_config.manage", "system.upload.config.manage", "system.media.view", "system.media.manage"},
+			MenuNames:      []string{"System", "SystemAccess", "ActionPermission", "FeaturePackage", "SystemNavigation", "AppManage", "Menus", "PageManagement", "FastEnterManage", "MenuSpaceManage", "AccessTrace", "SystemIntegration", "ApiEndpoint", "MessageManage", "CollaborationWorkspaceRoot", "CollaborationWorkspaceManage"},
+			PermissionKeys: []string{"system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage"},
 		},
 		{
 			PackageKey:     "platform_admin.menu_manage",
@@ -483,8 +489,50 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      3,
-			MenuNames:      []string{"System", "SystemAccess", "FeaturePackage", "SystemIntegration", "ApiEndpoint", "MessageManage", "SystemConfig", "Dictionary"},
+			MenuNames:      []string{"System", "SystemAccess", "FeaturePackage", "SystemIntegration", "ApiEndpoint"},
 			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "feature_package.manage", "feature_package.assign_collaboration_workspace"},
+		},
+		{
+			PackageKey:     "platform_admin.user_role_manage",
+			PackageType:    "base",
+			Name:           "平台管理员用户角色管理包",
+			Description:    "统一维护用户、角色及其菜单/功能/数据权限配置",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
+			IsBuiltin:      true,
+			Status:         "normal",
+			SortOrder:      4,
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "CollaborationWorkspaceRoot", "CollaborationWorkspaceMembers", "CollaborationWorkspaceRolesAndPermissions"},
+			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.role.assign"},
+		},
+		{
+			PackageKey:     "platform_admin.observability",
+			PackageType:    "base",
+			Name:           "平台管理员可观测包",
+			Description:    "包含审计日志、前端遥测、注册记录以及日志策略能力",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
+			IsBuiltin:      true,
+			Status:         "normal",
+			SortOrder:      5,
+			MenuNames:      []string{"System", "SystemLog", "AuditLog", "TelemetryLog", "LogPolicies", "SystemAccount", "RegisterLog"},
+			PermissionKeys: []string{"observability.log.read", "observability.policy.manage"},
+		},
+		{
+			PackageKey:     "platform_admin.content_manage",
+			PackageType:    "base",
+			Name:           "平台管理员内容与站点配置包",
+			Description:    "聚合字典、媒体、站点配置、上传配置以及注册入口治理能力",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
+			IsBuiltin:      true,
+			Status:         "normal",
+			SortOrder:      6,
+			MenuNames:      []string{"System", "SystemConfig", "Dictionary", "SiteConfig", "SystemFile", "UploadConfig", "SystemAccount", "RegisterEntry", "LoginPageTemplate"},
+			PermissionKeys: []string{"system.dictionary.view", "system.dictionary.manage", "system.site_config.view", "system.site_config.manage", "system.upload.config.manage", "system.media.view", "system.media.manage", "system.register_entry.manage"},
 		},
 		{
 			PackageKey:     "collaboration_workspace.member_admin",
@@ -504,13 +552,13 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			PackageKey:     "platform_admin.admin_bundle",
 			PackageType:    "bundle",
 			Name:           "平台管理员组合包",
-			Description:    "统一聚合平台系统、菜单与接口管理基础包",
+			Description:    "统一聚合平台系统、菜单、接口、用户角色、可观测与内容管理基础包",
 			WorkspaceScope: "all",
 			ContextType:    "common",
 			AppKeys:        []string{systemmodels.DefaultAppKey},
 			IsBuiltin:      true,
 			Status:         "normal",
-			SortOrder:      4,
+			SortOrder:      99,
 		},
 	}
 	for i := range items {
@@ -524,6 +572,9 @@ func DefaultFeaturePackageBundles() []FeaturePackageBundleSeed {
 		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.system_manage"},
 		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.menu_manage"},
 		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.api_manage"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.user_role_manage"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.observability"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.content_manage"},
 	}
 }
 
@@ -556,9 +607,9 @@ func DefaultMenus() []MenuSeed {
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "Dictionary", ParentName: "SystemConfig", Path: "/system/dictionary", Component: "/system/dictionary", Title: "数据字典", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "SiteConfig", ParentName: "SystemConfig", Path: "/system/site-config", Component: "/system/site-config", Title: "站点配置", SortOrder: 2, PermissionKey: "system.site_config.view", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"system.site_config.view"}, "keepAlive": true}},
-		{Name: "AuditLog", ParentName: "SystemLog", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 1, PermissionKey: "observability.audit.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.audit.read"}, "keepAlive": true}},
-		{Name: "TelemetryLog", ParentName: "SystemLog", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 2, PermissionKey: "observability.telemetry.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.telemetry.read"}, "keepAlive": true}},
-		{Name: "LogPolicies", ParentName: "SystemLog", Path: "/system/log-policies", Component: "/system/log-policies", Title: "日志策略", SortOrder: 3, PermissionKey: "observability.policy.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.policy.read"}, "keepAlive": true}},
+		{Name: "AuditLog", ParentName: "SystemLog", Path: "/system/audit-log", Component: "/system/audit-log", Title: "审计日志", SortOrder: 1, PermissionKey: "observability.log.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.log.read"}, "keepAlive": true}},
+		{Name: "TelemetryLog", ParentName: "SystemLog", Path: "/system/telemetry-log", Component: "/system/telemetry-log", Title: "前端遥测", SortOrder: 2, PermissionKey: "observability.log.read", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.log.read"}, "keepAlive": true}},
+		{Name: "LogPolicies", ParentName: "SystemLog", Path: "/system/log-policies", Component: "/system/log-policies", Title: "日志策略", SortOrder: 3, PermissionKey: "observability.policy.manage", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"observability.policy.manage"}, "keepAlive": true}},
 		{Name: "UploadConfig", ParentName: "SystemFile", Path: "/system/upload-config", Component: "/system/upload-config", Title: "上传配置", SortOrder: 1, PermissionKey: "system.upload.config.manage", Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "permissions": []interface{}{"system.upload.config.manage"}, "keepAlive": true}},
 		{Name: "RegisterEntry", ParentName: "SystemAccount", Path: "/system/register-entry", Component: "/system/register-entry", Title: "注册入口", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "RegisterLog", ParentName: "SystemAccount", Path: "/system/register-log", Component: "/system/register-log", Title: "注册记录", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},

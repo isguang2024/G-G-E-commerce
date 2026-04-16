@@ -14,7 +14,7 @@ import (
 	permissionrefresh "github.com/maben/backend/internal/pkg/permissionrefresh"
 )
 
-func (h *APIHandler) ListFeaturePackages(ctx context.Context, params gen.ListFeaturePackagesParams) (*gen.FeaturePackageList, error) {
+func (h *featurePackageAPIHandler) ListFeaturePackages(ctx context.Context, params gen.ListFeaturePackagesParams) (*gen.FeaturePackageList, error) {
 	req := &dto.FeaturePackageListRequest{
 		Current:     optInt(params.Current, 1),
 		Size:        optInt(params.Size, 20),
@@ -57,7 +57,7 @@ func (h *APIHandler) ListFeaturePackages(ctx context.Context, params gen.ListFea
 	}, nil
 }
 
-func (h *APIHandler) ListFeaturePackageOptions(ctx context.Context, params gen.ListFeaturePackageOptionsParams) (*gen.FeaturePackageOptions, error) {
+func (h *featurePackageAPIHandler) ListFeaturePackageOptions(ctx context.Context, params gen.ListFeaturePackageOptionsParams) (*gen.FeaturePackageOptions, error) {
 	req := &dto.FeaturePackageListRequest{
 		PackageType: optString(params.PackageType),
 		AppKey:      optString(params.AppKey),
@@ -73,7 +73,7 @@ func (h *APIHandler) ListFeaturePackageOptions(ctx context.Context, params gen.L
 	}, nil
 }
 
-func (h *APIHandler) GetFeaturePackage(ctx context.Context, params gen.GetFeaturePackageParams) (*gen.FeaturePackageSummary, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackage(ctx context.Context, params gen.GetFeaturePackageParams) (*gen.FeaturePackageSummary, error) {
 	p, err := h.featurePkgSvc.Get(params.ID)
 	if err != nil {
 		if errors.Is(err, featurepackage.ErrFeaturePackageNotFound) {
@@ -102,7 +102,7 @@ func (h *APIHandler) GetFeaturePackage(ctx context.Context, params gen.GetFeatur
 	return &s, nil
 }
 
-func (h *APIHandler) CreateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest) (*gen.IDResult, error) {
+func (h *featurePackageAPIHandler) CreateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest) (*gen.IDResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -123,7 +123,7 @@ func (h *APIHandler) CreateFeaturePackage(ctx context.Context, req *gen.FeatureP
 	return &gen.IDResult{ID: created.ID}, nil
 }
 
-func (h *APIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest, params gen.UpdateFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeaturePackageSaveRequest, params gen.UpdateFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -144,7 +144,7 @@ func (h *APIHandler) UpdateFeaturePackage(ctx context.Context, req *gen.FeatureP
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) DeleteFeaturePackage(ctx context.Context, params gen.DeleteFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) DeleteFeaturePackage(ctx context.Context, params gen.DeleteFeaturePackageParams) (*gen.FeaturePackageMutationResult, error) {
 	stats, err := h.featurePkgSvc.Delete(params.ID)
 	if err != nil {
 		h.logger.Error("delete feature package failed", zap.Error(err))
@@ -153,7 +153,7 @@ func (h *APIHandler) DeleteFeaturePackage(ctx context.Context, params gen.Delete
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageChildren(ctx context.Context, params gen.GetFeaturePackageChildrenParams) (*gen.FeaturePackageAssignmentResponse, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageChildren(ctx context.Context, params gen.GetFeaturePackageChildrenParams) (*gen.FeaturePackageAssignmentResponse, error) {
 	ids, pkgs, err := h.featurePkgSvc.GetPackageChildren(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package children failed", zap.Error(err))
@@ -165,7 +165,7 @@ func (h *APIHandler) GetFeaturePackageChildren(ctx context.Context, params gen.G
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageChildren(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageChildrenParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) SetFeaturePackageChildren(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageChildrenParams) (*gen.FeaturePackageMutationResult, error) {
 	stats, err := h.featurePkgSvc.SetPackageChildren(params.ID, uuidIDsFromRequest(req), "")
 	if err != nil {
 		h.logger.Error("set feature package children failed", zap.Error(err))
@@ -174,7 +174,7 @@ func (h *APIHandler) SetFeaturePackageChildren(ctx context.Context, req *gen.UUI
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageActions(ctx context.Context, params gen.GetFeaturePackageActionsParams) (*gen.FeaturePackageActionsResponse, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageActions(ctx context.Context, params gen.GetFeaturePackageActionsParams) (*gen.FeaturePackageActionsResponse, error) {
 	ids, _, err := h.featurePkgSvc.GetPackageKeys(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package actions failed", zap.Error(err))
@@ -186,7 +186,7 @@ func (h *APIHandler) GetFeaturePackageActions(ctx context.Context, params gen.Ge
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageActionsParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) SetFeaturePackageActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageActionsParams) (*gen.FeaturePackageMutationResult, error) {
 	stats, err := h.featurePkgSvc.SetPackageKeys(params.ID, uuidIDsFromRequest(req), "")
 	if err != nil {
 		h.logger.Error("set feature package actions failed", zap.Error(err))
@@ -195,7 +195,7 @@ func (h *APIHandler) SetFeaturePackageActions(ctx context.Context, req *gen.UUID
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageMenus(ctx context.Context, params gen.GetFeaturePackageMenusParams) (*gen.FeaturePackageMenusResponse, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageMenus(ctx context.Context, params gen.GetFeaturePackageMenusParams) (*gen.FeaturePackageMenusResponse, error) {
 	ids, menus, err := h.featurePkgSvc.GetPackageMenus(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package menus failed", zap.Error(err))
@@ -207,7 +207,7 @@ func (h *APIHandler) GetFeaturePackageMenus(ctx context.Context, params gen.GetF
 	}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageMenusParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageMenusParams) (*gen.FeaturePackageMutationResult, error) {
 	stats, err := h.featurePkgSvc.SetPackageMenus(params.ID, uuidIDsFromRequest(req), "")
 	if err != nil {
 		h.logger.Error("set feature package menus failed", zap.Error(err))
@@ -216,7 +216,7 @@ func (h *APIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDLi
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageCollaborationWorkspaceList, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageCollaborationWorkspaceList, error) {
 	ids, err := h.featurePkgSvc.GetPackageCollaborationWorkspaces(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package cws failed", zap.Error(err))
@@ -229,7 +229,7 @@ func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	return &gen.FeaturePackageCollaborationWorkspaceList{Records: records, Total: int64(len(records))}, nil
 }
 
-func (h *APIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageMutationResult, error) {
 	var grantedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		grantedBy = &uid
@@ -242,7 +242,7 @@ func (h *APIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *APIHandler) GetFeaturePackageImpactPreview(ctx context.Context, params gen.GetFeaturePackageImpactPreviewParams) (*gen.FeaturePackageImpactPreview, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageImpactPreview(ctx context.Context, params gen.GetFeaturePackageImpactPreviewParams) (*gen.FeaturePackageImpactPreview, error) {
 	preview, err := h.featurePkgSvc.GetImpactPreview(params.ID)
 	if err != nil {
 		h.logger.Error("get feature package impact preview failed", zap.Error(err))
@@ -258,7 +258,7 @@ func (h *APIHandler) GetFeaturePackageImpactPreview(ctx context.Context, params 
 	}, nil
 }
 
-func (h *APIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.ListFeaturePackageVersionsParams) (*gen.FeaturePackageVersionList, error) {
+func (h *featurePackageAPIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.ListFeaturePackageVersionsParams) (*gen.FeaturePackageVersionList, error) {
 	list, total, err := h.featurePkgSvc.ListVersions(params.ID, optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list feature package versions failed", zap.Error(err))
@@ -283,7 +283,7 @@ func (h *APIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.
 	return &gen.FeaturePackageVersionList{Records: records, Total: total}, nil
 }
 
-func (h *APIHandler) ListFeaturePackageRiskAudits(ctx context.Context, params gen.ListFeaturePackageRiskAuditsParams) (*gen.FeaturePackageRiskAuditList, error) {
+func (h *featurePackageAPIHandler) ListFeaturePackageRiskAudits(ctx context.Context, params gen.ListFeaturePackageRiskAuditsParams) (*gen.FeaturePackageRiskAuditList, error) {
 	list, total, err := h.featurePkgSvc.ListRiskAudits(params.ID, optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list feature package risk audits failed", zap.Error(err))

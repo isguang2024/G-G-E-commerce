@@ -18,7 +18,7 @@ import (
 
 const roleTimeLayout = "2006-01-02 15:04:05"
 
-func (h *APIHandler) ListRoles(ctx context.Context, params gen.ListRolesParams) (*gen.RoleList, error) {
+func (h *roleAPIHandler) ListRoles(ctx context.Context, params gen.ListRolesParams) (*gen.RoleList, error) {
 	req := &dto.RoleListRequest{
 		Current:  optInt(params.Current, 1),
 		Size:     optInt(params.Size, 20),
@@ -43,7 +43,7 @@ func (h *APIHandler) ListRoles(ctx context.Context, params gen.ListRolesParams) 
 	}, nil
 }
 
-func (h *APIHandler) ListRoleOptions(ctx context.Context, params gen.ListRoleOptionsParams) (*gen.RoleOptions, error) {
+func (h *roleAPIHandler) ListRoleOptions(ctx context.Context, params gen.ListRoleOptionsParams) (*gen.RoleOptions, error) {
 	list, err := h.roleSvc.ListOptions()
 	if err != nil {
 		h.logger.Error("list role options failed", zap.Error(err))
@@ -56,7 +56,7 @@ func (h *APIHandler) ListRoleOptions(ctx context.Context, params gen.ListRoleOpt
 	return &gen.RoleOptions{Records: records, Total: len(records)}, nil
 }
 
-func (h *APIHandler) GetRole(ctx context.Context, params gen.GetRoleParams) (gen.GetRoleRes, error) {
+func (h *roleAPIHandler) GetRole(ctx context.Context, params gen.GetRoleParams) (gen.GetRoleRes, error) {
 	r, err := h.roleSvc.Get(params.ID)
 	if err != nil {
 		if errors.Is(err, role.ErrRoleNotFound) {
@@ -69,7 +69,7 @@ func (h *APIHandler) GetRole(ctx context.Context, params gen.GetRoleParams) (gen
 	return &s, nil
 }
 
-func (h *APIHandler) CreateRole(ctx context.Context, req *gen.RoleCreateRequest) (*gen.RoleCreateResult, error) {
+func (h *roleAPIHandler) CreateRole(ctx context.Context, req *gen.RoleCreateRequest) (*gen.RoleCreateResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -89,7 +89,7 @@ func (h *APIHandler) CreateRole(ctx context.Context, req *gen.RoleCreateRequest)
 	return &gen.RoleCreateResult{RoleId: created.ID}, nil
 }
 
-func (h *APIHandler) UpdateRole(ctx context.Context, req *gen.RoleUpdateRequest, params gen.UpdateRoleParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) UpdateRole(ctx context.Context, req *gen.RoleUpdateRequest, params gen.UpdateRoleParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -108,7 +108,7 @@ func (h *APIHandler) UpdateRole(ctx context.Context, req *gen.RoleUpdateRequest,
 	return ok(), nil
 }
 
-func (h *APIHandler) DeleteRole(ctx context.Context, params gen.DeleteRoleParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) DeleteRole(ctx context.Context, params gen.DeleteRoleParams) (*gen.MutationResult, error) {
 	if err := h.roleSvc.Delete(params.ID); err != nil {
 		h.logger.Error("delete role failed", zap.Error(err))
 		return nil, err
@@ -116,7 +116,7 @@ func (h *APIHandler) DeleteRole(ctx context.Context, params gen.DeleteRoleParams
 	return ok(), nil
 }
 
-func (h *APIHandler) GetRolePackages(ctx context.Context, params gen.GetRolePackagesParams) (*gen.RolePackagesResponse, error) {
+func (h *roleAPIHandler) GetRolePackages(ctx context.Context, params gen.GetRolePackagesParams) (*gen.RolePackagesResponse, error) {
 	ids, pkgs, err := h.roleSvc.GetRolePackages(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("get role packages failed", zap.Error(err))
@@ -128,7 +128,7 @@ func (h *APIHandler) GetRolePackages(ctx context.Context, params gen.GetRolePack
 	}, nil
 }
 
-func (h *APIHandler) SetRolePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRolePackagesParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) SetRolePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRolePackagesParams) (*gen.MutationResult, error) {
 	var grantedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		grantedBy = &uid
@@ -141,7 +141,7 @@ func (h *APIHandler) SetRolePackages(ctx context.Context, req *gen.UUIDListReque
 	return ok(), nil
 }
 
-func (h *APIHandler) GetRoleMenus(ctx context.Context, params gen.GetRoleMenusParams) (*gen.RoleMenusResponse, error) {
+func (h *roleAPIHandler) GetRoleMenus(ctx context.Context, params gen.GetRoleMenusParams) (*gen.RoleMenusResponse, error) {
 	boundary, err := h.roleSvc.GetRoleMenuBoundary(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("get role menus failed", zap.Error(err))
@@ -156,7 +156,7 @@ func (h *APIHandler) GetRoleMenus(ctx context.Context, params gen.GetRoleMenusPa
 	}, nil
 }
 
-func (h *APIHandler) SetRoleMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRoleMenusParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) SetRoleMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRoleMenusParams) (*gen.MutationResult, error) {
 	ids := uuidIDsFromRequest(req)
 	if err := h.roleSvc.SetRoleMenus(params.ID, ids, params.AppKey); err != nil {
 		h.logger.Error("set role menus failed", zap.Error(err))
@@ -165,7 +165,7 @@ func (h *APIHandler) SetRoleMenus(ctx context.Context, req *gen.UUIDListRequest,
 	return ok(), nil
 }
 
-func (h *APIHandler) GetRoleActions(ctx context.Context, params gen.GetRoleActionsParams) (*gen.RoleActionsResponse, error) {
+func (h *roleAPIHandler) GetRoleActions(ctx context.Context, params gen.GetRoleActionsParams) (*gen.RoleActionsResponse, error) {
 	boundary, err := h.roleSvc.GetRoleKeyBoundary(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("get role actions failed", zap.Error(err))
@@ -181,7 +181,7 @@ func (h *APIHandler) GetRoleActions(ctx context.Context, params gen.GetRoleActio
 	}, nil
 }
 
-func (h *APIHandler) SetRoleActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRoleActionsParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) SetRoleActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetRoleActionsParams) (*gen.MutationResult, error) {
 	ids := uuidIDsFromRequest(req)
 	keys := make([]user.RoleKeyPermission, 0, len(ids))
 	for _, kid := range ids {
@@ -194,7 +194,7 @@ func (h *APIHandler) SetRoleActions(ctx context.Context, req *gen.UUIDListReques
 	return ok(), nil
 }
 
-func (h *APIHandler) GetRoleDataPermissions(ctx context.Context, params gen.GetRoleDataPermissionsParams) (*gen.RoleDataPermissionsResponse, error) {
+func (h *roleAPIHandler) GetRoleDataPermissions(ctx context.Context, params gen.GetRoleDataPermissionsParams) (*gen.RoleDataPermissionsResponse, error) {
 	perms, _, scopeOpts, err := h.roleSvc.GetRoleDataPermissions(params.ID)
 	if err != nil {
 		h.logger.Error("get role data permissions failed", zap.Error(err))
@@ -221,7 +221,7 @@ func (h *APIHandler) GetRoleDataPermissions(ctx context.Context, params gen.GetR
 	}, nil
 }
 
-func (h *APIHandler) SetRoleDataPermissions(ctx context.Context, req *gen.RoleDataPermissionsRequest, params gen.SetRoleDataPermissionsParams) (*gen.MutationResult, error) {
+func (h *roleAPIHandler) SetRoleDataPermissions(ctx context.Context, req *gen.RoleDataPermissionsRequest, params gen.SetRoleDataPermissionsParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}

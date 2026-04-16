@@ -15,7 +15,7 @@ import (
 	"github.com/maben/backend/internal/pkg/logger"
 )
 
-func (h *APIHandler) ListLogPolicies(ctx context.Context, params gen.ListLogPoliciesParams) (gen.ListLogPoliciesRes, error) {
+func (h *logPolicyAPIHandler) ListLogPolicies(ctx context.Context, params gen.ListLogPoliciesParams) (gen.ListLogPoliciesRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.ListLogPoliciesUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -62,7 +62,7 @@ func (h *APIHandler) ListLogPolicies(ctx context.Context, params gen.ListLogPoli
 	}, nil
 }
 
-func (h *APIHandler) CreateLogPolicy(ctx context.Context, req *gen.LogPolicyCreateRequest) (gen.CreateLogPolicyRes, error) {
+func (h *logPolicyAPIHandler) CreateLogPolicy(ctx context.Context, req *gen.LogPolicyCreateRequest) (gen.CreateLogPolicyRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.CreateLogPolicyUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -132,7 +132,7 @@ func (h *APIHandler) CreateLogPolicy(ctx context.Context, req *gen.LogPolicyCrea
 	return &item, nil
 }
 
-func (h *APIHandler) UpdateLogPolicy(ctx context.Context, req *gen.LogPolicyUpdateRequest, params gen.UpdateLogPolicyParams) (gen.UpdateLogPolicyRes, error) {
+func (h *logPolicyAPIHandler) UpdateLogPolicy(ctx context.Context, req *gen.LogPolicyUpdateRequest, params gen.UpdateLogPolicyParams) (gen.UpdateLogPolicyRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.UpdateLogPolicyUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -218,7 +218,7 @@ func (h *APIHandler) UpdateLogPolicy(ctx context.Context, req *gen.LogPolicyUpda
 	return &item, nil
 }
 
-func (h *APIHandler) DeleteLogPolicy(ctx context.Context, params gen.DeleteLogPolicyParams) (gen.DeleteLogPolicyRes, error) {
+func (h *logPolicyAPIHandler) DeleteLogPolicy(ctx context.Context, params gen.DeleteLogPolicyParams) (gen.DeleteLogPolicyRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.DeleteLogPolicyUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -253,7 +253,7 @@ func (h *APIHandler) DeleteLogPolicy(ctx context.Context, params gen.DeleteLogPo
 	return ok(), nil
 }
 
-func (h *APIHandler) PreviewLogPolicy(ctx context.Context, req *gen.LogPolicyPreviewRequest) (gen.PreviewLogPolicyRes, error) {
+func (h *logPolicyAPIHandler) PreviewLogPolicy(ctx context.Context, req *gen.LogPolicyPreviewRequest) (gen.PreviewLogPolicyRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.PreviewLogPolicyUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -282,7 +282,7 @@ func (h *APIHandler) PreviewLogPolicy(ctx context.Context, req *gen.LogPolicyPre
 	return resp, nil
 }
 
-func (h *APIHandler) refreshPolicyEngine(ctx context.Context) error {
+func (h *logPolicyAPIHandler) refreshPolicyEngine(ctx context.Context) error {
 	if h.policyEngine == nil {
 		return nil
 	}
@@ -293,7 +293,7 @@ func (h *APIHandler) refreshPolicyEngine(ctx context.Context) error {
 	return nil
 }
 
-func (h *APIHandler) recordPolicyAudit(ctx context.Context, action string, policy *logpolicy.LogPolicy) {
+func (h *logPolicyAPIHandler) recordPolicyAudit(ctx context.Context, action string, policy *logpolicy.LogPolicy) {
 	if policy == nil {
 		return
 	}

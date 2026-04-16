@@ -20,7 +20,7 @@ import (
 // TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401 —— 未登录上下文应返回 401。
 // 验证 handler 不依赖 ogen 中间件独立兜底 auth。
 func TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401(t *testing.T) {
-	h := &APIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}
+	h := &APIHandler{observabilityAPIHandler: &observabilityAPIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}}
 	res, err := h.GetObservabilityMetricsPrometheus(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -37,7 +37,7 @@ func TestGetObservabilityMetricsPrometheus_UnauthenticatedReturns401(t *testing.
 // TestGetObservabilityMetricsPrometheus_NoopAllZeros —— Noop 模式 4 项指标全 0,
 // 且 openmetrics 格式完整（每个指标有 # HELP + # TYPE + 数值行）。
 func TestGetObservabilityMetricsPrometheus_NoopAllZeros(t *testing.T) {
-	h := &APIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}
+	h := &APIHandler{observabilityAPIHandler: &observabilityAPIHandler{audit: audit.Noop{}, telemetry: telemetry.Noop{}}}
 	ctx := context.WithValue(context.Background(), CtxUserID, uuid.New().String())
 
 	res, err := h.GetObservabilityMetricsPrometheus(ctx)

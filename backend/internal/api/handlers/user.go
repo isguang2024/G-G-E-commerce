@@ -27,7 +27,7 @@ const (
 	userTimeLayout         = "2006-01-02 15:04:05"
 )
 
-func (h *APIHandler) ListUsers(ctx context.Context, params gen.ListUsersParams) (gen.ListUsersRes, error) {
+func (h *userAPIHandler) ListUsers(ctx context.Context, params gen.ListUsersParams) (gen.ListUsersRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.ListUsersUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -77,7 +77,7 @@ func (h *APIHandler) ListUsers(ctx context.Context, params gen.ListUsersParams) 
 	}, nil
 }
 
-func (h *APIHandler) GetUser(ctx context.Context, params gen.GetUserParams) (gen.GetUserRes, error) {
+func (h *userAPIHandler) GetUser(ctx context.Context, params gen.GetUserParams) (gen.GetUserRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetUserUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -97,7 +97,7 @@ func (h *APIHandler) GetUser(ctx context.Context, params gen.GetUserParams) (gen
 // resolveInviterNames batch-loads display names for the invited_by references
 // that appear in the page of users; missing inviters fall back to a sentinel
 // label so the list surface keeps the legacy contract.
-func (h *APIHandler) resolveInviterNames(list []models.User) map[uuid.UUID]string {
+func (h *userAPIHandler) resolveInviterNames(list []models.User) map[uuid.UUID]string {
 	ids := make([]uuid.UUID, 0, len(list))
 	seen := make(map[uuid.UUID]struct{})
 	for _, u := range list {
@@ -129,7 +129,7 @@ func (h *APIHandler) resolveInviterNames(list []models.User) map[uuid.UUID]strin
 	return out
 }
 
-func (h *APIHandler) CreateUser(ctx context.Context, req *gen.UserCreateRequest) (gen.CreateUserRes, error) {
+func (h *userAPIHandler) CreateUser(ctx context.Context, req *gen.UserCreateRequest) (gen.CreateUserRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.CreateUserUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -179,7 +179,7 @@ func (h *APIHandler) CreateUser(ctx context.Context, req *gen.UserCreateRequest)
 	return &gen.UserCreateResult{ID: created.ID}, nil
 }
 
-func (h *APIHandler) UpdateUser(ctx context.Context, req *gen.UserUpdateRequest, params gen.UpdateUserParams) (gen.UpdateUserRes, error) {
+func (h *userAPIHandler) UpdateUser(ctx context.Context, req *gen.UserUpdateRequest, params gen.UpdateUserParams) (gen.UpdateUserRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.UpdateUserUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -228,7 +228,7 @@ func (h *APIHandler) UpdateUser(ctx context.Context, req *gen.UserUpdateRequest,
 	return &gen.UserMutationResult{Success: true}, nil
 }
 
-func (h *APIHandler) DeleteUser(ctx context.Context, params gen.DeleteUserParams) (gen.DeleteUserRes, error) {
+func (h *userAPIHandler) DeleteUser(ctx context.Context, params gen.DeleteUserParams) (gen.DeleteUserRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.DeleteUserUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -262,7 +262,7 @@ func (h *APIHandler) DeleteUser(ctx context.Context, params gen.DeleteUserParams
 	return &gen.UserMutationResult{Success: true}, nil
 }
 
-func (h *APIHandler) AssignUserRoles(ctx context.Context, req *gen.UserAssignRolesRequest, params gen.AssignUserRolesParams) (gen.AssignUserRolesRes, error) {
+func (h *userAPIHandler) AssignUserRoles(ctx context.Context, req *gen.UserAssignRolesRequest, params gen.AssignUserRolesParams) (gen.AssignUserRolesRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.AssignUserRolesUnauthorized{Code: 401, Message: "未认证"}, nil
 	}

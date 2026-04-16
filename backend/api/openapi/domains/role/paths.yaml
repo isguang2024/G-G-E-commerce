@@ -219,7 +219,7 @@ paths:
       summary: 获取角色菜单权限
       tags:
       - role
-      x-permission-key: system.role.assign_menu
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id
@@ -245,7 +245,7 @@ paths:
       summary: 配置角色菜单权限
       tags:
       - role
-      x-permission-key: system.role.assign_menu
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id
@@ -278,7 +278,7 @@ paths:
       summary: 获取角色功能权限
       tags:
       - role
-      x-permission-key: system.role.assign_action
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id
@@ -304,7 +304,7 @@ paths:
       summary: 配置角色功能权限
       tags:
       - role
-      x-permission-key: system.role.assign_action
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id
@@ -337,7 +337,7 @@ paths:
       summary: 获取角色数据权限
       tags:
       - role
-      x-permission-key: system.role.assign_data
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id
@@ -358,7 +358,7 @@ paths:
       summary: 配置角色数据权限
       tags:
       - role
-      x-permission-key: system.role.assign_data
+      x-permission-key: system.role.assign
       x-access-mode: permission
       parameters:
       - name: id

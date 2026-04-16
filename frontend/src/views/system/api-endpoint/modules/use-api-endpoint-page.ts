@@ -181,12 +181,17 @@ export function useApiEndpointPage() {
     tableQuery.hasPermissionKey = searchForm.hasPermissionKey || ''
   }
 
+  // 过滤掉 code === 'uncategorized' 的分类：它由 categoryTreeData 内置的"未分类"节点承载，
+  // overview.uncategorizedCount 已把 category_id=NULL 和 category_id=uncategorized.id 合并，
+  // 这里再渲染会出现两个"未分类"节点。
   const sortedCategories = computed(() =>
-    [...categories.value].sort(
-      (a, b) =>
-        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
-        `${a.name || ''}`.localeCompare(`${b.name || ''}`, 'zh-CN')
-    )
+    [...categories.value]
+      .filter((item) => item.code !== 'uncategorized')
+      .sort(
+        (a, b) =>
+          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+          `${a.name || ''}`.localeCompare(`${b.name || ''}`, 'zh-CN')
+      )
   )
 
   const categoryTreeData = computed<CategoryTreeNode[]>(() => [

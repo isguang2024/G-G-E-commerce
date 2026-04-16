@@ -66,28 +66,28 @@
       :class="`menu-left-${getMenuTheme.theme} menu-left-${!menuOpen ? 'close' : 'open'}`"
       :style="{ background: getMenuTheme.background }"
     >
-      <ElScrollbar :style="scrollbarStyle">
-        <!-- Logo、系统名称 -->
-        <div
-          class="header"
-          @click="navigateToHome"
+      <!-- Logo、系统名称 -->
+      <div
+        class="header"
+        @click="navigateToHome"
+        :style="{
+          background: getMenuTheme.background
+        }"
+      >
+        <ArtLogo v-if="!isDualMenu" class="logo" />
+
+        <p
+          :class="{ 'is-dual-menu-name': isDualMenu }"
           :style="{
-            background: getMenuTheme.background
+            color: getMenuTheme.systemNameColor,
+            opacity: !menuOpen ? 0 : 1
           }"
         >
-          <ArtLogo v-if="!isDualMenu" class="logo" />
+          {{ siteName }}
+        </p>
+      </div>
 
-          <p
-            :class="{ 'is-dual-menu-name': isDualMenu }"
-            :style="{
-              color: getMenuTheme.systemNameColor,
-              opacity: !menuOpen ? 0 : 1
-            }"
-          >
-            {{ siteName }}
-          </p>
-        </div>
-
+      <ElScrollbar class="menu-scrollbar">
         <ElMenu
           :class="'el-menu-' + getMenuTheme.theme"
           :collapse="!menuOpen"
@@ -210,17 +210,7 @@
     // 返回当前顶级路径对应的子菜单
     const currentTopPath = `/${route.path.split('/')[1]}`
     const currentMenu = allMenus.find((menu) => menu.path === currentTopPath)
-    return currentMenu?.children ?? []
-  })
-
-  // 双列菜单收起时的滚动条样式
-  const scrollbarStyle = computed(() => {
-    const isCollapsed = isDualMenu.value && !menuOpen.value
-    return {
-      transform: isCollapsed ? 'translateY(-50px)' : 'translateY(0)',
-      height: isCollapsed ? 'calc(100% + 50px)' : '100%',
-      transition: 'transform 0.3s ease'
-    }
+      return currentMenu?.children ?? []
   })
 
   /**

@@ -15,7 +15,7 @@ import (
 
 // ── system fast-enter ───────────────────────────────────────────────────────
 
-func (h *APIHandler) GetFastEnterConfig(ctx context.Context) (*gen.SystemFastEnterConfig, error) {
+func (h *phase4ExtrasAPIHandler) GetFastEnterConfig(ctx context.Context) (*gen.SystemFastEnterConfig, error) {
 	cfg, err := h.fastEnterSvc.GetConfig()
 	if err != nil {
 		h.logger.Error("get fast enter config failed", zap.Error(err))
@@ -25,7 +25,7 @@ func (h *APIHandler) GetFastEnterConfig(ctx context.Context) (*gen.SystemFastEnt
 	return &out, nil
 }
 
-func (h *APIHandler) UpdateFastEnterConfig(ctx context.Context, req *gen.SystemFastEnterConfig) (*gen.SystemFastEnterConfig, error) {
+func (h *phase4ExtrasAPIHandler) UpdateFastEnterConfig(ctx context.Context, req *gen.SystemFastEnterConfig) (*gen.SystemFastEnterConfig, error) {
 	if req == nil {
 		req = &gen.SystemFastEnterConfig{}
 	}
@@ -119,7 +119,7 @@ func fastEnterQuickLinksToGen(items []systemmod.FastEnterQuickLink) []gen.System
 
 // ── system view-pages ───────────────────────────────────────────────────────
 
-func (h *APIHandler) GetSystemViewPages(ctx context.Context, params gen.GetSystemViewPagesParams) (*gen.ViewPagesResponse, error) {
+func (h *phase4ExtrasAPIHandler) GetSystemViewPages(ctx context.Context, params gen.GetSystemViewPagesParams) (*gen.ViewPagesResponse, error) {
 	force := false
 	if params.Force.Set {
 		v := strings.ToLower(strings.TrimSpace(params.Force.Value))
@@ -144,7 +144,7 @@ func (h *APIHandler) GetSystemViewPages(ctx context.Context, params gen.GetSyste
 
 // ── user collaboration workspaces ───────────────────────────────────────────
 
-func (h *APIHandler) GetUserCollaborationWorkspaces(ctx context.Context, params gen.GetUserCollaborationWorkspacesParams) (*gen.UserCollaborationWorkspacesResponse, error) {
+func (h *phase4ExtrasAPIHandler) GetUserCollaborationWorkspaces(ctx context.Context, params gen.GetUserCollaborationWorkspacesParams) (*gen.UserCollaborationWorkspacesResponse, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (h *APIHandler) GetUserCollaborationWorkspaces(ctx context.Context, params 
 
 // ── refresh user permission snapshot ────────────────────────────────────────
 
-func (h *APIHandler) RefreshUserPermissionSnapshot(ctx context.Context, params gen.RefreshUserPermissionSnapshotParams) (*gen.MutationResult, error) {
+func (h *phase4ExtrasAPIHandler) RefreshUserPermissionSnapshot(ctx context.Context, params gen.RefreshUserPermissionSnapshotParams) (*gen.MutationResult, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}

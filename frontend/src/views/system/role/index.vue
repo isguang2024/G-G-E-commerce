@@ -246,7 +246,7 @@
                 key: 'permission',
                 label: '权限配置',
                 icon: 'ri:shield-keyhole-line',
-                auth: 'system.role.assign_menu'
+                auth: 'system.role.assign'
               },
               {
                 key: 'edit',

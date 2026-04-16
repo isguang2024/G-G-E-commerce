@@ -11,7 +11,7 @@ paths:
         audit_logs。只读端点，永远不触发 DB 写入。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional
@@ -90,7 +90,7 @@ paths:
         空区间返回 `buckets: []`（不是 null）。只读端点。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional
@@ -148,7 +148,7 @@ paths:
       description: 返回单条 audit_logs 行，含完整 before / after / metadata JSON。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional
@@ -193,7 +193,7 @@ paths:
         telemetry_logs。只读端点。
       tags:
       - observability
-      x-permission-key: observability.telemetry.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional
@@ -262,7 +262,7 @@ paths:
       description: 返回单条 telemetry_logs 行，含完整 payload JSON。
       tags:
       - observability
-      x-permission-key: observability.telemetry.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional
@@ -314,7 +314,7 @@ paths:
         - Noop 实现（audit/telemetry 关闭或 DB 为 nil）下，所有字段返回 0。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -356,7 +356,7 @@ paths:
         区分「暂未启用」与「启用后异常」。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -390,7 +390,7 @@ paths:
       description: 分页查询当前租户下的日志策略，可按 pipeline 与 enabled 过滤。
       tags:
       - observability
-      x-permission-key: observability.policy.read
+      x-permission-key: observability.policy.manage
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -436,7 +436,7 @@ paths:
       summary: 创建日志策略
       tags:
       - observability
-      x-permission-key: observability.policy.write
+      x-permission-key: observability.policy.manage
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -483,7 +483,7 @@ paths:
       summary: 更新日志策略
       tags:
       - observability
-      x-permission-key: observability.policy.write
+      x-permission-key: observability.policy.manage
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -542,7 +542,7 @@ paths:
       summary: 删除日志策略
       tags:
       - observability
-      x-permission-key: observability.policy.write
+      x-permission-key: observability.policy.manage
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -591,7 +591,7 @@ paths:
       description: 输入 pipeline 与字段集合，返回最终决策与命中的规则快照。
       tags:
       - observability
-      x-permission-key: observability.policy.read
+      x-permission-key: observability.policy.manage
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: none
@@ -637,7 +637,7 @@ paths:
         telemetry_logs 仍会返回（属于审计的从属信息），不另外要求二次授权。
       tags:
       - observability
-      x-permission-key: observability.audit.read
+      x-permission-key: observability.log.read
       x-access-mode: permission
       x-tenant-scoped: true
       x-app-scope: optional

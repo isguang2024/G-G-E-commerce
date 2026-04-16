@@ -48,14 +48,67 @@ func LoadOpenAPISeed() (*OpenAPISeed, error) {
 	return &seed, nil
 }
 
-// PermissionKeyByOperationID flattens the seed into the runtime lookup used
-// by the auto permission middleware: ogen operationID -> permission key.
+// PermissionKeyByOperationID flattens the seed into an operationID -> permission key map.
+//
+// Deprecated: this lookup is kept only as a fallback for the middleware when
+// operation_id can still resolve the key. Prefer PermissionLookup whose
+// main path is keyed by endpoint_code (derived from METHOD + path via
+// StableID) so renaming an operation_id no longer invalidates runtime
+// permission checks nor api_endpoint_permission_bindings alignment.
 func (s *OpenAPISeed) PermissionKeyByOperationID() map[string]string {
 	out := make(map[string]string, len(s.Operations))
 	for _, op := range s.Operations {
 		out[op.OperationID] = op.PermissionKey
 	}
 	return out
+}
+
+// PermissionLookup is the runtime view consumed by the auto permission
+// middleware. The middleware resolves the permission key via two stages:
+//
+//  1. primary — operationID → endpoint_code (StableID("openapi-api-endpoint",
+//     METHOD+" "+path)) → permission_key. The endpoint_code dimension aligns
+//     with the api_endpoints.code / api_endpoint_permission_bindings.endpoint_code
+//     columns, so renaming operationId while keeping METHOD+path does not
+//     affect permission enforcement.
+//  2. fallback — operationID → permission_key (kept for backward compatibility
+//     with legacy callers). Marked deprecated and must not appear on the
+//     main resolution path in production.
+type PermissionLookup struct {
+	// ByEndpointCode maps endpoint_code (StableID-derived) -> permission_key.
+	// This is the authoritative lookup that aligns with the DB bindings table.
+	ByEndpointCode map[string]string
+	// OperationToEndpointCode maps ogen operation_id -> endpoint_code. Needed
+	// because ogen's middleware.Request only carries operation_id; we translate
+	// to endpoint_code before hitting ByEndpointCode.
+	OperationToEndpointCode map[string]string
+	// ByOperationIDDeprecated is the legacy operationID -> permission_key map.
+	// Do NOT rely on it in new code. Present only so the middleware can emit a
+	// deprecation warning if the main path misses but the fallback still hits.
+	ByOperationIDDeprecated map[string]string
+}
+
+// PermissionLookup builds the two-stage lookup described on PermissionLookup.
+// Called once at startup from router.SetupRouter.
+func (s *OpenAPISeed) PermissionLookup() *PermissionLookup {
+	byCode := make(map[string]string, len(s.Operations))
+	opToCode := make(map[string]string, len(s.Operations))
+	byOp := make(map[string]string, len(s.Operations))
+	for _, op := range s.Operations {
+		method := strings.ToUpper(strings.TrimSpace(op.Method))
+		path := strings.TrimSpace(op.Path)
+		endpointCode := StableID("openapi-api-endpoint", method+" "+path).String()
+		if op.PermissionKey != "" {
+			byCode[endpointCode] = op.PermissionKey
+			byOp[op.OperationID] = op.PermissionKey
+		}
+		opToCode[op.OperationID] = endpointCode
+	}
+	return &PermissionLookup{
+		ByEndpointCode:          byCode,
+		OperationToEndpointCode: opToCode,
+		ByOperationIDDeprecated: byOp,
+	}
 }
 
 // AccessModeByMethodPath returns a map of "METHOD /path" -> access_mode.

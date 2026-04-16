@@ -15,7 +15,7 @@ import (
 	"github.com/maben/backend/internal/modules/system/page"
 )
 
-func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.PageListResponse, error) {
+func (h *pageAPIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.PageListResponse, error) {
 	req := &page.ListRequest{
 		Current:  optInt(params.Current, 1),
 		Size:     optInt(params.Size, 20),
@@ -32,7 +32,7 @@ func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) 
 	return &gen.PageListResponse{Records: pageRecordsFromModels(list), Total: int(total)}, nil
 }
 
-func (h *APIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.PageListResponse, error) {
+func (h *pageAPIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.PageListResponse, error) {
 	pages, err := h.pageSvc.ListOptions(params.AppKey, optString(params.SpaceKey))
 	if err != nil {
 		h.logger.Error("list page options failed", zap.Error(err))
@@ -45,7 +45,7 @@ func (h *APIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOpt
 	return &gen.PageListResponse{Records: pageRecordsFromModels(records), Total: len(records)}, nil
 }
 
-func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.PageMenuOptionsResponse, error) {
+func (h *pageAPIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.PageMenuOptionsResponse, error) {
 	list, err := h.pageSvc.ListMenuOptions(params.AppKey, optString(params.SpaceKey))
 	if err != nil {
 		h.logger.Error("list page menu options failed", zap.Error(err))
@@ -54,7 +54,7 @@ func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPag
 	return &gen.PageMenuOptionsResponse{Records: pageMenuOptionItemsFromModels(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntimePagesParams) (*gen.PageListResponse, error) {
+func (h *pageAPIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntimePagesParams) (*gen.PageListResponse, error) {
 	var userID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		userID = &uid
@@ -74,7 +74,7 @@ func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntim
 	return &gen.PageListResponse{Records: pageRecordsFromModels(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.ListPublicRuntimePagesParams) (*gen.PageListResponse, error) {
+func (h *pageAPIHandler) ListPublicRuntimePages(ctx context.Context, params gen.ListPublicRuntimePagesParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.ListRuntimePublic(
 		optString(params.AppKey),
 		requestHostFromCtx(ctx),
@@ -89,7 +89,7 @@ func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.List
 	return &gen.PageListResponse{Records: pageRecordsFromModels(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListUnregisteredPages(ctx context.Context, params gen.ListUnregisteredPagesParams) (*gen.PageUnregisteredListResponse, error) {
+func (h *pageAPIHandler) ListUnregisteredPages(ctx context.Context, params gen.ListUnregisteredPagesParams) (*gen.PageUnregisteredListResponse, error) {
 	list, err := h.pageSvc.ListUnregistered(params.AppKey)
 	if err != nil {
 		h.logger.Error("list unregistered pages failed", zap.Error(err))
@@ -98,7 +98,7 @@ func (h *APIHandler) ListUnregisteredPages(ctx context.Context, params gen.ListU
 	return &gen.PageUnregisteredListResponse{Records: pageUnregisteredItemsFromModels(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) (*gen.PageSyncResult, error) {
+func (h *pageAPIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) (*gen.PageSyncResult, error) {
 	result, err := h.pageSvc.Sync(params.AppKey)
 	if err != nil {
 		h.logger.Error("sync pages failed", zap.Error(err))
@@ -129,7 +129,7 @@ func (h *APIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) 
 	}, nil
 }
 
-func (h *APIHandler) PreviewPageBreadcrumb(ctx context.Context, params gen.PreviewPageBreadcrumbParams) (*gen.PageBreadcrumbPreviewListResponse, error) {
+func (h *pageAPIHandler) PreviewPageBreadcrumb(ctx context.Context, params gen.PreviewPageBreadcrumbParams) (*gen.PageBreadcrumbPreviewListResponse, error) {
 	list, err := h.pageSvc.PreviewBreadcrumb(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("preview page breadcrumb failed", zap.Error(err))
@@ -209,7 +209,7 @@ func pageUnregisteredItemsFromModels(items []page.UnregisteredRecord) []gen.Page
 	return out
 }
 
-func (h *APIHandler) GetPage(ctx context.Context, params gen.GetPageParams) (*gen.PageSaveResult, error) {
+func (h *pageAPIHandler) GetPage(ctx context.Context, params gen.GetPageParams) (*gen.PageSaveResult, error) {
 	rec, err := h.pageSvc.Get(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("get page failed", zap.Error(err))
@@ -219,7 +219,7 @@ func (h *APIHandler) GetPage(ctx context.Context, params gen.GetPageParams) (*ge
 	return &result, nil
 }
 
-func (h *APIHandler) CreatePage(ctx context.Context, req *gen.PageSaveRequest, params gen.CreatePageParams) (*gen.PageSaveResult, error) {
+func (h *pageAPIHandler) CreatePage(ctx context.Context, req *gen.PageSaveRequest, params gen.CreatePageParams) (*gen.PageSaveResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -254,7 +254,7 @@ func (h *APIHandler) CreatePage(ctx context.Context, req *gen.PageSaveRequest, p
 	return &result, nil
 }
 
-func (h *APIHandler) UpdatePage(ctx context.Context, req *gen.PageSaveRequest, params gen.UpdatePageParams) (*gen.PageSaveResult, error) {
+func (h *pageAPIHandler) UpdatePage(ctx context.Context, req *gen.PageSaveRequest, params gen.UpdatePageParams) (*gen.PageSaveResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -282,7 +282,7 @@ func (h *APIHandler) UpdatePage(ctx context.Context, req *gen.PageSaveRequest, p
 	return &result, nil
 }
 
-func (h *APIHandler) DeletePage(ctx context.Context, params gen.DeletePageParams) (*gen.MutationResult, error) {
+func (h *pageAPIHandler) DeletePage(ctx context.Context, params gen.DeletePageParams) (*gen.MutationResult, error) {
 	if err := h.pageSvc.Delete(params.ID, params.AppKey); err != nil {
 		h.logger.Error("delete page failed", zap.Error(err))
 		h.audit.Record(ctx, audit.Event{

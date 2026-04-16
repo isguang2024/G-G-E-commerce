@@ -48,7 +48,7 @@ func mapJSON[T any](input any) (T, error) {
 
 // ── Inbox ────────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetInboxSummary(ctx context.Context) (*gen.InboxSummary, error) {
+func (h *messageAPIHandler) GetInboxSummary(ctx context.Context) (*gen.InboxSummary, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.InboxSummary{}, nil
@@ -66,7 +66,7 @@ func (h *APIHandler) GetInboxSummary(ctx context.Context) (*gen.InboxSummary, er
 	}, nil
 }
 
-func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.InboxListResponse, error) {
+func (h *messageAPIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.InboxListResponse, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.InboxListResponse{}, nil
@@ -99,7 +99,7 @@ func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) 
 	}, nil
 }
 
-func (h *APIHandler) GetInboxDetail(ctx context.Context, params gen.GetInboxDetailParams) (*gen.InboxItem, error) {
+func (h *messageAPIHandler) GetInboxDetail(ctx context.Context, params gen.GetInboxDetailParams) (*gen.InboxItem, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.InboxItem{}, nil
@@ -115,7 +115,7 @@ func (h *APIHandler) GetInboxDetail(ctx context.Context, params gen.GetInboxDeta
 	return mapJSON[*gen.InboxItem](detail)
 }
 
-func (h *APIHandler) MarkInboxRead(ctx context.Context, params gen.MarkInboxReadParams) (*gen.MutationResult, error) {
+func (h *messageAPIHandler) MarkInboxRead(ctx context.Context, params gen.MarkInboxReadParams) (*gen.MutationResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MutationResult{Success: false}, nil
@@ -130,7 +130,7 @@ func (h *APIHandler) MarkInboxRead(ctx context.Context, params gen.MarkInboxRead
 	return ok(), nil
 }
 
-func (h *APIHandler) MarkInboxReadAll(ctx context.Context) (*gen.MutationResult, error) {
+func (h *messageAPIHandler) MarkInboxReadAll(ctx context.Context) (*gen.MutationResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MutationResult{Success: false}, nil
@@ -142,7 +142,7 @@ func (h *APIHandler) MarkInboxReadAll(ctx context.Context) (*gen.MutationResult,
 	return ok(), nil
 }
 
-func (h *APIHandler) HandleInboxTodo(ctx context.Context, req *gen.InboxTodoActionRequest, params gen.HandleInboxTodoParams) (*gen.MutationResult, error) {
+func (h *messageAPIHandler) HandleInboxTodo(ctx context.Context, req *gen.InboxTodoActionRequest, params gen.HandleInboxTodoParams) (*gen.MutationResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MutationResult{Success: false}, nil
@@ -166,7 +166,7 @@ func (h *APIHandler) HandleInboxTodo(ctx context.Context, req *gen.InboxTodoActi
 
 // ── Dispatch ─────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetMessageDispatchOptions(ctx context.Context) (*gen.MessageDispatchOptions, error) {
+func (h *messageAPIHandler) GetMessageDispatchOptions(ctx context.Context) (*gen.MessageDispatchOptions, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MessageDispatchOptions{}, nil
@@ -180,7 +180,7 @@ func (h *APIHandler) GetMessageDispatchOptions(ctx context.Context) (*gen.Messag
 	return mapJSON[*gen.MessageDispatchOptions](options)
 }
 
-func (h *APIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispatchRequest) (*gen.MessageDispatchResult, error) {
+func (h *messageAPIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispatchRequest) (*gen.MessageDispatchResult, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
 		return &gen.MessageDispatchResult{}, nil
@@ -240,7 +240,7 @@ func (h *APIHandler) DispatchMessage(ctx context.Context, req *gen.MessageDispat
 
 // ── Templates ────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageTemplateListResponse, error) {
+func (h *messageAPIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageTemplateListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	result, err := h.systemFacade.ListTemplates(cwID, systemmod.MessageTemplateQuery{
 		Current: 1,
@@ -262,7 +262,7 @@ func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageTemp
 	}, nil
 }
 
-func (h *APIHandler) CreateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest) (*gen.MessageTemplateItem, error) {
+func (h *messageAPIHandler) CreateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest) (*gen.MessageTemplateItem, error) {
 	cwID := cwIDFromContext(ctx)
 	body := messageTemplateUpsertRequestFromGen(req)
 	item, err := h.systemFacade.SaveTemplate("", cwID, body)
@@ -273,7 +273,7 @@ func (h *APIHandler) CreateMessageTemplate(ctx context.Context, req *gen.Message
 	return mapJSON[*gen.MessageTemplateItem](item)
 }
 
-func (h *APIHandler) UpdateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest, params gen.UpdateMessageTemplateParams) (*gen.MessageTemplateItem, error) {
+func (h *messageAPIHandler) UpdateMessageTemplate(ctx context.Context, req *gen.MessageTemplateSaveRequest, params gen.UpdateMessageTemplateParams) (*gen.MessageTemplateItem, error) {
 	cwID := cwIDFromContext(ctx)
 	body := messageTemplateUpsertRequestFromGen(req)
 	item, err := h.systemFacade.SaveTemplate(params.TemplateId.String(), cwID, body)
@@ -286,7 +286,7 @@ func (h *APIHandler) UpdateMessageTemplate(ctx context.Context, req *gen.Message
 
 // ── Senders ──────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageSenderListResponse, error) {
+func (h *messageAPIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageSenderListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListSenders(cwID)
 	if err != nil {
@@ -300,7 +300,7 @@ func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageSender
 	return &gen.MessageSenderListResponse{Records: records}, nil
 }
 
-func (h *APIHandler) CreateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest) (*gen.MessageSenderItem, error) {
+func (h *messageAPIHandler) CreateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest) (*gen.MessageSenderItem, error) {
 	cwID := cwIDFromContext(ctx)
 	body := messageSenderSaveRequestFromGen(req)
 	item, err := h.systemFacade.SaveSender("", cwID, body)
@@ -311,7 +311,7 @@ func (h *APIHandler) CreateMessageSender(ctx context.Context, req *gen.MessageSe
 	return mapJSON[*gen.MessageSenderItem](item)
 }
 
-func (h *APIHandler) UpdateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest, params gen.UpdateMessageSenderParams) (*gen.MessageSenderItem, error) {
+func (h *messageAPIHandler) UpdateMessageSender(ctx context.Context, req *gen.MessageSenderSaveRequest, params gen.UpdateMessageSenderParams) (*gen.MessageSenderItem, error) {
 	cwID := cwIDFromContext(ctx)
 	body := messageSenderSaveRequestFromGen(req)
 	item, err := h.systemFacade.SaveSender(params.SenderId.String(), cwID, body)
@@ -324,7 +324,7 @@ func (h *APIHandler) UpdateMessageSender(ctx context.Context, req *gen.MessageSe
 
 // ── Recipient Groups ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.MessageRecipientGroupListResponse, error) {
+func (h *messageAPIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.MessageRecipientGroupListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListRecipientGroups(cwID)
 	if err != nil {
@@ -338,7 +338,7 @@ func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.Messa
 	return &gen.MessageRecipientGroupListResponse{Records: records}, nil
 }
 
-func (h *APIHandler) CreateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest) (*gen.MessageRecipientGroupItem, error) {
+func (h *messageAPIHandler) CreateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest) (*gen.MessageRecipientGroupItem, error) {
 	cwID := cwIDFromContext(ctx)
 	group, err := parseRecipientGroupRequest(req)
 	if err != nil {
@@ -352,7 +352,7 @@ func (h *APIHandler) CreateMessageRecipientGroup(ctx context.Context, req *gen.M
 	return mapJSON[*gen.MessageRecipientGroupItem](item)
 }
 
-func (h *APIHandler) UpdateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest, params gen.UpdateMessageRecipientGroupParams) (*gen.MessageRecipientGroupItem, error) {
+func (h *messageAPIHandler) UpdateMessageRecipientGroup(ctx context.Context, req *gen.MessageRecipientGroupSaveRequest, params gen.UpdateMessageRecipientGroupParams) (*gen.MessageRecipientGroupItem, error) {
 	cwID := cwIDFromContext(ctx)
 	group, err := parseRecipientGroupRequest(req)
 	if err != nil {
@@ -452,7 +452,7 @@ func optUUIDToString(o gen.OptUUID) string {
 
 // ── Dispatch Records ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.MessageDispatchRecordListResponse, error) {
+func (h *messageAPIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.MessageDispatchRecordListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	current := 1
 	size := 20
@@ -487,7 +487,7 @@ func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.
 	}, nil
 }
 
-func (h *APIHandler) GetMessageDispatchRecord(ctx context.Context, params gen.GetMessageDispatchRecordParams) (*gen.MessageDispatchRecord, error) {
+func (h *messageAPIHandler) GetMessageDispatchRecord(ctx context.Context, params gen.GetMessageDispatchRecordParams) (*gen.MessageDispatchRecord, error) {
 	cwID := cwIDFromContext(ctx)
 	detail, err := h.systemFacade.GetDispatchRecordDetail(cwID, params.RecordId.String())
 	if err != nil {

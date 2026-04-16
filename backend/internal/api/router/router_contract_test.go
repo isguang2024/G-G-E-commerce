@@ -2,9 +2,9 @@ package router
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -24,8 +24,10 @@ import (
 //
 // 新的测试改为**运行时对账**：
 //   1. 构造一个空的 gin.Engine；
-//   2. 调用 SetupRouter 实际使用的那段 mountOpenAPIBridgeRoutes；
-//   3. 枚举 engine.Routes()，和 seed 对账：method + path + 期望的 bridge 都要对得上。
+//   2. 从生产 newOgenBridges 取到同源 bridge（不再在测试里自己实现一份）；
+//   3. 调用 SetupRouter 实际使用的那段 mountOpenAPIBridgeRoutes；
+//   4. 枚举 engine.Routes()，按函数指针识别桥接类型，和 seed 对账：
+//      method + path + 期望的 bridge 都要对得上。
 //
 // 这比文本扫描更健壮：它在**实际的 Gin trie 里**检查每条 op 都被正确挂载，
 // 同时也能暴露 Gin radix tree 冲突（注册阶段 panic）。
@@ -108,11 +110,28 @@ func TestOpenAPIPathToGinPlaceholders(t *testing.T) {
 	}
 }
 
+// TestNewOgenBridgesProducesDistinctHandlers 保护 newOgenBridges 的核心契约：
+// 返回的两个 handler 必须是不同的函数指针，否则 registerAndSnapshot 无法
+// 区分 public 与 authenticated 挂载，整个对账测试就会退化成空检查。
+func TestNewOgenBridgesProducesDistinctHandlers(t *testing.T) {
+	pub, ogen := newOgenBridges(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if pub == nil || ogen == nil {
+		t.Fatalf("newOgenBridges returned nil handler(s): public=%v ogen=%v", pub == nil, ogen == nil)
+	}
+	if reflect.ValueOf(pub).Pointer() == reflect.ValueOf(ogen).Pointer() {
+		t.Fatalf("newOgenBridges collapsed public/ogen into the same function pointer")
+	}
+}
+
 // registerAndSnapshot builds a minimal gin.Engine, runs the production
 // mount logic against the given ops, and returns a map
 // `"METHOD /openapi-style-path" -> "publicBridge" | "ogenBridge"` for
 // comparison with the seed. Any conflict inside Gin's radix tree will
 // panic at register time and surface as an error here.
+//
+// 桥接函数来源于生产的 newOgenBridges —— 这是对 "测试和生产 bridge 不漂移"
+// 的结构化保障：如果生产代码改用别的 bridge 构造路径绕过 newOgenBridges，
+// 测试里 HandlerFunc 指针匹配不上，会整体报 missing。
 func registerAndSnapshot(ops []permissionseed.OpenAPIOperation) (result map[string]string, retErr error) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -125,9 +144,13 @@ func registerAndSnapshot(ops []permissionseed.OpenAPIOperation) (result map[stri
 	v1 := engine.Group("/api/v1")
 	authenticated := v1.Group("")
 
-	// 给两个 bridge 命名函数（而不是匿名闭包），这样 gin.RouteInfo.Handler
-	// 里拿到的函数名能稳定区分 public vs ogen。
-	mountOpenAPIBridgeRoutes(v1, authenticated, ops, namedPublicBridge, namedOgenBridge, zap.NewNop())
+	// 关键：从生产工厂取 bridge，确保和 SetupRouter 跑的是同一段代码。
+	// ogen 底层 http.Handler 在注册阶段不会被调用，传一个 no-op 即可。
+	publicBridge, ogenBridge := newOgenBridges(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	publicPtr := reflect.ValueOf(publicBridge).Pointer()
+	ogenPtr := reflect.ValueOf(ogenBridge).Pointer()
+
+	mountOpenAPIBridgeRoutes(v1, authenticated, ops, publicBridge, ogenBridge, zap.NewNop())
 
 	out := make(map[string]string, len(ops))
 	for _, ri := range engine.Routes() {
@@ -137,10 +160,11 @@ func registerAndSnapshot(ops []permissionseed.OpenAPIOperation) (result map[stri
 		openapiPath := ginParamPattern.ReplaceAllString(trimmed, `{$1}`)
 
 		bridge := ""
-		switch handlerShortName(ri.Handler) {
-		case "namedPublicBridge":
+		handlerPtr := reflect.ValueOf(ri.HandlerFunc).Pointer()
+		switch handlerPtr {
+		case publicPtr:
 			bridge = "publicBridge"
-		case "namedOgenBridge":
+		case ogenPtr:
 			bridge = "ogenBridge"
 		default:
 			// 非 seed 注册的路由（OAuth、health 等）不进入对账表。
@@ -149,40 +173,6 @@ func registerAndSnapshot(ops []permissionseed.OpenAPIOperation) (result map[stri
 		out[routeKey(ri.Method, openapiPath)] = bridge
 	}
 	return out, nil
-}
-
-func namedPublicBridge(*gin.Context) {}
-func namedOgenBridge(*gin.Context)   {}
-
-// handlerShortName extracts the trailing `.FuncName` out of runtime-reported
-// names like `github.com/maben/.../router.namedPublicBridge`.
-func handlerShortName(fqn string) string {
-	// gin.RouteInfo.Handler is the fully-qualified name captured via
-	// runtime.FuncForPC at registration time. We double-check by resolving
-	// the real function pointers below, which is the most robust path.
-	if fqn == "" {
-		return ""
-	}
-	if idx := strings.LastIndex(fqn, "."); idx >= 0 && idx < len(fqn)-1 {
-		return fqn[idx+1:]
-	}
-	return fqn
-}
-
-// Compile-time sanity: the two sentinel bridges must have distinct addresses
-// so the runtime.FuncForPC-based name resolution in gin.RouteInfo.Handler
-// can tell them apart. This also guarantees the functions aren't inlined
-// away by the compiler under test builds.
-var _ = func() struct{} {
-	if reflect.ValueOf(namedPublicBridge).Pointer() == reflect.ValueOf(namedOgenBridge).Pointer() {
-		panic("namedPublicBridge and namedOgenBridge collapsed to the same pointer")
-	}
-	return struct{}{}
-}()
-
-func currentRouterPath() string {
-	_, currentFile, _, _ := runtime.Caller(0)
-	return currentFile
 }
 
 func routeKey(method, path string) string {
@@ -196,8 +186,8 @@ func expectedBridge(accessMode string) string {
 	case "authenticated", "permission":
 		return "ogenBridge"
 	default:
-		// mountOpenAPIBridgeRoutes 对未知 access_mode 的默认策略是挂到
-		// authenticated（ogenBridge），这里保持一致。
-		return "ogenBridge"
+		// mountOpenAPIBridgeRoutes 现在对未知 access_mode 直接 logger.Fatal，
+		// 不会产出任何路由；这里返回 "unknown" 保证断言显式失败而非被兜底。
+		return "unknown"
 	}
 }

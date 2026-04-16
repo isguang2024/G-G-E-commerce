@@ -38,7 +38,7 @@ func resolveAppKey(opt gen.OptString) string {
 
 // ── GetUserMenus ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusParams) (*gen.UserMenusResponse, error) {
+func (h *userAPIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusParams) (*gen.UserMenusResponse, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		h.logger.Error("get user for menus failed", zap.Error(err))
 		return nil, err
@@ -75,7 +75,7 @@ func (h *APIHandler) GetUserMenus(ctx context.Context, params gen.GetUserMenusPa
 
 // ── SetUserMenus ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) SetUserMenus(ctx context.Context, req *gen.UserMenusResponse, params gen.SetUserMenusParams) (*gen.MutationResult, error) {
+func (h *userAPIHandler) SetUserMenus(ctx context.Context, req *gen.UserMenusResponse, params gen.SetUserMenusParams) (*gen.MutationResult, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (h *APIHandler) SetUserMenus(ctx context.Context, req *gen.UserMenusRespons
 
 // ── GetUserPackages ───────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserPackages(ctx context.Context, params gen.GetUserPackagesParams) (*gen.UserPackagesResponse, error) {
+func (h *userAPIHandler) GetUserPackages(ctx context.Context, params gen.GetUserPackagesParams) (*gen.UserPackagesResponse, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (h *APIHandler) GetUserPackages(ctx context.Context, params gen.GetUserPack
 
 // ── SetUserPackages ───────────────────────────────────────────────────────────
 
-func (h *APIHandler) SetUserPackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetUserPackagesParams) (*gen.MutationResult, error) {
+func (h *userAPIHandler) SetUserPackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetUserPackagesParams) (*gen.MutationResult, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (h *APIHandler) SetUserPackages(ctx context.Context, req *gen.UUIDListReque
 
 // ── GetUserPermissions ────────────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserPermissionsParams) (*gen.UserPermissionsResponse, error) {
+func (h *userAPIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserPermissionsParams) (*gen.UserPermissionsResponse, error) {
 	appKey := resolveAppKey(params.AppKey)
 
 	snapshot, err := h.getPersonalSnapshotForUser(params.ID, appKey)
@@ -204,7 +204,7 @@ func (h *APIHandler) GetUserPermissions(ctx context.Context, params gen.GetUserP
 
 // ── GetUserPermissionDiagnosis ────────────────────────────────────────────────
 
-func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.GetUserPermissionDiagnosisParams) (*gen.UserPermissionDiagnosisResponse, error) {
+func (h *userAPIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.GetUserPermissionDiagnosisParams) (*gen.UserPermissionDiagnosisResponse, error) {
 	appKey := resolveAppKey(params.AppKey)
 	permissionKey := ""
 	if params.PermissionKey.Set {
@@ -274,7 +274,7 @@ func (h *APIHandler) GetUserPermissionDiagnosis(ctx context.Context, params gen.
 // ── shared helpers ─────────────────────────────────────────────────────────────
 
 // getPersonalSnapshotForUser returns a platformaccess snapshot, never nil.
-func (h *APIHandler) getPersonalSnapshotForUser(userID uuid.UUID, appKey string) (*platformaccess.Snapshot, error) {
+func (h *userAPIHandler) getPersonalSnapshotForUser(userID uuid.UUID, appKey string) (*platformaccess.Snapshot, error) {
 	if h.personalAccess == nil {
 		return emptyPersonalSnapshot(), nil
 	}

@@ -18,7 +18,7 @@ const siteConfigTenantFallback = "default"
 
 // ─── ResolveSiteConfigs ──────────────────────────────────────────────────────
 
-func (h *APIHandler) ResolveSiteConfigs(ctx context.Context, params gen.ResolveSiteConfigsParams) (gen.ResolveSiteConfigsRes, error) {
+func (h *siteConfigAPIHandler) ResolveSiteConfigs(ctx context.Context, params gen.ResolveSiteConfigsParams) (gen.ResolveSiteConfigsRes, error) {
 	req := siteconfig.ResolveRequest{
 		AppKey:   optString(params.AppKey),
 		Keys:     splitCSV(optString(params.Keys)),
@@ -47,7 +47,7 @@ func (h *APIHandler) ResolveSiteConfigs(ctx context.Context, params gen.ResolveS
 
 // ─── ListSiteConfigs ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListSiteConfigs(ctx context.Context, params gen.ListSiteConfigsParams) (gen.ListSiteConfigsRes, error) {
+func (h *siteConfigAPIHandler) ListSiteConfigs(ctx context.Context, params gen.ListSiteConfigsParams) (gen.ListSiteConfigsRes, error) {
 	appKey := optString(params.AppKey)
 	list, err := h.siteConfigSvc.ListConfigs(ctx, siteConfigTenantFallback, appKey)
 	if err != nil {
@@ -66,7 +66,7 @@ func (h *APIHandler) ListSiteConfigs(ctx context.Context, params gen.ListSiteCon
 
 // ─── UpsertSiteConfig ────────────────────────────────────────────────────────
 
-func (h *APIHandler) UpsertSiteConfig(ctx context.Context, req *gen.SiteConfigSaveRequest) (gen.UpsertSiteConfigRes, error) {
+func (h *siteConfigAPIHandler) UpsertSiteConfig(ctx context.Context, req *gen.SiteConfigSaveRequest) (gen.UpsertSiteConfigRes, error) {
 	cfg, err := buildSiteConfigFromRequest(req, nil)
 	if err != nil {
 		return &gen.Error{Code: 400, Message: err.Error()}, nil
@@ -87,7 +87,7 @@ func (h *APIHandler) UpsertSiteConfig(ctx context.Context, req *gen.SiteConfigSa
 
 // ─── UpdateSiteConfig ────────────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateSiteConfig(ctx context.Context, req *gen.SiteConfigSaveRequest, params gen.UpdateSiteConfigParams) (gen.UpdateSiteConfigRes, error) {
+func (h *siteConfigAPIHandler) UpdateSiteConfig(ctx context.Context, req *gen.SiteConfigSaveRequest, params gen.UpdateSiteConfigParams) (gen.UpdateSiteConfigRes, error) {
 	existing, err := h.siteConfigSvc.GetConfig(ctx, siteConfigTenantFallback, params.ID)
 	if err != nil {
 		if errors.Is(err, siteconfig.ErrConfigNotFound) {
@@ -118,7 +118,7 @@ func (h *APIHandler) UpdateSiteConfig(ctx context.Context, req *gen.SiteConfigSa
 
 // ─── DeleteSiteConfig ────────────────────────────────────────────────────────
 
-func (h *APIHandler) DeleteSiteConfig(ctx context.Context, params gen.DeleteSiteConfigParams) (gen.DeleteSiteConfigRes, error) {
+func (h *siteConfigAPIHandler) DeleteSiteConfig(ctx context.Context, params gen.DeleteSiteConfigParams) (gen.DeleteSiteConfigRes, error) {
 	if err := h.siteConfigSvc.DeleteConfig(ctx, siteConfigTenantFallback, params.ID); err != nil {
 		if errors.Is(err, siteconfig.ErrConfigNotFound) {
 			e := gen.DeleteSiteConfigNotFound(gen.Error{Code: 404, Message: err.Error()})
@@ -134,7 +134,7 @@ func (h *APIHandler) DeleteSiteConfig(ctx context.Context, params gen.DeleteSite
 
 // ─── ListSiteConfigSets ──────────────────────────────────────────────────────
 
-func (h *APIHandler) ListSiteConfigSets(ctx context.Context) (gen.ListSiteConfigSetsRes, error) {
+func (h *siteConfigAPIHandler) ListSiteConfigSets(ctx context.Context) (gen.ListSiteConfigSetsRes, error) {
 	sets, err := h.siteConfigSvc.ListSets(ctx, siteConfigTenantFallback)
 	if err != nil {
 		h.logger.Error("list site config sets", zap.Error(err))
@@ -152,7 +152,7 @@ func (h *APIHandler) ListSiteConfigSets(ctx context.Context) (gen.ListSiteConfig
 
 // ─── UpsertSiteConfigSet ─────────────────────────────────────────────────────
 
-func (h *APIHandler) UpsertSiteConfigSet(ctx context.Context, req *gen.SiteConfigSetSaveRequest) (gen.UpsertSiteConfigSetRes, error) {
+func (h *siteConfigAPIHandler) UpsertSiteConfigSet(ctx context.Context, req *gen.SiteConfigSetSaveRequest) (gen.UpsertSiteConfigSetRes, error) {
 	set := buildSiteConfigSetFromRequest(req, nil)
 	if err := h.siteConfigSvc.UpsertSet(ctx, set); err != nil {
 		h.logger.Error("upsert site config set", zap.Error(err))
@@ -169,7 +169,7 @@ func (h *APIHandler) UpsertSiteConfigSet(ctx context.Context, req *gen.SiteConfi
 
 // ─── UpdateSiteConfigSet ─────────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateSiteConfigSet(ctx context.Context, req *gen.SiteConfigSetSaveRequest, params gen.UpdateSiteConfigSetParams) (gen.UpdateSiteConfigSetRes, error) {
+func (h *siteConfigAPIHandler) UpdateSiteConfigSet(ctx context.Context, req *gen.SiteConfigSetSaveRequest, params gen.UpdateSiteConfigSetParams) (gen.UpdateSiteConfigSetRes, error) {
 	existing, err := h.siteConfigSvc.GetSet(ctx, siteConfigTenantFallback, params.ID)
 	if err != nil {
 		if errors.Is(err, siteconfig.ErrSetNotFound) {
@@ -196,7 +196,7 @@ func (h *APIHandler) UpdateSiteConfigSet(ctx context.Context, req *gen.SiteConfi
 
 // ─── DeleteSiteConfigSet ─────────────────────────────────────────────────────
 
-func (h *APIHandler) DeleteSiteConfigSet(ctx context.Context, params gen.DeleteSiteConfigSetParams) (gen.DeleteSiteConfigSetRes, error) {
+func (h *siteConfigAPIHandler) DeleteSiteConfigSet(ctx context.Context, params gen.DeleteSiteConfigSetParams) (gen.DeleteSiteConfigSetRes, error) {
 	if err := h.siteConfigSvc.DeleteSet(ctx, siteConfigTenantFallback, params.ID); err != nil {
 		if errors.Is(err, siteconfig.ErrSetNotFound) {
 			e := gen.DeleteSiteConfigSetNotFound(gen.Error{Code: 404, Message: err.Error()})
@@ -212,7 +212,7 @@ func (h *APIHandler) DeleteSiteConfigSet(ctx context.Context, params gen.DeleteS
 
 // ─── UpdateSiteConfigSetItems ────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateSiteConfigSetItems(ctx context.Context, req *gen.SiteConfigSetItemsRequest, params gen.UpdateSiteConfigSetItemsParams) (gen.UpdateSiteConfigSetItemsRes, error) {
+func (h *siteConfigAPIHandler) UpdateSiteConfigSetItems(ctx context.Context, req *gen.SiteConfigSetItemsRequest, params gen.UpdateSiteConfigSetItemsParams) (gen.UpdateSiteConfigSetItemsRes, error) {
 	keys := compactStringsHandler(req.ConfigKeys)
 	if err := h.siteConfigSvc.UpdateSetItems(ctx, siteConfigTenantFallback, params.ID, keys); err != nil {
 		if errors.Is(err, siteconfig.ErrSetNotFound) {

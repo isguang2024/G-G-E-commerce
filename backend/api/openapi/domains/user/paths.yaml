@@ -6,7 +6,7 @@ paths:
       summary: 创建用户
       tags:
       - user
-      x-permission-key: user.create
+      x-permission-key: system.user.manage
       x-access-mode: permission
       requestBody:
         required: true
@@ -44,7 +44,7 @@ paths:
       summary: 获取用户列表（分页 + 多条件筛选）
       tags:
       - user
-      x-permission-key: user.list
+      x-permission-key: system.user.manage
       x-access-mode: permission
       parameters:
       - name: current
@@ -127,7 +127,7 @@ paths:
       summary: 获取用户详情
       tags:
       - user
-      x-permission-key: user.read
+      x-permission-key: system.user.manage
       x-access-mode: permission
       parameters:
       - name: id
@@ -166,7 +166,7 @@ paths:
       summary: 更新用户
       tags:
       - user
-      x-permission-key: user.update
+      x-permission-key: system.user.manage
       x-access-mode: permission
       parameters:
       - name: id
@@ -217,7 +217,7 @@ paths:
       summary: 删除用户
       tags:
       - user
-      x-permission-key: user.delete
+      x-permission-key: system.user.manage
       x-access-mode: permission
       parameters:
       - name: id
@@ -257,7 +257,7 @@ paths:
       summary: 分配用户角色
       tags:
       - user
-      x-permission-key: user.assign_role
+      x-permission-key: system.user.manage
       x-access-mode: permission
       parameters:
       - name: id

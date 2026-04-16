@@ -14,7 +14,7 @@ import (
 
 // ─── GetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
 
-func (h *APIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.CollaborationWorkspaceMemberRolesResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.CollaborationWorkspaceMemberRolesResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return &gen.CollaborationWorkspaceMemberRolesResponse{
@@ -47,7 +47,7 @@ func (h *APIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 
 // ─── SetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
 
-func (h *APIHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.MutationResult, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, err

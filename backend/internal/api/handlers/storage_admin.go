@@ -28,7 +28,7 @@ import (
 
 // ---------- providers ----------
 
-func (h *APIHandler) ListStorageProviders(ctx context.Context, params gen.ListStorageProvidersParams) (gen.ListStorageProvidersRes, error) {
+func (h *storageAdminAPIHandler) ListStorageProviders(ctx context.Context, params gen.ListStorageProvidersParams) (gen.ListStorageProvidersRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -50,7 +50,7 @@ func (h *APIHandler) ListStorageProviders(ctx context.Context, params gen.ListSt
 	}, nil
 }
 
-func (h *APIHandler) GetStorageProvider(ctx context.Context, params gen.GetStorageProviderParams) (gen.GetStorageProviderRes, error) {
+func (h *storageAdminAPIHandler) GetStorageProvider(ctx context.Context, params gen.GetStorageProviderParams) (gen.GetStorageProviderRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -66,7 +66,7 @@ func (h *APIHandler) GetStorageProvider(ctx context.Context, params gen.GetStora
 	return &resp, nil
 }
 
-func (h *APIHandler) CreateStorageProvider(ctx context.Context, req *gen.StorageProviderSaveRequest) (gen.CreateStorageProviderRes, error) {
+func (h *storageAdminAPIHandler) CreateStorageProvider(ctx context.Context, req *gen.StorageProviderSaveRequest) (gen.CreateStorageProviderRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.CreateStorageProviderBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -83,7 +83,7 @@ func (h *APIHandler) CreateStorageProvider(ctx context.Context, req *gen.Storage
 	return &resp, nil
 }
 
-func (h *APIHandler) UpdateStorageProvider(ctx context.Context, req *gen.StorageProviderSaveRequest, params gen.UpdateStorageProviderParams) (gen.UpdateStorageProviderRes, error) {
+func (h *storageAdminAPIHandler) UpdateStorageProvider(ctx context.Context, req *gen.StorageProviderSaveRequest, params gen.UpdateStorageProviderParams) (gen.UpdateStorageProviderRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.UpdateStorageProviderBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -103,7 +103,7 @@ func (h *APIHandler) UpdateStorageProvider(ctx context.Context, req *gen.Storage
 	return &resp, nil
 }
 
-func (h *APIHandler) DeleteStorageProvider(ctx context.Context, params gen.DeleteStorageProviderParams) (gen.DeleteStorageProviderRes, error) {
+func (h *storageAdminAPIHandler) DeleteStorageProvider(ctx context.Context, params gen.DeleteStorageProviderParams) (gen.DeleteStorageProviderRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -117,7 +117,7 @@ func (h *APIHandler) DeleteStorageProvider(ctx context.Context, params gen.Delet
 	return ok(), nil
 }
 
-func (h *APIHandler) TestStorageProvider(ctx context.Context, params gen.TestStorageProviderParams) (gen.TestStorageProviderRes, error) {
+func (h *storageAdminAPIHandler) TestStorageProvider(ctx context.Context, params gen.TestStorageProviderParams) (gen.TestStorageProviderRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -141,7 +141,7 @@ func (h *APIHandler) TestStorageProvider(ctx context.Context, params gen.TestSto
 
 // ---------- buckets ----------
 
-func (h *APIHandler) ListStorageBuckets(ctx context.Context, params gen.ListStorageBucketsParams) (gen.ListStorageBucketsRes, error) {
+func (h *storageAdminAPIHandler) ListStorageBuckets(ctx context.Context, params gen.ListStorageBucketsParams) (gen.ListStorageBucketsRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -163,7 +163,7 @@ func (h *APIHandler) ListStorageBuckets(ctx context.Context, params gen.ListStor
 	}, nil
 }
 
-func (h *APIHandler) GetStorageBucket(ctx context.Context, params gen.GetStorageBucketParams) (gen.GetStorageBucketRes, error) {
+func (h *storageAdminAPIHandler) GetStorageBucket(ctx context.Context, params gen.GetStorageBucketParams) (gen.GetStorageBucketRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -179,7 +179,7 @@ func (h *APIHandler) GetStorageBucket(ctx context.Context, params gen.GetStorage
 	return &resp, nil
 }
 
-func (h *APIHandler) CreateStorageBucket(ctx context.Context, req *gen.StorageBucketSaveRequest) (gen.CreateStorageBucketRes, error) {
+func (h *storageAdminAPIHandler) CreateStorageBucket(ctx context.Context, req *gen.StorageBucketSaveRequest) (gen.CreateStorageBucketRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -196,7 +196,7 @@ func (h *APIHandler) CreateStorageBucket(ctx context.Context, req *gen.StorageBu
 	return &resp, nil
 }
 
-func (h *APIHandler) UpdateStorageBucket(ctx context.Context, req *gen.StorageBucketSaveRequest, params gen.UpdateStorageBucketParams) (gen.UpdateStorageBucketRes, error) {
+func (h *storageAdminAPIHandler) UpdateStorageBucket(ctx context.Context, req *gen.StorageBucketSaveRequest, params gen.UpdateStorageBucketParams) (gen.UpdateStorageBucketRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.UpdateStorageBucketBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -216,7 +216,7 @@ func (h *APIHandler) UpdateStorageBucket(ctx context.Context, req *gen.StorageBu
 	return &resp, nil
 }
 
-func (h *APIHandler) DeleteStorageBucket(ctx context.Context, params gen.DeleteStorageBucketParams) (gen.DeleteStorageBucketRes, error) {
+func (h *storageAdminAPIHandler) DeleteStorageBucket(ctx context.Context, params gen.DeleteStorageBucketParams) (gen.DeleteStorageBucketRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -232,7 +232,7 @@ func (h *APIHandler) DeleteStorageBucket(ctx context.Context, params gen.DeleteS
 
 // ---------- upload keys ----------
 
-func (h *APIHandler) ListUploadKeys(ctx context.Context, params gen.ListUploadKeysParams) (gen.ListUploadKeysRes, error) {
+func (h *storageAdminAPIHandler) ListUploadKeys(ctx context.Context, params gen.ListUploadKeysParams) (gen.ListUploadKeysRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -254,7 +254,7 @@ func (h *APIHandler) ListUploadKeys(ctx context.Context, params gen.ListUploadKe
 	}, nil
 }
 
-func (h *APIHandler) GetUploadKey(ctx context.Context, params gen.GetUploadKeyParams) (gen.GetUploadKeyRes, error) {
+func (h *storageAdminAPIHandler) GetUploadKey(ctx context.Context, params gen.GetUploadKeyParams) (gen.GetUploadKeyRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -270,7 +270,7 @@ func (h *APIHandler) GetUploadKey(ctx context.Context, params gen.GetUploadKeyPa
 	return &detail, nil
 }
 
-func (h *APIHandler) CreateUploadKey(ctx context.Context, req *gen.UploadKeySaveRequest) (gen.CreateUploadKeyRes, error) {
+func (h *storageAdminAPIHandler) CreateUploadKey(ctx context.Context, req *gen.UploadKeySaveRequest) (gen.CreateUploadKeyRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -287,7 +287,7 @@ func (h *APIHandler) CreateUploadKey(ctx context.Context, req *gen.UploadKeySave
 	return &resp, nil
 }
 
-func (h *APIHandler) UpdateUploadKey(ctx context.Context, req *gen.UploadKeySaveRequest, params gen.UpdateUploadKeyParams) (gen.UpdateUploadKeyRes, error) {
+func (h *storageAdminAPIHandler) UpdateUploadKey(ctx context.Context, req *gen.UploadKeySaveRequest, params gen.UpdateUploadKeyParams) (gen.UpdateUploadKeyRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.UpdateUploadKeyBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -307,7 +307,7 @@ func (h *APIHandler) UpdateUploadKey(ctx context.Context, req *gen.UploadKeySave
 	return &resp, nil
 }
 
-func (h *APIHandler) DeleteUploadKey(ctx context.Context, params gen.DeleteUploadKeyParams) (gen.DeleteUploadKeyRes, error) {
+func (h *storageAdminAPIHandler) DeleteUploadKey(ctx context.Context, params gen.DeleteUploadKeyParams) (gen.DeleteUploadKeyRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -323,7 +323,7 @@ func (h *APIHandler) DeleteUploadKey(ctx context.Context, params gen.DeleteUploa
 
 // ---------- upload key rules ----------
 
-func (h *APIHandler) ListUploadKeyRules(ctx context.Context, params gen.ListUploadKeyRulesParams) (gen.ListUploadKeyRulesRes, error) {
+func (h *storageAdminAPIHandler) ListUploadKeyRules(ctx context.Context, params gen.ListUploadKeyRulesParams) (gen.ListUploadKeyRulesRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}
@@ -345,7 +345,7 @@ func (h *APIHandler) ListUploadKeyRules(ctx context.Context, params gen.ListUplo
 	}, nil
 }
 
-func (h *APIHandler) CreateUploadKeyRule(ctx context.Context, req *gen.UploadKeyRuleSaveRequest, params gen.CreateUploadKeyRuleParams) (gen.CreateUploadKeyRuleRes, error) {
+func (h *storageAdminAPIHandler) CreateUploadKeyRule(ctx context.Context, req *gen.UploadKeyRuleSaveRequest, params gen.CreateUploadKeyRuleParams) (gen.CreateUploadKeyRuleRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.CreateUploadKeyRuleBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -365,7 +365,7 @@ func (h *APIHandler) CreateUploadKeyRule(ctx context.Context, req *gen.UploadKey
 	return &resp, nil
 }
 
-func (h *APIHandler) UpdateUploadKeyRule(ctx context.Context, req *gen.UploadKeyRuleSaveRequest, params gen.UpdateUploadKeyRuleParams) (gen.UpdateUploadKeyRuleRes, error) {
+func (h *storageAdminAPIHandler) UpdateUploadKeyRule(ctx context.Context, req *gen.UploadKeyRuleSaveRequest, params gen.UpdateUploadKeyRuleParams) (gen.UpdateUploadKeyRuleRes, error) {
 	if h.uploadSvc == nil {
 		return &gen.UpdateUploadKeyRuleBadRequest{Code: 500, Message: "上传服务未就绪"}, nil
 	}
@@ -385,7 +385,7 @@ func (h *APIHandler) UpdateUploadKeyRule(ctx context.Context, req *gen.UploadKey
 	return &resp, nil
 }
 
-func (h *APIHandler) DeleteUploadKeyRule(ctx context.Context, params gen.DeleteUploadKeyRuleParams) (gen.DeleteUploadKeyRuleRes, error) {
+func (h *storageAdminAPIHandler) DeleteUploadKeyRule(ctx context.Context, params gen.DeleteUploadKeyRuleParams) (gen.DeleteUploadKeyRuleRes, error) {
 	if h.uploadSvc == nil {
 		return errResp(500, "上传服务未就绪"), nil
 	}

@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -53,12 +54,10 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 
 	r := gin.New()
 
-	// 约定：RequestID 必须挂在第一条，后续中间件的日志字段 / ctx 都依赖它。
-	r.Use(middleware.RequestID())
-	r.Use(middleware.Logger(logger))
-	r.Use(middleware.Recovery(logger))
-	r.Use(middleware.AppContext(db))
-	r.Use(middleware.DynamicAppSecurity(db, logger, cfg.Env))
+	// 全局中间件链由 buildGlobalMiddlewareChain 统一产出；SetupRouter 只在这里
+	// r.Use 一次，后续新增全局中间件请直接改那个函数，不要在 SetupRouter 里
+	// 另起 r.Use() 行 —— 顺序约束写在函数注释里，避免散落定义导致顺序漂移。
+	r.Use(buildGlobalMiddlewareChain(db, logger, cfg)...)
 	r.Static("/uploads", "./data/uploads")
 
 	r.GET("/health", func(c *gin.Context) {
@@ -76,7 +75,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 		logger.Fatal("openapi seed validation failed", zap.Error(err))
 	}
 	logger.Info("openapi seed loaded", zap.Int("operations", len(seed.Operations)))
-	permLookup := seed.PermissionKeyByOperationID()
+	permLookup := seed.PermissionLookup()
 
 	// Phase 3 follow-up: consistency check. Every non-public/non-authenticated
 	// operation must resolve to a permission_keys row — otherwise the evaluator
@@ -99,7 +98,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 		user.NewAPIEndpointRepository(db),
 		user.NewAPIEndpointCategoryRepository(db),
 		user.NewAPIEndpointPermissionBindingRepository(db),
-		r,
 		logger,
 		cfg.Env,
 		endpointAccessService,
@@ -118,50 +116,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	if err != nil {
 		logger.Fatal("failed to build ogen server", zap.Error(err))
 	}
-	// ogenServeWith 把 gin.Context 上已经落位的字段透出到 request.Context，
-	// 同时往 pkgLogger 的类型化 ctx 里注入 request_id / actor / tenant / app /
-	// workspace / client 信息 —— 下游任何 handler 拿到 ctx 都可以：
-	//   - logger.With(ctx).Info(...) 得到带全链路字段的结构化日志；
-	//   - auditRecorder.Record(ctx, ...) 自动补齐 audit 行上的身份/租户列。
-	ogenServeWith := func(c *gin.Context, withUser bool) {
-		ctx := c.Request.Context()
-		if withUser {
-			userID := c.GetString("user_id")
-			ctx = context.WithValue(ctx, handlers.CtxUserID, userID)
-			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
-			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
-			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
-			if authTime, exists := c.Get("auth_time"); exists {
-				ctx = context.WithValue(ctx, handlers.CtxAuthTime, authTime)
-			}
-			ctx = pkgLogger.WithActor(ctx, userID, "user")
-			ctx = pkgLogger.WithWorkspace(ctx, c.GetString("collaboration_workspace_id"))
-		}
-		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
-		requestHost := strings.TrimSpace(c.GetString("request_host"))
-		if requestHost == "" && c.Request != nil {
-			requestHost = c.Request.Host
-		}
-		ctx = context.WithValue(ctx, handlers.CtxRequestHost, requestHost)
-		ctx = context.WithValue(ctx, handlers.CtxRequestPath, c.Request.URL.Path)
-		ctx = context.WithValue(ctx, handlers.CtxUserAgent, c.Request.UserAgent())
-
-		// pkgLogger 类型化 ctx：租户目前固定 default；app_key 来自 AppContext；
-		// IP / UA 放到独立键，审计 row 直接读即可。
-		if tenant := strings.TrimSpace(c.GetString("tenant_id")); tenant != "" {
-			ctx = pkgLogger.WithTenant(ctx, tenant)
-		} else {
-			ctx = pkgLogger.WithTenant(ctx, "default")
-		}
-		ctx = pkgLogger.WithApp(ctx, c.GetString("app_key"))
-		ctx = pkgLogger.WithClient(ctx, c.ClientIP(), c.Request.UserAgent())
-
-		req := c.Request.Clone(ctx)
-		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
-		ogenServer.ServeHTTP(c.Writer, req)
-	}
-	publicBridge := func(c *gin.Context) { ogenServeWith(c, false) }
-	ogenBridge := func(c *gin.Context) { ogenServeWith(c, true) }
+	// 桥接闭包由 newOgenBridges 这个包级工厂统一产出，这样 router_contract_test
+	// 可以直接引用同源工厂，避免测试再自行实现一份 bridge 导致漂移。
+	publicBridge, ogenBridge := newOgenBridges(ogenServer)
 	socialSvc := social.NewService(
 		db,
 		auth.NewAuthService(user.NewUserRepository(db), &cfg.JWT, logger),
@@ -199,9 +156,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 		}
 	}
 
-	if _, err := apiendpoint.SyncRoutes(db, logger, r.Routes()); err != nil {
-		logger.Error("Failed to sync API registry", zap.Error(err))
-	}
+	// Route-to-DB sync is owned by the OpenAPI seed ensure pipeline in
+	// cmd/migrate (permissionseed.EnsureOpenAPIEndpoints + EnsureOpenAPIPermissionBindings).
+	// The runtime only needs to warm the endpoint-status cache here.
 	if err := endpointAccessService.Refresh(); err != nil {
 		logger.Error("Failed to refresh API endpoint runtime cache", zap.Error(err))
 	}
@@ -209,12 +166,107 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	return r
 }
 
+// buildGlobalMiddlewareChain returns the ordered list of gin.HandlerFunc
+// that SetupRouter mounts on the root gin.Engine.
+//
+// Adding a new global middleware? Append/insert it here — do NOT add another
+// r.Use(...) line in SetupRouter. One place to read, one place to change.
+//
+// Order is load-bearing. Each entry's position is justified by the next
+// entries' dependencies; reordering is a breaking change:
+//
+//  1. RequestID      — must be first so every downstream middleware and log
+//                      line carries the same request_id field.
+//  2. Logger         — access log; reads request_id + app/space/auth tags
+//                      populated later but writes the line at response time
+//                      (gin runs all Use() handlers before routing).
+//  3. Recovery       — panic-safety net; after Logger so a panic still gets
+//                      a request_id-tagged line written.
+//  4. AppContext     — resolves app_key/space_key from Host + path, stores
+//                      them on gin.Context for both DynamicAppSecurity and
+//                      downstream handlers.
+//  5. DynamicAppSecurity — consumes AppContext output to pick auth_mode,
+//                      flags app-status and returns 4xx when relevant; MUST
+//                      be last here (i.e. the last pre-routing middleware)
+//                      so blocked requests never reach route-group Use()
+//                      chains (JWT, API-Key, endpoint-status, permission).
+//
+// Route-group-scoped middleware (JWTAuth / APIKeyAuth / RequireActiveEndpoint
+// / OpenAPIPermission) is NOT part of this chain — those have different
+// scopes per sub-group and are mounted inline at the group they protect.
+func buildGlobalMiddlewareChain(db *gorm.DB, logger *zap.Logger, cfg *config.Config) []gin.HandlerFunc {
+	return []gin.HandlerFunc{
+		middleware.RequestID(),
+		middleware.Logger(logger),
+		middleware.Recovery(logger),
+		middleware.AppContext(db),
+		middleware.DynamicAppSecurity(db, logger, cfg.Env),
+	}
+}
+
+// newOgenBridges builds the two gin handlers that forward /api/v1/* traffic
+// into the ogen-generated http.Handler. Exactly one factory exists so
+// router_contract_test can reference the same source the production path
+// uses — replacing the bridges in SetupRouter without going through this
+// factory is the kind of drift the contract test is meant to catch.
+//
+// publicBridge drops user claims (used for access_mode=public operations);
+// ogenBridge carries user/workspace/auth_time through the context (used
+// for access_mode=authenticated|permission operations).
+func newOgenBridges(ogenServer http.Handler) (publicBridge, ogenBridge gin.HandlerFunc) {
+	// serveWith 把 gin.Context 上已经落位的字段透出到 request.Context，
+	// 同时往 pkgLogger 的类型化 ctx 里注入 request_id / actor / tenant / app /
+	// workspace / client 信息 —— 下游任何 handler 拿到 ctx 都可以：
+	//   - logger.With(ctx).Info(...) 得到带全链路字段的结构化日志；
+	//   - auditRecorder.Record(ctx, ...) 自动补齐 audit 行上的身份/租户列。
+	serveWith := func(c *gin.Context, withUser bool) {
+		ctx := c.Request.Context()
+		if withUser {
+			userID := c.GetString("user_id")
+			ctx = context.WithValue(ctx, handlers.CtxUserID, userID)
+			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
+			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
+			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
+			if authTime, exists := c.Get("auth_time"); exists {
+				ctx = context.WithValue(ctx, handlers.CtxAuthTime, authTime)
+			}
+			ctx = pkgLogger.WithActor(ctx, userID, "user")
+			ctx = pkgLogger.WithWorkspace(ctx, c.GetString("collaboration_workspace_id"))
+		}
+		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
+		requestHost := strings.TrimSpace(c.GetString("request_host"))
+		if requestHost == "" && c.Request != nil {
+			requestHost = c.Request.Host
+		}
+		ctx = context.WithValue(ctx, handlers.CtxRequestHost, requestHost)
+		ctx = context.WithValue(ctx, handlers.CtxRequestPath, c.Request.URL.Path)
+		ctx = context.WithValue(ctx, handlers.CtxUserAgent, c.Request.UserAgent())
+
+		// pkgLogger 类型化 ctx：租户目前固定 default；app_key 来自 AppContext；
+		// IP / UA 放到独立键，审计 row 直接读即可。
+		if tenant := strings.TrimSpace(c.GetString("tenant_id")); tenant != "" {
+			ctx = pkgLogger.WithTenant(ctx, tenant)
+		} else {
+			ctx = pkgLogger.WithTenant(ctx, "default")
+		}
+		ctx = pkgLogger.WithApp(ctx, c.GetString("app_key"))
+		ctx = pkgLogger.WithClient(ctx, c.ClientIP(), c.Request.UserAgent())
+
+		req := c.Request.Clone(ctx)
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
+		ogenServer.ServeHTTP(c.Writer, req)
+	}
+	publicBridge = func(c *gin.Context) { serveWith(c, false) }
+	ogenBridge = func(c *gin.Context) { serveWith(c, true) }
+	return
+}
+
 // mountOpenAPIBridgeRoutes registers every operation in `ops` onto the
 // appropriate Gin router group, dispatching based on access_mode:
 //
 //   - "public"                        → v1 group (no JWT)
 //   - "authenticated" / "permission"  → authenticated group (JWT + perm MW)
-//   - anything else                   → authenticated, with a warning log
+//   - anything else                   → logger.Fatal, fail boot (strict mode)
 //
 // Ops are registered in (path, method) ascending order. Gin's radix tree
 // requires static path segments to be registered before parametric ones
@@ -248,14 +300,11 @@ func mountOpenAPIBridgeRoutes(
 		case "authenticated", "permission":
 			authenticated.Handle(method, ginPath, ogenBridge)
 		default:
-			if logger != nil {
-				logger.Warn("openapi seed: unknown access_mode, defaulting to permission",
-					zap.String("access_mode", op.AccessMode),
-					zap.String("operation_id", op.OperationID),
-					zap.String("method", method),
-					zap.String("path", ginPath))
-			}
-			authenticated.Handle(method, ginPath, ogenBridge)
+			logger.Fatal("openapi seed: unknown access_mode — fix spec before boot",
+				zap.String("access_mode", op.AccessMode),
+				zap.String("operation_id", op.OperationID),
+				zap.String("method", method),
+				zap.String("path", ginPath))
 		}
 	}
 }

@@ -127,7 +127,7 @@ func testEngine(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("permissionseed.LoadOpenAPISeed: %v", err)
 	}
-	permLookup := seed.PermissionKeyByOperationID()
+	permLookup := seed.PermissionLookup()
 
 	eval := &noopEvaluator{}
 

@@ -238,7 +238,7 @@ func applyLoginPageTemplateUpsert(
 
 // ── register entries CRUD ────────────────────────────────────────────────
 
-func (h *APIHandler) ListRegisterEntries(ctx context.Context) (gen.ListRegisterEntriesRes, error) {
+func (h *systemAPIHandler) ListRegisterEntries(ctx context.Context) (gen.ListRegisterEntriesRes, error) {
 	var rows []systemmodels.RegisterEntry
 	if err := h.db.WithContext(ctx).Order("sort_order ASC, created_at ASC").Find(&rows).Error; err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func (h *APIHandler) ListRegisterEntries(ctx context.Context) (gen.ListRegisterE
 
 // checkEntryCodeUnique 验证 entry_code 唯一性。若 excludeID 非空，则排除自身（编辑场景）。
 // 冲突时返回 FieldError，mapper 会翻译为 400 + details.entry_code = Reason。
-func (h *APIHandler) checkEntryCodeUnique(ctx context.Context, code string, excludeID *uuid.UUID) error {
+func (h *systemAPIHandler) checkEntryCodeUnique(ctx context.Context, code string, excludeID *uuid.UUID) error {
 	if code == "" {
 		return nil
 	}
@@ -275,7 +275,7 @@ func (h *APIHandler) checkEntryCodeUnique(ctx context.Context, code string, excl
 	return nil
 }
 
-func (h *APIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterEntryUpsertRequest) (gen.CreateRegisterEntryRes, error) {
+func (h *systemAPIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterEntryUpsertRequest) (gen.CreateRegisterEntryRes, error) {
 	if req == nil {
 		return nil, errors.New("请求体为空")
 	}
@@ -322,7 +322,7 @@ func (h *APIHandler) CreateRegisterEntry(ctx context.Context, req *gen.RegisterE
 	return entryToDTO(&entry), nil
 }
 
-func (h *APIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterEntryUpsertRequest, params gen.UpdateRegisterEntryParams) (gen.UpdateRegisterEntryRes, error) {
+func (h *systemAPIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterEntryUpsertRequest, params gen.UpdateRegisterEntryParams) (gen.UpdateRegisterEntryRes, error) {
 	if req == nil {
 		return nil, errors.New("请求体为空")
 	}
@@ -377,7 +377,7 @@ func (h *APIHandler) UpdateRegisterEntry(ctx context.Context, req *gen.RegisterE
 	return entryToDTO(&entry), nil
 }
 
-func (h *APIHandler) DeleteRegisterEntry(ctx context.Context, params gen.DeleteRegisterEntryParams) (gen.DeleteRegisterEntryRes, error) {
+func (h *systemAPIHandler) DeleteRegisterEntry(ctx context.Context, params gen.DeleteRegisterEntryParams) (gen.DeleteRegisterEntryRes, error) {
 	var entry systemmodels.RegisterEntry
 	if err := h.db.WithContext(ctx).Where("id = ?", params.ID).First(&entry).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -415,7 +415,7 @@ func (h *APIHandler) DeleteRegisterEntry(ctx context.Context, params gen.DeleteR
 	return &gen.DeleteRegisterEntryNoContent{}, nil
 }
 
-func (h *APIHandler) ListLoginPageTemplates(ctx context.Context) (*gen.LoginPageTemplateList, error) {
+func (h *systemAPIHandler) ListLoginPageTemplates(ctx context.Context) (*gen.LoginPageTemplateList, error) {
 	var rows []systemmodels.LoginPageTemplate
 	if err := h.db.WithContext(ctx).
 		Where("tenant_id = ? AND deleted_at IS NULL", "default").
@@ -432,7 +432,7 @@ func (h *APIHandler) ListLoginPageTemplates(ctx context.Context) (*gen.LoginPage
 	return &gen.LoginPageTemplateList{Records: records, Total: len(records)}, nil
 }
 
-func (h *APIHandler) CreateLoginPageTemplate(
+func (h *systemAPIHandler) CreateLoginPageTemplate(
 	ctx context.Context,
 	req *gen.LoginPageTemplateUpsertRequest,
 ) (*gen.LoginPageTemplateItem, error) {
@@ -477,7 +477,7 @@ func (h *APIHandler) CreateLoginPageTemplate(
 	return loginPageTemplateToDTO(&item), nil
 }
 
-func (h *APIHandler) UpdateLoginPageTemplate(
+func (h *systemAPIHandler) UpdateLoginPageTemplate(
 	ctx context.Context,
 	req *gen.LoginPageTemplateUpsertRequest,
 	params gen.UpdateLoginPageTemplateParams,
@@ -531,7 +531,7 @@ func (h *APIHandler) UpdateLoginPageTemplate(
 	return loginPageTemplateToDTO(&item), nil
 }
 
-func (h *APIHandler) DeleteLoginPageTemplate(
+func (h *systemAPIHandler) DeleteLoginPageTemplate(
 	ctx context.Context,
 	params gen.DeleteLoginPageTemplateParams,
 ) (gen.DeleteLoginPageTemplateRes, error) {
@@ -576,7 +576,7 @@ func (h *APIHandler) DeleteLoginPageTemplate(
 
 // ── register logs ────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListRegisterLogs(ctx context.Context, params gen.ListRegisterLogsParams) (gen.ListRegisterLogsRes, error) {
+func (h *systemAPIHandler) ListRegisterLogs(ctx context.Context, params gen.ListRegisterLogsParams) (gen.ListRegisterLogsRes, error) {
 	q := h.db.WithContext(ctx).Model(&usermodel.User{}).
 		Where("register_entry_code <> ''")
 	if params.Source.Set {

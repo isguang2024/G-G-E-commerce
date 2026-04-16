@@ -16,7 +16,7 @@ import (
 
 // -------- apps --------
 
-func (h *APIHandler) ListApps(ctx context.Context) (*gen.SystemAppListResponse, error) {
+func (h *systemAPIHandler) ListApps(ctx context.Context) (*gen.SystemAppListResponse, error) {
 	items, err := h.appSvc.ListApps()
 	if err != nil {
 		h.logger.Error("list apps failed", zap.Error(err))
@@ -28,7 +28,7 @@ func (h *APIHandler) ListApps(ctx context.Context) (*gen.SystemAppListResponse, 
 	}, nil
 }
 
-func (h *APIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest) (*gen.SystemAppItem, error) {
+func (h *systemAPIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest) (*gen.SystemAppItem, error) {
 	if req == nil {
 		req = &gen.SystemAppSaveRequest{}
 	}
@@ -72,7 +72,7 @@ func (h *APIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRequest)
 	return systemAppItemFromModel(record)
 }
 
-func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListAppHostBindingsParams) (*gen.SystemAppHostBindingListResponse, error) {
+func (h *systemAPIHandler) ListAppHostBindings(ctx context.Context, params gen.ListAppHostBindingsParams) (*gen.SystemAppHostBindingListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -88,7 +88,7 @@ func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListApp
 	}, nil
 }
 
-func (h *APIHandler) SaveAppHostBinding(ctx context.Context, req *gen.SystemAppHostBindingSaveRequest) (*gen.SystemAppHostBindingItem, error) {
+func (h *systemAPIHandler) SaveAppHostBinding(ctx context.Context, req *gen.SystemAppHostBindingSaveRequest) (*gen.SystemAppHostBindingItem, error) {
 	if req == nil {
 		req = &gen.SystemAppHostBindingSaveRequest{}
 	}
@@ -113,7 +113,7 @@ func (h *APIHandler) SaveAppHostBinding(ctx context.Context, req *gen.SystemAppH
 	return systemAppHostBindingItemFromModel(record)
 }
 
-func (h *APIHandler) DeleteAppHostBinding(ctx context.Context, params gen.DeleteAppHostBindingParams) (*gen.MutationResult, error) {
+func (h *systemAPIHandler) DeleteAppHostBinding(ctx context.Context, params gen.DeleteAppHostBindingParams) (*gen.MutationResult, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -140,7 +140,7 @@ func (h *APIHandler) DeleteAppHostBinding(ctx context.Context, params gen.Delete
 	return ok(), nil
 }
 
-func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.ListMenuSpaceEntryBindingsParams) (*gen.SystemMenuSpaceEntryBindingListResponse, error) {
+func (h *systemAPIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.ListMenuSpaceEntryBindingsParams) (*gen.SystemMenuSpaceEntryBindingListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -156,7 +156,7 @@ func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.
 	}, nil
 }
 
-func (h *APIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req *gen.SystemMenuSpaceEntryBindingSaveRequest) (*gen.SystemMenuSpaceEntryBindingItem, error) {
+func (h *systemAPIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req *gen.SystemMenuSpaceEntryBindingSaveRequest) (*gen.SystemMenuSpaceEntryBindingItem, error) {
 	if req == nil {
 		req = &gen.SystemMenuSpaceEntryBindingSaveRequest{}
 	}
@@ -181,7 +181,7 @@ func (h *APIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req *gen.Sys
 	return systemMenuSpaceEntryBindingItemFromModel(record)
 }
 
-func (h *APIHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params gen.DeleteMenuSpaceEntryBindingParams) (*gen.MutationResult, error) {
+func (h *systemAPIHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params gen.DeleteMenuSpaceEntryBindingParams) (*gen.MutationResult, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -193,7 +193,7 @@ func (h *APIHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params gen
 	return ok(), nil
 }
 
-func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentAppParams) (*gen.SystemCurrentAppResponse, error) {
+func (h *systemAPIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentAppParams) (*gen.SystemCurrentAppResponse, error) {
 	resp, err := h.appSvc.GetCurrent(requestHostFromCtx(ctx), optString(params.AppKey))
 	if err != nil {
 		h.logger.Error("get current app failed", zap.Error(err))
@@ -202,7 +202,7 @@ func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentApp
 	return systemCurrentAppResponseFromModel(resp)
 }
 
-func (h *APIHandler) GetAppPreflight(ctx context.Context, params gen.GetAppPreflightParams) (*gen.SystemAppPreflightResponse, error) {
+func (h *systemAPIHandler) GetAppPreflight(ctx context.Context, params gen.GetAppPreflightParams) (*gen.SystemAppPreflightResponse, error) {
 	resp, err := h.appSvc.GetAppPreflight(params.AppKey, requestHostFromCtx(ctx))
 	if err != nil {
 		h.logger.Error("get app preflight failed", zap.Error(err))
@@ -213,7 +213,7 @@ func (h *APIHandler) GetAppPreflight(ctx context.Context, params gen.GetAppPrefl
 
 // -------- spaces --------
 
-func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpacesParams) (*gen.SystemMenuSpaceListResponse, error) {
+func (h *systemAPIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpacesParams) (*gen.SystemMenuSpaceListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -229,7 +229,7 @@ func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpac
 	}, nil
 }
 
-func (h *APIHandler) SaveMenuSpace(ctx context.Context, req *gen.SystemMenuSpaceSaveRequest) (*gen.SystemMenuSpaceItem, error) {
+func (h *systemAPIHandler) SaveMenuSpace(ctx context.Context, req *gen.SystemMenuSpaceSaveRequest) (*gen.SystemMenuSpaceItem, error) {
 	if req == nil {
 		req = &gen.SystemMenuSpaceSaveRequest{}
 	}
@@ -253,7 +253,7 @@ func (h *APIHandler) SaveMenuSpace(ctx context.Context, req *gen.SystemMenuSpace
 	return systemMenuSpaceItemFromModel(record)
 }
 
-func (h *APIHandler) GetCurrentMenuSpace(ctx context.Context, params gen.GetCurrentMenuSpaceParams) (*gen.SystemCurrentMenuSpaceResponse, error) {
+func (h *systemAPIHandler) GetCurrentMenuSpace(ctx context.Context, params gen.GetCurrentMenuSpaceParams) (*gen.SystemCurrentMenuSpaceResponse, error) {
 	var userID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		userID = &uid
@@ -273,7 +273,7 @@ func (h *APIHandler) GetCurrentMenuSpace(ctx context.Context, params gen.GetCurr
 	return systemCurrentMenuSpaceResponseFromModel(resp)
 }
 
-func (h *APIHandler) GetMenuSpaceMode(ctx context.Context, params gen.GetMenuSpaceModeParams) (*gen.SystemMenuSpaceModeResponse, error) {
+func (h *systemAPIHandler) GetMenuSpaceMode(ctx context.Context, params gen.GetMenuSpaceModeParams) (*gen.SystemMenuSpaceModeResponse, error) {
 	mode, err := h.spaceSvc.GetMode(optString(params.AppKey))
 	if err != nil {
 		h.logger.Error("get menu space mode failed", zap.Error(err))
@@ -282,7 +282,7 @@ func (h *APIHandler) GetMenuSpaceMode(ctx context.Context, params gen.GetMenuSpa
 	return &gen.SystemMenuSpaceModeResponse{Mode: mode}, nil
 }
 
-func (h *APIHandler) SaveMenuSpaceMode(ctx context.Context, req *gen.SystemMenuSpaceModeSaveRequest) (*gen.SystemMenuSpaceModeResponse, error) {
+func (h *systemAPIHandler) SaveMenuSpaceMode(ctx context.Context, req *gen.SystemMenuSpaceModeSaveRequest) (*gen.SystemMenuSpaceModeResponse, error) {
 	if req == nil {
 		req = &gen.SystemMenuSpaceModeSaveRequest{}
 	}
@@ -294,7 +294,7 @@ func (h *APIHandler) SaveMenuSpaceMode(ctx context.Context, req *gen.SystemMenuS
 	return &gen.SystemMenuSpaceModeResponse{Mode: mode}, nil
 }
 
-func (h *APIHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params gen.InitializeMenuSpaceFromDefaultParams) (*gen.SystemMenuSpaceInitializeResult, error) {
+func (h *systemAPIHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params gen.InitializeMenuSpaceFromDefaultParams) (*gen.SystemMenuSpaceInitializeResult, error) {
 	var actor *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		actor = &uid
@@ -307,7 +307,7 @@ func (h *APIHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params 
 	return systemMenuSpaceInitializeResultFromModel(result)
 }
 
-func (h *APIHandler) ListMenuSpaceHostBindings(ctx context.Context) (*gen.SystemMenuSpaceHostBindingListResponse, error) {
+func (h *systemAPIHandler) ListMenuSpaceHostBindings(ctx context.Context) (*gen.SystemMenuSpaceHostBindingListResponse, error) {
 	items, err := h.spaceSvc.ListHostBindings("")
 	if err != nil {
 		h.logger.Error("list menu space host bindings failed", zap.Error(err))
@@ -319,7 +319,7 @@ func (h *APIHandler) ListMenuSpaceHostBindings(ctx context.Context) (*gen.System
 	}, nil
 }
 
-func (h *APIHandler) SaveMenuSpaceHostBinding(ctx context.Context, req *gen.SystemMenuSpaceHostBindingSaveRequest) (*gen.SystemMenuSpaceHostBindingItem, error) {
+func (h *systemAPIHandler) SaveMenuSpaceHostBinding(ctx context.Context, req *gen.SystemMenuSpaceHostBindingSaveRequest) (*gen.SystemMenuSpaceHostBindingItem, error) {
 	if req == nil {
 		req = &gen.SystemMenuSpaceHostBindingSaveRequest{}
 	}

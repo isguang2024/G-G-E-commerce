@@ -11,7 +11,7 @@ import (
 	"github.com/maben/backend/internal/api/dto"
 )
 
-func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.PermissionActionList, error) {
+func (h *permissionAPIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.PermissionActionList, error) {
 	req := &dto.PermissionKeyListRequest{
 		Current:       optInt(params.Current, 1),
 		Size:          optInt(params.Size, 20),
@@ -33,7 +33,7 @@ func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListP
 	}, nil
 }
 
-func (h *APIHandler) ListPermissionActionOptions(ctx context.Context, params gen.ListPermissionActionOptionsParams) (*gen.PermissionActionOptions, error) {
+func (h *permissionAPIHandler) ListPermissionActionOptions(ctx context.Context, params gen.ListPermissionActionOptionsParams) (*gen.PermissionActionOptions, error) {
 	req := &dto.PermissionKeyListRequest{
 		Keyword:       optString(params.Keyword),
 		ModuleGroupID: optString(params.GroupID),
@@ -46,7 +46,7 @@ func (h *APIHandler) ListPermissionActionOptions(ctx context.Context, params gen
 	return &gen.PermissionActionOptions{Records: permissionActionOptionItemsFromModels(list), Total: int64(len(list))}, nil
 }
 
-func (h *APIHandler) GetPermissionAction(ctx context.Context, params gen.GetPermissionActionParams) (*gen.PermissionActionDetail, error) {
+func (h *permissionAPIHandler) GetPermissionAction(ctx context.Context, params gen.GetPermissionActionParams) (*gen.PermissionActionDetail, error) {
 	p, err := h.permSvc.Get(params.ID)
 	if err != nil {
 		h.logger.Error("get permission action failed", zap.Error(err))
@@ -64,7 +64,7 @@ func (h *APIHandler) GetPermissionAction(ctx context.Context, params gen.GetPerm
 	return &detail, nil
 }
 
-func (h *APIHandler) CreatePermissionAction(ctx context.Context, req *gen.PermissionActionSaveRequest) (*gen.IDResult, error) {
+func (h *permissionAPIHandler) CreatePermissionAction(ctx context.Context, req *gen.PermissionActionSaveRequest) (*gen.IDResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -82,7 +82,7 @@ func (h *APIHandler) CreatePermissionAction(ctx context.Context, req *gen.Permis
 	return &gen.IDResult{ID: created.ID}, nil
 }
 
-func (h *APIHandler) UpdatePermissionAction(ctx context.Context, req *gen.PermissionActionSaveRequest, params gen.UpdatePermissionActionParams) (*gen.MutationResult, error) {
+func (h *permissionAPIHandler) UpdatePermissionAction(ctx context.Context, req *gen.PermissionActionSaveRequest, params gen.UpdatePermissionActionParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -99,7 +99,7 @@ func (h *APIHandler) UpdatePermissionAction(ctx context.Context, req *gen.Permis
 	return ok(), nil
 }
 
-func (h *APIHandler) DeletePermissionAction(ctx context.Context, params gen.DeletePermissionActionParams) (*gen.MutationResult, error) {
+func (h *permissionAPIHandler) DeletePermissionAction(ctx context.Context, params gen.DeletePermissionActionParams) (*gen.MutationResult, error) {
 	if err := h.permSvc.Delete(params.ID); err != nil {
 		h.logger.Error("delete permission action failed", zap.Error(err))
 		return nil, err
@@ -107,7 +107,7 @@ func (h *APIHandler) DeletePermissionAction(ctx context.Context, params gen.Dele
 	return ok(), nil
 }
 
-func (h *APIHandler) ListPermissionActionEndpoints(ctx context.Context, params gen.ListPermissionActionEndpointsParams) (*gen.PermissionActionEndpointList, error) {
+func (h *permissionAPIHandler) ListPermissionActionEndpoints(ctx context.Context, params gen.ListPermissionActionEndpointsParams) (*gen.PermissionActionEndpointList, error) {
 	list, err := h.permSvc.ListEndpoints(params.ID)
 	if err != nil {
 		h.logger.Error("list permission action endpoints failed", zap.Error(err))
@@ -120,7 +120,7 @@ func (h *APIHandler) ListPermissionActionEndpoints(ctx context.Context, params g
 	return &gen.PermissionActionEndpointList{Records: records, Total: int64(len(list))}, nil
 }
 
-func (h *APIHandler) AddPermissionActionEndpoint(ctx context.Context, req *gen.PermissionActionEndpointAddRequest, params gen.AddPermissionActionEndpointParams) (*gen.MutationResult, error) {
+func (h *permissionAPIHandler) AddPermissionActionEndpoint(ctx context.Context, req *gen.PermissionActionEndpointAddRequest, params gen.AddPermissionActionEndpointParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -131,7 +131,7 @@ func (h *APIHandler) AddPermissionActionEndpoint(ctx context.Context, req *gen.P
 	return ok(), nil
 }
 
-func (h *APIHandler) RemovePermissionActionEndpoint(ctx context.Context, params gen.RemovePermissionActionEndpointParams) (*gen.MutationResult, error) {
+func (h *permissionAPIHandler) RemovePermissionActionEndpoint(ctx context.Context, params gen.RemovePermissionActionEndpointParams) (*gen.MutationResult, error) {
 	if err := h.permSvc.RemoveEndpoint(params.ID, params.EndpointCode); err != nil {
 		h.logger.Error("remove permission action endpoint failed", zap.Error(err))
 		return nil, err
@@ -139,7 +139,7 @@ func (h *APIHandler) RemovePermissionActionEndpoint(ctx context.Context, params 
 	return ok(), nil
 }
 
-func (h *APIHandler) GetPermissionActionConsumers(ctx context.Context, params gen.GetPermissionActionConsumersParams) (*gen.PermissionActionConsumersResponse, error) {
+func (h *permissionAPIHandler) GetPermissionActionConsumers(ctx context.Context, params gen.GetPermissionActionConsumersParams) (*gen.PermissionActionConsumersResponse, error) {
 	details, err := h.permSvc.GetConsumerDetails(params.ID)
 	if err != nil {
 		h.logger.Error("get permission action consumers failed", zap.Error(err))
@@ -148,7 +148,7 @@ func (h *APIHandler) GetPermissionActionConsumers(ctx context.Context, params ge
 	return permissionActionConsumersResponseFromModel(details), nil
 }
 
-func (h *APIHandler) GetPermissionActionImpactPreview(ctx context.Context, params gen.GetPermissionActionImpactPreviewParams) (*gen.PermissionActionImpactPreview, error) {
+func (h *permissionAPIHandler) GetPermissionActionImpactPreview(ctx context.Context, params gen.GetPermissionActionImpactPreviewParams) (*gen.PermissionActionImpactPreview, error) {
 	preview, err := h.permSvc.GetImpactPreview(params.ID)
 	if err != nil {
 		h.logger.Error("get permission action impact preview failed", zap.Error(err))
@@ -157,7 +157,7 @@ func (h *APIHandler) GetPermissionActionImpactPreview(ctx context.Context, param
 	return permissionActionImpactPreviewFromModel(preview), nil
 }
 
-func (h *APIHandler) ListPermissionActionGroups(ctx context.Context) (*gen.PermissionActionGroupList, error) {
+func (h *permissionAPIHandler) ListPermissionActionGroups(ctx context.Context) (*gen.PermissionActionGroupList, error) {
 	list, total, err := h.permSvc.ListGroups(&dto.PermissionGroupListRequest{Current: 1, Size: 500})
 	if err != nil {
 		h.logger.Error("list permission action groups failed", zap.Error(err))
@@ -166,7 +166,7 @@ func (h *APIHandler) ListPermissionActionGroups(ctx context.Context) (*gen.Permi
 	return &gen.PermissionActionGroupList{Records: permissionGroupItemsFromModels(list), Total: int64(total)}, nil
 }
 
-func (h *APIHandler) CleanupUnusedPermissionActions(ctx context.Context) (*gen.PermissionActionCleanupResult, error) {
+func (h *permissionAPIHandler) CleanupUnusedPermissionActions(ctx context.Context) (*gen.PermissionActionCleanupResult, error) {
 	result, err := h.permSvc.CleanupUnused()
 	if err != nil {
 		h.logger.Error("cleanup unused permission actions failed", zap.Error(err))
@@ -178,7 +178,7 @@ func (h *APIHandler) CleanupUnusedPermissionActions(ctx context.Context) (*gen.P
 	}, nil
 }
 
-func (h *APIHandler) ListPermissionActionRiskAudits(ctx context.Context, params gen.ListPermissionActionRiskAuditsParams) (*gen.PermissionActionRiskAuditList, error) {
+func (h *permissionAPIHandler) ListPermissionActionRiskAudits(ctx context.Context, params gen.ListPermissionActionRiskAuditsParams) (*gen.PermissionActionRiskAuditList, error) {
 	list, total, err := h.permSvc.ListRiskAudits("", optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list permission action risk audits failed", zap.Error(err))
@@ -187,7 +187,7 @@ func (h *APIHandler) ListPermissionActionRiskAudits(ctx context.Context, params 
 	return &gen.PermissionActionRiskAuditList{Records: riskAuditItemsFromModels(list), Total: int64(total)}, nil
 }
 
-func (h *APIHandler) ListPermissionActionBatchTemplates(ctx context.Context) (*gen.PermissionActionBatchTemplateList, error) {
+func (h *permissionAPIHandler) ListPermissionActionBatchTemplates(ctx context.Context) (*gen.PermissionActionBatchTemplateList, error) {
 	list, err := h.permSvc.ListBatchTemplates()
 	if err != nil {
 		h.logger.Error("list permission action batch templates failed", zap.Error(err))

@@ -216,7 +216,7 @@ func parseMaybeUUID(value string) (*uuid.UUID, error) {
 
 // ─── listApiEndpoints ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListApiEndpoints(ctx context.Context, params gen.ListApiEndpointsParams) (gen.ListApiEndpointsRes, error) {
+func (h *apiEndpointAPIHandler) ListApiEndpoints(ctx context.Context, params gen.ListApiEndpointsParams) (gen.ListApiEndpointsRes, error) {
 	var hasPermission *bool
 	if params.HasPermissionKey.Set {
 		v := params.HasPermissionKey.Value
@@ -275,7 +275,7 @@ func (h *APIHandler) ListApiEndpoints(ctx context.Context, params gen.ListApiEnd
 
 // ─── getApiEndpointOverview ───────────────────────────────────────────────────
 
-func (h *APIHandler) GetApiEndpointOverview(ctx context.Context, params gen.GetApiEndpointOverviewParams) (gen.GetApiEndpointOverviewRes, error) {
+func (h *apiEndpointAPIHandler) GetApiEndpointOverview(ctx context.Context, params gen.GetApiEndpointOverviewParams) (gen.GetApiEndpointOverviewRes, error) {
 	overview, err := h.apiEndpointSvc.Overview(optString(params.AppKey))
 	if err != nil {
 		h.logger.Error("get api endpoint overview failed", zap.Error(err))
@@ -294,7 +294,7 @@ func (h *APIHandler) GetApiEndpointOverview(ctx context.Context, params gen.GetA
 
 // ─── listStaleApiEndpoints ────────────────────────────────────────────────────
 
-func (h *APIHandler) ListStaleApiEndpoints(ctx context.Context, params gen.ListStaleApiEndpointsParams) (gen.ListStaleApiEndpointsRes, error) {
+func (h *apiEndpointAPIHandler) ListStaleApiEndpoints(ctx context.Context, params gen.ListStaleApiEndpointsParams) (gen.ListStaleApiEndpointsRes, error) {
 	list, total, err := h.apiEndpointSvc.ListStale(&apiendpoint.StaleListRequest{
 		Current: optInt(params.Current, 1),
 		Size:    optInt(params.Size, 20),
@@ -323,7 +323,7 @@ func (h *APIHandler) ListStaleApiEndpoints(ctx context.Context, params gen.ListS
 
 // ─── listUnregisteredApiEndpoints ────────────────────────────────────────────
 
-func (h *APIHandler) ListUnregisteredApiEndpoints(ctx context.Context, params gen.ListUnregisteredApiEndpointsParams) (gen.ListUnregisteredApiEndpointsRes, error) {
+func (h *apiEndpointAPIHandler) ListUnregisteredApiEndpoints(ctx context.Context, params gen.ListUnregisteredApiEndpointsParams) (gen.ListUnregisteredApiEndpointsRes, error) {
 	list, total, err := h.apiEndpointSvc.ListUnregisteredRoutes(&apiendpoint.UnregisteredRouteListRequest{
 		Current:    optInt(params.Current, 1),
 		Size:       optInt(params.Size, 20),
@@ -350,7 +350,7 @@ func (h *APIHandler) ListUnregisteredApiEndpoints(ctx context.Context, params ge
 
 // ─── listApiEndpointCategories ────────────────────────────────────────────────
 
-func (h *APIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApiEndpointCategoriesRes, error) {
+func (h *apiEndpointAPIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApiEndpointCategoriesRes, error) {
 	items, err := h.apiEndpointSvc.ListCategories()
 	if err != nil {
 		h.logger.Error("list api endpoint categories failed", zap.Error(err))
@@ -368,7 +368,7 @@ func (h *APIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApi
 
 // ─── syncApiEndpoints ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) SyncApiEndpoints(ctx context.Context) (gen.SyncApiEndpointsRes, error) {
+func (h *apiEndpointAPIHandler) SyncApiEndpoints(ctx context.Context) (gen.SyncApiEndpointsRes, error) {
 	summary, err := h.apiEndpointSvc.Sync()
 	if err != nil {
 		h.logger.Error("sync api endpoints failed", zap.Error(err))
@@ -387,7 +387,7 @@ func (h *APIHandler) SyncApiEndpoints(ctx context.Context) (gen.SyncApiEndpoints
 
 // ─── cleanupStaleApiEndpoints ─────────────────────────────────────────────────
 
-func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req *gen.CleanupStaleRequest) (gen.CleanupStaleApiEndpointsRes, error) {
+func (h *apiEndpointAPIHandler) CleanupStaleApiEndpoints(ctx context.Context, req *gen.CleanupStaleRequest) (gen.CleanupStaleApiEndpointsRes, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -413,29 +413,29 @@ func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req *gen.Clea
 
 // ─── updateApiEndpoint ────────────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateApiEndpoint(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointParams) (gen.UpdateApiEndpointRes, error) {
+func (h *apiEndpointAPIHandler) UpdateApiEndpoint(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointParams) (gen.UpdateApiEndpointRes, error) {
 	return h.saveEndpointFromBody(ctx, params.ID, req)
 }
 
 // ─── createApiEndpointCategory ────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateApiEndpointContextScope(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointContextScopeParams) (gen.UpdateApiEndpointContextScopeRes, error) {
+func (h *apiEndpointAPIHandler) UpdateApiEndpointContextScope(ctx context.Context, req *gen.ApiEndpointSaveRequest, params gen.UpdateApiEndpointContextScopeParams) (gen.UpdateApiEndpointContextScopeRes, error) {
 	return h.saveEndpointFromBody(ctx, params.ID, req)
 }
 
-func (h *APIHandler) CreateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest) (gen.CreateApiEndpointCategoryRes, error) {
+func (h *apiEndpointAPIHandler) CreateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest) (gen.CreateApiEndpointCategoryRes, error) {
 	return h.saveCategoryFromBody(ctx, uuid.Nil, req)
 }
 
 // ─── updateApiEndpointCategory ────────────────────────────────────────────────
 
-func (h *APIHandler) UpdateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest, params gen.UpdateApiEndpointCategoryParams) (gen.UpdateApiEndpointCategoryRes, error) {
+func (h *apiEndpointAPIHandler) UpdateApiEndpointCategory(ctx context.Context, req *gen.ApiEndpointCategorySaveRequest, params gen.UpdateApiEndpointCategoryParams) (gen.UpdateApiEndpointCategoryRes, error) {
 	return h.saveCategoryFromBody(ctx, params.ID, req)
 }
 
 // ─── internal save helpers ────────────────────────────────────────────────────
 
-func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointSaveRequest) (*gen.ApiEndpointItem, error) {
+func (h *apiEndpointAPIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointSaveRequest) (*gen.ApiEndpointItem, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -472,7 +472,7 @@ func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req *
 	return &out, nil
 }
 
-func (h *APIHandler) saveCategoryFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointCategorySaveRequest) (*gen.ApiEndpointCategoryItem, error) {
+func (h *apiEndpointAPIHandler) saveCategoryFromBody(_ context.Context, id uuid.UUID, req *gen.ApiEndpointCategorySaveRequest) (*gen.ApiEndpointCategoryItem, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}

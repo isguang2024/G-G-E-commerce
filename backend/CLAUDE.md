@@ -62,12 +62,30 @@ Operational rule:
 - If you introduced new tables, columns, baseline permission keys, or any
   other schema/default-data change, rerun `cmd/migrate` as well.
 - For a brand-new database, run `cmd/migrate` first, then `update-openapi.bat`.
+- **After regenerating `openapi_seed.json` — restart the running backend
+  process.** The route ↔ permission-key map is loaded once at router
+  initialisation and cached for the life of the process. Consolidations,
+  renames, or deletions that look correct in the DB will still be denied
+  by middleware until the server restarts and rereads the seed. Symptom:
+  "the new key works in SQL but the endpoint returns 403". Fix: restart,
+  don't chase permission-eval bugs.
 
-### 3. Implement the operation method
+### 3. Implement the operation method (sub-handler/service)
 
-Add a method on `APIHandler` in `internal/api/handlers/{domain}.go` that
-matches the generated `gen.Handler` signature. Reach into the existing
-service-layer (`internal/modules/system/{domain}`) for business logic.
+Handlers are **domain-split**. Do not add new ops to a monolithic
+`APIHandler` — find the matching sub-handler and add the method there.
+
+Layout:
+
+- `internal/api/handlers/{domain}_handler.go` — `{domain}APIHandler` struct
+  + constructor (holds the minimal dependency set for this domain)
+- `internal/api/handlers/{domain}.go` — all op methods with receiver
+  `*{domain}APIHandler`, matching the generated `gen.Handler` signature
+- `internal/api/handlers/workspace.go` — `APIHandler` main struct that
+  embeds every sub-handler plus `NewAPIHandler`
+
+Business logic stays in the service layer
+(`internal/modules/system/{domain}`); the sub-handler is a thin adapter.
 
 You do **not** need to touch `internal/api/router/router.go`. The router
 iterates over `permissionseed.LoadOpenAPISeed().Operations` at startup and
@@ -75,9 +93,12 @@ mounts each operation to the appropriate Gin group (`public` → v1 without
 JWT; `authenticated` / `permission` → v1 with JWT + permission middleware).
 Any operation you declared in step 1 and regenerated in step 2 is already
 reachable as soon as the server boots — there is no "bridge row" to add.
+The only routes still registered by hand in `router.go` are non-OpenAPI
+entries: `/health`, `/uploads`, OAuth callbacks, WebSocket, SSE, etc.
 
 Do NOT re-introduce a legacy Gin module shell
 (`internal/modules/system/*/module.go`).
+Do NOT pile new ops onto a god `APIHandler` — split by domain.
 
 ### 4. Ensure the permission key exists in the DB
 
@@ -109,7 +130,8 @@ the full checklist is in `docs/guides/new-module-checklist.md`. It covers:
 
 1. Migration → Model → OpenAPI spec → permission key mapping →
    permission key seed → module group → menu seed → feature package
-   binding → code gen → handler/service → frontend page → verify.
+   binding → code gen → restart backend → sub-handler/service →
+   frontend page → verify.
 
 Key invariant: `permissionkey.go` mapping's `ResourceCode` must equal
 the `ModuleGroup.Code` in `seeds.go`, otherwise the permission key
@@ -120,6 +142,10 @@ lands in the wrong group in the admin UI.
 - Do NOT re-introduce a legacy Gin module shell
   (`internal/modules/system/*/module.go`) — those files have been deleted
   and must not be recreated.
+- Do NOT pile new ops onto a single god `APIHandler` — every op belongs
+  to exactly one `*{domain}APIHandler` sub-handler. Same-named methods
+  across two sub-handlers produce ambiguous-selector compile errors,
+  which is a signal the domain boundary is wrong.
 - Do NOT bypass `internal/pkg/permission/evaluator` for permission
   decisions; never read `feature_package_keys` / `role_feature_packages`
   directly from a handler.
@@ -128,4 +154,7 @@ lands in the wrong group in the admin UI.
 - Do NOT write tenant-unaware queries; every query must filter on
   `tenant_id` (currently always `default`).
 - Do NOT hand-edit `openapi_seed.json` — it is regenerated from the spec.
+- Do NOT assume route↔permission bindings hot-reload. They are cached at
+  process startup. Always restart the backend after `gen-permissions` or
+  any permission-key consolidation migration.
 

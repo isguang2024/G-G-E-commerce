@@ -14,7 +14,7 @@ import (
 	"github.com/maben/backend/internal/modules/system/user"
 )
 
-func (h *APIHandler) GetMenuTree(ctx context.Context, params gen.GetMenuTreeParams) (*gen.MenuTreeResponse, error) {
+func (h *menuAPIHandler) GetMenuTree(ctx context.Context, params gen.GetMenuTreeParams) (*gen.MenuTreeResponse, error) {
 	all := optString(params.All) == "true" || optString(params.All) == "1"
 	nodes, err := h.menuSvc.GetTree(all, nil, optString(params.AppKey), optString(params.SpaceKey))
 	if err != nil {
@@ -24,7 +24,7 @@ func (h *APIHandler) GetMenuTree(ctx context.Context, params gen.GetMenuTreePara
 	return &gen.MenuTreeResponse{Records: menuTreeItemsFromModels(nodes)}, nil
 }
 
-func (h *APIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveRequest) (*gen.MutationResult, error) {
+func (h *menuAPIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveRequest) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -75,7 +75,7 @@ func (h *APIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveRequest) (
 	return ok(), nil
 }
 
-func (h *APIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, params gen.UpdateMenuParams) (*gen.MutationResult, error) {
+func (h *menuAPIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, params gen.UpdateMenuParams) (*gen.MutationResult, error) {
 	if req == nil {
 		return nil, errors.New("request body required")
 	}
@@ -122,7 +122,7 @@ func (h *APIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, p
 	return ok(), nil
 }
 
-func (h *APIHandler) DeleteMenu(ctx context.Context, params gen.DeleteMenuParams) (*gen.MutationResult, error) {
+func (h *menuAPIHandler) DeleteMenu(ctx context.Context, params gen.DeleteMenuParams) (*gen.MutationResult, error) {
 	if err := h.menuSvc.Delete(params.ID, "", nil); err != nil {
 		h.logger.Error("delete menu failed", zap.Error(err))
 		h.audit.Record(ctx, audit.Event{

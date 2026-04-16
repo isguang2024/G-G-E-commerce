@@ -1,4 +1,4 @@
-﻿// Package handlers contains ogen Handler implementations for the v5
+// Package handlers contains ogen Handler implementations for the v5
 // OpenAPI-first API. Each handler is the single entry point for one
 // generated operation interface; legacy Gin handlers are removed as
 // each domain migrates over.
@@ -22,7 +22,6 @@ import (
 	"github.com/maben/backend/internal/modules/system/app"
 	"github.com/maben/backend/internal/modules/system/auth"
 	"github.com/maben/backend/internal/modules/system/collaborationworkspace"
-	"github.com/maben/backend/internal/modules/system/dictionary"
 	"github.com/maben/backend/internal/modules/system/featurepackage"
 	"github.com/maben/backend/internal/modules/system/menu"
 	"github.com/maben/backend/internal/modules/system/models"
@@ -58,61 +57,52 @@ const (
 	CtxAuthTime                 ctxKey = "auth_time"
 )
 
-// APIHandler implements gen.Handler. It deliberately embeds
-// gen.UnimplementedHandler so future operations compile without forcing us
-// to stub every method while migrating one domain at a time.
-type APIHandler struct {
+// handlerBase 把 gen.UnimplementedHandler 下沉一层，让 APIHandler 嵌入的
+// 域专属 sub-handler（如 *dictionaryAPIHandler，位于深度 1）能覆盖
+// base 里的 stub（位于深度 2）。这样既保持 ogen 新增 op 不强制立刻实现
+// 的便利，又允许按域拆分而不触发方法歧义。
+type handlerBase struct {
 	gen.UnimplementedHandler
-	db                 *gorm.DB
-	logger             *zap.Logger
-	service            workspace.Service
-	evaluator          evaluator.Evaluator
-	authSvc            auth.AuthService
-	centralizedAuthSvc auth.CentralizedAuthService
-	userRepo           user.UserRepository
-	userSvc            user.UserService
-	roleSvc            role.RoleService
-	navSvc             navigation.Compiler
-	menuSvc            menu.MenuService
-	pageSvc            page.Service
-	featurePkgSvc      featurepackage.Service
-	permSvc            permission.PermissionService
-	cwSvc              collaborationworkspace.CollaborationWorkspaceService
-	appSvc             app.Service
-	spaceSvc           space.Service
-	boundarySvc        collaborationworkspaceboundary.Service
-	personalAccess     platformaccess.Service
-	cwMemberRepo       user.CollaborationWorkspaceMemberRepository
-	fastEnterSvc       systemmod.FastEnterService
-	viewPagesSvc       systemmod.ViewPagesService
-	systemFacade       *systemmod.Facade
-	refresher          permissionrefresh.Service
-	// Phase 4: CW boundary ops
-	roleRepo         user.RoleRepository
-	userRoleRepo     user.UserRoleRepository
-	featurePkgRepo   user.FeaturePackageRepository
-	cwFeaturePkgRepo user.CollaborationWorkspaceFeaturePackageRepository
-	keyRepo          user.PermissionKeyRepository
-	// Phase 5: apiendpoint domain
-	apiEndpointSvc apiendpoint.Service
-	// 注册体系
-	registerResolver *register.Resolver
-	registerSvc      *register.Service
-	socialSvc        social.Service
-	uploadSvc        upload.Service
-	// 数据字典
-	dictSvc *dictionary.Service
-	// 站点配置中心
-	siteConfigSvc siteconfig.Service
-	// 业务审计 Recorder（异步写 audit_logs 表，失败走日志而非返回错误）。
-	// 由 router.SetupRouter 注入；关闭审计时传 audit.Noop{}。
-	audit audit.Recorder
-	// 前端日志摄取器（异步写 telemetry_logs）。同样由 router 注入；
-	// 关闭时传 telemetry.Noop{}，避免 handler 判空。
-	telemetry telemetry.Ingester
-	// 日志策略仓储与决策引擎（用于 observability/log-policies 控制面）。
-	policyRepo   logpolicy.Repository
-	policyEngine logpolicy.Engine
+}
+
+// APIHandler implements gen.Handler。
+//
+// 域拆分完成后 APIHandler 只保留：
+//   - 工作空间域方法（GetWorkspace / ListMyWorkspaces / GetCurrentWorkspace /
+//     SwitchWorkspace / ExplainPermissions）
+//   - 构造函数 NewAPIHandler
+//   - 各域 sub-handler 的匿名嵌入
+//
+// 每个域 sub-handler 通过 *{domain}APIHandler 匿名嵌入接管自己的操作；
+// 未迁移或新增的操作由 handlerBase.UnimplementedHandler 兜底。
+type APIHandler struct {
+	handlerBase
+	// 工作空间域保留字段
+	logger    *zap.Logger
+	service   workspace.Service
+	evaluator evaluator.Evaluator
+	// ── 域 sub-handler 嵌入 ────────────────────────────────────────────────
+	*navigationAPIHandler
+	*dictionaryAPIHandler
+	*authAPIHandler
+	*userAPIHandler
+	*roleAPIHandler
+	*menuAPIHandler
+	*pageAPIHandler
+	*permissionAPIHandler
+	*featurePackageAPIHandler
+	*cwAPIHandler
+	*extrasAPIHandler
+	*phase4ExtrasAPIHandler
+	*systemAPIHandler
+	*apiEndpointAPIHandler
+	*mediaAPIHandler
+	*storageAdminAPIHandler
+	*siteConfigAPIHandler
+	*logPolicyAPIHandler
+	*observabilityAPIHandler
+	*telemetryAPIHandler
+	*messageAPIHandler
 }
 
 // NewAPIHandler 构建统一的 v5 API handler。
@@ -236,56 +226,102 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		logger,
 	)
 
-	h := &APIHandler{
-		db:               db,
-		logger:           logger,
-		service:          workspace.NewService(db, logger),
-		evaluator:        eval,
-		authSvc:          auth.NewAuthService(userRepo, &cfg.JWT, logger),
-		userRepo:         userRepo,
-		userSvc:          userSvc,
-		roleSvc:          roleSvc,
-		navSvc:           navSvc,
-		menuSvc:          menuSvc,
-		pageSvc:          pageSvc,
-		featurePkgSvc:    featurePkgSvc,
-		permSvc:          permSvc,
-		cwSvc:            cwSvc,
-		appSvc:           appSvc,
-		spaceSvc:         spaceSvc,
-		boundarySvc:      boundarySvc,
-		personalAccess:   personalAccess,
-		cwMemberRepo:     cwMemberRepo,
-		fastEnterSvc:     systemmod.NewFastEnterService(db),
-		viewPagesSvc:     systemmod.NewViewPagesService(logger, nil),
-		systemFacade:     systemmod.NewFacade(db, logger, nil),
-		refresher:        refresher,
-		roleRepo:         roleRepo,
-		userRoleRepo:     userRoleRepo,
-		featurePkgRepo:   featurePkgRepo,
-		cwFeaturePkgRepo: cwFeaturePkgRepo,
-		keyRepo:          keyRepo,
-		apiEndpointSvc:   apiEndpointSvc,
-		audit:            auditRecorder,
-		telemetry:        telemetryIngester,
-		policyRepo:       policyRepo,
-		policyEngine:     policyEngine,
-	}
-	h.centralizedAuthSvc = auth.NewCentralizedAuthService(db, h.authSvc, userRepo)
+	workspaceSvc := workspace.NewService(db, logger)
+
+	authSvc := auth.NewAuthService(userRepo, &cfg.JWT, logger)
+	centralizedAuthSvc := auth.NewCentralizedAuthService(db, authSvc, userRepo)
+
 	registerResolver := register.NewResolver(register.NewRepository(db))
-	h.registerResolver = registerResolver
-	h.registerSvc = register.NewService(
-		db,
-		registerResolver,
-		h.authSvc,
-		h.service,
-		logger,
-	)
-	h.socialSvc = social.NewService(db, h.authSvc, userRepo, registerResolver, cfg.JWT.Secret, logger)
-	h.uploadSvc = upload.NewService(upload.NewRepository(db).WithAuditRecorder(auditRecorder), cfg, logger)
-	h.dictSvc = dictionary.NewService(db, logger)
-	h.siteConfigSvc = siteconfig.NewService(siteconfig.NewRepository(db), cfg, logger)
-	if cache := h.siteConfigSvc.Cache(); cache != nil {
+	registerSvc := register.NewService(db, registerResolver, authSvc, workspaceSvc, logger)
+	socialSvc := social.NewService(db, authSvc, userRepo, registerResolver, cfg.JWT.Secret, logger)
+
+	uploadSvc := upload.NewService(upload.NewRepository(db).WithAuditRecorder(auditRecorder), cfg, logger)
+
+	siteConfigSvc := siteconfig.NewService(siteconfig.NewRepository(db), cfg, logger)
+
+	systemFacade := systemmod.NewFacade(db, logger, nil)
+
+	h := &APIHandler{
+		logger:    logger,
+		service:   workspaceSvc,
+		evaluator: eval,
+		// ── sub-handlers ──────────────────────────────────────────────────
+		navigationAPIHandler: newNavigationAPIHandler(navSvc, logger),
+		authAPIHandler: newAuthAPIHandler(
+			authSvc,
+			centralizedAuthSvc,
+			userRepo,
+			socialSvc,
+			registerSvc,
+			registerResolver,
+			eval,
+			workspaceSvc,
+			auditRecorder,
+			db,
+			logger,
+		),
+		userAPIHandler: newUserAPIHandler(
+			userSvc,
+			userRepo,
+			boundarySvc,
+			menuSvc,
+			featurePkgRepo,
+			personalAccess,
+			refresher,
+			auditRecorder,
+			db,
+			logger,
+		),
+		roleAPIHandler:           newRoleAPIHandler(roleSvc, logger),
+		menuAPIHandler:           newMenuAPIHandler(menuSvc, auditRecorder, logger),
+		pageAPIHandler:           newPageAPIHandler(pageSvc, auditRecorder, logger),
+		permissionAPIHandler:     newPermissionAPIHandler(permSvc, logger),
+		featurePackageAPIHandler: newFeaturePackageAPIHandler(featurePkgSvc, logger),
+		cwAPIHandler: newCWAPIHandler(
+			cwSvc,
+			featurePkgSvc,
+			boundarySvc,
+			cwMemberRepo,
+			roleRepo,
+			userRoleRepo,
+			featurePkgRepo,
+			cwFeaturePkgRepo,
+			keyRepo,
+			db,
+			logger,
+		),
+		extrasAPIHandler: newExtrasAPIHandler(
+			featurePkgSvc,
+			menuSvc,
+			pageSvc,
+			permSvc,
+			logger,
+		),
+		phase4ExtrasAPIHandler: newPhase4ExtrasAPIHandler(
+			systemmod.NewFastEnterService(db),
+			userSvc,
+			systemmod.NewViewPagesService(logger, nil),
+			cwMemberRepo,
+			refresher,
+			logger,
+		),
+		systemAPIHandler:      newSystemAPIHandler(appSvc, spaceSvc, auditRecorder, db, logger),
+		apiEndpointAPIHandler: newAPIEndpointAPIHandler(apiEndpointSvc, logger),
+		mediaAPIHandler:       newMediaAPIHandler(uploadSvc, eval, logger),
+		storageAdminAPIHandler: newStorageAdminAPIHandler(uploadSvc, logger),
+		siteConfigAPIHandler:  newSiteConfigAPIHandler(siteConfigSvc, auditRecorder, logger),
+		logPolicyAPIHandler:   newLogPolicyAPIHandler(policyRepo, policyEngine, auditRecorder, logger),
+		observabilityAPIHandler: newObservabilityAPIHandler(
+			db,
+			auditRecorder,
+			telemetryIngester,
+			logger,
+		),
+		telemetryAPIHandler: newTelemetryAPIHandler(telemetryIngester, logger),
+		messageAPIHandler:   newMessageAPIHandler(systemFacade, auditRecorder, logger),
+	}
+	h.dictionaryAPIHandler = newDictionaryAPIHandler(db, logger)
+	if cache := siteConfigSvc.Cache(); cache != nil {
 		cache.Start(context.Background())
 	}
 	return h
@@ -477,4 +513,3 @@ func summaryFromService(item workspace.Summary) gen.WorkspaceSummary {
 	}
 	return out
 }
-

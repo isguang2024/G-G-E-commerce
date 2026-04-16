@@ -18,7 +18,7 @@ import (
 //   - 正文由 ogen 校验（maxItems=100、字段必填）；这里只做模型转换。
 //   - session_id / IP 作为限流 key：前端同 tab 同会话只有一个 session_id；
 //     IP 用 ctx 中 client_ip（代理剥离后的真实来源）。
-func (h *APIHandler) IngestTelemetryLogs(ctx context.Context, req *gen.TelemetryIngestRequest) (gen.IngestTelemetryLogsRes, error) {
+func (h *telemetryAPIHandler) IngestTelemetryLogs(ctx context.Context, req *gen.TelemetryIngestRequest) (gen.IngestTelemetryLogsRes, error) {
 	if req == nil || len(req.Entries) == 0 {
 		return &gen.TelemetryIngestResponse{Accepted: 0, Dropped: 0}, nil
 	}

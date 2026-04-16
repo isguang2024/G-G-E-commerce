@@ -12,7 +12,7 @@ import (
 	pkgLogger "github.com/maben/backend/internal/pkg/logger"
 )
 
-func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (gen.UploadMediaRes, error) {
+func (h *mediaAPIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (gen.UploadMediaRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return &gen.UploadMediaUnauthorized{Code: 401, Message: "未认证"}, nil
@@ -58,7 +58,7 @@ func (h *APIHandler) UploadMedia(ctx context.Context, req *gen.UploadMediaReq) (
 	}, nil
 }
 
-func (h *APIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepareUploadRequest) (gen.PrepareMediaUploadRes, error) {
+func (h *mediaAPIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepareUploadRequest) (gen.PrepareMediaUploadRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return &gen.PrepareMediaUploadUnauthorized{Code: 401, Message: "未认证"}, nil
@@ -125,7 +125,7 @@ func (h *APIHandler) PrepareMediaUpload(ctx context.Context, req *gen.MediaPrepa
 	return response, nil
 }
 
-func (h *APIHandler) CompleteMediaUpload(ctx context.Context, req *gen.MediaCompleteUploadRequest) (gen.CompleteMediaUploadRes, error) {
+func (h *mediaAPIHandler) CompleteMediaUpload(ctx context.Context, req *gen.MediaCompleteUploadRequest) (gen.CompleteMediaUploadRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return &gen.CompleteMediaUploadUnauthorized{Code: 401, Message: "未认证"}, nil
@@ -172,7 +172,7 @@ func (h *APIHandler) CompleteMediaUpload(ctx context.Context, req *gen.MediaComp
 	}, nil
 }
 
-func (h *APIHandler) ListVisibleMediaUploadKeys(ctx context.Context) (gen.ListVisibleMediaUploadKeysRes, error) {
+func (h *mediaAPIHandler) ListVisibleMediaUploadKeys(ctx context.Context) (gen.ListVisibleMediaUploadKeysRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return &gen.ListVisibleMediaUploadKeysUnauthorized{Code: 401, Message: "未认证"}, nil
@@ -226,7 +226,7 @@ func (h *APIHandler) ListVisibleMediaUploadKeys(ctx context.Context) (gen.ListVi
 	}, nil
 }
 
-func (h *APIHandler) ListMedia(ctx context.Context) (gen.ListMediaRes, error) {
+func (h *mediaAPIHandler) ListMedia(ctx context.Context) (gen.ListMediaRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.ListMediaUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -259,7 +259,7 @@ func (h *APIHandler) ListMedia(ctx context.Context) (gen.ListMediaRes, error) {
 	}, nil
 }
 
-func (h *APIHandler) DeleteMedia(ctx context.Context, params gen.DeleteMediaParams) (gen.DeleteMediaRes, error) {
+func (h *mediaAPIHandler) DeleteMedia(ctx context.Context, params gen.DeleteMediaParams) (gen.DeleteMediaRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.DeleteMediaUnauthorized{Code: 401, Message: "未认证"}, nil
 	}

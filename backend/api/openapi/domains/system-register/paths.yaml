@@ -4,7 +4,7 @@ paths:
       operationId: listRegisterEntries
       summary: 注册入口列表
       tags: [system-register]
-      x-permission-key: system.register_entry.read
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -24,7 +24,7 @@ paths:
       operationId: createRegisterEntry
       summary: 创建注册入口
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -51,7 +51,7 @@ paths:
       operationId: updateRegisterEntry
       summary: 更新注册入口
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -82,7 +82,7 @@ paths:
       operationId: deleteRegisterEntry
       summary: 删除注册入口
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -104,7 +104,7 @@ paths:
       operationId: listLoginPageTemplates
       summary: 登录页模板列表
       tags: [system-register]
-      x-permission-key: system.register_entry.read
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -119,7 +119,7 @@ paths:
       operationId: createLoginPageTemplate
       summary: 创建登录页模板
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -141,7 +141,7 @@ paths:
       operationId: updateLoginPageTemplate
       summary: 更新登录页模板
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -167,7 +167,7 @@ paths:
       operationId: deleteLoginPageTemplate
       summary: 删除登录页模板
       tags: [system-register]
-      x-permission-key: system.register_entry.write
+      x-permission-key: system.register_entry.manage
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -189,7 +189,7 @@ paths:
       operationId: listRegisterLogs
       summary: 注册记录列表
       tags: [system-register]
-      x-permission-key: system.register_log.read
+      x-permission-key: observability.log.read
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission

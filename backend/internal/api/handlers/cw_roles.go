@@ -14,7 +14,7 @@ import (
 
 // ─── ListCurrentCollaborationWorkspaceRoles ───────────────────────────────────
 
-func (h *APIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
+func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return &gen.CollaborationWorkspaceRoleList{Records: []gen.CollaborationWorkspaceRoleItem{}, Total: 0}, nil
@@ -29,7 +29,7 @@ func (h *APIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 
 // ─── CreateCurrentCollaborationWorkspaceRole ──────────────────────────────────
 
-func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, err
@@ -67,19 +67,19 @@ func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context
 
 // ─── ListCurrentCollaborationWorkspaceBoundaryRoles ───────────────────────────
 
-func (h *APIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
+func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
 	return h.ListCurrentCollaborationWorkspaceRoles(ctx)
 }
 
 // ─── CreateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
 
-func (h *APIHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
 	return h.CreateCurrentCollaborationWorkspaceRole(ctx, req)
 }
 
 // ─── UpdateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
 
-func (h *APIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest, params gen.UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest, params gen.UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (h *APIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 
 // ─── DeleteCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
 
-func (h *APIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params gen.DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params gen.DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (h *APIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 
 // ─── ListCollaborationWorkspaceRoles ──────────────────────────────────────────
 
-func (h *APIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params gen.ListCollaborationWorkspaceRolesParams) (*gen.CollaborationWorkspaceRoleList, error) {
+func (h *cwAPIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params gen.ListCollaborationWorkspaceRolesParams) (*gen.CollaborationWorkspaceRoleList, error) {
 	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(params.ID)
 	if err != nil {
 		h.logger.Error("list cw roles failed", zap.Error(err))

@@ -35,7 +35,7 @@ const (
 	CtxUserAgent   ctxKey = "user_agent"
 )
 
-func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.LoginRes, error) {
+func (h *authAPIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.LoginRes, error) {
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
 		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
@@ -131,7 +131,7 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 	return out, nil
 }
 
-func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (gen.RegisterRes, error) {
+func (h *authAPIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (gen.RegisterRes, error) {
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
 		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
@@ -215,7 +215,7 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 	return out, nil
 }
 
-func (h *APIHandler) ExchangeSocialToken(ctx context.Context, req *gen.SocialTokenExchangeRequest) (gen.ExchangeSocialTokenRes, error) {
+func (h *authAPIHandler) ExchangeSocialToken(ctx context.Context, req *gen.SocialTokenExchangeRequest) (gen.ExchangeSocialTokenRes, error) {
 	if req == nil || h.socialSvc == nil {
 		return nil, &apperr.ParamError{Msg: "social exchange 未启用"}
 	}
@@ -257,7 +257,7 @@ func (h *APIHandler) ExchangeSocialToken(ctx context.Context, req *gen.SocialTok
 
 // GetRegisterContext: 由 host + path 命中入口并合并策略，返回前端注册页所需的
 // 有效上下文。公开接口，未命中任何 entry 时退回 default entry。
-func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegisterContextParams) (gen.GetRegisterContextRes, error) {
+func (h *authAPIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegisterContextParams) (gen.GetRegisterContextRes, error) {
 	host := ""
 	if params.Host.Set {
 		host = strings.TrimSpace(params.Host.Value)
@@ -317,7 +317,7 @@ func (h *APIHandler) GetRegisterContext(ctx context.Context, params gen.GetRegis
 	return out, nil
 }
 
-func (h *APIHandler) GetLoginPageContext(
+func (h *authAPIHandler) GetLoginPageContext(
 	ctx context.Context,
 	params gen.GetLoginPageContextParams,
 ) (gen.GetLoginPageContextRes, error) {
@@ -389,7 +389,7 @@ func (h *APIHandler) GetLoginPageContext(
 	return out, nil
 }
 
-func (h *APIHandler) resolveSocialCapability(ctx context.Context, pageScene, host, path string) map[string]interface{} {
+func (h *authAPIHandler) resolveSocialCapability(ctx context.Context, pageScene, host, path string) map[string]interface{} {
 	capability := map[string]interface{}{
 		"allow":     true,
 		"reason":    "",
@@ -429,7 +429,7 @@ func (h *APIHandler) resolveSocialCapability(ctx context.Context, pageScene, hos
 	return capability
 }
 
-func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequest) (gen.RefreshTokenRes, error) {
+func (h *authAPIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequest) (gen.RefreshTokenRes, error) {
 	if req == nil || strings.TrimSpace(req.RefreshToken) == "" {
 		return nil, &apperr.ParamError{Msg: "缺少 refresh_token"}
 	}
@@ -444,7 +444,7 @@ func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequ
 	}, nil
 }
 
-func (h *APIHandler) Logout(ctx context.Context) (gen.LogoutRes, error) {
+func (h *authAPIHandler) Logout(ctx context.Context) (gen.LogoutRes, error) {
 	// Logout 目前是无状态操作（token 失效由前端清理），但仍落审计，方便追踪用户主动退出。
 	var actorID string
 	if id, ok := userIDFromContext(ctx); ok {
@@ -459,7 +459,7 @@ func (h *APIHandler) Logout(ctx context.Context) (gen.LogoutRes, error) {
 	return ok(), nil
 }
 
-func (h *APIHandler) ExchangeAuthCallback(ctx context.Context, req *gen.AuthCallbackExchangeRequest) (gen.ExchangeAuthCallbackRes, error) {
+func (h *authAPIHandler) ExchangeAuthCallback(ctx context.Context, req *gen.AuthCallbackExchangeRequest) (gen.ExchangeAuthCallbackRes, error) {
 	if req == nil || h.centralizedAuthSvc == nil {
 		return nil, &apperr.ParamError{Msg: "callback exchange 未启用"}
 	}
@@ -501,7 +501,7 @@ func toJxRawMap(m map[string]interface{}) gen.LoginResponseUser {
 	return raw
 }
 
-func (h *APIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error) {
+func (h *authAPIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return nil, &apperr.UnauthError{Msg: "未认证"}
@@ -654,7 +654,7 @@ func uuidFromMapValue(value interface{}) (uuid.UUID, error) {
 	return uuid.Parse(strings.TrimSpace(raw))
 }
 
-func (h *APIHandler) SilentSSOCallback(ctx context.Context, req *gen.SilentSSORequest) (gen.SilentSSOCallbackRes, error) {
+func (h *authAPIHandler) SilentSSOCallback(ctx context.Context, req *gen.SilentSSORequest) (gen.SilentSSOCallbackRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return nil, &apperr.UnauthError{Msg: "未认证"}

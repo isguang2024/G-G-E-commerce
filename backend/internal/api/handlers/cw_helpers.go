@@ -32,7 +32,7 @@ func cwIDFromCtx(ctx context.Context) (uuid.UUID, bool) {
 
 // resolveCWMember retrieves the CollaborationWorkspaceMember for the current
 // user+workspace.
-func (h *APIHandler) resolveCWMember(ctx context.Context) (*user.CollaborationWorkspaceMember, error) {
+func (h *cwAPIHandler) resolveCWMember(ctx context.Context) (*user.CollaborationWorkspaceMember, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return nil, errNoUser
@@ -49,7 +49,7 @@ func (h *APIHandler) resolveCWMember(ctx context.Context) (*user.CollaborationWo
 }
 
 // resolveCWRole resolves the member + a CW-scoped role by roleId.
-func (h *APIHandler) resolveCWRole(ctx context.Context, roleID uuid.UUID) (*user.CollaborationWorkspaceMember, *user.Role, error) {
+func (h *cwAPIHandler) resolveCWRole(ctx context.Context, roleID uuid.UUID) (*user.CollaborationWorkspaceMember, *user.Role, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -66,7 +66,7 @@ func (h *APIHandler) resolveCWRole(ctx context.Context, roleID uuid.UUID) (*user
 
 // resolveCWRoleEditable is like resolveCWRole but also validates that the role
 // is workspace-specific (not global/system).
-func (h *APIHandler) resolveCWRoleEditable(ctx context.Context, roleID uuid.UUID) (*user.CollaborationWorkspaceMember, *user.Role, error) {
+func (h *cwAPIHandler) resolveCWRoleEditable(ctx context.Context, roleID uuid.UUID) (*user.CollaborationWorkspaceMember, *user.Role, error) {
 	member, role, err := h.resolveCWRole(ctx, roleID)
 	if err != nil {
 		return member, role, err
@@ -87,12 +87,12 @@ func cwIsAssignableRole(role user.Role, collaborationWorkspaceID uuid.UUID) bool
 
 // cwGetWorkspaceAwareTeamRoleIDs retrieves effective team role IDs for a user.
 // V5 真相源：仅查 workspace_role_bindings，旧 user_roles 回退已废弃。
-func (h *APIHandler) cwGetWorkspaceAwareTeamRoleIDs(userID, cwID uuid.UUID) ([]uuid.UUID, error) {
+func (h *cwAPIHandler) cwGetWorkspaceAwareTeamRoleIDs(userID, cwID uuid.UUID) ([]uuid.UUID, error) {
 	return workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(h.db, cwID, userID, false)
 }
 
 // cwSyncWorkspaceRoleBindings replaces CW role bindings for a user.
-func (h *APIHandler) cwSyncWorkspaceRoleBindings(cwID, userID uuid.UUID, roleIDs []uuid.UUID) error {
+func (h *cwAPIHandler) cwSyncWorkspaceRoleBindings(cwID, userID uuid.UUID, roleIDs []uuid.UUID) error {
 	return h.db.Transaction(func(tx *gorm.DB) error {
 		return workspacerolebinding.ReplaceCollaborationWorkspaceRoleBindings(tx, cwID, userID, roleIDs)
 	})

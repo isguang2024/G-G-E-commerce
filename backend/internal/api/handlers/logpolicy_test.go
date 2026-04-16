@@ -111,10 +111,12 @@ func TestCreateLogPolicy_SuccessRefreshAndAudit(t *testing.T) {
 	engine := &fakePolicyEngine{}
 	aud := &recordingAudit{}
 	h := &APIHandler{
-		policyRepo:   repo,
-		policyEngine: engine,
-		audit:        aud,
-		logger:       zap.NewNop(),
+		logPolicyAPIHandler: &logPolicyAPIHandler{
+			policyRepo:   repo,
+			policyEngine: engine,
+			audit:        aud,
+			logger:       zap.NewNop(),
+		},
 	}
 
 	req := &gen.LogPolicyCreateRequest{
@@ -165,10 +167,12 @@ func TestUpdateLogPolicy_ComplianceLockedReturns409(t *testing.T) {
 	}
 	engine := &fakePolicyEngine{}
 	h := &APIHandler{
-		policyRepo:   repo,
-		policyEngine: engine,
-		audit:        &recordingAudit{},
-		logger:       zap.NewNop(),
+		logPolicyAPIHandler: &logPolicyAPIHandler{
+			policyRepo:   repo,
+			policyEngine: engine,
+			audit:        &recordingAudit{},
+			logger:       zap.NewNop(),
+		},
 	}
 
 	res, err := h.UpdateLogPolicy(authCtx(), &gen.LogPolicyUpdateRequest{}, gen.UpdateLogPolicyParams{ID: id})
@@ -211,10 +215,12 @@ func TestPreviewLogPolicy_ReturnsDecisionAndMatchedPolicy(t *testing.T) {
 		},
 	}
 	h := &APIHandler{
-		policyEngine: engine,
-		policyRepo:   &fakePolicyRepo{},
-		audit:        &recordingAudit{},
-		logger:       zap.NewNop(),
+		logPolicyAPIHandler: &logPolicyAPIHandler{
+			policyEngine: engine,
+			policyRepo:   &fakePolicyRepo{},
+			audit:        &recordingAudit{},
+			logger:       zap.NewNop(),
+		},
 	}
 
 	req := &gen.LogPolicyPreviewRequest{

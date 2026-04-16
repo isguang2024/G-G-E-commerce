@@ -34,7 +34,7 @@ const (
 
 // ─── audit_logs ─────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListAuditLogs(ctx context.Context, params gen.ListAuditLogsParams) (gen.ListAuditLogsRes, error) {
+func (h *observabilityAPIHandler) ListAuditLogs(ctx context.Context, params gen.ListAuditLogsParams) (gen.ListAuditLogsRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.ListAuditLogsUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -92,7 +92,7 @@ func (h *APIHandler) ListAuditLogs(ctx context.Context, params gen.ListAuditLogs
 	}, nil
 }
 
-func (h *APIHandler) GetAuditLog(ctx context.Context, params gen.GetAuditLogParams) (gen.GetAuditLogRes, error) {
+func (h *observabilityAPIHandler) GetAuditLog(ctx context.Context, params gen.GetAuditLogParams) (gen.GetAuditLogRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetAuditLogUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -112,7 +112,7 @@ func (h *APIHandler) GetAuditLog(ctx context.Context, params gen.GetAuditLogPara
 
 // ─── telemetry_logs ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListTelemetryLogs(ctx context.Context, params gen.ListTelemetryLogsParams) (gen.ListTelemetryLogsRes, error) {
+func (h *observabilityAPIHandler) ListTelemetryLogs(ctx context.Context, params gen.ListTelemetryLogsParams) (gen.ListTelemetryLogsRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.ListTelemetryLogsUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -174,7 +174,7 @@ func (h *APIHandler) ListTelemetryLogs(ctx context.Context, params gen.ListTelem
 //
 // 非时间维度 limit 默认 20 / 最大 100；hour 维度忽略 limit（时间段由 from/to 自然限制）。
 // 空区间 buckets 返回 []（非 null）。tenant_id 硬过滤。
-func (h *APIHandler) GetAuditLogStats(ctx context.Context, params gen.GetAuditLogStatsParams) (gen.GetAuditLogStatsRes, error) {
+func (h *observabilityAPIHandler) GetAuditLogStats(ctx context.Context, params gen.GetAuditLogStatsParams) (gen.GetAuditLogStatsRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetAuditLogStatsUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -285,7 +285,7 @@ func statsBucketLimit(in gen.OptInt) int {
 // 表折叠返回。权限按 audit.read 控制（见 paths.yaml 注释），即使调用方没有
 // telemetry.read 权限，同一 request_id 的 telemetry 行也会返回，因为它们属于审计
 // 现场的从属信息。两侧都按 ts ASC 排序，前端按时间线渲染。
-func (h *APIHandler) GetObservabilityTrace(ctx context.Context, params gen.GetObservabilityTraceParams) (gen.GetObservabilityTraceRes, error) {
+func (h *observabilityAPIHandler) GetObservabilityTrace(ctx context.Context, params gen.GetObservabilityTraceParams) (gen.GetObservabilityTraceRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetObservabilityTraceUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -339,7 +339,7 @@ func (h *APIHandler) GetObservabilityTrace(ctx context.Context, params gen.GetOb
 //     单独维护一个 metrics permission key；
 //  4. 认证层走 ogen 中间件，handler 侧只兜底 401；Stats() 本身是 O(1) + 只加
 //     一次锁，可以安全高频 scrape（Grafana / Prometheus agent 30s 一次）。
-func (h *APIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObservabilityMetricsRes, error) {
+func (h *observabilityAPIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObservabilityMetricsRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetObservabilityMetricsUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -383,7 +383,7 @@ func (h *APIHandler) GetObservabilityMetrics(ctx context.Context) (gen.GetObserv
 // Content-Type 受 ogen 生成码约束为 text/plain; charset=utf-8——Prometheus 抓取
 // 端默认兼容 text/plain 0.0.4 / openmetrics 1.0.0，内容格式本身符合 openmetrics
 // 即可，不依赖 Content-Type 的 version 参数。
-func (h *APIHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (gen.GetObservabilityMetricsPrometheusRes, error) {
+func (h *observabilityAPIHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (gen.GetObservabilityMetricsPrometheusRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetObservabilityMetricsPrometheusUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
@@ -448,7 +448,7 @@ func (h *APIHandler) GetObservabilityMetricsPrometheus(ctx context.Context) (gen
 	return &gen.GetObservabilityMetricsPrometheusOK{Data: strings.NewReader(b.String())}, nil
 }
 
-func (h *APIHandler) GetTelemetryLog(ctx context.Context, params gen.GetTelemetryLogParams) (gen.GetTelemetryLogRes, error) {
+func (h *observabilityAPIHandler) GetTelemetryLog(ctx context.Context, params gen.GetTelemetryLogParams) (gen.GetTelemetryLogRes, error) {
 	if _, ok := userIDFromContext(ctx); !ok {
 		return &gen.GetTelemetryLogUnauthorized{Code: 401, Message: "未认证"}, nil
 	}
