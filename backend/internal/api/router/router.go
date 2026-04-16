@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -176,325 +177,21 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	v1 := r.Group("/api/v1")
 	v1.Use(endpointAccessService.RequireActiveEndpoint())
 	{
-		// Public (unauthenticated) operations served by the ogen bridge.
-		v1.POST("/auth/login", publicBridge)
-		v1.POST("/auth/register", publicBridge)
-		v1.POST("/auth/refresh", publicBridge)
-		v1.POST("/auth/social/exchange", publicBridge)
-		v1.POST("/auth/callback/exchange", publicBridge)
-		v1.GET("/auth/register-context", publicBridge)
-		v1.GET("/auth/login-page-context", publicBridge)
-		v1.GET("/pages/runtime/public", publicBridge)
-		// telemetry 走 public bridge：登录前的脚本错误/资源错误也要能上报。
-		v1.POST("/telemetry/logs", publicBridge)
-
 		authenticated := v1.Group("")
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
-		{
-			authenticated.GET("/auth/me", ogenBridge)
-			authenticated.POST("/auth/logout", ogenBridge)
-			authenticated.POST("/auth/callback/silent", ogenBridge)
-			authenticated.POST("/workspaces/switch", ogenBridge)
-			authenticated.GET("/workspaces/my", ogenBridge)
-			authenticated.GET("/workspaces/current", ogenBridge)
-			authenticated.GET("/workspaces/:id", ogenBridge)
-			authenticated.GET("/permissions/explain", ogenBridge)
 
-			// /users/* read + write + role assignment
-			authenticated.GET("/users", ogenBridge)
-			authenticated.POST("/users", ogenBridge)
-			authenticated.GET("/users/:id", ogenBridge)
-			authenticated.PUT("/users/:id", ogenBridge)
-			authenticated.DELETE("/users/:id", ogenBridge)
-			authenticated.POST("/users/:id/roles", ogenBridge)
-
-			// role + navigation
-			authenticated.GET("/roles", ogenBridge)
-			authenticated.POST("/roles", ogenBridge)
-			authenticated.GET("/roles/options", ogenBridge)
-			authenticated.GET("/roles/:id", ogenBridge)
-			authenticated.PUT("/roles/:id", ogenBridge)
-			authenticated.DELETE("/roles/:id", ogenBridge)
-			authenticated.GET("/roles/:id/packages", ogenBridge)
-			authenticated.PUT("/roles/:id/packages", ogenBridge)
-			authenticated.GET("/roles/:id/menus", ogenBridge)
-			authenticated.PUT("/roles/:id/menus", ogenBridge)
-			authenticated.GET("/roles/:id/actions", ogenBridge)
-			authenticated.PUT("/roles/:id/actions", ogenBridge)
-			authenticated.GET("/roles/:id/data-permissions", ogenBridge)
-			authenticated.PUT("/roles/:id/data-permissions", ogenBridge)
-			authenticated.GET("/runtime/navigation", ogenBridge)
-
-			// feature-package
-			authenticated.GET("/feature-packages/relationship-tree", ogenBridge)
-			authenticated.POST("/feature-packages/:id/rollback", ogenBridge)
-			authenticated.GET("/feature-packages", ogenBridge)
-			authenticated.GET("/feature-packages/options", ogenBridge)
-			authenticated.POST("/feature-packages", ogenBridge)
-			authenticated.GET("/feature-packages/:id", ogenBridge)
-			authenticated.PUT("/feature-packages/:id", ogenBridge)
-			authenticated.DELETE("/feature-packages/:id", ogenBridge)
-			authenticated.GET("/feature-packages/:id/children", ogenBridge)
-			authenticated.PUT("/feature-packages/:id/children", ogenBridge)
-			authenticated.GET("/feature-packages/:id/actions", ogenBridge)
-			authenticated.PUT("/feature-packages/:id/actions", ogenBridge)
-			authenticated.GET("/feature-packages/:id/menus", ogenBridge)
-			authenticated.PUT("/feature-packages/:id/menus", ogenBridge)
-			authenticated.GET("/feature-packages/:id/collaboration-workspaces", ogenBridge)
-			authenticated.PUT("/feature-packages/:id/collaboration-workspaces", ogenBridge)
-			authenticated.GET("/feature-packages/:id/impact-preview", ogenBridge)
-			authenticated.GET("/feature-packages/:id/versions", ogenBridge)
-			authenticated.GET("/feature-packages/:id/risk-audits", ogenBridge)
-			authenticated.GET("/feature-packages/collaboration-workspaces/:collaborationWorkspaceId", ogenBridge)
-			authenticated.PUT("/feature-packages/collaboration-workspaces/:collaborationWorkspaceId", ogenBridge)
-
-			// permission
-			authenticated.GET("/permission-actions", ogenBridge)
-			authenticated.GET("/permission-actions/options", ogenBridge)
-			authenticated.GET("/permission-actions/:id", ogenBridge)
-			authenticated.GET("/permission-actions/:id/endpoints", ogenBridge)
-			authenticated.GET("/permission-actions/:id/consumers", ogenBridge)
-			authenticated.GET("/permission-actions/:id/impact-preview", ogenBridge)
-			authenticated.GET("/permission-actions/groups", ogenBridge)
-			authenticated.GET("/permission-actions/risk-audits", ogenBridge)
-			authenticated.GET("/permission-actions/templates", ogenBridge)
-			authenticated.POST("/permission-actions", ogenBridge)
-			authenticated.POST("/permission-actions/:id/endpoints", ogenBridge)
-			authenticated.POST("/permission-actions/cleanup-unused", ogenBridge)
-			authenticated.PUT("/permission-actions/:id", ogenBridge)
-			authenticated.DELETE("/permission-actions/:id", ogenBridge)
-			authenticated.DELETE("/permission-actions/:id/endpoints/:endpointCode", ogenBridge)
-			authenticated.POST("/permission-actions/batch", ogenBridge)
-			authenticated.POST("/permission-actions/templates", ogenBridge)
-			authenticated.POST("/permission-actions/groups", ogenBridge)
-			authenticated.PUT("/permission-actions/groups/:id", ogenBridge)
-			authenticated.DELETE("/permission-actions/groups/:id", ogenBridge)
-
-			// menu
-			authenticated.GET("/menus/tree", ogenBridge)
-			authenticated.POST("/menus", ogenBridge)
-			authenticated.PUT("/menus/:id", ogenBridge)
-			authenticated.DELETE("/menus/:id", ogenBridge)
-			authenticated.GET("/menus/:id/delete-preview", ogenBridge)
-
-			// page
-			authenticated.GET("/pages", ogenBridge)
-			authenticated.GET("/pages/options", ogenBridge)
-			authenticated.GET("/pages/menu-options", ogenBridge)
-			authenticated.GET("/pages/runtime", ogenBridge)
-			authenticated.GET("/pages/unregistered", ogenBridge)
-			authenticated.GET("/pages/:id/breadcrumb-preview", ogenBridge)
-			authenticated.GET("/pages/:id", ogenBridge)
-			authenticated.POST("/pages", ogenBridge)
-			authenticated.POST("/pages/sync", ogenBridge)
-			authenticated.PUT("/pages/:id", ogenBridge)
-			authenticated.DELETE("/pages/:id", ogenBridge)
-			authenticated.GET("/pages/access-trace", ogenBridge)
-
-			// collaboration-workspace
-			authenticated.GET("/collaboration-workspaces", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/options", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id", ogenBridge)
-			authenticated.POST("/collaboration-workspaces", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/:id", ogenBridge)
-			authenticated.DELETE("/collaboration-workspaces/:id", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id/members", ogenBridge)
-			authenticated.POST("/collaboration-workspaces/:id/members", ogenBridge)
-			authenticated.DELETE("/collaboration-workspaces/:id/members/:userId", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/:id/members/:userId/role", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/mine", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/members", ogenBridge)
-			authenticated.POST("/collaboration-workspaces/current/members", ogenBridge)
-			authenticated.DELETE("/collaboration-workspaces/current/members/:userId", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/members/:userId/role", ogenBridge)
-
-			// system app + menu-space
-			authenticated.GET("/system/apps", ogenBridge)
-			authenticated.POST("/system/apps", ogenBridge)
-			authenticated.GET("/system/apps/current", ogenBridge)
-			authenticated.GET("/system/apps/preflight", ogenBridge)
-			authenticated.GET("/system/app-host-bindings", ogenBridge)
-			authenticated.POST("/system/app-host-bindings", ogenBridge)
-			authenticated.DELETE("/system/app-host-bindings/:id", ogenBridge)
-			authenticated.GET("/system/menu-spaces", ogenBridge)
-			authenticated.POST("/system/menu-spaces", ogenBridge)
-			authenticated.GET("/system/menu-spaces/current", ogenBridge)
-			authenticated.GET("/system/menu-space-mode", ogenBridge)
-			authenticated.PUT("/system/menu-space-mode", ogenBridge)
-			authenticated.POST("/system/menu-spaces/:spaceKey/initialize-default", ogenBridge)
-			authenticated.GET("/system/menu-space-entry-bindings", ogenBridge)
-			authenticated.POST("/system/menu-space-entry-bindings", ogenBridge)
-			authenticated.DELETE("/system/menu-space-entry-bindings/:id", ogenBridge)
-			authenticated.GET("/system/menu-space-host-bindings", ogenBridge)
-			authenticated.POST("/system/menu-space-host-bindings", ogenBridge)
-
-			// system fast-enter + view-pages
-			authenticated.GET("/system/view-pages", ogenBridge)
-			authenticated.GET("/system/fast-enter", ogenBridge)
-			authenticated.PUT("/system/fast-enter", ogenBridge)
-
-			// message
-			authenticated.GET("/messages/inbox/summary", ogenBridge)
-			authenticated.GET("/messages/inbox", ogenBridge)
-			authenticated.GET("/messages/inbox/:deliveryId", ogenBridge)
-			authenticated.POST("/messages/inbox/:deliveryId/read", ogenBridge)
-			authenticated.POST("/messages/inbox/read-all", ogenBridge)
-			authenticated.POST("/messages/inbox/:deliveryId/todo-action", ogenBridge)
-			authenticated.GET("/messages/dispatch/options", ogenBridge)
-			authenticated.POST("/messages/dispatch", ogenBridge)
-			authenticated.GET("/messages/templates", ogenBridge)
-			authenticated.POST("/messages/templates", ogenBridge)
-			authenticated.PUT("/messages/templates/:templateId", ogenBridge)
-			authenticated.GET("/messages/senders", ogenBridge)
-			authenticated.POST("/messages/senders", ogenBridge)
-			authenticated.PUT("/messages/senders/:senderId", ogenBridge)
-			authenticated.GET("/messages/recipient-groups", ogenBridge)
-			authenticated.POST("/messages/recipient-groups", ogenBridge)
-			authenticated.PUT("/messages/recipient-groups/:groupId", ogenBridge)
-			authenticated.GET("/messages/records", ogenBridge)
-			authenticated.GET("/messages/records/:recordId", ogenBridge)
-
-			// user sub-routes — collaboration workspaces + refresh
-			authenticated.GET("/users/:id/collaboration-workspaces", ogenBridge)
-			authenticated.POST("/users/:id/permission-refresh", ogenBridge)
-
-			// user sub-routes — menus / packages / permissions / diagnosis
-			authenticated.GET("/users/:id/menus", ogenBridge)
-			authenticated.PUT("/users/:id/menus", ogenBridge)
-			authenticated.GET("/users/:id/packages", ogenBridge)
-			authenticated.PUT("/users/:id/packages", ogenBridge)
-			authenticated.GET("/users/:id/permissions", ogenBridge)
-			authenticated.GET("/users/:id/permission-diagnosis", ogenBridge)
-
-			// collaboration-workspace boundary — current workspace complex ops
-			authenticated.GET("/collaboration-workspaces/current/roles", ogenBridge)
-			authenticated.POST("/collaboration-workspaces/current/roles", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/boundary/roles", ogenBridge)
-			authenticated.POST("/collaboration-workspaces/current/boundary/roles", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/boundary/roles/:roleId", ogenBridge)
-			authenticated.DELETE("/collaboration-workspaces/current/boundary/roles/:roleId", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/boundary/roles/:roleId/packages", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/boundary/roles/:roleId/packages", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/boundary/roles/:roleId/menus", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/boundary/roles/:roleId/menus", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/boundary/roles/:roleId/actions", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/boundary/roles/:roleId/actions", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/boundary/packages", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/menus", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/menu-origins", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/actions", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/action-origins", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/current/members/:userId/roles", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/current/members/:userId/roles", ogenBridge)
-			// collaboration-workspace boundary — workspace-scoped ops
-			authenticated.GET("/collaboration-workspaces/:id/roles", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id/menus", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id/menu-origins", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/:id/menus", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id/actions", ogenBridge)
-			authenticated.GET("/collaboration-workspaces/:id/action-origins", ogenBridge)
-			authenticated.PUT("/collaboration-workspaces/:id/actions", ogenBridge)
-
-			// ── register system ───────────────────────────────────────────
-			authenticated.GET("/system/register-entries", ogenBridge)
-			authenticated.POST("/system/register-entries", ogenBridge)
-			authenticated.PUT("/system/register-entries/:id", ogenBridge)
-			authenticated.DELETE("/system/register-entries/:id", ogenBridge)
-			authenticated.GET("/system/login-page-templates", ogenBridge)
-			authenticated.POST("/system/login-page-templates", ogenBridge)
-			authenticated.PUT("/system/login-page-templates/:templateKey", ogenBridge)
-			authenticated.DELETE("/system/login-page-templates/:templateKey", ogenBridge)
-			authenticated.GET("/system/users/register-logs", ogenBridge)
-
-			// ── api-endpoints ─────────────────────────────────────────────
-			authenticated.GET("/api-endpoints", ogenBridge)
-			authenticated.GET("/api-endpoints/overview", ogenBridge)
-			authenticated.GET("/api-endpoints/stale", ogenBridge)
-			authenticated.POST("/api-endpoints/sync", ogenBridge)
-			authenticated.POST("/api-endpoints/cleanup-stale", ogenBridge)
-			authenticated.GET("/api-endpoints/unregistered", ogenBridge)
-			authenticated.GET("/api-endpoints/categories", ogenBridge)
-			authenticated.POST("/api-endpoints/categories", ogenBridge)
-			authenticated.PUT("/api-endpoints/categories/:id", ogenBridge)
-			authenticated.PUT("/api-endpoints/:id", ogenBridge)
-			authenticated.PUT("/api-endpoints/:id/context-scope", ogenBridge)
-
-			// ── dictionary ────────────────────────────────────────────────
-			authenticated.GET("/dictionaries", ogenBridge)
-			authenticated.POST("/dictionaries", ogenBridge)
-			authenticated.GET("/dictionaries/by-codes", ogenBridge)
-			authenticated.GET("/dictionaries/:id", ogenBridge)
-			authenticated.PUT("/dictionaries/:id", ogenBridge)
-			authenticated.DELETE("/dictionaries/:id", ogenBridge)
-			authenticated.GET("/dictionaries/:id/items", ogenBridge)
-			authenticated.POST("/dictionaries/:id/items", ogenBridge)
-			authenticated.PUT("/dictionaries/:id/items", ogenBridge)
-			authenticated.PUT("/dictionaries/:id/items/:itemId", ogenBridge)
-			authenticated.DELETE("/dictionaries/:id/items/:itemId", ogenBridge)
-
-			// ── media ─────────────────────────────────────────────────────
-			authenticated.GET("/media/upload-keys", ogenBridge)
-			authenticated.POST("/media/upload", ogenBridge)
-			authenticated.GET("/media", ogenBridge)
-			authenticated.DELETE("/media/:id", ogenBridge)
-			authenticated.POST("/media/prepare", ogenBridge)
-			authenticated.POST("/media/complete", ogenBridge)
-
-			// ── upload config (storage_admin) ─────────────────────────────
-			// Provider / Bucket / UploadKey / Rule 管理面，统一权限
-			// system.upload.config.manage。
-			authenticated.GET("/storage/providers", ogenBridge)
-			authenticated.POST("/storage/providers", ogenBridge)
-			authenticated.GET("/storage/providers/:id", ogenBridge)
-			authenticated.PUT("/storage/providers/:id", ogenBridge)
-			authenticated.DELETE("/storage/providers/:id", ogenBridge)
-			authenticated.POST("/storage/providers/:id/test", ogenBridge)
-			authenticated.GET("/storage/buckets", ogenBridge)
-			authenticated.POST("/storage/buckets", ogenBridge)
-			authenticated.GET("/storage/buckets/:id", ogenBridge)
-			authenticated.PUT("/storage/buckets/:id", ogenBridge)
-			authenticated.DELETE("/storage/buckets/:id", ogenBridge)
-			authenticated.GET("/upload/keys", ogenBridge)
-			authenticated.POST("/upload/keys", ogenBridge)
-			authenticated.GET("/upload/keys/:id", ogenBridge)
-			authenticated.PUT("/upload/keys/:id", ogenBridge)
-			authenticated.DELETE("/upload/keys/:id", ogenBridge)
-			authenticated.GET("/upload/keys/:id/rules", ogenBridge)
-			authenticated.POST("/upload/keys/:id/rules", ogenBridge)
-			authenticated.PUT("/upload/rules/:ruleId", ogenBridge)
-			authenticated.DELETE("/upload/rules/:ruleId", ogenBridge)
-
-			// ── site-config (全局 + 应用级合并，批量解析 / CRUD / 集合管理) ──
-			authenticated.GET("/site-configs/resolve", ogenBridge)
-			authenticated.GET("/site-configs", ogenBridge)
-			authenticated.POST("/site-configs", ogenBridge)
-			authenticated.PUT("/site-configs/:id", ogenBridge)
-			authenticated.DELETE("/site-configs/:id", ogenBridge)
-			authenticated.GET("/site-configs/sets", ogenBridge)
-			authenticated.POST("/site-configs/sets", ogenBridge)
-			authenticated.PUT("/site-configs/sets/:id", ogenBridge)
-			authenticated.DELETE("/site-configs/sets/:id", ogenBridge)
-			authenticated.PUT("/site-configs/sets/:id/items", ogenBridge)
-
-			// ── observability (audit / telemetry read-only queries) ────────
-			// 写入链路走异步 recorder/ingester；这里只暴露登录后的后台查询页用。
-			authenticated.GET("/observability/audit-logs", ogenBridge)
-			// /stats 必须在 /:id 之前，避免 "stats" 被当作 id 捕获
-			authenticated.GET("/observability/audit-logs/stats", ogenBridge)
-			authenticated.GET("/observability/audit-logs/:id", ogenBridge)
-			authenticated.GET("/observability/telemetry-logs", ogenBridge)
-			authenticated.GET("/observability/telemetry-logs/:id", ogenBridge)
-			authenticated.GET("/observability/log-policies", ogenBridge)
-			authenticated.POST("/observability/log-policies", ogenBridge)
-			authenticated.POST("/observability/log-policies/preview", ogenBridge)
-			authenticated.PATCH("/observability/log-policies/:id", ogenBridge)
-			authenticated.DELETE("/observability/log-policies/:id", ogenBridge)
-			authenticated.GET("/observability/trace/:request_id", ogenBridge)
-			// /observability/metrics: 进程内 Recorder/Ingester 运行时指标，无参数。
-			authenticated.GET("/observability/metrics", ogenBridge)
-			authenticated.GET("/observability/metrics/prometheus", ogenBridge)
-		}
+		// /api/v1 下所有业务路由由 OpenAPI seed 驱动批量挂载。
+		//
+		// 新增/删除 operation 只需改 api/openapi/*.yaml 然后 `make api`，
+		// seed 会被重新生成并嵌入二进制；mountOpenAPIBridgeRoutes 自动把每条
+		// operation 桥接到 ogen Server —— router.go 不再需要为每条 API 手工
+		// 新增行。这避免了历史上漏桥接导致前端 404 的那类问题。
+		//
+		// 仍然需要手工注册的（已在 router 上方独立挂载）：
+		//   - /api/v1/auth/oauth/:provider/{authorize,callback}：socialHandler 自
+		//     实现，不是 OpenAPI 操作，不会出现在 seed 里。
+		//   - /health、/health/*、/uploads：不在 /api/v1 路径下，启动前就要可用。
+		mountOpenAPIBridgeRoutes(v1, authenticated, seed.Operations, publicBridge, ogenBridge, logger)
 
 		open := r.Group("/open/v1")
 		open.Use(endpointAccessService.RequireActiveEndpoint(), middleware.APIKeyAuth(db))
@@ -510,6 +207,85 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 	}
 
 	return r
+}
+
+// mountOpenAPIBridgeRoutes registers every operation in `ops` onto the
+// appropriate Gin router group, dispatching based on access_mode:
+//
+//   - "public"                        → v1 group (no JWT)
+//   - "authenticated" / "permission"  → authenticated group (JWT + perm MW)
+//   - anything else                   → authenticated, with a warning log
+//
+// Ops are registered in (path, method) ascending order. Gin's radix tree
+// requires static path segments to be registered before parametric ones
+// at the same level (e.g. `/audit-logs/stats` before `/audit-logs/{id}`).
+// Since '{' (ASCII 123) sorts after all letters and digits, alphabetical
+// ordering naturally satisfies this constraint.
+//
+// Extracted so both SetupRouter and the router_contract_test can share the
+// exact same registration logic.
+func mountOpenAPIBridgeRoutes(
+	v1 *gin.RouterGroup,
+	authenticated *gin.RouterGroup,
+	ops []permissionseed.OpenAPIOperation,
+	publicBridge gin.HandlerFunc,
+	ogenBridge gin.HandlerFunc,
+	logger *zap.Logger,
+) {
+	sorted := append([]permissionseed.OpenAPIOperation(nil), ops...)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].Path != sorted[j].Path {
+			return sorted[i].Path < sorted[j].Path
+		}
+		return sorted[i].Method < sorted[j].Method
+	})
+	for _, op := range sorted {
+		method := strings.ToUpper(strings.TrimSpace(op.Method))
+		ginPath := openapiPathToGin(op.Path)
+		switch op.AccessMode {
+		case "public":
+			v1.Handle(method, ginPath, publicBridge)
+		case "authenticated", "permission":
+			authenticated.Handle(method, ginPath, ogenBridge)
+		default:
+			if logger != nil {
+				logger.Warn("openapi seed: unknown access_mode, defaulting to permission",
+					zap.String("access_mode", op.AccessMode),
+					zap.String("operation_id", op.OperationID),
+					zap.String("method", method),
+					zap.String("path", ginPath))
+			}
+			authenticated.Handle(method, ginPath, ogenBridge)
+		}
+	}
+}
+
+// openapiPathToGin translates an OpenAPI-style path ("/users/{id}/packages/{packageId}")
+// into Gin's colon-prefixed placeholder form ("/users/:id/packages/:packageId").
+// Used by the seed-driven route registration loop. Non-brace characters are
+// copied verbatim; an unmatched '{' is also copied verbatim rather than
+// silently dropped, so any upstream spec bug is visible in the final path.
+func openapiPathToGin(p string) string {
+	if !strings.ContainsRune(p, '{') {
+		return p
+	}
+	var b strings.Builder
+	b.Grow(len(p))
+	for i := 0; i < len(p); i++ {
+		if p[i] != '{' {
+			b.WriteByte(p[i])
+			continue
+		}
+		end := strings.IndexByte(p[i:], '}')
+		if end <= 0 {
+			b.WriteByte(p[i])
+			continue
+		}
+		b.WriteByte(':')
+		b.WriteString(p[i+1 : i+end])
+		i += end
+	}
+	return b.String()
 }
 
 // findMissingPermissionKeys returns permission_key strings referenced by

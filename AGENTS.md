@@ -32,7 +32,7 @@
   - 长期默认数据走 `seed / ensure`，不反复写进 migration
   - API 契约只改 `backend/api/openapi/`
   - 生成物只通过 `bundle / ogen / gen-permissions / pnpm run gen:api` 刷新，不手改
-  - API 网关配置在本仓库内等价于 `OpenAPI 扩展字段 + gin bridge/router + middleware 分组`
+  - API 网关配置在本仓库内等价于 `OpenAPI 扩展字段 + gin middleware 分组`；/api/v1 下的路由由 OpenAPI seed 驱动，启动时自动从 `permissionseed.LoadOpenAPISeed()` 派生并挂到 Gin，新增/删除 operation 不需要改 `backend/internal/api/router/router.go`
   - handler 写完不算完成，必须继续收口前端类型、前端封装、UI 联调和校验
 
 - 每次**新增 API**或**修改 API 契约**后，必须按以下顺序执行，不允许跳步：

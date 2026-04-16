@@ -557,13 +557,15 @@ ingester 的异步通道仍是唯一的写入者。
      `x-access-mode: permission`
 2. 根 spec `openapi.root.yaml` 注册 path ref
 3. 跑 `make api`（或 `update-openapi.bat`）重生 ogen + permission seed
+   —— 这一步同时把新 operation 写入 `openapi_seed.json`，后端启动时
+   `mountOpenAPIBridgeRoutes` 会按 `x-access-mode` 自动把路由挂到 Gin，
+   不需要再改 `router.go`
 4. `internal/api/handlers/observability.go` 实现 handler：
    - 首行判 `userIDFromContext(ctx)`；未登录返 `*Unauthorized`
    - `tenant_id` 硬过滤；时间 / 分页参数走 `observabilityPagination`
    - 复用 `auditLogItemFromModel` / `telemetryLogRecordFromModel` 映射
-5. **务必在 `internal/api/router/router.go` 加对应 Gin 桥接行**
-   （`authenticated.GET(..., ogenBridge)`）。少了这一步 ogen 侧看不到请求，
-   返 404 但没报错日志，很难排
+5. 跑一下 `go test ./internal/api/router -count=1`：该对账测试验证 seed 里
+   每条 op 都能在 Gin trie 里被找到、bridge 对齐、无 radix tree 冲突
 6. 补 `integration_test.go` smoke（`go test -tags integration ./internal/api/handlers/...`）
 7. 前端 `frontend/src/domains/governance/api/observability.ts` 封装 client 函数
 

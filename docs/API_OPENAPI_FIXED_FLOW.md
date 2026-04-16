@@ -33,7 +33,7 @@
 - `OpenAPI spec`：后端与前端共享的唯一契约真相源。
 - `bundle/lint/ogen`：把多文件 spec 收敛成最终契约并生成后端产物。
 - `gen-permissions`：从 OpenAPI 扩展字段派生 `permission_keys / api_endpoints / bindings`。
-- `gin bridge/router`：把 OpenAPI 生成的 server 接入认证、权限、endpoint-status 等中间件分组。
+- `gin bridge/router`：**自动**。`openapi_seed.json` 生成后，后端启动时由 `mountOpenAPIBridgeRoutes` 循环挂载到 Gin 的认证 / 权限 / endpoint-status 分组；不需要手工往 `router.go` 加行。
 - `handler/service`：基于最新生成物实现业务逻辑，不手改生成代码。
 - `frontend gen:api`：刷新前端类型与 client 契约。
 - `frontend API 封装`：在生成层之外写业务调用封装。
@@ -154,27 +154,37 @@
 
 - spec 已更新
 - handler 已实现
-- router 已挂桥
+- router 已自动桥接（seed 驱动）
 - 但权限注册表和 API 注册表不同步
 
 ## 2.7 gin bridge / router
 
 本仓库的“API 网关配置”不是单独一套外部网关文件，而是：
 
-- OpenAPI 扩展字段
-- `router.go` 里的 `ogenBridge`
-- middleware 分组
+- OpenAPI 扩展字段（`x-access-mode`、`x-permission-key`、`x-app-scope` 等）
+- `router.go` 顶部注册的全局 middleware 分组（RequestID / Logger /
+  Recovery / AppContext / DynamicAppSecurity / endpoint-status / JWTAuth /
+  permission middleware）
+- 启动期由 seed 驱动的自动挂载（`mountOpenAPIBridgeRoutes`）
 
-新增 API 后必须检查：
+**这一步是自动的**。跑完 `make api` 之后：
 
-- 是否挂到了正确的 gin 分组
-- 是否走 authenticated / public / api-key 路径
-- 是否经过 permission evaluator
-- 是否经过 endpoint status / recovery / auth middleware
+- `backend/internal/pkg/permissionseed/openapi_seed.json` 已经包含每条
+  operation 的 `method / path / access_mode`
+- 后端启动时，`backend/internal/api/router/router.go` 里的
+  `mountOpenAPIBridgeRoutes` 按字母序遍历 seed，把每条 op 按 `access_mode`
+  挂到对应的 Gin group（`public` → 不过 JWT；`authenticated` /
+  `permission` → 过 JWT，`permission` 再过权限 middleware）
+- `router.go` 不再保存每条业务路由的显式 `authenticated.GET(..., ogenBridge)`
+  行；只有 `/health`、`/uploads`、OAuth 回调等**非 OpenAPI** 路由仍然显式注册
 
-也就是说，新增 API 不是只有 spec 和 handler，还必须确认：
+因此新增 API 后要检查的不是"router.go 有没有加行"，而是：
 
-- `router.go` 真正把它接进来了
+- spec 的 `x-access-mode` 是否正确（public / authenticated / permission）
+- 是否带上了 `x-permission-key`（`permission` 模式必填）
+- 对账测试 `go test ./internal/api/router -count=1` 通过
+  （该测试构造空 gin.Engine、跑一次 seed 驱动注册、对比 seed 和实际
+  `engine.Routes()`；任何漏项、多项、错配、radix tree 冲突都会失败）
 
 ## 2.8 handler / service
 
@@ -306,8 +316,8 @@ UI 不直接散用生成 client。
 
 - 只改 handler，没改 OpenAPI
 - 跑了 ogen，没跑前端 `gen:api`
-- 改了受控 API，但没跑 `gen-permissions`
-- handler 写完了，`router.go` 没挂 `ogenBridge`
+- 改了受控 API，但没跑 `gen-permissions`，权限注册表和 API 注册表不同步
+- 改了 spec 但忘记跑生成链（`make api`），旧 seed 还在 `openapi_seed.json` 里，启动时自动挂载的 Gin 路由集合还停留在旧版本
 - 默认数据写进 migration，而不是 seed / ensure
 - UI 直接写死类型，没有吃生成 schema
 - 只过编译，没有做浏览器验证
@@ -316,4 +326,4 @@ UI 不直接散用生成 client。
 
 团队内部如果只保留一条短句，建议固定成：
 
-`先定模型和数据，再定 OpenAPI；先刷新生成物和权限种子，再接 gin bridge 和 handler；最后刷新前端类型、补 API 封装、做 UI 和联调验证。`
+`先定模型和数据，再定 OpenAPI；先刷新生成物和权限种子（gin bridge/router 随 seed 在启动时自动挂载），再实现 handler；最后刷新前端类型、补 API 封装、做 UI 和联调验证。`

@@ -48,9 +48,9 @@
 - 这条顺序的含义是：
   - 先定领域模型、表结构和默认数据策略，再谈 API
   - OpenAPI 是后端与前端共享的唯一契约真相源
-  - `gin bridge/router` 属于仓库内 API 网关配置的一部分，负责把 OpenAPI 生成的 server 接到认证、权限、endpoint-status 等中间件分组
+  - `gin bridge/router` 是**自动步骤**：跑完 `make api` 后，`openapi_seed.json` 已经携带每条 operation 的 path / method / access_mode；启动时 `backend/internal/api/router/router.go` 里的 `mountOpenAPIBridgeRoutes` 循环把它们一次性挂到 Gin 的认证 / 权限 / endpoint-status 中间件分组，不需要人工往 router.go 加行
   - 前端不是只拿到 `schema.d.ts` 就结束，仍需补业务 API 封装与 UI 联调
-  - 未完成生成、桥接、权限种子、联编和浏览器验证前，不视为闭环完成
+  - 未完成生成、权限种子、联编和浏览器验证前，不视为闭环完成
 
 ## 当前非目标
 

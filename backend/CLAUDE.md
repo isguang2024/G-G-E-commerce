@@ -69,9 +69,15 @@ Add a method on `APIHandler` in `internal/api/handlers/{domain}.go` that
 matches the generated `gen.Handler` signature. Reach into the existing
 service-layer (`internal/modules/system/{domain}`) for business logic.
 
+You do **not** need to touch `internal/api/router/router.go`. The router
+iterates over `permissionseed.LoadOpenAPISeed().Operations` at startup and
+mounts each operation to the appropriate Gin group (`public` → v1 without
+JWT; `authenticated` / `permission` → v1 with JWT + permission middleware).
+Any operation you declared in step 1 and regenerated in step 2 is already
+reachable as soon as the server boots — there is no "bridge row" to add.
+
 Do NOT re-introduce a legacy Gin module shell
-(`internal/modules/system/*/module.go`). The ogen bridge in
-`internal/api/router/router.go` covers every operation declared in the spec.
+(`internal/modules/system/*/module.go`).
 
 ### 4. Ensure the permission key exists in the DB
 

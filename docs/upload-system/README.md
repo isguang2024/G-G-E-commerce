@@ -415,7 +415,7 @@ upload.driver_unavailable
 
 | 入口 | 现状 |
 | --- | --- |
-| `POST /api/v1/media/upload` | `backend/internal/api/handlers/media.go`，挂载于 `router.go` |
+| `POST /api/v1/media/upload` | `backend/internal/api/handlers/media.go`（路由由 OpenAPI seed 在启动时自动挂载，无需改 `router.go`） |
 | `frontend/src/domains/upload/api.ts` | 统一收敛 |
 | `frontend/src/domains/upload/use-upload.ts` | 组合式封装 `submit / fetchList / remove` |
 | `art-wang-editor/index.vue` | WangEditor 走 `uploadMediaWithPrepare` |
