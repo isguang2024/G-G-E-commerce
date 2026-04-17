@@ -1,14 +1,53 @@
 # AGENTS.md
 
+> 本仓库 AI 协作的唯一真相源。`CLAUDE.md` / `CODEX.md` 等文件只做指向本文件的链接中转。
+
+## 真相源分层
+
+遇到冲突一律按以下顺序为准：
+
+1. **根真相源**：本文件（`AGENTS.md`）
+2. **子项目真相源**：
+   - `backend/truth.md` + `backend/Truth/*`
+   - `frontend/truth.md` + `frontend/Truth/*`
+   - `frontend-platform/truth.md` + `frontend-platform/Truth/*`
+3. **项目说明**（非真相）：`docs/` 下的各端子目录
+4. **目录级 README**：只作目录介绍，不作真相
+
 ## 协作约束
 
 - 使用中文沟通。
 - 通过 Shell 读写文本必须显式 UTF-8，避免乱码。
-- 当前协作文档真相源如下，其余说明若与它们冲突，一律按这里为准：
-  - `AGENTS.md`
-  - `docs/project-framework.md`
-  - `docs/frontend-guideline.md`
-  - `backend/CLAUDE.md`
+- 所有 README.md 只做"当前目录介绍"，不细说业务和代码构成，不作真相。
+- 开发真相只放在对应子项目的 `Truth/` 文件夹，其他位置一律不放真相文档。
+- 临时任务、临时记忆、阶段性文档一律进入 `docs/tmp/`，不进主干导航。
+
+## 项目定位
+
+- 定位：**通用 Admin 管理后台脚手架**。
+- 主干职责：认证、权限、路由/页面注册、OpenAPI 契约治理、运行时上下文、多APP、多空间治理等通用底座。
+- 业务落位原则：垂直业务能力以模块化方式接入，不反向污染底座抽象。
+
+仓库主线：
+
+- `backend/` — Go 1.25 + Gin + GORM + Postgres + Redis + Elasticsearch + ogen + goose + OpenTelemetry
+- `frontend/` — Vue 3 + TypeScript + Vite + Element Plus + Pinia + openapi-fetch（已接真实接口，不走 mock）
+- `frontend-platform/` — 基于 Vben Admin 的前端平台工作空间（独立 monorepo）开发中
+
+## 核心语义
+
+- **Workspace 空间**：系统唯一的空间主实体，分 `personal` / `collaboration` 两类型。
+- **Personal 空间**：个人账号自身的空间，权限来源以账号角色为主。
+- **Collaboration 空间**：协作空间，权限来源以成员角色为主，空间功能包给出权限上限。
+- **Member 成员**：账号在 workspace 内的身份记录。
+- **最终权限公式**：`空间功能包权限键和 成员角色权限键交集`。个人空间可直接退化为账号角色权限集合。
+- **菜单 / 页面 / 权限键** 三段分离：菜单管导航，页面管路由，权限键管访问。`menu_space_key` 只是某 app 下的导航菜单视图，不参与权限计算。
+
+## 当前非目标
+
+- 不开放租户能力、不暴露租户管理界面、不做 schema 分片。
+- 新增设计不得以"菜单反推权限 / mock 接口 / 手写权限规则"模式扩散。
+- 不维护第二套后台前端、不重启第二个后端工程。
 
 ## 实施原则
 
@@ -16,8 +55,7 @@
 - 数据库允许清空重建；迁移只负责一次性结构变更或历史数据修正，**默认数据走 seed / ensure 幂等逻辑**，不要把长期默认状态反复写进迁移链。
 - 只要本次改动涉及 migration，必须优先创建并落当前迁移，再继续后续实现；不要拖到收尾阶段补迁移，避免并行开发时新增迁移插队，导致编号、内容或目标状态被覆盖。
 - 临时修复型迁移在目标状态达成后必须删除，不长期保留。
-- 不手写已有成熟模块能解决的能力（路由、校验、API 文档、权限模型、迁移、DI、缓存）。新增依赖前先核对当前技术栈。
-- 新模块 / 新表 / 新接口在评审时必须显式回答：**是否带 tenant_id、是否在仓储层强制过滤**。
+- 不手写已有成熟模块能解决的能力（路由、校验、API 文档、权限模型、迁移、DI、缓存等）。新增依赖前先核对当前技术栈。
 - API 一律走 OpenAPI-first：spec 即真相，先改 `backend/api/openapi/`，再刷新生成物，再写实现；不允许手写 router/dto 绕开 ogen 生成。
 - `backend/api/gen/` 与 `frontend/src/api/v5/`（当前包含 `client.ts`、`types.ts`、`schema.d.ts`、`error-codes.ts`）属于生成产物，禁止手改生成文件本体；业务封装只能写在生成层之外。
 - 权限判断一律走 `backend/internal/pkg/permission/evaluator`，不允许在 sub-handler / service 内散写权限交集逻辑。
@@ -50,9 +88,9 @@
 - 未完成上述生成、修正、校验前，不得判定"接口改造完成"，也不得开始依赖该接口继续开发下游功能。
 
 ## 协作技能位置（Claude Code 与 Codex 共用）
-
+-长任务要使用任务树技能
 - 技能统一按用户目录全局技能读取（`~/.claude/skills/`、`~/.codex/skills/`）。
-  - 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `maben/<skill-name>` 加载。
+ - 本仓库执行任务时，不再强制要求从 `<repo>/.claude/skills/` 或 `maben/<skill-name>` 加载。
 - 当仓库内技能与全局技能同名时，以全局技能为准。
 - 若需调整技能规则，优先修改全局技能，不要求回灌仓库副本。
 
@@ -61,9 +99,6 @@
 - `backend/internal/api/handlers/` 已完成 "god handler" 拆分，19 个域按 domain 各自持有 sub-handler
 - 新增 op 必须归到某个 `*{domain}APIHandler`，不允许堆回主 `APIHandler`
 - 同名方法出现在两个 sub-handler 会触发歧义编译错误 → 重新划分域边界
-- 目录约定、扩展新域步骤、嵌入深度规则、测试构造姿势详见 [backend/CLAUDE.md](backend/CLAUDE.md)
+- 目录约定、扩展新域步骤、嵌入深度规则、测试构造姿势详见 [backend/Truth/backend-guide.md](backend/Truth/backend-guide.md)
 
-## 风险动作纪律
 
-- 删除文件、清库、force push、删除分支等不可逆动作必须先确认。
-- 迁移失败、hook 失败时排查根因，禁止 `--no-verify` 或跳过校验。

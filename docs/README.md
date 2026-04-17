@@ -1,17 +1,27 @@
-# 文档中枢
+# docs/
 
-`docs/` 只做三件事：导航、长期手册、历史归档。
+项目说明目录。**不是真相源**——开发真相在各子项目的 `Truth/` 下。
 
-## 入口分工
+## 目录
 
-- 总导航：[INDEX.md](INDEX.md)
-- 结构说明：[project-structure.md](project-structure.md)
-- API 流程：[API_OPENAPI_FIXED_FLOW.md](API_OPENAPI_FIXED_FLOW.md)
-- 专题手册：[guides/README.md](guides/README.md)
-- 历史归档：[archive/README.md](archive/README.md)
+| 路径 | 说明 |
+| --- | --- |
+| `backend/` | 后端项目说明（目录结构、业务映射） |
+| `frontend/` | 前端项目说明（目录结构、业务映射） |
+| `frontend-platform/` | 前端平台项目说明 |
+| `tmp/` | 临时任务文档、阶段性文档、临时记忆 |
+| `change-log.md` | 跨端项目变更日志 |
 
-## 约束
+## 放什么 / 不放什么
 
-- 入口文档只保留职责、阅读顺序和链接，不重复展开实现细节。
-- 同一主题只保留一个主说明文档，其他位置改为跳转。
-- 阶段验收、回滚预案、专项审计、故障复盘默认进入 `archive/`，不进入主手册导航。
+- **放**：按端的项目结构说明、业务入口清单、跨端变更日志。
+- **不放**：开发约束、API 流程、权限模型、命令速查等"真相类"内容——这些在各子项目的 `Truth/` 下。
+
+## 真相入口
+
+| 端 | 真相摘要 | 真相索引 |
+| --- | --- | --- |
+| 根 / AI 协作 | [../AGENTS.md](../AGENTS.md) | — |
+| 后端 | [../backend/truth.md](../backend/truth.md) | [../backend/truth_index.md](../backend/truth_index.md) |
+| 前端 | [../frontend/truth.md](../frontend/truth.md) | [../frontend/truth_index.md](../frontend/truth_index.md) |
+| 前端平台 | [../frontend-platform/truth.md](../frontend-platform/truth.md) | [../frontend-platform/truth_index.md](../frontend-platform/truth_index.md) |

@@ -24,5 +24,6 @@
 ## 延伸阅读
 
 - 组件选用指南：[components/README.md](components/README.md)
-- 页面规范：[../../docs/frontend-guideline.md](../../docs/frontend-guideline.md)
-- 仓库结构：[../../docs/project-structure.md](../../docs/project-structure.md)
+- 页面规范：[../Truth/frontend-guideline.md](../Truth/frontend-guideline.md)
+- 当前前端结构：[../../docs/frontend/structure.md](../../docs/frontend/structure.md)
+- 前端真相索引：[../truth_index.md](../truth_index.md)

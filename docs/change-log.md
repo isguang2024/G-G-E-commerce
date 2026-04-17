@@ -1,9 +1,34 @@
+## 2026-04-17 docs/tmp 状态标签与上传文档入口收口
+
+### 本次改动
+- 为 `docs/tmp/upload-system-plan.md`、`upload-config-v2-gap-analysis.md`、`upload-config-v2-design.md`、`upload-config-v2-release.md` 补充了“文档状态”提示，明确它们是历史规划稿、阶段性分析稿、设计稿和交付稿，不再充当现行真相入口。
+- 为 `docs/tmp/task-tree-skill-feedback.md` 补充单次反馈说明，并指向 `.learnings/ERRORS.md`，避免临时反馈文件继续承担长期知识库角色。
+- 将 [backend/Truth/upload-system/overview.md](../backend/Truth/upload-system/overview.md) 的关联文档拆成“当前真相”和“历史材料”两组，明确上传域的正式入口与追溯入口。
+- 在 [backend/truth_index.md](../backend/truth_index.md) 增加说明，明确 `docs/tmp/` 下的设计稿、Gap Analysis 和交付稿不是后端真相。
+- 已再次校验排除 `frontend-platform/` 后的全部仓库文档，当前仍未发现站内坏链。
+
+### 下次方向
+- 若继续清理上传域文档，下一步应把 `docs/tmp` 里仍有长期价值的结论提炼进 `backend/Truth/upload-system/overview.md` 或 `ops-guide.md`，而不是让读者继续读完整历史稿。
+- 可继续给 `frontend/Truth/*` 和 `backend/Truth/*` 补统一的“适用场景 / 现行状态 / 关联文档”头部模板，让索引页之外的单文档也能自解释。
+
+## 2026-04-17 文档导航坏链修复与归档入口收口
+
+### 本次改动
+- 修复 `docs/tmp/INDEX.md`、`docs/tmp/_archived/guides-README.md`、`frontend/README.md`、`frontend/src/README.md`、`backend/Truth/api-openapi-flow.md`、`docs/change-log.md` 中的陈旧链接，全部改为当前真实路径。
+- 给 `docs/tmp/_archived/GUIDELINES.md` 与 `docs/tmp/_archived/guides-README.md` 补充“已归档”提示，避免旧入口继续被误当成现行规范。
+- 重新梳理 `docs/tmp/INDEX.md` 的导航语义，把旧时代的 `project-framework`、`guides/*`、`API_OPENAPI_FIXED_FLOW` 路径映射到当前 `AGENTS.md`、`README.md`、`backend/Truth/*`、`frontend/Truth/*` 文档体系。
+- 已重新校验排除 `frontend-platform/` 后的全部仓库文档，当前未发现剩余站内坏链。
+
+### 下次方向
+- 继续收口 `docs/tmp/` 中仍有长期价值的设计稿与交付稿，把稳定结论迁回 `backend/Truth/` 或 `frontend/Truth/`，减少临时目录承担正式导航职责。
+- 若后续继续整理文档，可再统一补一轮“文档状态标签”，明确区分现行真相、目录说明、临时稿和归档稿，降低误读成本。
+
 ## 2026-04-17 上传配置中心二期交付与审计收口
 
 ### 本次改动
 - 完成上传配置中心二期主链路交付，补齐 UploadKey / Rule 运行时字段、前端可见 UploadKey 接口、驱动差异化表单、自定义参数 schema 编辑器，以及前端上传 SDK 的可见目标解析与计划回传。
-- 新增 [upload-config-v2-release.md](./upload-system/upload-config-v2-release.md) 与 [upload-config-v2-ops-guide.md](./upload-system/upload-config-v2-ops-guide.md)，把上线步骤、迁移兼容、回滚策略、安全审计结论、配置示例与运维排障集中收口。
-- 更新 [docs/upload-system/README.md](./upload-system/README.md) 二期补充文档导航，便于后续从设计、约束、交付、运维四个层次定位资料。
+- 新增 [upload-config-v2-release.md](./tmp/upload-config-v2-release.md) 与 [upload-config-v2-ops-guide.md](../backend/Truth/upload-system/ops-guide.md)，把上线步骤、迁移兼容、回滚策略、安全审计结论、配置示例与运维排障集中收口。
+- 更新 [backend/Truth/upload-system/overview.md](../backend/Truth/upload-system/overview.md) 文档导航，便于后续从设计、约束、交付、运维四个层次定位资料。
 - 对权限与泄露面做了一轮代码链路审计，确认管理面密钥回显走脱敏值、Provider 写入走加密、前端可见 UploadKey 接口只暴露安全摘要字段。
 
 ### 下次方向
@@ -286,3 +311,98 @@
 ### 下次方向
 - 最好在后续有空时用全新 `node_modules` 再走一次首次安装验证，确认从零 clone 的场景也能一次成功，而不是只在当前修复后的环境里通过。
 - 如果后面还要启用 `frontend-platform` 下的其它 Vben app，可以直接复用这套自动链接脚本，不要再手工创建 junction。
+
+## 2026-04-17 frontend-platform runtime navigation 菜单适配
+
+### 本次改动
+- 新增共享包 `frontend-platform/packages/runtime-navigation`，把后端 `/runtime/navigation` 的 `menu_tree + managed_pages` 统一转换成 Vben backend mode 可消费的动态路由，并补了查询参数和 `/index.vue` 组件别名辅助，给后续 `web-naive` / 新 APP 复用。
+- `apps/web-ele` 已改为直接请求 `/runtime/navigation`，登录、`/auth/me`、refresh token 也切到当前后端真实契约；菜单拉取、权限码写入和页面组件解析不再依赖 Vben demo 的 `/menu/all`、`/user/info`、`/auth/codes`。
+- `web-ele` 偏好配置切到 `backend` 模式并启用 refresh token，开发代理默认指向 `http://localhost:8080/api/v1`；已验证 `pnpm -F @vben/web-ele run typecheck`、`pnpm exec vitest run packages/runtime-navigation/src/__tests__/build-routes.test.ts --dom`、`pnpm -F @vben/web-ele run build` 通过。
+- `pnpm build:ele` 仍会被 monorepo 里若干现存 UI-kit 打包依赖问题拦住，例如缺少 `vue-tsc` / `@tsdown/css` 链接以及 `menu-ui` 现有样式构建错误，这一轮未改 Vben 内核，因此没有顺手修这些基础包问题。
+
+### 下次方向
+- 下一步最值得做的是把 `runtime-navigation` 的 pageMap/layoutMap 接线抽成更明确的 app factory，让 `web-naive` 接入时只需要提供自己的页面资源映射，不再重复写 `access.ts` 粘合层。
+- 如果要继续推进“菜单配置中心”迁移，应基于这次保留下来的扩展 meta，补运行时 badge / 内页 / 全屏页的 UI 展示校验，而不是再退回到纯 Vben 菜单字段模型。
+- 当前 `pnpm build:ele` 的 turbo 链失败是 monorepo 依赖链接和现有 UI-kit 构建问题；后续如果要把 `frontend-platform` 当正式主线，需要单独清理这批基础包构建稳定性。 
+
+## 2026-04-17 frontend-platform 登录主链迁移
+
+### 本次改动
+- `apps/web-ele` 的登录页已移除 Vben demo 账号选择和滑块校验，改为直接提交当前后端 `/auth/login` 所需的用户名密码与 `target_app_key`、`redirect_uri`、`state`、`nonce` 等 centralized-login 参数，并补上 `/auth/login-page-context` 文案上下文读取。
+- 登录状态管理改为识别后端 `LoginResponse` 里的 `landing` 和 `callback` 语义：直接登录时会优先消费 `redirect` / `landing.home_path` / `target_path`，命中 `callback.redirect_to` 时会先缓存 `state/nonce` 上下文，再跳转中心登录回调。
+- `web-ele` 新增 `/auth/callback` 页面和本地 centralized attempt 存储，回跳后可通过 `/auth/callback/exchange` 换取 token 并继续走现有的 `auth/me + 动态菜单` 链路，不再停留在 Vben demo 的“只认 access_token”模型。
+- `web-ele` 的注册页已接入 `/auth/register-context` 和 `/auth/register`：会按后端策略动态显示邮箱、邀请码、验证码字段，提交后根据 `access_token` / `pending` 分流到自动登录或回登录页，并保留 `landing_url` / `landing_path` 这类后续跳转信息。
+- 忘记密码页已从空提交表单改成明确的说明页：继续使用登录页模板上下文，但不再伪装成“可发送重置链接”的能力，而是直接告知当前后端尚未暴露重置密码 API，并引导返回登录。
+- 已执行 `corepack pnpm -F @vben/web-ele run typecheck` 与 `corepack pnpm -F @vben/web-ele run build`，类型检查和生产构建通过。
+
+### 下次方向
+- 忘记密码页仍停留在基础壳子，而且后端当前只暴露了登录页模板上下文，没有看到对应提交流程；下一步应明确它是“仅展示入口”还是补真正的重置密码 API，避免继续保留空提交。
+- 如果后续还要支持社交登录或 callback 失败后的更细 landing/space 恢复，建议把 `centralized-login` 这层 app 内适配继续抽成共享 `@gge/shared-access`，避免 `web-naive` 再重复一遍。
+
+## 2026-04-17 frontend-platform runtime-access 抽取
+
+### 本次改动
+- 新增共享包 `frontend-platform/packages/runtime-access`，提供 `createAccessGenerator()` 和 `createRouterGuard()`，把 Vben app 的“动态菜单生成 + 通用进度条守卫 + 权限守卫”抽成可复用纯逻辑，不再把这套代码散写在每个 app 的 `router/access.ts`、`router/guard.ts` 里。
+- `apps/web-ele` 已切到新包：`src/router/access.ts` 现在只负责注入菜单接口、toast、页面映射和布局映射，`src/router/guard.ts` 只负责注入 Vben store、登录路径、默认首页和 `authStore.fetchUserInfo()`。
+- 这层抽取仍然保持 app 边界清晰：登录 store、菜单接口、`ElMessage`、`preferences` 等壳和 UI 单例没有下沉进共享包，后续 `web-naive` 只需改自己的注入，不用重写守卫主逻辑。
+
+### 下次方向
+- 当前 workspace 仍被安装链环境问题卡住，`vue-tsc` 缺 `@volar/typescript`、`vite` 缺 `rolldown`；下一步如果要正式验证 `runtime-access`，得先把 `frontend-platform` 的 `node_modules` 和 stub 构建恢复完整。
+- 再往下值得做的是 Step 3，把 workspace/app 上下文收口成 `@gge/runtime-context`，这样登录、菜单、space 跳转就能继续去掉 `web-ele` 里的零散运行时参数处理。
+
+## 2026-04-17 frontend-platform 安装链修复与正式验证
+
+### 本次改动
+- 定位到 `frontend-platform` 安装链的真实根因不是业务代码，而是当前 pnpm 生效配置里有 `symlink=false`，导致包虽然已经下载进 `node_modules/.pnpm`，但 `node_modules` 链接层没有建出来，最终引发 `tsdown` 找不到 `ansis`、`vue-tsc` 找不到 `@volar/typescript`、`vite` 找不到 `rolldown`。
+- 在 [frontend-platform/.npmrc](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/.npmrc) 明确补上 `symlink=true`，然后删除损坏的 `node_modules` 并重新执行 `corepack pnpm install`，`postinstall` 的 workspace link 和 `pnpm -r run stub --if-present` 已全部正常跑完。
+- 同步把 `runtime-access` 收口到不直接依赖 `vue-router` 类型，改成最小 Router 抽象接口，避免源码直出 workspace 包在当前 monorepo 类型解析下再次被具体路由实现卡住。
+- 已重新执行 `corepack pnpm install`、`corepack pnpm -F @vben/web-ele run typecheck`、`corepack pnpm -F @vben/web-ele run build`，三条链路均通过。
+
+### 下次方向
+- 当前 install 虽已恢复，但 `internal/vite-config` 仍有一组基于 Vite 8 的 peer warning（`vite-plugin-pwa`、`vite-plugin-vue-devtools` 及其下游插件）；这不影响当前安装和构建，但如果后续要把 `frontend-platform` 当长期主线，建议单独收口这组版本兼容性。
+- 认证和菜单基础链路、共享请求层、共享 access 层现在都已落地，下一步最值得做的是继续抽 `@gge/runtime-context`，把 app/space/runtime 参数从 `web-ele` 再剥一层出去。
+
+## 2026-04-17 frontend-platform Vite 版本兼容性清理
+
+### 本次改动
+- 单独清理了 `frontend-platform` 里这组 Vite peer warning：定位后确认问题不在本地安装链，而是当前 catalog 把 `vite` 统一升到了 `8.0.8`，但 `vite-plugin-pwa@1.2.0`、`vite-plugin-inspect@11.3.3`、`vite-dev-rpc@1.1.0` 这条链的官方 peer 仍停留在 `vite 7`。
+- 将 [frontend-platform/pnpm-workspace.yaml](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/pnpm-workspace.yaml) 的 catalog `vite` 从 `^8.0.8` 调整为 `^7.1.12`，其余 `@vitejs/plugin-vue@6.0.6`、`@vitejs/plugin-vue-jsx@5.1.5`、`vite-plugin-vue-devtools@8.1.1` 保持不变，因为它们本身已支持 `vite 7`。
+- 重新执行 `corepack pnpm install` 后，原先的 Vite peer warning 已消失，只剩 4 个与本次无关的 deprecated subdependency 提示；同时复验 `corepack pnpm -F @vben/web-ele run typecheck` 与 `corepack pnpm -F @vben/web-ele run build` 均通过。
+
+### 下次方向
+- 这次是按当前插件生态选择更稳的 `vite 7`，不是永久锁死；后续如果 `vite-plugin-pwa` / `vite-plugin-inspect` 官方补上 `vite 8` peer，再统一升回去会更干净。
+- 如果要继续把 `frontend-platform` 当主线，下一轮值得清的是 install 输出里剩余那 4 个 deprecated subdependency，避免后面继续混入真正需要处理的警告。
+
+## 2026-04-17 frontend-platform deprecated subdependency warning 清理
+
+### 本次改动
+- 继续追踪 install 输出里剩余的 4 个 deprecated subdependency，确认它们都来自 `@vben/vite-config` 里默认关闭但仍被静态安装的可选能力：`importmap` 依赖的 `@jspm/generator` / `cheerio`，以及 `PWA` / `Vite Devtools` 依赖链。
+- 调整 [frontend-platform/internal/vite-config/package.json](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/internal/vite-config/package.json)，移除 `@jspm/generator`、`cheerio`、`vite-plugin-pwa`、`vite-plugin-vue-devtools` 这 4 个静态依赖；同时改造 [plugins/index.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/internal/vite-config/src/plugins/index.ts) 与 [plugins/importmap.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/internal/vite-config/src/plugins/importmap.ts)，在真正启用对应功能时才动态加载可选包，并在缺包时抛出明确错误。
+- 移除了 `vite-plugin-pwa` 的类型硬依赖，改为本地最小 `PwaPluginOptions` 结构，相关收口在 [typing.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/internal/vite-config/src/typing.ts) 与 [options.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend-platform/internal/vite-config/src/options.ts)。
+- 重新执行 `corepack pnpm install` 后，这 4 个 deprecated warning 已全部消失；同时复验 `corepack pnpm -F @vben/web-ele run typecheck` 与 `corepack pnpm -F @vben/web-ele run build` 通过。
+
+### 下次方向
+- 当前默认路径已经不再把这些可选插件装进工作区；如果后续某个 app 真的要开启 `PWA`、`ImportMap CDN` 或 `Vite Devtools`，需要显式补装对应依赖，否则会收到这次新增的明确提示。
+- 这轮收口的是默认安装体验，不是删除能力；后面如果要把这些可选插件做成更标准的 app 级依赖，可以继续往 `apps/*` 侧下沉，而不是再挂回 `@vben/vite-config` 的基础依赖。 
+
+## 2026-04-17 workspace / collaboration / menu_space 边界修正
+
+### 本次改动
+- 修正 [docs/project-framework.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/project-framework.md) 的核心语义：删除 tenant 叙事，改成以 `workspace` 为唯一空间主实体，`personal` / `collaboration` 只作为类型分流。
+- 修正 [backend/internal/modules/system/README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/README.md) 与 [backend/internal/modules/system/collaborationworkspace/README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/collaborationworkspace/README.md) 的目录职责说明，明确 `workspace/`、`collaborationworkspace/`、`space/` 的当前边界。
+
+### 下次方向
+- 如果后续继续清理命名，优先把 `space_key` 的文档口径统一成 `menu_space_key`，避免“空间”中文语义和导航域混淆。
+- 若再扩展工作区模型说明，优先补 `workspace/` 与 `permission/` 的联动说明，避免把协作空间业务实体和鉴权主域再混写。
+
+## 2026-04-17 workspace 单主域收口后端兜底修复
+
+### 本次改动
+- 修复了 [backend/internal/pkg/database/database.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/database.go)、[backend/internal/pkg/permissionseed/ensure.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionseed/ensure.go)、[backend/internal/pkg/permissionseed/register_seed.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionseed/register_seed.go) 与 [backend/cmd/migrate/main.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 中对已删除 `collaboration_*` 旧表/旧列的索引、seed、迁移收尾逻辑，避免 `00035` 执行后继续命中旧 schema。
+- 修复 [backend/internal/modules/system/user/repository.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/user/repository.go)、[backend/internal/modules/system/user/service.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/user/service.go)、[backend/internal/modules/system/role/service.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/role/service.go) 的角色链路：协作空间上下文只走 `workspace_role_bindings`，不再错误写回全局 `user_roles`。
+- 修复 [backend/internal/modules/system/system/message_service.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/system/message_service.go)、[backend/internal/modules/system/featurepackage/assign_service.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)、[backend/internal/pkg/workspacefeaturebinding/service.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/workspacefeaturebinding/service.go) 等协作空间运行时查询，统一改为基于 `workspaces / workspace_members / workspace_role_bindings / workspace_feature_packages`。
+- 已验证 `go build ./...`、`go test ./internal/api/handlers -count=1`、`go test ./internal/api/router -count=1` 通过，后端恢复到可编译、可基本回归状态。
+
+### 下次方向
+- 继续完成 `frontend/` 的 S7 收口，尤其是 `api/workspace.ts`、`workspace store`、请求头 `X-Collaboration-Workspace-Id` 与协作空间页面封装，避免前后端仍处于半双轨状态。
+- 若要继续做更彻底的领域收敛，下一轮应单独规划消息域里的 `owner/target/recipient_collaboration_workspace_id` 兼容字段是否改名；这次先保证运行时不再依赖被删除的 legacy schema。

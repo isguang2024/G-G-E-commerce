@@ -30,13 +30,15 @@ pnpm run gen:api      # 根据 OpenAPI spec 重新生成类型文件
 
 | 文档 | 说明 |
 | --- | --- |
+| [truth.md](truth.md) | 前端协作铁律与边界 |
+| [truth_index.md](truth_index.md) | 前端真相文档索引 |
 | [src/README.md](src/README.md) | `src/` 目录职责速览 |
 | [src/components/README.md](src/components/README.md) | **组件选用指南**：三层体系 + 选型规则（开发新页面必读） |
 | [src/components/docs/art-core-components.md](src/components/docs/art-core-components.md) | Art Design Pro 全部 54 个 `core/` 组件目录 |
 | [src/components/docs/business-components.md](src/components/docs/business-components.md) | 本仓自封装 `business/` 组件 + 配套 Hooks |
-| [../docs/frontend-guideline.md](../docs/frontend-guideline.md) | 前端开发规范（命名、目录、API 调用约定） |
-| [../docs/project-structure.md](../docs/project-structure.md) | 全仓库结构说明 |
-| [../docs/API_OPENAPI_FIXED_FLOW.md](../docs/API_OPENAPI_FIXED_FLOW.md) | OpenAPI 接口生成完整流程 |
+| [Truth/frontend-guideline.md](Truth/frontend-guideline.md) | 前端开发规范（命名、目录、API 调用约定） |
+| [../docs/frontend/structure.md](../docs/frontend/structure.md) | 当前前端代码结构说明 |
+| [../backend/Truth/api-openapi-flow.md](../backend/Truth/api-openapi-flow.md) | OpenAPI 接口生成完整流程 |
 
 ## 基座说明
 
