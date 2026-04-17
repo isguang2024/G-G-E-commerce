@@ -56,25 +56,25 @@
       />
     </ElCard>
 
-    <CollaborationWorkspaceRoleDialog
+    <CollaborationRoleDialog
       v-model="roleDialog"
       :dialog-type="dialogType"
       :role-data="currentRoleData"
       @success="onSuccess"
     />
-    <CollaborationWorkspaceRolePackageDialog
+    <CollaborationRolePackageDialog
       v-model="packageDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
       @success="onSuccess"
     />
-    <CollaborationWorkspaceRoleMenuDialog
+    <CollaborationRoleMenuDialog
       v-model="menuDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
       @success="onSuccess"
     />
-    <CollaborationWorkspaceRoleActionDialog
+    <CollaborationRoleActionDialog
       v-model="actionDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
@@ -97,10 +97,10 @@
   } from '@/api/collaboration'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
-  import CollaborationWorkspaceRoleDialog from './modules/collaboration-role-dialog.vue'
-  import CollaborationWorkspaceRolePackageDialog from './modules/collaboration-role-package-dialog.vue'
-  import CollaborationWorkspaceRoleMenuDialog from './modules/collaboration-role-menu-dialog.vue'
-  import CollaborationWorkspaceRoleActionDialog from './modules/collaboration-role-action-dialog.vue'
+  import CollaborationRoleDialog from './modules/collaboration-role-dialog.vue'
+  import CollaborationRolePackageDialog from './modules/collaboration-role-package-dialog.vue'
+  import CollaborationRoleMenuDialog from './modules/collaboration-role-menu-dialog.vue'
+  import CollaborationRoleActionDialog from './modules/collaboration-role-action-dialog.vue'
 
   defineOptions({ name: 'CollaborationRolesAndPermissions' })
 

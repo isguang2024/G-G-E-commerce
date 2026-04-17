@@ -1,9 +1,9 @@
 <template>
-  <div class="collaborationWorkspace-members-page art-full-height">
-    <template v-if="!collaborationWorkspace">
-      <NoCollaborationState v-if="collaborationWorkspaceLoadDone" />
-      <ElCard v-else shadow="never" class="collaborationWorkspace-members-empty">
-        <div class="collaborationWorkspace-members-loading">
+  <div class="collaboration-members-page art-full-height">
+    <template v-if="!currentCollaboration">
+      <NoCollaborationState v-if="collaborationLoadDone" />
+      <ElCard v-else shadow="never" class="collaboration-members-empty">
+        <div class="collaboration-members-loading">
           <ElIcon class="is-loading" :size="32"><Loading /></ElIcon>
         </div>
       </ElCard>
@@ -15,7 +15,7 @@
         description="这里区分成员身份与协作空间内部角色：成员身份决定协作空间关系边界，协作空间内部角色决定当前协作空间内的权限。"
         :metrics="heroMetrics"
       >
-        <div class="collaborationWorkspace-members-hero-actions">
+        <div class="collaboration-members-hero-actions">
           <ElButton
             v-if="hasAction('collaboration.member.manage')"
             type="primary"
@@ -27,12 +27,12 @@
         </div>
       </AdminWorkspaceHero>
 
-      <ElCard shadow="never" class="art-table-card collaborationWorkspace-members-main">
+      <ElCard shadow="never" class="art-table-card collaboration-members-main">
         <section
           v-if="hasAction('collaboration.member.manage')"
-          class="collaborationWorkspace-members-add art-card"
+          class="collaboration-members-add art-card"
         >
-          <header class="collaborationWorkspace-members-add__header">
+          <header class="collaboration-members-add__header">
             <h3>快速添加</h3>
             <p>可直接录入用户 ID 设置成员身份。</p>
           </header>
@@ -40,7 +40,7 @@
             :model="addForm"
             label-width="80px"
             label-position="top"
-            class="collaborationWorkspace-members-add__form"
+            class="collaboration-members-add__form"
           >
             <ElFormItem label="用户 ID" class="mb-0">
               <ElInput
@@ -64,10 +64,10 @@
           </ElForm>
         </section>
 
-        <section class="collaborationWorkspace-members-table art-card">
+        <section class="collaboration-members-table art-card">
           <ArtTableHeader layout="refresh" :loading="loading" @refresh="loadMembers">
             <template #left>
-              <div class="collaborationWorkspace-members-table-summary">
+              <div class="collaboration-members-table-summary">
                 <strong>成员列表</strong>
                 <span
                   >成员身份变化会影响协作空间边界；协作空间内部角色变化会影响当前协作空间权限快照。</span
@@ -166,7 +166,10 @@
   defineOptions({ name: 'CollaborationMembers' })
 
   const roleDialogRef = ref()
-  const currentMember = ref<Api.SystemManage.CollaborationWorkspaceMemberItem | null>(null)
+  type WorkspaceItem = Api.SystemManage.CollaborationWorkspaceListItem
+  type MemberItem = Api.SystemManage.CollaborationWorkspaceMemberItem
+
+  const currentMember = ref<MemberItem | null>(null)
   const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
   const { hasAction } = useAuth()
@@ -174,9 +177,9 @@
   const { currentAuthWorkspace, currentAuthWorkspaceId, currentAuthWorkspaceType } =
     storeToRefs(workspaceStore)
 
-  const collaborationWorkspace = ref<Api.SystemManage.CollaborationWorkspaceListItem | null>(null)
-  const collaborationWorkspaceLoadDone = ref(false)
-  const members = ref<Api.SystemManage.CollaborationWorkspaceMemberItem[]>([])
+  const currentCollaboration = ref<WorkspaceItem | null>(null)
+  const collaborationLoadDone = ref(false)
+  const members = ref<MemberItem[]>([])
   const hasMemberOperationPermission = computed(() =>
     hasAction('collaboration.member.manage')
   )
@@ -207,9 +210,9 @@
   ])
   const heroTitle = computed(() => {
     const workspaceName =
-      currentAuthWorkspace.value?.name || collaborationWorkspace.value?.name || '当前协作空间'
-    const collaborationWorkspaceName = collaborationWorkspace.value?.name || workspaceName
-    return `协作空间成员（${collaborationWorkspaceName}） · ${workspaceName}`
+      currentAuthWorkspace.value?.name || currentCollaboration.value?.name || '当前协作空间'
+    const collaborationName = currentCollaboration.value?.name || workspaceName
+    return `协作空间成员（${collaborationName}） · ${workspaceName}`
   })
 
   const addForm = reactive({
@@ -222,7 +225,7 @@
     return members.value.slice(start, start + pagination.size)
   })
 
-  function isAdmin(row: Api.SystemManage.CollaborationWorkspaceMemberItem): boolean {
+  function isAdmin(row: MemberItem): boolean {
     return (
       row.roleCode === 'collaboration_admin' ||
       row.role === 'collaboration_admin'
@@ -233,32 +236,32 @@
     return roleCode === 'collaboration_admin' ? '协作空间管理员' : '协作空间成员'
   }
 
-  async function loadMyCollaborationWorkspace() {
-    collaborationWorkspaceLoadDone.value = false
-    collaborationWorkspace.value = null
+  async function loadCurrentCollaboration() {
+    collaborationLoadDone.value = false
+    currentCollaboration.value = null
     members.value = []
 
     if (!hasCollaborations.value) {
-      collaborationWorkspaceLoadDone.value = true
+      collaborationLoadDone.value = true
       return
     }
 
     try {
-      collaborationWorkspace.value = await fetchGetMyCollaboration()
+      currentCollaboration.value = await fetchGetMyCollaboration()
       await loadMembers()
     } catch (e: any) {
       if ([400, 404, 3006].includes(e?.response?.status) || [400, 404, 3006].includes(e?.code)) {
-        collaborationWorkspace.value = null
+        currentCollaboration.value = null
       } else {
         ElMessage.error(e?.message || '获取协作空间信息失败')
       }
     } finally {
-      collaborationWorkspaceLoadDone.value = true
+      collaborationLoadDone.value = true
     }
   }
 
   async function loadMembers() {
-    if (!collaborationWorkspace.value) return
+    if (!currentCollaboration.value) return
     loading.value = true
     try {
       members.value = await fetchGetMyCollaborationMembers()
@@ -272,7 +275,7 @@
     }
   }
 
-  function handleAssignRoles(member: Api.SystemManage.CollaborationWorkspaceMemberItem) {
+  function handleAssignRoles(member: MemberItem) {
     currentMember.value = member
     nextTick(() => {
       roleDialogRef.value?.open()
@@ -281,7 +284,7 @@
 
   function handleCommand(
     command: string,
-    member: Api.SystemManage.CollaborationWorkspaceMemberItem
+    member: MemberItem
   ) {
     if (command === 'assign') {
       handleAssignRoles(member)
@@ -290,7 +293,7 @@
     }
   }
 
-  function removeMember(row: Api.SystemManage.CollaborationWorkspaceMemberItem) {
+  function removeMember(row: MemberItem) {
     if (isAdmin(row)) {
       ElMessage.warning('协作空间管理员不能被移除')
       return
@@ -332,42 +335,42 @@
   }
 
   onMounted(() => {
-    loadMyCollaborationWorkspace()
+    loadCurrentCollaboration()
   })
 
   watch(
     [currentAuthWorkspaceId, currentAuthWorkspaceType],
     ([workspaceId, workspaceType], [oldWorkspaceId, oldWorkspaceType]) => {
       if (workspaceId === oldWorkspaceId && workspaceType === oldWorkspaceType) return
-      loadMyCollaborationWorkspace()
+      loadCurrentCollaboration()
     }
   )
 </script>
 
 <style scoped>
-  .collaborationWorkspace-members-empty {
+  .collaboration-members-empty {
     min-height: 320px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .collaborationWorkspace-members-loading :deep(.el-icon) {
+  .collaboration-members-loading :deep(.el-icon) {
     animation: rotate 1s linear infinite;
   }
 
-  .collaborationWorkspace-members-main {
+  .collaboration-members-main {
     display: grid;
     gap: 14px;
   }
 
-  .collaborationWorkspace-members-hero-actions {
+  .collaboration-members-hero-actions {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  .collaborationWorkspace-members-add {
+  .collaboration-members-add {
     padding: 14px;
     border-radius: 18px;
     border: 1px solid var(--art-card-border);
@@ -375,30 +378,30 @@
     box-shadow: var(--art-shadow-sm);
   }
 
-  .collaborationWorkspace-members-add__header {
+  .collaboration-members-add__header {
     margin-bottom: 12px;
   }
 
-  .collaborationWorkspace-members-add__header h3 {
+  .collaboration-members-add__header h3 {
     margin: 0;
     font-size: 15px;
     color: var(--art-text-strong);
     font-weight: 700;
   }
 
-  .collaborationWorkspace-members-add__header p {
+  .collaboration-members-add__header p {
     margin: 6px 0 0;
     font-size: 12px;
     color: var(--art-text-muted);
   }
 
-  .collaborationWorkspace-members-add__form {
+  .collaboration-members-add__form {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0 14px;
   }
 
-  .collaborationWorkspace-members-table {
+  .collaboration-members-table {
     border: 1px solid var(--art-card-border);
     border-radius: 18px;
     padding: 14px;
@@ -406,18 +409,18 @@
     box-shadow: var(--art-shadow-sm);
   }
 
-  .collaborationWorkspace-members-table-summary {
+  .collaboration-members-table-summary {
     display: grid;
     gap: 4px;
   }
 
-  .collaborationWorkspace-members-table-summary strong {
+  .collaboration-members-table-summary strong {
     font-size: 15px;
     color: var(--art-text-strong);
     font-weight: 700;
   }
 
-  .collaborationWorkspace-members-table-summary span {
+  .collaboration-members-table-summary span {
     font-size: 12px;
     line-height: 1.6;
     color: var(--art-text-muted);
@@ -434,7 +437,7 @@
   }
 
   @media (max-width: 960px) {
-    .collaborationWorkspace-members-add__form {
+    .collaboration-members-add__form {
       grid-template-columns: 1fr;
     }
   }

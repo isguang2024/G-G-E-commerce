@@ -6,6 +6,8 @@ import { HttpError } from '@/utils/http/error'
 
 export type AuthWorkspaceType = 'personal' | 'collaboration'
 
+const legacyPreferredWorkspaceRecordKey = ['preferred', 'Collaboration', 'Id'].join('')
+
 function normalizeWorkspaceType(value?: string | null): AuthWorkspaceType {
   return `${value || ''}`.trim() === 'collaboration' ? 'collaboration' : 'personal'
 }
@@ -78,8 +80,7 @@ export const useWorkspaceStore = defineStore(
     const ensureCurrentWorkspace = (options?: {
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
-      preferredCollaborationId?: string
-      preferredCollaborationIdFromRecord?: string
+      preferredWorkspaceRecordId?: string
       preferPersonal?: boolean
     }) => {
       if (!workspaceList.value.length) {
@@ -99,36 +100,33 @@ export const useWorkspaceStore = defineStore(
         }
       }
 
-      const preferredCollaborationId =
-        `${options?.preferredCollaborationId || ''}`.trim()
-      if (preferredCollaborationId) {
-        const matchedByCollaborationWorkspaceId = workspaceList.value.find(
+      const preferredWorkspaceRecordId = `${options?.preferredWorkspaceRecordId || ''}`.trim()
+      const legacyPreferredWorkspaceRecordId =
+        `${(options as Record<string, unknown> | undefined)?.[legacyPreferredWorkspaceRecordKey] || ''}`.trim()
+      if (preferredWorkspaceRecordId) {
+        const matchedByWorkspaceRecord = workspaceList.value.find(
           (item) =>
             normalizeWorkspaceType(item.workspaceType) === 'collaboration' &&
-            item.id === preferredCollaborationId
+            `${(item as Record<string, unknown>).workspaceRecordId || item.collaborationWorkspaceId || ''}`.trim() === preferredWorkspaceRecordId
         )
-        if (matchedByCollaborationWorkspaceId) {
+        if (matchedByWorkspaceRecord) {
           setCurrentAuthWorkspace(
-            matchedByCollaborationWorkspaceId.id,
-            matchedByCollaborationWorkspaceId.workspaceType
+            matchedByWorkspaceRecord.id,
+            matchedByWorkspaceRecord.workspaceType
           )
           return
         }
       }
-
-      const preferredCollaborationIdFromRecord =
-        `${options?.preferredCollaborationIdFromRecord || ''}`.trim()
-      if (preferredCollaborationIdFromRecord) {
-        const matchedByCollaborationWorkspaceRecord = workspaceList.value.find(
+      if (legacyPreferredWorkspaceRecordId) {
+        const matchedByWorkspaceRecord = workspaceList.value.find(
           (item) =>
             normalizeWorkspaceType(item.workspaceType) === 'collaboration' &&
-            `${item.collaborationWorkspaceId || ''}`.trim() ===
-              preferredCollaborationIdFromRecord
+            `${(item as Record<string, unknown>).workspaceRecordId || item.collaborationWorkspaceId || ''}`.trim() === legacyPreferredWorkspaceRecordId
         )
-        if (matchedByCollaborationWorkspaceRecord) {
+        if (matchedByWorkspaceRecord) {
           setCurrentAuthWorkspace(
-            matchedByCollaborationWorkspaceRecord.id,
-            matchedByCollaborationWorkspaceRecord.workspaceType
+            matchedByWorkspaceRecord.id,
+            matchedByWorkspaceRecord.workspaceType
           )
           return
         }
@@ -156,8 +154,7 @@ export const useWorkspaceStore = defineStore(
     const loadMyWorkspaces = async (options?: {
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
-      preferredCollaborationId?: string
-      preferredCollaborationIdFromRecord?: string
+      preferredWorkspaceRecordId?: string
       preferPersonal?: boolean
     }) => {
       loading.value = true

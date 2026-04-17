@@ -15,10 +15,10 @@
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
         <ElTag type="success" effect="plain" round
-          >已开通 {{ selectedCollaborationWorkspaceIds.length }}</ElTag
+          >已开通 {{ selectedWorkspaceIds.length }}</ElTag
         >
         <ElTag type="info" effect="plain" round
-          >协作空间总数 {{ collaborationWorkspaces.length }}</ElTag
+          >协作空间总数 {{ workspaceRows.length }}</ElTag
         >
       </div>
 
@@ -29,11 +29,11 @@
         class="toolbar-search"
       />
 
-      <ElTable :data="pagedCollaborationWorkspaces" border max-height="420">
+      <ElTable :data="pagedWorkspaceRows" border max-height="420">
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
-              :model-value="selectedCollaborationWorkspaceIds.includes(row.id)"
+              :model-value="selectedWorkspaceIds.includes(row.id)"
               @change="toggleSelection(row.id, $event)"
             />
           </template>
@@ -52,7 +52,7 @@
       <WorkspacePagination
         v-model:current-page="pagination.current"
         v-model:page-size="pagination.size"
-        :total="filteredCollaborationWorkspaces.length"
+        :total="filteredWorkspaceRows.length"
         compact
       />
     </div>
@@ -101,24 +101,24 @@
   const loading = ref(false)
   const saving = ref(false)
   const keyword = ref('')
-  const collaborationWorkspaces = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
-  const selectedCollaborationWorkspaceIds = ref<string[]>([])
+  const workspaceRows = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const selectedWorkspaceIds = ref<string[]>([])
   const pagination = ref({
     current: 1,
     size: 10
   })
 
-  const filteredCollaborationWorkspaces = computed(() => {
+  const filteredWorkspaceRows = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
-    if (!currentKeyword) return collaborationWorkspaces.value
-    return collaborationWorkspaces.value.filter((item) =>
+    if (!currentKeyword) return workspaceRows.value
+    return workspaceRows.value.filter((item) =>
       [item.name, item.remark].filter(Boolean).join(' ').toLowerCase().includes(currentKeyword)
     )
   })
 
-  const pagedCollaborationWorkspaces = computed(() => {
+  const pagedWorkspaceRows = computed(() => {
     const start = (pagination.value.current - 1) * pagination.value.size
-    return filteredCollaborationWorkspaces.value.slice(start, start + pagination.value.size)
+    return filteredWorkspaceRows.value.slice(start, start + pagination.value.size)
   })
 
   watch(
@@ -132,12 +132,12 @@
     if (!props.packageId) return
     loading.value = true
     try {
-      const [collaborationWorkspaceRes, bindingRes] = await Promise.all([
+      const [workspaceRes, bindingRes] = await Promise.all([
         fetchGetCollaborationOptions(),
         fetchGetFeaturePackageCollaborationWorkspaces(props.packageId)
       ])
-      collaborationWorkspaces.value = collaborationWorkspaceRes?.records || []
-      selectedCollaborationWorkspaceIds.value = [...(bindingRes?.collaboration_workspace_ids || [])]
+      workspaceRows.value = workspaceRes?.records || []
+      selectedWorkspaceIds.value = [...(bindingRes?.collaboration_workspace_ids || [])]
       pagination.value.current = 1
     } catch (error: any) {
       ElMessage.error(error?.message || '加载功能包协作空间失败')
@@ -146,19 +146,14 @@
     }
   }
 
-  function toggleSelection(collaborationWorkspaceId: string, checked: boolean | string | number) {
+  function toggleSelection(workspaceId: string, checked: boolean | string | number) {
     if (checked) {
-      if (!selectedCollaborationWorkspaceIds.value.includes(collaborationWorkspaceId)) {
-        selectedCollaborationWorkspaceIds.value = [
-          ...selectedCollaborationWorkspaceIds.value,
-          collaborationWorkspaceId
-        ]
+      if (!selectedWorkspaceIds.value.includes(workspaceId)) {
+        selectedWorkspaceIds.value = [...selectedWorkspaceIds.value, workspaceId]
       }
       return
     }
-    selectedCollaborationWorkspaceIds.value = selectedCollaborationWorkspaceIds.value.filter(
-      (item) => item !== collaborationWorkspaceId
-    )
+    selectedWorkspaceIds.value = selectedWorkspaceIds.value.filter((item) => item !== workspaceId)
   }
 
   async function handleSave() {
@@ -167,7 +162,7 @@
     try {
       const stats = await fetchSetFeaturePackageCollaborationWorkspaces(
         props.packageId,
-        selectedCollaborationWorkspaceIds.value
+        selectedWorkspaceIds.value
       )
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')

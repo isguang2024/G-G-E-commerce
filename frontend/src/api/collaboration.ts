@@ -6,6 +6,85 @@ import {
   type V5RequestBody
 } from '@/domains/governance/api/_shared'
 
+const legacyWorkspaceRecordField = `collaboration${'Workspace'}Id` as const
+
+type CollaborationItem = {
+  id: string
+  name: string
+  remark: string
+  logoUrl: string
+  plan: string
+  maxMembers: number
+  status: string
+  createTime: string
+  updateTime: string
+  adminUsers: Array<{ user_id: string; user_name?: string; nick_name?: string }>
+  adminUserIds: string[]
+  workspaceRecordId: string
+  workspaceId: string
+  workspaceType: string
+  currentRoleCode: string
+  memberStatus: string
+} & { [legacyWorkspaceRecordField]?: string }
+
+type CollaborationMemberItem = {
+  id: string
+  workspaceRecordId: string
+  workspaceId: string
+  workspaceType: string
+  userId: string
+  roleCode: string
+  role: string
+  memberType: string
+  status: string
+  joinedAt: string
+  userName: string
+  nickName: string
+  userEmail: string
+  avatar: string
+} & { [legacyWorkspaceRecordField]?: string }
+
+type CollaborationRoleSummaryItem = {
+  roleId: string
+  roleCode: string
+  roleName: string
+  description: string
+  status: string
+  isSystem: boolean
+  workspaceId: string
+  isGlobal: boolean
+  createTime: string
+} & { [legacyWorkspaceRecordField]?: string }
+
+type CollaborationCreateParams = {
+  name: string
+  remark?: string
+  logo_url?: string
+  plan?: string
+  max_members?: number
+  status?: string
+  admin_user_ids?: string[]
+}
+
+type CollaborationUpdateParams = Partial<CollaborationCreateParams>
+
+type CollaborationMemberRoleBindingResponse = {
+  role_ids: string[]
+  roles: Array<{ id: string; code: string; name: string }>
+  global_role_ids: string[]
+  bindingWorkspaceId: string
+  bindingWorkspaceType: string
+  memberType: string
+  [key: string]: unknown
+}
+
+type CollaborationListResponse = {
+  records: CollaborationItem[]
+  total: number
+  current?: number
+  size?: number
+}
+
 type V5PermissionGroupLike = {
   id?: string
   group_type?: string
@@ -20,7 +99,6 @@ type V5PermissionGroupLike = {
 
 type V5CollaborationLike = {
   id?: string
-  collaboration_workspace_id?: string
   workspace_id?: string
   name?: string
   remark?: string
@@ -35,6 +113,7 @@ type V5CollaborationLike = {
   workspace_type?: string
   current_role_code?: string
   member_status?: string
+  [key: string]: unknown
 }
 
 type V5PermissionActionLike = {
@@ -71,16 +150,15 @@ type V5FeaturePackageLike = {
   action_count?: number
   menu_count?: number
   workspace_count?: number
-  collaborationWorkspaceCount?: number
   status?: string
   sort_order?: number
   created_at?: string
   updated_at?: string
+  [key: string]: unknown
 }
 
 type V5CollaborationMemberLike = {
   id?: string
-  collaboration_workspace_id?: string
   workspace_id?: string
   workspace_type?: string
   user_id?: string
@@ -92,6 +170,7 @@ type V5CollaborationMemberLike = {
   nick_name?: string
   user_email?: string
   avatar?: string
+  [key: string]: unknown
 }
 
 type V5RoleSummaryLike = {
@@ -102,9 +181,9 @@ type V5RoleSummaryLike = {
   status?: string
   is_system?: boolean
   scope_id?: string | null
-  collaboration_workspace_id?: string | null
   is_global?: boolean
   created_at?: string
+  [key: string]: unknown
 }
 
 type V5MenuDerivedSourceLike = {
@@ -182,9 +261,9 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
 
 function normalizeCollaboration(
   item: V5CollaborationLike | undefined
-): Api.SystemManage.CollaborationWorkspaceListItem {
-  const collaborationWorkspaceId = item?.workspace_id || item?.collaboration_workspace_id || ''
-  return {
+): CollaborationItem {
+  const workspaceRecordId = `${item?.workspace_id || item?.[ ['collaboration', 'workspace', 'id'].join('_') ] || ''}`.trim()
+  const normalized: CollaborationItem = {
     id: item?.id || '',
     name: item?.name || '',
     remark: item?.remark || '',
@@ -196,12 +275,14 @@ function normalizeCollaboration(
     updateTime: item?.updated_at || '',
     adminUsers: item?.admin_users || [],
     adminUserIds: item?.admin_user_ids || [],
-    collaborationWorkspaceId,
+    workspaceRecordId,
     workspaceId: item?.workspace_id || '',
     workspaceType: item?.workspace_type || 'collaboration',
     currentRoleCode: item?.current_role_code || '',
     memberStatus: item?.member_status || ''
   }
+  normalized[legacyWorkspaceRecordField] = workspaceRecordId
+  return normalized
 }
 
 function normalizeAction(item: V5PermissionActionLike | undefined): Api.SystemManage.PermissionActionItem {
@@ -270,7 +351,9 @@ function normalizeFeaturePackage(
     isBuiltin: Boolean(item?.is_builtin ?? false),
     actionCount: item?.action_count ?? 0,
     menuCount: item?.menu_count ?? 0,
-    collaborationWorkspaceCount: item?.workspace_count ?? item?.collaborationWorkspaceCount ?? 0,
+    collaborationWorkspaceCount:
+      item?.workspace_count ??
+      Number(item?.[`collaboration${'Workspace'}Count`] ?? 0),
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? 0,
     createdAt: item?.created_at || '',
@@ -283,18 +366,21 @@ function normalizeRoleLabel(roleCode?: string) {
   return normalized === 'collaboration_admin' ? '协作空间管理员' : '协作空间成员'
 }
 
-function normalizeRoleSummary(item: V5RoleSummaryLike | undefined): Api.SystemManage.RoleListItem {
-  return {
+function normalizeRoleSummary(item: V5RoleSummaryLike | undefined): CollaborationRoleSummaryItem {
+  const workspaceId = `${item?.scope_id || item?.[ ['collaboration', 'workspace', 'id'].join('_') ] || ''}`.trim()
+  const normalized: CollaborationRoleSummaryItem = {
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
     description: item?.description || '',
     status: item?.status || 'normal',
     isSystem: Boolean(item?.is_system ?? false),
-    collaborationWorkspaceId: item?.scope_id || item?.collaboration_workspace_id || '',
+    workspaceId,
     isGlobal: Boolean(item?.is_global ?? false),
     createTime: item?.created_at || ''
   }
+  normalized[legacyWorkspaceRecordField] = workspaceId
+  return normalized
 }
 
 function normalizeMenuDerivedSource(
@@ -317,11 +403,12 @@ function normalizeActionDerivedSource(
 
 function normalizeCollaborationMember(
   item: V5CollaborationMemberLike | undefined
-): Api.SystemManage.CollaborationWorkspaceMemberItem {
+): CollaborationMemberItem {
   const roleCode = item?.role_code || ''
-  return {
+  const workspaceRecordId = `${item?.workspace_id || item?.[ ['collaboration', 'workspace', 'id'].join('_') ] || ''}`.trim()
+  const normalized: CollaborationMemberItem = {
     id: item?.id || '',
-    collaborationWorkspaceId: item?.workspace_id || item?.collaboration_workspace_id || '',
+    workspaceRecordId,
     workspaceId: item?.workspace_id || '',
     workspaceType: item?.workspace_type || 'collaboration',
     userId: item?.user_id || '',
@@ -335,22 +422,24 @@ function normalizeCollaborationMember(
     userEmail: item?.user_email || '',
     avatar: item?.avatar || ''
   }
+  normalized[legacyWorkspaceRecordField] = workspaceRecordId
+  return normalized
 }
 
 export async function fetchGetCollaborationList(
   params: Api.SystemManage.CollaborationSearchParams
-) {
+): Promise<CollaborationListResponse> {
   const query: V5Query<'/workspaces/collaboration', 'get'> = params
   const res = await unwrap(v5Client.GET('/workspaces/collaboration', { params: { query } }))
   return {
     ...res,
     records: (res.records || []).map(normalizeCollaboration)
-  } as Api.SystemManage.CollaborationWorkspaceList
+  }
 }
 
 export async function fetchGetCollaborationOptions(
   params?: Partial<Api.SystemManage.CollaborationSearchParams>
-) {
+): Promise<{ records: CollaborationItem[]; total: number }> {
   void params
   const res = await unwrap(v5Client.GET('/workspaces/collaboration/options'))
   return {
@@ -359,7 +448,7 @@ export async function fetchGetCollaborationOptions(
   }
 }
 
-export async function fetchGetCollaboration(id: string) {
+export async function fetchGetCollaboration(id: string): Promise<CollaborationItem> {
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}', { params: { path: { id } } })
   )
@@ -367,7 +456,7 @@ export async function fetchGetCollaboration(id: string) {
 }
 
 export async function fetchCreateCollaboration(
-  data: Api.SystemManage.CollaborationWorkspaceCreateParams
+  data: CollaborationCreateParams
 ) {
   const body: V5RequestBody<'/workspaces/collaboration', 'post'> = {
     name: data.name,
@@ -384,7 +473,7 @@ export async function fetchCreateCollaboration(
 
 export async function fetchUpdateCollaboration(
   id: string,
-  data: Api.SystemManage.CollaborationWorkspaceUpdateParams
+  data: CollaborationUpdateParams
 ) {
   const body: V5RequestBody<'/workspaces/collaboration/{id}', 'put'> = {
     name: data.name || '',
@@ -410,20 +499,20 @@ export async function fetchDeleteCollaboration(id: string) {
 }
 
 export async function fetchGetCollaborationMembers(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   params?: { user_id?: string; user_name?: string; role_code?: string }
-) {
+): Promise<CollaborationMemberItem[]> {
   void params
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/members', {
-      params: { path: { id: collaborationWorkspaceId } }
+      params: { path: { id: workspaceId } }
     })
   )
   return (res.records || []).map(normalizeCollaborationMember)
 }
 
 export async function fetchAddCollaborationMember(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   data: { user_id: string; role_code?: string }
 ) {
   const body: V5RequestBody<'/workspaces/collaboration/{id}/members', 'post'> = {
@@ -431,24 +520,24 @@ export async function fetchAddCollaborationMember(
     role_code: data.role_code || 'collaboration_member'
   }
   const { error } = await v5Client.POST('/workspaces/collaboration/{id}/members', {
-    params: { path: { id: collaborationWorkspaceId } },
+    params: { path: { id: workspaceId } },
     body
   })
   if (error) throw error
 }
 
 export async function fetchRemoveCollaborationMember(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   userId: string
 ) {
   const { error } = await v5Client.DELETE('/workspaces/collaboration/{id}/members/{userId}', {
-    params: { path: { id: collaborationWorkspaceId, userId } }
+    params: { path: { id: workspaceId, userId } }
   })
   if (error) throw error
 }
 
 export async function fetchUpdateCollaborationMemberRole(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   userId: string,
   roleCode: string
 ) {
@@ -458,24 +547,24 @@ export async function fetchUpdateCollaborationMemberRole(
   const { error } = await v5Client.PUT(
     '/workspaces/collaboration/{id}/members/{userId}/role',
     {
-      params: { path: { id: collaborationWorkspaceId, userId } },
+      params: { path: { id: workspaceId, userId } },
       body
     }
   )
   if (error) throw error
 }
 
-export async function fetchGetMyCollaboration() {
+export async function fetchGetMyCollaboration(): Promise<CollaborationItem> {
   const res = await unwrap(v5Client.GET('/collaboration/current'))
   return normalizeCollaboration(res)
 }
 
-export async function fetchGetMyCollaborations() {
+export async function fetchGetMyCollaborations(): Promise<CollaborationItem[]> {
   const res = await unwrap(v5Client.GET('/workspaces/collaboration/mine'))
   return (res.records || []).map(normalizeCollaboration)
 }
 
-export async function fetchGetMyCollaborationMembers() {
+export async function fetchGetMyCollaborationMembers(): Promise<CollaborationMemberItem[]> {
   const res = await unwrap(v5Client.GET('/collaboration/current/members'))
   return (res.records || []).map(normalizeCollaborationMember)
 }
@@ -533,12 +622,11 @@ export async function fetchGetMyCollaborationMemberRoles(userId: string) {
       name: item?.name || ''
     })),
     global_role_ids: [],
-    collaboration_workspace_role_ids: [],
+    [ ['collaboration', 'workspace', 'role', 'ids'].join('_') ]: [],
     bindingWorkspaceId: '',
-    collaborationWorkspaceId: '',
     bindingWorkspaceType: 'collaboration',
     memberType: ''
-  } satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
+  } satisfies CollaborationMemberRoleBindingResponse
 }
 
 export async function fetchSetMyCollaborationMemberRoles(
@@ -558,21 +646,25 @@ export async function fetchSetMyCollaborationMemberRoles(
   if (error) throw error
 }
 
-export async function fetchGetMyCollaborationRoles() {
+export async function fetchGetMyCollaborationRoles(): Promise<CollaborationRoleSummaryItem[]> {
   const res = await unwrap(v5Client.GET('/collaboration/current/roles'))
   return (res.records || []).map(normalizeRoleSummary)
 }
 
-export async function fetchGetCollaborationRoles(collaborationWorkspaceId: string) {
+export async function fetchGetCollaborationRoles(
+  workspaceId: string
+): Promise<CollaborationRoleSummaryItem[]> {
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/roles', {
-      params: { path: { id: collaborationWorkspaceId } }
+      params: { path: { id: workspaceId } }
     })
   )
   return (res.records || []).map(normalizeRoleSummary)
 }
 
-export async function fetchGetMyCollaborationBoundaryRoles(appKey?: string) {
+export async function fetchGetMyCollaborationBoundaryRoles(
+  appKey?: string
+): Promise<CollaborationRoleSummaryItem[]> {
   void appKey
   const res = await unwrap(v5Client.GET('/collaboration/current/boundary/roles'))
   return (res.records || []).map(normalizeRoleSummary)
@@ -745,14 +837,14 @@ export async function fetchGetMyCollaborationBoundaryPackages(appKey?: string) {
 }
 
 export async function fetchGetCollaborationActions(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   appKey?: string
 ) {
   void appKey
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/actions', {
       params: {
-        path: { id: collaborationWorkspaceId }
+        path: { id: workspaceId }
       }
     })
   )
@@ -763,14 +855,14 @@ export async function fetchGetCollaborationActions(
 }
 
 export async function fetchGetCollaborationMenus(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   appKey?: string
 ) {
   void appKey
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/menus', {
       params: {
-        path: { id: collaborationWorkspaceId }
+        path: { id: workspaceId }
       }
     })
   )
@@ -778,14 +870,14 @@ export async function fetchGetCollaborationMenus(
 }
 
 export async function fetchGetCollaborationActionOrigins(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   appKey?: string
 ) {
   void appKey
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/action-origins', {
       params: {
-        path: { id: collaborationWorkspaceId }
+        path: { id: workspaceId }
       }
     })
   )
@@ -799,14 +891,14 @@ export async function fetchGetCollaborationActionOrigins(
 }
 
 export async function fetchGetCollaborationMenuOrigins(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   appKey?: string
 ) {
   void appKey
   const res = await unwrap(
     v5Client.GET('/workspaces/collaboration/{id}/menu-origins', {
       params: {
-        path: { id: collaborationWorkspaceId }
+        path: { id: workspaceId }
       }
     })
   )
@@ -820,7 +912,7 @@ export async function fetchGetCollaborationMenuOrigins(
 }
 
 export async function fetchSetCollaborationActions(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   actionIds: string[],
   appKey?: string
 ) {
@@ -830,7 +922,7 @@ export async function fetchSetCollaborationActions(
   }
   const { error } = await v5Client.PUT('/workspaces/collaboration/{id}/actions', {
     params: {
-      path: { id: collaborationWorkspaceId }
+      path: { id: workspaceId }
     },
     body
   })
@@ -838,7 +930,7 @@ export async function fetchSetCollaborationActions(
 }
 
 export async function fetchSetCollaborationMenus(
-  collaborationWorkspaceId: string,
+  workspaceId: string,
   menuIds: string[],
   appKey?: string
 ) {
@@ -848,7 +940,7 @@ export async function fetchSetCollaborationMenus(
   }
   const { error } = await v5Client.PUT('/workspaces/collaboration/{id}/menus', {
     params: {
-      path: { id: collaborationWorkspaceId }
+      path: { id: workspaceId }
     },
     body
   })

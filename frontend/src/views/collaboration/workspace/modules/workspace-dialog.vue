@@ -96,7 +96,7 @@
   interface Props {
     visible: boolean
     type: 'add' | 'edit'
-    collaborationWorkspaceData?: Partial<Api.SystemManage.CollaborationWorkspaceListItem>
+    workspaceData?: Partial<Api.SystemManage.CollaborationWorkspaceListItem>
   }
 
   interface Emits {
@@ -211,16 +211,16 @@
     async (visible) => {
       if (!visible) return
 
-      const collaborationWorkspaceData = props.collaborationWorkspaceData
-      if (props.type === 'edit' && collaborationWorkspaceData) {
-        formData.name = collaborationWorkspaceData.name ?? ''
-        formData.remark = collaborationWorkspaceData.remark ?? ''
-        const adminUsers = resolveAdminUsers(collaborationWorkspaceData)
+      const workspaceData = props.workspaceData
+      if (props.type === 'edit' && workspaceData) {
+        formData.name = workspaceData.name ?? ''
+        formData.remark = workspaceData.remark ?? ''
+        const adminUsers = resolveAdminUsers(workspaceData)
         formData.admin_user_ids = adminUsers.map((admin) => admin.user_id || admin.id || '')
-        formData.logo_url = collaborationWorkspaceData.logoUrl ?? ''
-        formData.plan = collaborationWorkspaceData.plan ?? 'free'
-        formData.max_members = collaborationWorkspaceData.maxMembers ?? 10
-        formData.status = collaborationWorkspaceData.status ?? 'active'
+        formData.logo_url = workspaceData.logoUrl ?? ''
+        formData.plan = workspaceData.plan ?? 'free'
+        formData.max_members = workspaceData.maxMembers ?? 10
+        formData.status = workspaceData.status ?? 'active'
 
         if (formData.admin_user_ids.length > 0) {
           await loadAdminUsers(formData.admin_user_ids)

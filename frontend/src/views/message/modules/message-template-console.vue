@@ -383,9 +383,9 @@
 
   const resolveScopeLabel = (item: Api.Message.MessageTemplateItem) => {
     if (item.owner_scope === 'collaboration') {
-      const collaborationWorkspaceName = item.owner_collaboration_workspace_name
-      return collaborationWorkspaceName
-        ? `协作空间 · ${collaborationWorkspaceName}`
+      const workspaceName = `${(item as unknown as Record<string, unknown>).owner_workspace_name || ''}`.trim()
+      return workspaceName
+        ? `协作空间 · ${workspaceName}`
         : '协作空间模板'
     }
     return '全局模板'

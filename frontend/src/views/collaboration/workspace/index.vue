@@ -59,7 +59,7 @@
       <CollaborationDialog
         v-model:visible="dialogVisible"
         :type="dialogType"
-        :collaboration-data="currentCollaborationData"
+        :workspace-data="currentWorkspaceData"
         @submit="handleDialogSubmit"
       />
 
@@ -133,7 +133,7 @@
 
   defineOptions({ name: 'CollaborationManagement' })
 
-  type CollaborationWorkspaceListItem = Api.SystemManage.CollaborationWorkspaceListItem
+  type WorkspaceListItem = Api.SystemManage.CollaborationWorkspaceListItem
   type AdminCandidate = {
     id?: string
     user_id?: string
@@ -141,7 +141,7 @@
     username?: string
     email?: string
   }
-  type CollaborationWorkspaceWithAdmins = CollaborationWorkspaceListItem & {
+  type WorkspaceWithAdmins = WorkspaceListItem & {
     adminUsers?: AdminCandidate[]
     admin_users?: AdminCandidate[]
   }
@@ -150,15 +150,15 @@
   const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
 
-  const resolveAdminUsers = (item?: CollaborationWorkspaceListItem): AdminCandidate[] => {
-    const normalized = item as CollaborationWorkspaceWithAdmins | undefined
+  const resolveAdminUsers = (item?: WorkspaceListItem): AdminCandidate[] => {
+    const normalized = item as WorkspaceWithAdmins | undefined
     return normalized?.adminUsers || normalized?.admin_users || []
   }
 
   const dialogType = ref<DialogType>('add')
   const selectedAppKey = ref('')
   const dialogVisible = ref(false)
-  const currentCollaborationData = ref<Partial<CollaborationWorkspaceListItem>>({})
+  const currentWorkspaceData = ref<Partial<WorkspaceListItem>>({})
   const showSearchBar = ref(false)
   const membersDrawerVisible = ref(false)
   const actionDialogVisible = ref(false)
@@ -197,24 +197,12 @@
     }
   ])
 
-  const {
-    columns,
-    columnChecks,
-    data,
-    loading,
-    pagination,
-    getData,
-    searchParams,
-    resetSearchParams,
-    handleSizeChange,
-    handleCurrentChange,
-    refreshData
-  } = useTable({
+  const table = useTable({
     core: {
-      apiFn: async (params) => {
+      apiFn: async (params: Record<string, any>) => {
         if (!targetAppKey.value || !hasAction('workspace.manage')) {
           return {
-            records: [],
+            records: [] as WorkspaceListItem[],
             total: 0,
             current: Number(params?.current || 1),
             size: Number(params?.size || 20)
@@ -238,7 +226,7 @@
           prop: 'adminUsers',
           label: '管理员',
           width: 200,
-          formatter: (row: CollaborationWorkspaceListItem) => {
+          formatter: (row: WorkspaceListItem) => {
             // 兼容 adminUsers 和 admin_users 两种字段名
             const admins = resolveAdminUsers(row)
             if (!admins.length) return '-'
@@ -264,7 +252,7 @@
           prop: 'status',
           label: '状态',
           width: 90,
-          formatter: (row) => {
+          formatter: (row: WorkspaceListItem) => {
             const cfg = getStatusConfig(row.status)
             return h(ElTag, { type: cfg.type }, () => cfg.text)
           }
@@ -275,7 +263,7 @@
           label: '操作',
           width: 60,
           fixed: 'right',
-          formatter: (row) => {
+          formatter: (row: WorkspaceListItem) => {
             const dropdown = h(
               ElDropdown,
               {
@@ -331,9 +319,21 @@
       ]
     },
     transform: {
-      dataTransformer: (records) => (Array.isArray(records) ? records : [])
+      dataTransformer: (records: WorkspaceListItem[]) => (Array.isArray(records) ? records : [])
     }
-  })
+  } as any)
+
+  const columns = table.columns as any
+  const columnChecks = table.columnChecks as any
+  const data = computed(() => (((table.data as any)?.value || []) as WorkspaceListItem[]))
+  const loading = computed(() => Boolean((table.loading as any)?.value))
+  const pagination = table.pagination as any
+  const getData = table.getData as () => Promise<void>
+  const searchParams = table.searchParams as Record<string, any>
+  const resetSearchParams = table.resetSearchParams as () => void
+  const handleSizeChange = table.handleSizeChange as (value: number) => void
+  const handleCurrentChange = table.handleCurrentChange as (value: number) => void
+  const refreshData = table.refreshData as () => Promise<void>
 
   const handleSearch = (params: Record<string, any>) => {
     Object.assign(searchParams, { ...params, appKey: targetAppKey.value || '' })
@@ -362,15 +362,15 @@
     })
   }
 
-  const showDialog = (type: DialogType, row?: CollaborationWorkspaceListItem) => {
+  const showDialog = (type: DialogType, row?: WorkspaceListItem) => {
     dialogType.value = type
-    currentCollaborationData.value = row ? { ...row } : {}
+    currentWorkspaceData.value = row ? { ...row } : {}
     nextTick(() => {
       dialogVisible.value = true
     })
   }
 
-  const handleOperationCommand = (command: string, row: CollaborationWorkspaceListItem) => {
+  const handleOperationCommand = (command: string, row: WorkspaceListItem) => {
     if (command === 'edit') {
       showDialog('edit', row)
     } else if (command === 'view') {
@@ -382,35 +382,35 @@
     } else if (command === 'package') {
       showFeaturePackages(row)
     } else if (command === 'delete') {
-      deleteCollaborationWorkspace(row)
+      deleteWorkspace(row)
     }
   }
 
-  const showMembers = (row: CollaborationWorkspaceListItem) => {
+  const showMembers = (row: WorkspaceListItem) => {
     currentCollaborationId.value = row.id
     currentCollaborationName.value = row.name
     membersDrawerVisible.value = true
   }
 
-  const showActionPermissions = (row: CollaborationWorkspaceListItem) => {
+  const showActionPermissions = (row: WorkspaceListItem) => {
     currentCollaborationId.value = row.id
     currentCollaborationName.value = row.name
     actionDialogVisible.value = true
   }
 
-  const showMenuPermissions = (row: CollaborationWorkspaceListItem) => {
+  const showMenuPermissions = (row: WorkspaceListItem) => {
     currentCollaborationId.value = row.id
     currentCollaborationName.value = row.name
     menuDialogVisible.value = true
   }
 
-  const showFeaturePackages = (row: CollaborationWorkspaceListItem) => {
+  const showFeaturePackages = (row: WorkspaceListItem) => {
     currentCollaborationId.value = row.id
     currentCollaborationName.value = row.name
     packageDialogVisible.value = true
   }
 
-  const deleteCollaborationWorkspace = (row: CollaborationWorkspaceListItem) => {
+  const deleteWorkspace = (row: WorkspaceListItem) => {
     ElMessageBox.confirm(`确定要删除协作空间「${row.name}」吗？`, '删除协作空间', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -446,7 +446,7 @@
         await refreshWorkspaceContexts(created?.id)
         ElMessage.success('添加成功')
       } else {
-        const id = (currentCollaborationData.value as CollaborationWorkspaceListItem).id
+        const id = (currentWorkspaceData.value as WorkspaceListItem).id
         if (!id) return
         await fetchUpdateCollaboration(
           id,
@@ -456,7 +456,7 @@
         ElMessage.success('更新成功')
       }
       dialogVisible.value = false
-      currentCollaborationData.value = {}
+      currentWorkspaceData.value = {}
       refreshData()
     } catch (e: any) {
       ElMessage.error(e?.message || (isAdd ? '添加失败' : '更新失败'))

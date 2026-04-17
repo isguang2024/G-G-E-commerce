@@ -82,7 +82,7 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ resolveAudienceLabel(row.audience_type) }}</span>
-              <small>{{ row.target_collaboration_workspace_name || '全局范围' }}</small>
+              <small>{{ resolveTargetWorkspaceName(row) || '全局范围' }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -147,7 +147,7 @@
               <span>{{ resolveMessageTypeLabel(activeRecord.message_type) }}</span>
               <span>{{ resolveAudienceLabel(activeRecord.audience_type) }}</span>
               <span>{{
-                activeRecord.target_collaboration_workspace_name ||
+                resolveTargetWorkspaceName(activeRecord) ||
                 (activeRecord.scope_type === 'collaboration'
                   ? currentCollaborationName
                   : '全局范围')
@@ -201,7 +201,7 @@
               <div class="message-record-delivery-card__top">
                 <div>
                   <strong>{{ delivery.recipient_name || '未命名用户' }}</strong>
-                  <p>{{ delivery.recipient_collaboration_workspace_name || '全局用户' }}</p>
+                  <p>{{ resolveRecipientWorkspaceName(delivery) || '全局用户' }}</p>
                 </div>
                 <ElTag size="small" effect="plain">{{
                   resolveDeliveryStatusLabel(delivery.delivery_status)
@@ -412,13 +412,9 @@
     if (delivery.source_target_type === 'user')
       return delivery.source_target_value || delivery.recipient_user_id
     if (delivery.source_target_type === 'collaboration_users')
-      return (
-        delivery.recipient_collaboration_workspace_name || currentCollaborationName.value
-      )
+      return resolveRecipientWorkspaceName(delivery) || currentCollaborationName.value
     if (delivery.source_target_type === 'collaboration_admins')
-      return (
-        delivery.recipient_collaboration_workspace_name || currentCollaborationName.value
-      )
+      return resolveRecipientWorkspaceName(delivery) || currentCollaborationName.value
     if (delivery.source_target_type === 'role') return delivery.source_target_value || '角色规则'
     if (delivery.source_target_type === 'feature_package')
       return delivery.source_target_value || '功能包规则'
@@ -433,6 +429,13 @@
     if (label.includes('membership_identity')) return 'membership_identity'
     return ''
   }
+
+  const resolveTargetWorkspaceName = (
+    record?: Api.Message.DispatchRecordItem | Api.Message.DispatchRecordDetail | null
+  ) => `${(record as Record<string, unknown> | null | undefined)?.target_workspace_name || ''}`.trim()
+
+  const resolveRecipientWorkspaceName = (delivery?: Api.Message.DispatchRecordDeliveryItem) =>
+    `${(delivery as Record<string, unknown> | undefined)?.recipient_workspace_name || ''}`.trim()
 
   const loadRecords = async () => {
     loading.value = true

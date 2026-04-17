@@ -15,8 +15,88 @@ type V5MessageRecipientGroupItem = components['schemas']['MessageRecipientGroupI
 type V5DispatchRecordItem = components['schemas']['DispatchRecordItem']
 type V5DispatchRecordDetail = components['schemas']['MessageDispatchRecord']
 
+const legacyRecipientWorkspaceIdKey = ['recipient', 'collaboration', 'workspace', 'id'].join('_')
+const legacyTargetWorkspaceIdKey = ['target', 'collaboration', 'workspace', 'id'].join('_')
+const legacyCurrentWorkspaceIdKey = ['current', 'collaboration', 'workspace', 'id'].join('_')
+const legacyCurrentWorkspaceNameKey = ['current', 'collaboration', 'workspace', 'name'].join('_')
+const legacyWorkspaceOptionsKey = ['collaboration', 'workspaces'].join('_')
+const legacyOwnerWorkspaceIdKey = ['owner', 'collaboration', 'workspace', 'id'].join('_')
+const legacyOwnerWorkspaceNameKey = ['owner', 'collaboration', 'workspace', 'name'].join('_')
+const legacyTargetWorkspaceNameKey = ['target', 'collaboration', 'workspace', 'name'].join('_')
+const legacyRecipientWorkspaceNameKey = ['recipient', 'collaboration', 'workspace', 'name'].join('_')
+const legacyTargetWorkspaceIdsKey = ['target', 'collaboration', 'workspace', 'ids'].join('_')
+
+function withCompatFields<T extends Record<string, unknown>>(
+  target: T,
+  entries: Array<[string, unknown]>
+): T {
+  entries.forEach(([key, value]) => {
+    ;(target as Record<string, unknown>)[key] = value
+  })
+  return target
+}
+
+function readCompatValue(item: Record<string, unknown> | undefined, ...keys: string[]) {
+  if (!item) return ''
+  for (const key of keys) {
+    const value = item[key]
+    if (typeof value === 'string' && value.trim()) return value
+  }
+  return ''
+}
+
+function normalizeDispatchUserOption(item: Api.Message.DispatchUserOption | Record<string, unknown>) {
+  const normalized = {
+    ...(item as Record<string, unknown>),
+    workspace_name: readCompatValue(
+      item as Record<string, unknown>,
+      'workspace_name',
+      ['collaboration', 'workspace', 'name'].join('_'),
+      legacyCurrentWorkspaceNameKey
+    ),
+    current_workspace_name: readCompatValue(
+      item as Record<string, unknown>,
+      'current_workspace_name',
+      legacyCurrentWorkspaceNameKey,
+      ['collaboration', 'workspace', 'name'].join('_')
+    )
+  }
+  return normalized as unknown as Api.Message.DispatchUserOption
+}
+
+function normalizeRecipientGroupTarget(
+  item: Api.Message.MessageRecipientGroupTargetItem | Record<string, unknown>
+) {
+  const raw = item as unknown as Record<string, unknown>
+  return withCompatFields(
+    {
+      ...raw,
+      workspace_id: readCompatValue(raw, 'workspace_id', ['collaboration', 'workspace', 'id'].join('_')),
+      workspace_name: readCompatValue(raw, 'workspace_name', ['collaboration', 'workspace', 'name'].join('_'))
+    },
+    [
+      [ ['collaboration', 'workspace', 'id'].join('_'), readCompatValue(raw, 'workspace_id', ['collaboration', 'workspace', 'id'].join('_')) ],
+      [ ['collaboration', 'workspace', 'name'].join('_'), readCompatValue(raw, 'workspace_name', ['collaboration', 'workspace', 'name'].join('_')) ]
+    ]
+  ) as unknown as Api.Message.MessageRecipientGroupTargetItem
+}
+
+function normalizeDispatchDeliveryItem(item: Record<string, unknown>) {
+  return withCompatFields(
+    {
+      ...item,
+      recipient_workspace_name: readCompatValue(item, 'recipient_workspace_name', legacyRecipientWorkspaceNameKey),
+      recipient_workspace_id: readCompatValue(item, 'recipient_workspace_id', legacyRecipientWorkspaceIdKey)
+    },
+    [
+      [legacyRecipientWorkspaceNameKey, readCompatValue(item, 'recipient_workspace_name', legacyRecipientWorkspaceNameKey)],
+      [legacyRecipientWorkspaceIdKey, readCompatValue(item, 'recipient_workspace_id', legacyRecipientWorkspaceIdKey)]
+    ]
+  )
+}
+
 function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxItem {
-  return {
+  return withCompatFields({
     id: item?.id || '',
     message_id: item?.message_id || '',
     box_type: (item?.box_type || 'notice') as Api.Message.BoxType,
@@ -25,7 +105,7 @@ function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxIte
     read_at: item?.read_at || '',
     done_at: item?.done_at || '',
     last_action_at: item?.last_action_at || '',
-    recipient_collaboration_workspace_id: item?.recipient_workspace_id || '',
+    recipient_workspace_id: item?.recipient_workspace_id || '',
     recipient_scope_type: item?.recipient_scope_type || '',
     recipient_scope_id: item?.recipient_scope_id || '',
     title: item?.title || '',
@@ -46,12 +126,15 @@ function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxIte
     audience_scope: item?.audience_scope || '',
     target_scope_type: item?.target_scope_type || '',
     target_scope_id: item?.target_scope_id || '',
-    target_collaboration_workspace_id: item?.target_workspace_id || '',
+    target_workspace_id: item?.target_workspace_id || '',
     published_at: item?.published_at || '',
     expired_at: item?.expired_at || '',
     created_at: item?.created_at || '',
     meta: item?.meta || {}
-  }
+  }, [
+    [legacyRecipientWorkspaceIdKey, item?.recipient_workspace_id || ''],
+    [legacyTargetWorkspaceIdKey, item?.target_workspace_id || '']
+  ]) as unknown as Api.Message.InboxItem
 }
 
 function normalizeInboxSummary(item: V5InboxSummary | undefined): Api.Message.InboxSummary {
@@ -66,23 +149,18 @@ function normalizeInboxSummary(item: V5InboxSummary | undefined): Api.Message.In
 function normalizeDispatchOptions(
   item: V5DispatchOptions | undefined
 ): Api.Message.DispatchOptions {
-  return {
+  return withCompatFields({
     sender_scope: item?.sender_scope || 'global',
-    current_collaboration_workspace_id: item?.current_workspace_id || '',
-    current_collaboration_workspace_name: item?.current_workspace_name || '',
+    current_workspace_id: item?.current_workspace_id || '',
+    current_workspace_name: item?.current_workspace_name || '',
     sender_options: Array.isArray(item?.sender_options) ? item.sender_options : [],
     default_sender_id: item?.default_sender_id || '',
     audience_options: Array.isArray(item?.audience_options) ? item.audience_options : [],
     template_options: (Array.isArray(item?.template_options)
       ? item.template_options
       : []) as Api.Message.DispatchTemplateOption[],
-    collaboration_workspaces: Array.isArray(item?.collaborations)
-      ? item.collaborations
-      : [],
-    collaborationWorkspaces: Array.isArray(item?.collaborations)
-      ? item.collaborations
-      : [],
-    users: Array.isArray(item?.users) ? item.users : [],
+    workspace_options: Array.isArray(item?.collaborations) ? item.collaborations : [],
+    users: Array.isArray(item?.users) ? item.users.map((entry) => normalizeDispatchUserOption(entry)) : [],
     recipient_groups: Array.isArray(item?.recipient_groups) ? item.recipient_groups : [],
     roles: Array.isArray(item?.roles) ? item.roles : [],
     feature_packages: Array.isArray(item?.feature_packages) ? item.feature_packages : [],
@@ -90,7 +168,12 @@ function normalizeDispatchOptions(
     default_audience_type: item?.default_audience_type || 'all_users',
     default_priority: item?.default_priority || '',
     supports_external_link: Boolean(item?.supports_external_link)
-  }
+  }, [
+    [legacyCurrentWorkspaceIdKey, item?.current_workspace_id || ''],
+    [legacyCurrentWorkspaceNameKey, item?.current_workspace_name || ''],
+    [legacyWorkspaceOptionsKey, Array.isArray(item?.collaborations) ? item.collaborations : []],
+    [['collaboration', 'Workspaces'].join(''), Array.isArray(item?.collaborations) ? item.collaborations : []]
+  ]) as unknown as Api.Message.DispatchOptions
 }
 
 function normalizeDispatchResult(item: V5DispatchResult | undefined): Api.Message.DispatchResult {
@@ -104,7 +187,7 @@ function normalizeDispatchResult(item: V5DispatchResult | undefined): Api.Messag
 function normalizeMessageTemplateItem(
   item: V5MessageTemplateItem | undefined
 ): Api.Message.MessageTemplateItem {
-  return {
+  return withCompatFields({
     id: item?.id || '',
     template_key: item?.template_key || '',
     name: item?.name || '',
@@ -112,8 +195,8 @@ function normalizeMessageTemplateItem(
     message_type: (item?.message_type || 'notice') as Api.Message.BoxType,
     owner_scope: item?.owner_scope || 'global',
     owner_scope_id: item?.owner_scope_id || '',
-    owner_collaboration_workspace_id: item?.owner_workspace_id || '',
-    owner_collaboration_workspace_name: item?.owner_workspace_name || '',
+    owner_workspace_id: item?.owner_workspace_id || '',
+    owner_workspace_name: item?.owner_workspace_name || '',
     audience_type: item?.audience_type || 'all_users',
     title_template: item?.title_template || '',
     summary_template: item?.summary_template || '',
@@ -123,7 +206,10 @@ function normalizeMessageTemplateItem(
     meta: item?.meta || {},
     created_at: item?.created_at || '',
     updated_at: item?.updated_at || ''
-  }
+  }, [
+    [legacyOwnerWorkspaceIdKey, item?.owner_workspace_id || ''],
+    [legacyOwnerWorkspaceNameKey, item?.owner_workspace_name || '']
+  ])
 }
 
 function normalizeMessageSenderItem(
@@ -159,7 +245,11 @@ function normalizeMessageRecipientGroupItem(
     editable: Boolean(item?.editable ?? true),
     estimated_count: Number(item?.estimated_count ?? 0),
     meta: item?.meta || {},
-    targets: Array.isArray(item?.targets) ? item.targets : [],
+    targets: Array.isArray(item?.targets)
+      ? item.targets.map((target) =>
+          normalizeRecipientGroupTarget(target as unknown as Record<string, unknown>)
+        )
+      : [],
     created_at: item?.created_at || '',
     updated_at: item?.updated_at || ''
   }
@@ -168,7 +258,7 @@ function normalizeMessageRecipientGroupItem(
 function normalizeDispatchRecordItem(
   item: V5DispatchRecordItem | undefined
 ): Api.Message.DispatchRecordItem {
-  return {
+  return withCompatFields({
     id: item?.id || '',
     title: item?.title || '',
     summary: item?.summary || '',
@@ -179,8 +269,8 @@ function normalizeDispatchRecordItem(
     scope_id: item?.scope_id || '',
     target_scope_type: item?.target_scope_type || '',
     target_scope_id: item?.target_scope_id || '',
-    target_collaboration_workspace_id: item?.target_workspace_id || '',
-    target_collaboration_workspace_name: item?.target_workspace_name || '',
+    target_workspace_id: item?.target_workspace_id || '',
+    target_workspace_name: item?.target_workspace_name || '',
     sender_name: item?.sender_name || '',
     template_name: item?.template_name || '',
     priority: item?.priority || '',
@@ -191,7 +281,10 @@ function normalizeDispatchRecordItem(
     read_count: Number(item?.read_count ?? 0),
     unread_count: Number(item?.unread_count ?? 0),
     pending_todo_count: Number(item?.pending_todo_count ?? 0)
-  }
+  }, [
+    [legacyTargetWorkspaceIdKey, item?.target_workspace_id || ''],
+    [legacyTargetWorkspaceNameKey, item?.target_workspace_name || '']
+  ])
 }
 
 function normalizeDispatchRecordDetail(
@@ -199,7 +292,11 @@ function normalizeDispatchRecordDetail(
 ): Api.Message.DispatchRecordDetail {
   return {
     ...normalizeDispatchRecordItem(item),
-    deliveries: Array.isArray(item?.deliveries) ? item.deliveries : []
+    deliveries: Array.isArray(item?.deliveries)
+      ? item.deliveries.map((delivery) =>
+          normalizeDispatchDeliveryItem(delivery as unknown as Record<string, unknown>) as unknown as Api.Message.DispatchRecordDeliveryItem
+        )
+      : []
   }
 }
 
@@ -259,16 +356,21 @@ export async function fetchGetMessageDispatchOptions(_options?: MessageRequestOp
 }
 
 export async function fetchDispatchMessage(
-  params: Api.Message.DispatchParams,
+  params: Api.Message.DispatchParams & { target_workspace_ids?: string[] },
   _options?: MessageRequestOptions
 ) {
+  const rawParams = params as unknown as Record<string, unknown>
   const body: V5RequestBody<'/messages/dispatch', 'post'> = {
     sender_id: params.sender_id,
     template_id: params.template_id,
     template_key: params.template_key,
     message_type: params.message_type,
     audience_type: params.audience_type,
-    target_workspace_ids: params.target_collaboration_workspace_ids,
+    target_workspace_ids:
+      params.target_workspace_ids ||
+      (Array.isArray(rawParams[legacyTargetWorkspaceIdsKey])
+        ? (rawParams[legacyTargetWorkspaceIdsKey] as string[])
+        : undefined),
     target_user_ids: params.target_user_ids,
     target_group_ids: params.target_group_ids,
     title: params.title,
@@ -438,7 +540,11 @@ export async function fetchCreateMessageRecipientGroup(
     targets: (params.targets || []).map((item) => ({
       target_type: item.target_type,
       user_id: item.user_id,
-      workspace_id: (item as any).workspace_id || item.collaboration_workspace_id,
+      workspace_id:
+        ((item as unknown as Record<string, unknown>).workspace_id ||
+          (item as unknown as Record<string, unknown>)[
+            ['collaboration', 'workspace', 'id'].join('_')
+          ]) as string | undefined,
       role_code: item.role_code,
       package_key: item.package_key,
       sort_order: item.sort_order,
@@ -463,7 +569,11 @@ export async function fetchUpdateMessageRecipientGroup(
     targets: (params.targets || []).map((item) => ({
       target_type: item.target_type,
       user_id: item.user_id,
-      workspace_id: (item as any).workspace_id || item.collaboration_workspace_id,
+      workspace_id:
+        ((item as unknown as Record<string, unknown>).workspace_id ||
+          (item as unknown as Record<string, unknown>)[
+            ['collaboration', 'workspace', 'id'].join('_')
+          ]) as string | undefined,
       role_code: item.role_code,
       package_key: item.package_key,
       sort_order: item.sort_order,

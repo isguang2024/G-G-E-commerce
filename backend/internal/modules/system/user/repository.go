@@ -180,7 +180,22 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 	}
 	if roleID != "" {
 		baseQuery = baseQuery.Where(
-			"EXISTS (SELECT 1 FROM user_roles JOIN roles ON roles.id = user_roles.role_id WHERE users.id = user_roles.user_id AND user_roles.collaboration_workspace_id IS NULL AND user_roles.role_id = ? AND roles.deleted_at IS NULL AND "+globalRoleScopeExclusionSQL+")",
+			`EXISTS (
+				SELECT 1
+				FROM workspace_role_bindings
+				JOIN workspaces ON workspaces.id = workspace_role_bindings.workspace_id
+				JOIN roles ON roles.id = workspace_role_bindings.role_id
+				WHERE users.id = workspace_role_bindings.user_id
+					AND workspace_role_bindings.enabled = ?
+					AND workspace_role_bindings.deleted_at IS NULL
+					AND workspaces.workspace_type = ?
+					AND workspaces.owner_user_id = users.id
+					AND workspaces.deleted_at IS NULL
+					AND workspace_role_bindings.role_id = ?
+					AND roles.deleted_at IS NULL
+					AND `+globalRoleScopeExclusionSQL+`)`,
+			true,
+			models.WorkspaceTypePersonal,
 			roleID,
 			models.ScopeTypeGlobal,
 		)
@@ -341,8 +356,12 @@ func (r *roleRepository) List() ([]Role, error) {
 }
 
 func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceID uuid.UUID) ([]Role, error) {
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
+	if err != nil {
+		return nil, err
+	}
 	var roles []Role
-	err := r.db.Table("roles").
+	err = r.db.Table("roles").
 		Select("roles.*").
 		Joins("LEFT JOIN role_scopes rs ON rs.role_id = roles.id AND rs.deleted_at IS NULL").
 		Joins("LEFT JOIN workspaces scoped_workspaces ON scoped_workspaces.id = rs.scope_id AND scoped_workspaces.deleted_at IS NULL").
@@ -355,16 +374,14 @@ func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceI
 			OR
 			(
 				rs.scope_type = ?
-				AND scoped_workspaces.workspace_type = ?
-				AND scoped_workspaces.collaboration_workspace_id = ?
+				AND rs.scope_id = ?
 			)
 		`,
 			models.ScopeTypeGlobal,
 			models.ScopeTypeGlobal,
 			[]string{"collaboration_admin", "collaboration_member"},
 			models.ScopeTypeCollaboration,
-			models.WorkspaceTypeCollaboration,
-			collaborationWorkspaceID,
+			workspace.ID,
 		).
 		Order("CASE WHEN COALESCE(rs.scope_type, 'global') = 'global' THEN 0 ELSE 1 END ASC").
 		Order("roles.sort_order ASC, roles.created_at DESC").
@@ -1220,15 +1237,7 @@ func (r *userRoleRepository) GetRoleIDsByUserAndCollaborationWorkspace(userID uu
 	if collaborationWorkspaceID != nil {
 		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
-
-	var roleIDs []uuid.UUID
-	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	query = query.Where("collaboration_workspace_id IS NULL")
-	err := query.Pluck("role_id", &roleIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return roleIDs, nil
+	return []uuid.UUID{}, nil
 }
 
 func (r *userRoleRepository) GetRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error) {
@@ -1240,18 +1249,7 @@ func (r *userRoleRepository) GetRoleCodesByUserAndCollaborationWorkspace(userID 
 	if collaborationWorkspaceID != nil {
 		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
-
-	var codes []string
-	query := r.db.Model(&UserRole{}).
-		Joins("JOIN roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", userID).
-		Where("roles.deleted_at IS NULL")
-	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
-	err := query.Pluck("roles.code", &codes).Error
-	if err != nil {
-		return nil, err
-	}
-	return codes, nil
+	return []string{}, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
@@ -1263,15 +1261,7 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndCollaborationWorkspace(
 	if collaborationWorkspaceID != nil {
 		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
-
-	var roleIDs []uuid.UUID
-	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	query = query.Where("collaboration_workspace_id IS NULL")
-	err := query.Pluck("role_id", &roleIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return roleIDs, nil
+	return []uuid.UUID{}, nil
 }
 
 func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
@@ -1283,19 +1273,7 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndCollaborationWork
 	if collaborationWorkspaceID != nil {
 		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, true)
 	}
-
-	var roleIDs []uuid.UUID
-	query := r.db.Model(&UserRole{}).
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("user_roles.user_id = ?", userID).
-		Where("roles.status = ?", "normal").
-		Where("roles.deleted_at IS NULL")
-	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
-	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return roleIDs, nil
+	return []uuid.UUID{}, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error) {
@@ -1307,18 +1285,7 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndCollaborationWorkspac
 	if collaborationWorkspaceID != nil {
 		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
-
-	var codes []string
-	query := r.db.Model(&UserRole{}).
-		Joins("JOIN roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", userID).
-		Where("roles.deleted_at IS NULL")
-	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
-	err := query.Pluck("roles.code", &codes).Error
-	if err != nil {
-		return nil, err
-	}
-	return codes, nil
+	return []string{}, nil
 }
 
 func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoleIDs(userID, collaborationWorkspaceID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
@@ -1556,65 +1523,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		}
 		workspaceBoundUsers[row.UserID] = struct{}{}
 		appendRole(target, roleCopy)
-	}
-
-	fallbackUserIDs := make([]uuid.UUID, 0, len(userIDs))
-	for _, userID := range userIDs {
-		if _, ok := workspaceBoundUsers[userID]; ok {
-			continue
-		}
-		fallbackUserIDs = append(fallbackUserIDs, userID)
-	}
-	if len(fallbackUserIDs) == 0 {
-		return nil
-	}
-
-	type userRoleRow struct {
-		UserID      uuid.UUID `gorm:"column:user_id"`
-		ID          uuid.UUID `gorm:"column:id"`
-		Code        string    `gorm:"column:code"`
-		Name        string    `gorm:"column:name"`
-		Description string    `gorm:"column:description"`
-		Status      string    `gorm:"column:status"`
-		SortOrder   int       `gorm:"column:sort_order"`
-		IsSystem    bool      `gorm:"column:is_system"`
-		CreatedAt   time.Time `gorm:"column:created_at"`
-		UpdatedAt   time.Time `gorm:"column:updated_at"`
-	}
-
-	var rows []userRoleRow
-	if err := r.db.Table("user_roles").
-		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("user_roles.user_id IN ?", fallbackUserIDs).
-		Where("user_roles.collaboration_workspace_id IS NULL").
-		Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal).
-		Where("roles.deleted_at IS NULL").
-		Scan(&rows).Error; err != nil {
-		return err
-	}
-
-	for _, row := range rows {
-		target, ok := userIndex[row.UserID]
-		if !ok {
-			continue
-		}
-		role, exists := roleCache[row.ID]
-		if !exists {
-			role = &Role{
-				ID:          row.ID,
-				Code:        row.Code,
-				Name:        row.Name,
-				Description: row.Description,
-				Status:      row.Status,
-				SortOrder:   row.SortOrder,
-				IsSystem:    row.IsSystem,
-				CreatedAt:   row.CreatedAt,
-				UpdatedAt:   row.UpdatedAt,
-			}
-			roleCache[row.ID] = role
-		}
-		appendRole(target, role)
 	}
 
 	return nil

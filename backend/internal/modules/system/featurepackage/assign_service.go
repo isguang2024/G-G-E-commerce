@@ -42,11 +42,7 @@ func (s *service) GetPackageCollaborationWorkspaces(id uuid.UUID, appKey string)
 	if err != nil {
 		return nil, err
 	}
-	legacyCollaborationWorkspaceIDs, err := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(id)
-	if err != nil {
-		return nil, err
-	}
-	return mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs), nil
+	return workspaceCollaborationWorkspaceIDs, nil
 }
 
 func (s *service) SetPackageCollaborationWorkspaces(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
@@ -316,20 +312,12 @@ func (s *service) GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, 
 	if err != nil {
 		return nil, err
 	}
-	var legacyCollaborationWorkspaceIDs []uuid.UUID
-	if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
-		return nil, err
-	}
-	result.CollaborationWorkspaceCount = int64(len(mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+	result.CollaborationWorkspaceCount = int64(len(workspaceCollaborationWorkspaceIDs))
 	workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, []uuid.UUID{id}, item.AppKey)
 	if err != nil {
 		return nil, err
 	}
-	var legacyUserIDs []uuid.UUID
-	if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("user_id").Pluck("user_id", &legacyUserIDs).Error; err != nil {
-		return nil, err
-	}
-	result.UserCount = int64(len(mergeUUIDSlice(workspaceUserIDs, legacyUserIDs)))
+	result.UserCount = int64(len(workspaceUserIDs))
 	if err := s.db.Model(&user.FeaturePackageMenu{}).Where("package_id = ?", id).Count(&row.Total).Error; err != nil {
 		return nil, err
 	}

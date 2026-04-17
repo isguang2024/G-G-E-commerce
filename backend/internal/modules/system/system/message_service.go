@@ -1688,6 +1688,34 @@ func (s *messageService) resolveWorkspaceScopeID(collaborationWorkspaceID *uuid.
 	return &workspaceID
 }
 
+func (s *messageService) resolveWorkspaceScopeIDStrict(collaborationWorkspaceID uuid.UUID) (uuid.UUID, error) {
+	workspaceID := s.resolveWorkspaceID(&collaborationWorkspaceID)
+	if workspaceID == uuid.Nil {
+		return uuid.Nil, errors.New("协作空间不存在")
+	}
+	return workspaceID, nil
+}
+
+func (s *messageService) resolveWorkspaceScopeIDsStrict(collaborationWorkspaceIDs []uuid.UUID) ([]uuid.UUID, error) {
+	if len(collaborationWorkspaceIDs) == 0 {
+		return []uuid.UUID{}, nil
+	}
+	result := make([]uuid.UUID, 0, len(collaborationWorkspaceIDs))
+	seen := make(map[uuid.UUID]struct{}, len(collaborationWorkspaceIDs))
+	for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
+		workspaceID, err := s.resolveWorkspaceScopeIDStrict(collaborationWorkspaceID)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := seen[workspaceID]; ok {
+			continue
+		}
+		seen[workspaceID] = struct{}{}
+		result = append(result, workspaceID)
+	}
+	return result, nil
+}
+
 func collaborationMemberTypesForRoleCode(roleCode string) []string {
 	switch normalizeCollaborationRoleCode(roleCode) {
 	case "collaboration_admin":
@@ -2169,6 +2197,10 @@ func (s *messageService) loadCollaborationWorkspaceRecipients(targetCollaboratio
 	if len(targetCollaborationWorkspaceIDs) == 0 {
 		return nil, errors.New("请选择目标协作空间")
 	}
+	workspaceIDs, err := s.resolveWorkspaceScopeIDsStrict(targetCollaborationWorkspaceIDs)
+	if err != nil {
+		return nil, err
+	}
 	type collaborationWorkspaceRecipientRow struct {
 		UserID                   uuid.UUID `gorm:"column:user_id"`
 		CollaborationWorkspaceID uuid.UUID `gorm:"column:collaboration_workspace_id"`
@@ -2181,7 +2213,8 @@ func (s *messageService) loadCollaborationWorkspaceRecipients(targetCollaboratio
 		Select("workspace_members.user_id AS user_id", "workspaces.collaboration_workspace_id AS collaboration_workspace_id", "users.username AS username", "users.nickname AS nickname", "workspace_members.member_type AS role_code", "workspace_members.status AS status").
 		Joins("JOIN workspaces ON workspaces.id = workspace_members.workspace_id").
 		Joins("JOIN users ON users.id = workspace_members.user_id").
-		Where("workspaces.workspace_type = ? AND workspaces.collaboration_workspace_id IN ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration, targetCollaborationWorkspaceIDs).
+		Where("workspace_members.workspace_id IN ?", workspaceIDs).
+		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 		Where("workspace_members.status = ?", "active").
 		Where("users.status = ?", "active")
 	if adminOnly {
@@ -2261,6 +2294,10 @@ func (s *messageService) loadSpecifiedUsers(targetUserIDs []uuid.UUID, collabora
 }
 
 func (s *messageService) loadSpecifiedCollaborationWorkspaceUsers(collaborationWorkspaceID uuid.UUID, targetUserIDs []uuid.UUID) ([]dispatchRecipient, error) {
+	workspaceID, err := s.resolveWorkspaceScopeIDStrict(collaborationWorkspaceID)
+	if err != nil {
+		return nil, err
+	}
 	type row struct {
 		UserID                   uuid.UUID `gorm:"column:user_id"`
 		CollaborationWorkspaceID uuid.UUID `gorm:"column:collaboration_workspace_id"`
@@ -2272,7 +2309,8 @@ func (s *messageService) loadSpecifiedCollaborationWorkspaceUsers(collaborationW
 		Select("workspace_members.user_id AS user_id", "workspaces.collaboration_workspace_id AS collaboration_workspace_id", "users.username AS username", "users.nickname AS nickname").
 		Joins("JOIN workspaces ON workspaces.id = workspace_members.workspace_id").
 		Joins("JOIN users ON users.id = workspace_members.user_id").
-		Where("workspaces.workspace_type = ? AND workspaces.collaboration_workspace_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration, collaborationWorkspaceID).
+		Where("workspace_members.workspace_id = ?", workspaceID).
+		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 		Where("workspace_members.user_id IN ?", targetUserIDs).
 		Where("workspace_members.status = ?", "active").
 		Where("users.status = ?", "active").
@@ -2343,6 +2381,10 @@ func (s *messageService) loadPlatformRecipientsByRoleCode(roleCode string) ([]di
 }
 
 func (s *messageService) loadCollaborationWorkspaceRecipientsByRoleCode(collaborationWorkspaceID uuid.UUID, roleCode string) ([]dispatchRecipient, error) {
+	workspaceID, err := s.resolveWorkspaceScopeIDStrict(collaborationWorkspaceID)
+	if err != nil {
+		return nil, err
+	}
 	seen := make(map[uuid.UUID]dispatchRecipient)
 	var memberRows []dispatchRecipientUserRow
 	memberTypes := collaborationMemberTypesForRoleCode(roleCode)
@@ -2351,7 +2393,8 @@ func (s *messageService) loadCollaborationWorkspaceRecipientsByRoleCode(collabor
 			Select("users.id AS user_id", "users.username AS username", "users.nickname AS nickname").
 			Joins("JOIN workspaces ON workspaces.id = workspace_members.workspace_id").
 			Joins("JOIN users ON users.id = workspace_members.user_id").
-			Where("workspaces.workspace_type = ? AND workspaces.collaboration_workspace_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration, collaborationWorkspaceID).
+			Where("workspace_members.workspace_id = ?", workspaceID).
+			Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 			Where("workspace_members.status = ? AND workspace_members.member_type IN ?", "active", memberTypes).
 			Where("users.status = ? AND users.deleted_at IS NULL", "active").
 			Scan(&memberRows).Error; err != nil {
@@ -2384,15 +2427,13 @@ func (s *messageService) loadCollaborationWorkspaceRecipientsByRoleCode(collabor
 			OR
 			(
 				role_scopes.scope_type = ?
-				AND workspaces.workspace_type = ?
-				AND workspaces.collaboration_workspace_id = ?
+				AND role_scopes.scope_id = ?
 			)
 		`,
 			models.ScopeTypeGlobal,
 			models.ScopeTypeGlobal,
 			models.ScopeTypeCollaboration,
-			models.WorkspaceTypeCollaboration,
-			collaborationWorkspaceID,
+			workspaceID,
 		).
 		Pluck("id", &roleIDs).Error; err != nil {
 		return nil, err
@@ -2531,7 +2572,8 @@ func (s *messageService) loadCollaborationWorkspaceRecipientsByPackageKey(collab
 				Select("users.id AS user_id", "users.username AS username", "users.nickname AS nickname").
 				Joins("JOIN workspaces ON workspaces.id = workspace_members.workspace_id").
 				Joins("JOIN users ON users.id = workspace_members.user_id").
-				Where("workspaces.workspace_type = ? AND workspaces.collaboration_workspace_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration, collaborationWorkspaceID).
+				Where("workspace_members.workspace_id = ?", *workspaceScopeID).
+				Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 				Where("workspace_members.status = ? AND workspace_members.member_type IN ?", "active", memberTypes).
 				Where("users.status = ? AND users.deleted_at IS NULL", "active").
 				Scan(&identityRows).Error; err != nil {
@@ -2718,6 +2760,10 @@ func (s *messageService) loadGroupRecipientsByRuleType(groupIDs []uuid.UUID, col
 
 func (s *messageService) listDispatchUsers(collaborationWorkspaceID *uuid.UUID) ([]dispatchUserOption, error) {
 	if collaborationWorkspaceID != nil {
+		workspaceID, err := s.resolveWorkspaceScopeIDStrict(*collaborationWorkspaceID)
+		if err != nil {
+			return nil, err
+		}
 		type row struct {
 			UserID                     uuid.UUID `gorm:"column:user_id"`
 			Username                   string    `gorm:"column:username"`
@@ -2730,7 +2776,8 @@ func (s *messageService) listDispatchUsers(collaborationWorkspaceID *uuid.UUID) 
 			Select("workspace_members.user_id AS user_id", "users.username AS username", "users.nickname AS nickname", "workspaces.collaboration_workspace_id AS collaboration_workspace_id", "workspaces.name AS collaboration_workspace_name").
 			Joins("JOIN workspaces ON workspaces.id = workspace_members.workspace_id").
 			Joins("JOIN users ON users.id = workspace_members.user_id").
-			Where("workspaces.workspace_type = ? AND workspaces.collaboration_workspace_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration, *collaborationWorkspaceID).
+			Where("workspace_members.workspace_id = ?", workspaceID).
+			Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 			Where("workspace_members.status = ?", "active").
 			Where("users.status = ?", "active").
 			Order("workspace_members.created_at ASC").
@@ -2799,11 +2846,15 @@ func (s *messageService) listDispatchRecipientGroups(collaborationWorkspaceID *u
 func (s *messageService) listDispatchRoles(collaborationWorkspaceID *uuid.UUID) ([]dispatchRoleOption, error) {
 	var rows []models.Role
 	query := s.db.Table("roles").
-		Select("roles.id", "roles.code", "roles.name", "roles.description", "roles.status", "workspaces.collaboration_workspace_id").
+		Select("roles.id", "roles.code", "roles.name", "roles.description", "roles.status").
 		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id AND role_scopes.deleted_at IS NULL").
 		Joins("LEFT JOIN workspaces ON workspaces.id = role_scopes.scope_id AND workspaces.deleted_at IS NULL").
 		Where("roles.status = ? AND roles.deleted_at IS NULL", "normal")
 	if collaborationWorkspaceID != nil {
+		workspaceID, err := s.resolveWorkspaceScopeIDStrict(*collaborationWorkspaceID)
+		if err != nil {
+			return nil, err
+		}
 		query = query.Where(`
 			(
 				COALESCE(role_scopes.scope_type, ?) = ?
@@ -2812,16 +2863,14 @@ func (s *messageService) listDispatchRoles(collaborationWorkspaceID *uuid.UUID) 
 			OR
 			(
 				role_scopes.scope_type = ?
-				AND workspaces.workspace_type = ?
-				AND workspaces.collaboration_workspace_id = ?
+				AND role_scopes.scope_id = ?
 			)
 		`,
 			models.ScopeTypeGlobal,
 			models.ScopeTypeGlobal,
 			[]string{"collaboration_admin", "collaboration_member"},
 			models.ScopeTypeCollaboration,
-			models.WorkspaceTypeCollaboration,
-			*collaborationWorkspaceID,
+			workspaceID,
 		)
 	} else {
 		query = query.Where("COALESCE(role_scopes.scope_type, ?) = ?", models.ScopeTypeGlobal, models.ScopeTypeGlobal)
@@ -3094,17 +3143,19 @@ func (s *messageService) lookupRoleName(roleCode string, collaborationWorkspaceI
 		Joins("LEFT JOIN workspaces ON workspaces.id = role_scopes.scope_id AND workspaces.deleted_at IS NULL").
 		Where("roles.code = ? AND roles.status = ? AND roles.deleted_at IS NULL", roleCode, "normal")
 	if collaborationWorkspaceID != nil {
+		workspaceID := s.resolveWorkspaceID(collaborationWorkspaceID)
+		if workspaceID == uuid.Nil {
+			return ""
+		}
 		query = query.Where(`
 			(
 				role_scopes.scope_type = ?
-				AND workspaces.workspace_type = ?
-				AND workspaces.collaboration_workspace_id = ?
+				AND role_scopes.scope_id = ?
 			)
 			OR COALESCE(role_scopes.scope_type, ?) = ?
 		`,
 			models.ScopeTypeCollaboration,
-			models.WorkspaceTypeCollaboration,
-			*collaborationWorkspaceID,
+			workspaceID,
 			models.ScopeTypeGlobal,
 			models.ScopeTypeGlobal,
 		).Order("CASE WHEN role_scopes.scope_type = 'collaboration' THEN 0 ELSE 1 END")

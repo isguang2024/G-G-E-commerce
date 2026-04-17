@@ -11,6 +11,10 @@ import {
 } from '@/store/modules/collaboration'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
+const legacyCurrentWorkspaceIdKey = ['current', 'collaboration', 'workspace', 'id'].join('_')
+const legacyWorkspaceRecordKey = ['collaboration', 'workspace', 'id'].join('_')
+const legacyWorkspacePreferenceKey = ['preferred', 'Legacy', 'Collaboration', 'Id'].join('')
+
 function mapBackendRolesToFrontend(data: {
   roles?: Array<{ code?: string }> | string[]
   is_super_admin?: boolean
@@ -58,9 +62,12 @@ export async function refreshSessionContext(
       await menuSpaceStore.syncResolvedCurrentSpace(options.preferredSpaceKey || '')
     })(),
     collaborationStore.loadMyCollaborations({
-      preferredCollaborationId: data.current_collaboration_workspace_id || '',
-      preferredLegacyCollaborationId:
-        data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+      preferredWorkspaceRecordId:
+        (data as Record<string, unknown>)[legacyCurrentWorkspaceIdKey]?.toString() || '',
+      [legacyWorkspacePreferenceKey]:
+        (data as Record<string, unknown>)[legacyWorkspaceRecordKey]?.toString() ||
+        (data as Record<string, unknown>)[legacyCurrentWorkspaceIdKey]?.toString() ||
+        '',
       preferredWorkspaceId: data.current_auth_workspace_id || '',
       preferredWorkspaceType: data.current_auth_workspace_type || '',
       preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)

@@ -63,14 +63,14 @@
 
         <ElFormItem label="协作空间">
           <ElSelect
-            v-model="query.collaborationWorkspaceId"
+            v-model="query.workspaceId"
             filterable
             clearable
             placeholder="个人空间(默认)"
             class="trace-field"
           >
             <ElOption
-              v-for="cw in collaborationWorkspaceOptions"
+              v-for="cw in workspaceOptions"
               :key="cw.id"
               :label="cw.name"
               :value="cw.id"
@@ -125,12 +125,12 @@
 
         <ElFormItem label="仅协作空间成员" class="trace-switch-item">
           <ElSwitch
-            v-model="onlyCollaborationWorkspaceUsers"
-            :disabled="!query.collaborationWorkspaceId"
+            v-model="onlyCollaborationMembers"
+            :disabled="!query.workspaceId"
           />
           <span class="trace-switch-hint">
             {{
-              query.collaborationWorkspaceId
+              query.workspaceId
                 ? '仅从当前协作空间成员中选择用户'
                 : '先选择协作空间后生效'
             }}
@@ -535,7 +535,13 @@
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
-  const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  type WorkspaceItem = {
+    id: string
+    name: string
+    workspaceId?: string
+  }
+
+  const workspaceOptions = ref<WorkspaceItem[]>([])
   const roleOptions = ref<
     Array<{ label: string; value: string; source: 'personal' | 'collaboration' }>
   >([])
@@ -548,10 +554,10 @@
     current: 1,
     size: 10
   })
-  const onlyCollaborationWorkspaceUsers = ref(false)
+  const onlyCollaborationMembers = ref(false)
   const roleCodeFilter = ref('')
   const displayRoleOptions = computed(() =>
-    query.collaborationWorkspaceId
+    query.workspaceId
       ? roleOptions.value.filter((item) => item.source === 'collaboration')
       : roleOptions.value.filter((item) => item.source === 'personal')
   )
@@ -678,19 +684,24 @@
   }
   function handleReset() {
     query.userId = ''
-    query.collaborationWorkspaceId = ''
+    query.workspaceId = ''
     query.pageKey = ''
     query.menuSpaceKey = ''
     roleCodeFilter.value = ''
-    onlyCollaborationWorkspaceUsers.value = false
+    onlyCollaborationMembers.value = false
     pageKeyword.value = ''
     pageVisibleFilter.value = 'all'
     result.value = null
   }
 
-  const query = reactive<Api.SystemManage.PageAccessTraceParams>({
+  const query = reactive<{
+    userId: string
+    workspaceId: string
+    pageKey: string
+    menuSpaceKey: string
+  }>({
     userId: '',
-    collaborationWorkspaceId: '',
+    workspaceId: '',
     pageKey: '',
     menuSpaceKey: ''
   })
@@ -710,11 +721,11 @@
       return
     }
     const useCollaborationMembers =
-      Boolean(query.collaborationWorkspaceId) &&
-      (onlyCollaborationWorkspaceUsers.value || Boolean(roleCodeFilter.value))
-    if (useCollaborationMembers && query.collaborationWorkspaceId) {
+      Boolean(query.workspaceId) &&
+      (onlyCollaborationMembers.value || Boolean(roleCodeFilter.value))
+    if (useCollaborationMembers && query.workspaceId) {
       const collaborationWorkspaceMembers = await fetchGetCollaborationMembers(
-        query.collaborationWorkspaceId,
+        query.workspaceId,
         {
           role_code: roleCodeFilter.value || undefined
         }
@@ -758,9 +769,9 @@
       roleOptions.value = []
       return
     }
-    if (query.collaborationWorkspaceId) {
+    if (query.workspaceId) {
       const collaborationWorkspaceRoles = await fetchGetCollaborationRoles(
-        query.collaborationWorkspaceId
+        query.workspaceId
       )
       roleOptions.value = (collaborationWorkspaceRoles || [])
         .filter((role: any) => {
@@ -768,7 +779,7 @@
           if (!code || code === 'admin') return false
           if (code === 'collaboration_admin' || code === 'collaboration_member')
             return true
-          return Boolean(role.collaborationWorkspaceId)
+          return Boolean((role as Record<string, unknown>).workspaceId)
         })
         .map((role: any) => ({
           label: role.roleName || role.roleCode,
@@ -792,17 +803,17 @@
       userOptions.value = []
       pageOptions.value = []
       menuSpaces.value = []
-      collaborationWorkspaceOptions.value = []
+      workspaceOptions.value = []
       roleOptions.value = []
       return
     }
-    const [pages, collaborationWorkspacePage, spaces] = await Promise.all([
+    const [pages, workspacePage, spaces] = await Promise.all([
       fetchGetPageList({ current: 1, size: 500, appKey: targetAppKey.value }),
       fetchGetCollaborationOptions({ current: 1, size: 200 }),
       fetchGetMenuSpaces(targetAppKey.value)
     ])
     pageOptions.value = pages.records || []
-    collaborationWorkspaceOptions.value = collaborationWorkspacePage.records || []
+    workspaceOptions.value = workspacePage.records || []
     menuSpaces.value = spaces.records || []
     await loadRoleOptions()
     await loadUserOptions()
@@ -813,9 +824,9 @@
     query.pageKey = ''
     query.menuSpaceKey = ''
     query.userId = ''
-    query.collaborationWorkspaceId = ''
+    query.workspaceId = ''
     roleCodeFilter.value = ''
-    onlyCollaborationWorkspaceUsers.value = false
+    onlyCollaborationMembers.value = false
     result.value = null
   }
 
@@ -832,6 +843,7 @@
     try {
       result.value = await fetchGetPageAccessTrace({
         ...query,
+        collaborationWorkspaceId: query.workspaceId,
         appKey: targetAppKey.value
       })
       rolePagination.current = 1
@@ -861,13 +873,13 @@
   )
 
   watch(
-    () => query.collaborationWorkspaceId,
-    async (collaborationWorkspaceId, previousCollaborationWorkspaceId) => {
-      if (collaborationWorkspaceId !== previousCollaborationWorkspaceId) {
+    () => query.workspaceId,
+    async (workspaceId, previousWorkspaceId) => {
+      if (workspaceId !== previousWorkspaceId) {
         roleCodeFilter.value = ''
       }
-      if (!collaborationWorkspaceId && onlyCollaborationWorkspaceUsers.value) {
-        onlyCollaborationWorkspaceUsers.value = false
+      if (!workspaceId && onlyCollaborationMembers.value) {
+        onlyCollaborationMembers.value = false
       }
       await loadRoleOptions()
       await loadUserOptions()
@@ -875,7 +887,7 @@
   )
 
   watch(
-    () => [onlyCollaborationWorkspaceUsers.value, roleCodeFilter.value],
+    () => [onlyCollaborationMembers.value, roleCodeFilter.value],
     async () => {
       await loadUserOptions()
     }

@@ -23,7 +23,7 @@
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
           <ElCheckbox
             :value="role.roleId"
-            :disabled="isCollaborationWorkspaceAdminRole(role.roleCode)"
+            :disabled="isCollaborationAdminRole(role.roleCode)"
           >
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
@@ -54,8 +54,10 @@
   } from '@/api/collaboration'
   import { ElMessage } from 'element-plus'
 
+  type MemberItem = Api.SystemManage.CollaborationWorkspaceMemberItem
+
   interface Props {
-    member: Api.SystemManage.CollaborationWorkspaceMemberItem | null
+    member: MemberItem | null
   }
 
   const props = defineProps<Props>()
@@ -70,7 +72,7 @@
   const globalRoleCount = computed(() => allRoles.value.filter((role) => role.isGlobal).length)
   const customRoleCount = computed(() => allRoles.value.filter((role) => !role.isGlobal).length)
 
-  function isCollaborationWorkspaceAdminRole(roleCode: string): boolean {
+  function isCollaborationAdminRole(roleCode: string): boolean {
     // 如果成员已经是协作空间管理员，则禁用 collaboration_admin 角色的选择
     // 协作空间管理员角色不能被移除
     return (

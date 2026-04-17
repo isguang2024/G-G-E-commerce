@@ -29,7 +29,7 @@
         <ElCol :span="8">
           <ElSelect v-model="searchForm.role" placeholder="协作空间身份" clearable filterable>
             <ElOption
-              v-for="role in collaborationWorkspaceRoles"
+            v-for="role in roleOptions"
               :key="role"
               :label="role"
               :value="role"
@@ -106,9 +106,11 @@
     set: (v) => emit('update:visible', v)
   })
 
-  const members = ref<Api.SystemManage.CollaborationWorkspaceMemberItem[]>([])
+  type MemberItem = Api.SystemManage.CollaborationWorkspaceMemberItem
+
+  const members = ref<MemberItem[]>([])
   const loading = ref(false)
-  const collaborationWorkspaceRoles = ref<string[]>([])
+  const roleOptions = ref<string[]>([])
   const pagination = reactive({
     current: 1,
     size: 10
@@ -128,10 +130,10 @@
   }))
 
   // 获取协作空间角色
-  async function loadCollaborationRoles() {
+  async function loadRoleOptions() {
     try {
       const res = await fetchGetMyCollaborationRoles()
-      collaborationWorkspaceRoles.value = (res || [])
+      roleOptions.value = (res || [])
         .map((r: any) => r.roleCode || r.roleName)
         .filter(Boolean)
     } catch (e) {
@@ -175,7 +177,7 @@
     searchForm.userId = ''
     searchForm.userName = ''
     searchForm.role = ''
-    loadCollaborationRoles()
+    loadRoleOptions()
     loadMembers()
   }
 </script>

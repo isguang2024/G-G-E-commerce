@@ -191,12 +191,7 @@
                     <ElOption
                       v-for="user in userOptions"
                       :key="user.id"
-                      :label="
-                        user.collaboration_workspace_name ||
-                        user.current_collaboration_workspace_name
-                          ? `${user.display_name} · ${user.collaboration_workspace_name || user.current_collaboration_workspace_name}`
-                          : user.display_name
-                      "
+                      :label="formatUserOptionLabel(user)"
                       :value="user.id"
                     />
                   </ElSelect>
@@ -215,12 +210,12 @@
                   </div>
                   <ElSelect
                     v-else
-                    v-model="item.collaborationWorkspaceId"
+                    v-model="item.workspaceId"
                     filterable
                     placeholder="请选择协作空间"
                   >
                     <ElOption
-                      v-for="workspace in collaborationWorkspaceOptions"
+                      v-for="workspace in workspaceOptions"
                       :key="workspace.id"
                       :label="workspace.name"
                       :value="workspace.id"
@@ -304,7 +299,7 @@
       | 'feature_package'
       | string
     user_id: string
-    collaborationWorkspaceId: string
+    workspaceId: string
     role_code: string
     package_key: string
     sort_order: number
@@ -341,7 +336,9 @@
   const drawerEditingId = ref('')
   const drawerModel = ref<DrawerGroupModel | null>(null)
   const userOptions = ref<Api.Message.DispatchUserOption[]>([])
-  const collaborationWorkspaceOptions = ref<Api.Message.DispatchCollaborationWorkspaceOption[]>([])
+  type DispatchWorkspaceOption = Api.Message.DispatchCollaborationWorkspaceOption
+
+  const workspaceOptions = ref<DispatchWorkspaceOption[]>([])
   const roleOptions = ref<Api.Message.DispatchRoleOption[]>([])
   const featurePackageOptions = ref<Api.Message.DispatchFeaturePackageOption[]>([])
 
@@ -385,9 +382,8 @@
     local_id: nextLocalId(),
     target_type: target?.target_type || 'user',
     user_id: target?.user_id || '',
-    collaborationWorkspaceId:
-      target?.collaboration_workspace_id ||
-      target?.collaboration_workspace_id ||
+    workspaceId:
+      `${(target as Record<string, unknown> | undefined)?.workspace_id || ''}` ||
       (isCollaborationScope.value ? currentCollaborationId.value || '' : ''),
     role_code: target?.role_code || '',
     package_key: target?.package_key || '',
@@ -401,12 +397,12 @@
     targets: [createTarget()]
   })
 
-  const resolveTargetCollaborationWorkspaceId = (
+  const resolveTargetWorkspaceId = (
     item?: Api.Message.MessageRecipientGroupTargetItem | DrawerTargetModel
   ) => {
     if (!item) return ''
-    if ('collaborationWorkspaceId' in item) return item.collaborationWorkspaceId || ''
-    return item.collaboration_workspace_id || item.collaboration_workspace_id || ''
+    if ('workspaceId' in item) return item.workspaceId || ''
+    return `${(item as unknown as Record<string, unknown>).workspace_id || ''}`
   }
 
   const summarizeTarget = (
@@ -434,16 +430,22 @@
           : featurePackageOptions.value.find((pkg) => pkg.package_key === item.package_key)?.name
       return name ? `功能包规则 · ${name}` : '功能包规则'
     }
-    const collaborationWorkspaceName =
-      'collaboration_workspace_name' in item && item.collaboration_workspace_name
-        ? item.collaboration_workspace_name
-        : collaborationWorkspaceOptions.value.find(
-            (workspace) => workspace.id === resolveTargetCollaborationWorkspaceId(item)
+    const workspaceName =
+      'workspace_name' in item && item.workspace_name
+        ? item.workspace_name
+        : workspaceOptions.value.find(
+            (workspace) => workspace.id === resolveTargetWorkspaceId(item)
           )?.name || currentCollaborationName.value
     if (item.target_type === 'collaboration_admins') {
-      return `${collaborationWorkspaceName} · 协作空间管理员`
+      return `${workspaceName} · 协作空间管理员`
     }
-    return `${collaborationWorkspaceName} · 协作空间成员`
+    return `${workspaceName} · 协作空间成员`
+  }
+
+  const formatUserOptionLabel = (user: Api.Message.DispatchUserOption) => {
+    const userRecord = user as unknown as Record<string, unknown>
+    const workspaceName = `${userRecord.workspace_name || userRecord.current_workspace_name || ''}`.trim()
+    return workspaceName ? `${user.display_name} · ${workspaceName}` : user.display_name
   }
 
   const summarizeTargets = (targets?: Api.Message.MessageRecipientGroupTargetItem[]) => {
@@ -475,8 +477,7 @@
         userOptions.value
           .filter(
             (user) =>
-              (user.collaboration_workspace_name || user.current_collaboration_workspace_name) ===
-              currentCollaborationName.value
+              formatUserOptionLabel(user).endsWith(`· ${currentCollaborationName.value}`)
           )
           .forEach((user) => seen.add(user.id))
         return
@@ -493,7 +494,7 @@
       skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
     })
     userOptions.value = data.users || []
-    collaborationWorkspaceOptions.value = data.collaboration_workspaces || []
+    workspaceOptions.value = ((data as any).workspace_options as DispatchWorkspaceOption[] | undefined) || []
     roleOptions.value = data.roles || []
     featurePackageOptions.value = data.feature_packages || []
   }
@@ -558,7 +559,7 @@
 
   const handleTargetTypeChange = (item: DrawerTargetModel) => {
     item.user_id = ''
-    item.collaborationWorkspaceId = isCollaborationScope.value
+    item.workspaceId = isCollaborationScope.value
       ? currentCollaborationId.value || ''
       : ''
     item.role_code = ''
@@ -584,7 +585,7 @@
         !isCollaborationScope.value &&
         (item.target_type === 'collaboration_users' ||
           item.target_type === 'collaboration_admins') &&
-        !item.collaborationWorkspaceId
+        !item.workspaceId
       ) {
         ElMessage.warning('协作空间规则必须选择目标协作空间')
         return
@@ -600,7 +601,7 @@
     }
     saving.value = true
     try {
-      const payload: Api.Message.MessageRecipientGroupSaveParams = {
+      const payload = {
         name: drawerModel.value.name.trim(),
         description: drawerModel.value.description.trim(),
         match_mode: 'manual',
@@ -608,19 +609,19 @@
         targets: drawerModel.value.targets.map((item, index) => ({
           target_type: item.target_type,
           user_id: item.target_type === 'user' ? item.user_id || undefined : undefined,
-          collaboration_workspace_id:
+          workspace_id:
             item.target_type === 'collaboration_users' ||
             item.target_type === 'collaboration_admins'
               ? isCollaborationScope.value
                 ? currentCollaborationId.value || undefined
-                : item.collaborationWorkspaceId || undefined
+                : item.workspaceId || undefined
               : undefined,
           role_code: item.target_type === 'role' ? item.role_code || undefined : undefined,
           package_key:
             item.target_type === 'feature_package' ? item.package_key || undefined : undefined,
           sort_order: item.sort_order || index + 1
         }))
-      }
+      } as Api.Message.MessageRecipientGroupSaveParams
       if (drawerEditingId.value) {
         await fetchUpdateMessageRecipientGroup(drawerEditingId.value, payload, {
           skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value

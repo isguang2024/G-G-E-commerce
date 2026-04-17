@@ -41,7 +41,6 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
   skipAuthWorkspaceHeader?: boolean
-  skipCollaborationWorkspaceHeader?: boolean
   skipWorkspaceHeader?: boolean
   /** GET 缓存 TTL（毫秒）。仅 GET 生效；> 0 时启用 */
   cache?: number
@@ -103,7 +102,6 @@ axiosInstance.interceptors.request.use(
   (
     request: InternalAxiosRequestConfig & {
       skipAuthWorkspaceHeader?: boolean
-      skipCollaborationWorkspaceHeader?: boolean
       skipWorkspaceHeader?: boolean
     }
   ) => {

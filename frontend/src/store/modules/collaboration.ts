@@ -29,8 +29,10 @@ export function hasPersonalWorkspaceAccessByUserInfo(
 export const useCollaborationStore = defineStore(
   'collaborationStore',
   () => {
+    type WorkspaceItem = Api.SystemManage.CollaborationWorkspaceListItem
+
     const workspaceStore = useWorkspaceStore()
-    const collaborationList = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+    const collaborationList = ref<WorkspaceItem[]>([])
     const loading = ref(false)
     const hasPersonalWorkspaceAccess = ref(false)
 
@@ -130,7 +132,7 @@ export const useCollaborationStore = defineStore(
     }
 
     const setCollaborationList = (
-      items: Api.SystemManage.CollaborationWorkspaceListItem[]
+      items: WorkspaceItem[]
     ) => {
       collaborationList.value = items || []
     }
@@ -138,6 +140,7 @@ export const useCollaborationStore = defineStore(
     const ensureCurrentCollaboration = (options?: {
       preferredCollaborationId?: string
       preferredLegacyCollaborationId?: string
+      preferredWorkspaceRecordId?: string
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
       preferPersonalWorkspace?: boolean
@@ -149,11 +152,12 @@ export const useCollaborationStore = defineStore(
             options?.preferredLegacyCollaborationId ||
             options?.preferredWorkspaceId,
           preferredWorkspaceType: options?.preferredWorkspaceType,
-          preferredCollaborationId:
+          preferredWorkspaceRecordId:
+            options?.preferredWorkspaceRecordId ||
             options?.preferredCollaborationId ||
             options?.preferredLegacyCollaborationId,
           preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
-        })
+        } as any)
         return
       }
 
@@ -163,16 +167,18 @@ export const useCollaborationStore = defineStore(
           options?.preferredLegacyCollaborationId ||
           options?.preferredWorkspaceId,
         preferredWorkspaceType: options?.preferredWorkspaceType,
-        preferredCollaborationId:
+        preferredWorkspaceRecordId:
+          options?.preferredWorkspaceRecordId ||
           options?.preferredCollaborationId ||
           options?.preferredLegacyCollaborationId,
         preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
-      })
+      } as any)
     }
 
     const loadMyCollaborations = async (options?: {
       preferredCollaborationId?: string
       preferredLegacyCollaborationId?: string
+      preferredWorkspaceRecordId?: string
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
       preferPersonalWorkspace?: boolean
@@ -187,11 +193,12 @@ export const useCollaborationStore = defineStore(
               options?.preferredLegacyCollaborationId ||
               options?.preferredWorkspaceId,
             preferredWorkspaceType: options?.preferredWorkspaceType,
-            preferredCollaborationId:
+            preferredWorkspaceRecordId:
+              options?.preferredWorkspaceRecordId ||
               options?.preferredCollaborationId ||
               options?.preferredLegacyCollaborationId,
             preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
-          })
+          } as any)
         ])
         collaborationList.value = collaborationWorkspaces
         ensureCurrentCollaboration(options)

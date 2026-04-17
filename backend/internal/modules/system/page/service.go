@@ -574,20 +574,9 @@ func (s *service) loadAccessTraceRoles(userID uuid.UUID, collaborationWorkspaceI
 		if len(roleIDs) > 0 {
 			if err := s.db.Model(&models.Role{}).
 				Where("id IN ?", roleIDs).
-				Where("collaboration_workspace_id IS NULL").
+				Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 				Where("status = ?", "normal").
-				Find(&roles).Error; err != nil {
-				return nil, err
-			}
-		} else {
-			if err := s.db.Model(&models.Role{}).
-				Joins("JOIN user_roles ON user_roles.role_id = roles.id").
-				Where("user_roles.user_id = ?", userID).
-				Where("user_roles.collaboration_workspace_id IS NULL").
-				Where("roles.collaboration_workspace_id IS NULL").
-				Where("roles.status = ?", "normal").
-				Where("roles.deleted_at IS NULL").
-				Distinct("roles.*").
+				Where("deleted_at IS NULL").
 				Find(&roles).Error; err != nil {
 				return nil, err
 			}

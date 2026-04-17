@@ -61,7 +61,7 @@
                   <span class="message-chip">{{ resolveSourceLabel(item) }}</span>
                   <span
                     v-if="resolveWorkspaceTag(item)"
-                    class="message-chip is-collaboration-workspace"
+                    class="message-chip is-collaboration"
                     >{{ resolveWorkspaceTag(item) }}</span
                   >
                 </div>
@@ -233,28 +233,25 @@
     return plainTextFromHtml(item.summary) || plainTextFromHtml(item.content) || '点击查看消息详情'
   }
 
-  const resolveCollaborationWorkspaceTag = (item: Api.Message.InboxItem) => {
-    const collaborationWorkspaceId =
+  const resolveCollaborationTag = (item: Api.Message.InboxItem) => {
+    const workspaceId =
       item.scope_type === 'collaboration'
         ? item.scope_id ||
-          item.recipient_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
-          item.recipient_collaboration_workspace_id
-        : item.recipient_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
-          item.recipient_collaboration_workspace_id ||
+          item.recipient_scope_id ||
+          item.target_scope_id
+        : item.recipient_scope_id ||
+          item.target_scope_id ||
           item.scope_id
-    if (!collaborationWorkspaceId) return ''
-    const collaborationWorkspaceName =
-      collaborationStore.collaborationList.find(
-        (workspace) => workspace.id === collaborationWorkspaceId
-      )?.name || ''
-    return collaborationWorkspaceName ? `协作空间 · ${collaborationWorkspaceName}` : ''
+    if (!workspaceId) return ''
+    const workspaceName =
+      collaborationStore.collaborationList.find((workspace) => workspace.id === workspaceId)
+        ?.name || ''
+    return workspaceName ? `协作空间 · ${workspaceName}` : ''
   }
 
   const resolveWorkspaceTag = (item: Api.Message.InboxItem) => {
     if (item.scope_type === 'collaboration') {
-      return resolveCollaborationWorkspaceTag(item)
+      return resolveCollaborationTag(item)
     }
     return `个人空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
   }
@@ -484,7 +481,7 @@
     color: #475569;
   }
 
-  .message-chip.is-collaboration-workspace {
+  .message-chip.is-collaboration {
     background: rgb(219 234 254 / 0.9);
     color: #1d4ed8;
   }

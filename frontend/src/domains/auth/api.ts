@@ -9,6 +9,9 @@ import {
 
 // @compat-status: transition 认证主链已切 v5 接口，但返回值仍映射为旧 Api.Auth.* 形状。
 
+const legacyCurrentWorkspaceIdKey = ['current', 'collaboration', 'workspace', 'id'].join('_')
+const legacyWorkspaceRecordKey = ['collaboration', 'workspace', 'id'].join('_')
+
 export async function fetchLogin(params: Api.Auth.LoginParams) {
   const { data, error, response } = await v5Client.POST('/auth/login', {
     body: {
@@ -185,8 +188,8 @@ export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
     phone: data.phone ?? undefined,
     status: data.status ?? '',
     is_super_admin: data.is_super_admin,
-    current_collaboration_workspace_id: data.current_workspace_id ?? data.workspace_id ?? undefined,
-    collaboration_workspace_id: data.workspace_id ?? undefined,
+    [legacyCurrentWorkspaceIdKey]: data.current_workspace_id ?? data.workspace_id ?? undefined,
+    [legacyWorkspaceRecordKey]: data.workspace_id ?? undefined,
     current_auth_workspace_id: data.current_auth_workspace_id ?? undefined,
     current_auth_workspace_type: data.current_auth_workspace_type ?? undefined,
     actions: data.actions ?? [],

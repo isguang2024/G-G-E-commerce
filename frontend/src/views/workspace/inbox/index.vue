@@ -90,9 +90,9 @@
             <div class="message-center-item__meta">
               <span class="message-center-chip">{{ resolveSender(item) }}</span>
               <span
-                v-if="resolveCollaborationWorkspaceTag(item)"
-                class="message-center-chip is-collaboration-workspace"
-                >{{ resolveCollaborationWorkspaceTag(item) }}</span
+                v-if="resolveWorkspaceTag(item)"
+                class="message-center-chip is-collaboration"
+                >{{ resolveWorkspaceTag(item) }}</span
               >
               <span class="message-center-chip is-soft">{{ resolveTypeLabel(item) }}</span>
             </div>
@@ -125,9 +125,9 @@
             </div>
             <div class="message-center-detail__status">
               <span
-                v-if="resolveCollaborationWorkspaceTag(detail)"
-                class="message-center-chip is-collaboration-workspace"
-                >{{ resolveCollaborationWorkspaceTag(detail) }}</span
+                v-if="resolveWorkspaceTag(detail)"
+                class="message-center-chip is-collaboration"
+                >{{ resolveWorkspaceTag(detail) }}</span
               >
               <span class="message-center-chip">{{
                 detail.delivery_status === 'unread' ? '未读' : '已读'
@@ -302,28 +302,25 @@
     return plainTextFromHtml(item.summary) || plainTextFromHtml(item.content) || '点击查看详情'
   }
 
-  const resolveCollaborationWorkspaceName = (item: Api.Message.InboxItem) => {
-    const collaborationWorkspaceId =
+  const resolveWorkspaceName = (item: Api.Message.InboxItem) => {
+    const workspaceId =
       item.scope_type === 'collaboration'
         ? item.scope_id ||
-          item.recipient_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
-          item.recipient_collaboration_workspace_id
-        : item.recipient_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
-          item.recipient_collaboration_workspace_id ||
+          item.recipient_scope_id ||
+          item.target_scope_id
+        : item.recipient_scope_id ||
+          item.target_scope_id ||
           item.scope_id
-    if (!collaborationWorkspaceId) return ''
+    if (!workspaceId) return ''
     return (
-      collaborationStore.collaborationList.find(
-        (workspace) => workspace.id === collaborationWorkspaceId
-      )?.name || ''
+      collaborationStore.collaborationList.find((workspace) => workspace.id === workspaceId)?.name ||
+      ''
     )
   }
 
-  const resolveCollaborationWorkspaceTag = (item: Api.Message.InboxItem) => {
-    const collaborationWorkspaceName = resolveCollaborationWorkspaceName(item)
-    return collaborationWorkspaceName ? `协作空间视图 · ${collaborationWorkspaceName}` : ''
+  const resolveWorkspaceTag = (item: Api.Message.InboxItem) => {
+    const workspaceName = resolveWorkspaceName(item)
+    return workspaceName ? `协作空间视图 · ${workspaceName}` : ''
   }
 
   const resolveTodoStatus = (value?: string) => {
@@ -699,7 +696,7 @@
     background: rgb(241 245 249 / 0.95);
   }
 
-  .message-center-chip.is-collaboration-workspace {
+  .message-center-chip.is-collaboration {
     background: rgb(219 234 254 / 0.9);
     color: #1d4ed8;
   }

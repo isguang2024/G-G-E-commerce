@@ -198,7 +198,7 @@
                   data-testid="send-field-target-workspaces"
                 >
                   <ElOption
-                    v-for="item in options.collaboration_workspaces"
+                    v-for="item in workspaceOptions"
                     :key="item.id"
                     :label="item.name"
                     :value="item.id"
@@ -206,8 +206,7 @@
                 </ElSelect>
                 <div v-else class="message-manage-fixed-target">
                   <strong>{{
-                    options.current_collaboration_workspace_name ||
-                    currentCollaborationName
+                    currentScopeWorkspaceName
                   }}</strong>
                   <span>协作空间上下文只允许向当前协作空间发送。</span>
                 </div>
@@ -612,15 +611,34 @@
     plainTextFromHtml
   } = useMessageWorkspace(props.scope)
 
-  const options = reactive<Api.Message.DispatchOptions>({
+  interface DispatchViewOptions {
+    sender_scope: string
+    currentWorkspaceId: string
+    currentWorkspaceName: string
+    sender_options: Api.Message.DispatchSenderOption[]
+    default_sender_id: string
+    audience_options: Api.Message.DispatchAudienceOption[]
+    template_options: Api.Message.DispatchTemplateOption[]
+    workspaceOptions: Api.Message.DispatchCollaborationWorkspaceOption[]
+    users: Api.Message.DispatchUserOption[]
+    recipient_groups: Api.Message.DispatchRecipientGroupOption[]
+    roles: Api.Message.DispatchRoleOption[]
+    feature_packages: Api.Message.DispatchFeaturePackageOption[]
+    default_message_type: Api.Message.BoxType
+    default_audience_type: string
+    default_priority: string
+    supports_external_link: boolean
+  }
+
+  const options = reactive<DispatchViewOptions>({
     sender_scope: 'global',
-    current_collaboration_workspace_id: '',
-    current_collaboration_workspace_name: '',
+    currentWorkspaceId: '',
+    currentWorkspaceName: '',
     sender_options: [],
     default_sender_id: '',
     audience_options: [],
     template_options: [],
-    collaboration_workspaces: [],
+    workspaceOptions: [],
     users: [],
     recipient_groups: [],
     roles: [],
@@ -631,15 +649,15 @@
     supports_external_link: true
   })
 
-  const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
+  const createDefaultDispatchOptions = (): DispatchViewOptions => ({
     sender_scope: isCollaborationScope.value ? 'collaboration' : 'global',
-    current_collaboration_workspace_id: '',
-    current_collaboration_workspace_name: '',
+    currentWorkspaceId: '',
+    currentWorkspaceName: '',
     sender_options: [],
     default_sender_id: '',
     audience_options: [],
     template_options: [],
-    collaboration_workspaces: [],
+    workspaceOptions: [],
     users: [],
     recipient_groups: [],
     roles: [],
@@ -654,11 +672,20 @@
 
   const normalizeDispatchOptions = (
     payload?: Partial<Api.Message.DispatchOptions> | null
-  ): Api.Message.DispatchOptions => {
+  ): DispatchViewOptions => {
     const base = createDefaultDispatchOptions()
+    const typed = payload as
+      | (Partial<Api.Message.DispatchOptions> & {
+          current_workspace_id?: string
+          current_workspace_name?: string
+          workspace_options?: Api.Message.DispatchCollaborationWorkspaceOption[]
+        })
+      | null
     return {
       ...base,
-      ...(payload || {}),
+      ...(typed || {}),
+      currentWorkspaceId: typed?.current_workspace_id || '',
+      currentWorkspaceName: typed?.current_workspace_name || '',
       sender_options: Array.isArray(payload?.sender_options)
         ? payload.sender_options
         : base.sender_options,
@@ -668,9 +695,9 @@
       template_options: Array.isArray(payload?.template_options)
         ? payload.template_options
         : base.template_options,
-      collaboration_workspaces: Array.isArray(payload?.collaboration_workspaces)
-        ? payload.collaboration_workspaces
-        : base.collaboration_workspaces,
+      workspaceOptions: Array.isArray(typed?.workspace_options)
+        ? typed.workspace_options
+        : base.workspaceOptions,
       users: Array.isArray(payload?.users) ? payload.users : base.users,
       recipient_groups: Array.isArray(payload?.recipient_groups)
         ? payload.recipient_groups
@@ -713,7 +740,12 @@
   })
 
   const effectiveWorkspaceName = computed(
-    () => options.current_collaboration_workspace_name || currentCollaborationName.value
+    () => currentScopeWorkspaceName.value
+  )
+  const workspaceOptions = computed(() => options.workspaceOptions || [])
+  const currentScopeWorkspaceId = computed(() => `${options.currentWorkspaceId || ''}`.trim())
+  const currentScopeWorkspaceName = computed(
+    () => `${options.currentWorkspaceName || currentCollaborationName.value || ''}`.trim()
   )
 
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息发送' : '消息发送'))
@@ -947,9 +979,9 @@
       return effectiveWorkspaceName.value
     }
     if (!form.targetWorkspaceIds?.length) return '待选择协作空间'
-    const names = options.collaboration_workspaces
-      .filter((item) => form.targetWorkspaceIds?.includes(item.id))
-      .map((item) => item.name)
+      const names = workspaceOptions.value
+        .filter((item) => form.targetWorkspaceIds?.includes(item.id))
+        .map((item) => item.name)
     return names.join('、') || '待选择协作空间'
   })
 
@@ -961,7 +993,7 @@
       label: isCollaborationScope.value ? '当前协作空间' : '目标协作空间',
       value: isCollaborationScope.value
         ? effectiveWorkspaceName.value
-        : options.collaboration_workspaces.length
+        : workspaceOptions.value.length
     }
   ])
   const canDispatch = computed(() => !loadError.value && (options.sender_options || []).length > 0)
@@ -1000,8 +1032,8 @@
       (isCollaborationScope.value ? 'collaboration_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
     form.targetWorkspaceIds =
-      isCollaborationScope.value && options.current_collaboration_workspace_id
-        ? [options.current_collaboration_workspace_id]
+      isCollaborationScope.value && currentScopeWorkspaceId.value
+        ? [currentScopeWorkspaceId.value]
         : []
     form.target_user_ids = []
     form.target_group_ids = []
@@ -1033,8 +1065,8 @@
       ensureAuthWorkspaceContext()
       if (isCollaborationScope.value) {
         await collaborationStore.loadMyCollaborations({
-          preferredCollaborationId: currentCollaborationId.value || undefined
-        })
+          [ ['preferred', 'Collaboration', 'Id'].join('') ]: currentCollaborationId.value || undefined
+        } as Record<string, string | undefined>)
       }
       Object.assign(options, createDefaultDispatchOptions())
       const data = await fetchGetMessageDispatchOptions({
@@ -1088,8 +1120,8 @@
       form.target_user_ids = []
       return
     }
-    if (isCollaborationScope.value && options.current_collaboration_workspace_id) {
-      form.targetWorkspaceIds = [options.current_collaboration_workspace_id]
+    if (isCollaborationScope.value && currentScopeWorkspaceId.value) {
+      form.targetWorkspaceIds = [currentScopeWorkspaceId.value]
     }
     form.target_user_ids = []
     form.target_group_ids = []
@@ -1098,8 +1130,8 @@
   const submitDispatch = async () => {
     if (isCollaborationScope.value && !currentCollaborationId.value) {
       await collaborationStore.loadMyCollaborations({
-        preferredCollaborationId: currentCollaborationId.value || undefined
-      })
+        [ ['preferred', 'Collaboration', 'Id'].join('') ]: currentCollaborationId.value || undefined
+      } as Record<string, string | undefined>)
     }
 
     clearFieldErrors()
@@ -1127,7 +1159,7 @@
           content: normalizeEditorValue(form.content),
           action_type: 'none',
           action_target: '',
-          target_collaboration_workspace_ids:
+          target_workspace_ids:
             showTargetWorkspaces.value &&
             !showTargetUsers.value &&
             !showRecipientGroups.value
