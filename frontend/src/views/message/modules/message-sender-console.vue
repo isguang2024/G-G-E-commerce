@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-sender-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-sender-hero__actions">
@@ -58,7 +58,7 @@
 
           <div class="message-sender-card__meta">
             <span>{{
-              item.scope_type === 'collaboration' ? '协作空间发送人' : '个人空间发送人'
+              item.scope_type === 'collaboration' ? '协作空间发送人' : '全局发送人'
             }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
@@ -89,7 +89,7 @@
             <div class="message-sender-drawer__text">{{ drawerSummary }}</div>
           </div>
           <ElTag effect="plain">{{
-            isCollaborationScope ? '协作空间发送人' : '个人空间发送人'
+            isCollaborationScope ? '协作空间发送人' : '全局发送人'
           }}</ElTag>
         </div>
 
@@ -99,7 +99,7 @@
               v-model="drawerModel.name"
               maxlength="40"
               show-word-limit
-              placeholder="例如：个人空间 / 个人空间管理 / 个人空间服务台 / 协作空间"
+              placeholder="例如：全局消息中心 / 全局运营 / 全局服务台 / 协作空间"
             />
             <div class="field-hint">消息中心和右上角消息面板都会展示这个发送人名称。</div>
           </ElFormItem>
@@ -109,7 +109,7 @@
               v-model="drawerModel.description"
               type="textarea"
               :rows="3"
-              placeholder="例如：个人空间统一通知发送身份"
+              placeholder="例如：全局统一通知发送身份"
             />
           </ElFormItem>
 
@@ -161,7 +161,7 @@
   defineOptions({ name: 'MessageSenderConsole' })
 
   const props = defineProps<{
-    scope: 'personal' | 'collaboration'
+    scope: 'global' | 'collaboration'
   }>()
 
   interface SenderDrawerModel {
@@ -175,7 +175,7 @@
   const {
     isCollaborationScope,
     skipCollaborationWorkspaceHeader,
-    currentCollaborationWorkspaceName,
+    currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
     ensureCollaborationWorkspaceContext,
@@ -195,17 +195,17 @@
   const drawerModel = ref<SenderDrawerModel | null>(null)
 
   const pageTitle = computed(() =>
-    isCollaborationScope.value ? '协作空间发送人' : '个人空间发送人'
+    isCollaborationScope.value ? '协作空间发送人' : '全局发送人'
   )
   const pageDescription = computed(() =>
     isCollaborationScope.value
-      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationWorkspaceName.value} 使用的协作空间消息发送人，默认发送人建议保持“协作空间”或更具体的协作空间身份。`
-      : '维护个人空间消息发送人，默认发送人为“个人空间”，也可以扩展为个人空间管理、个人空间服务台等发送身份。'
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationName.value} 使用的协作空间消息发送人，默认发送人建议保持“协作空间”或更具体的协作空间身份。`
+      : '维护全局消息发送人，默认发送人为“全局消息中心”，也可以扩展为全局运营、全局服务台等发送身份。'
   )
   const toolbarDescription = computed(() =>
     isCollaborationScope.value
       ? '协作空间侧发送人只作用于当前协作空间消息发送页。'
-      : '个人空间发送人只作用于个人空间消息发送页。'
+      : '全局发送人只作用于全局消息发送页。'
   )
   const heroMetrics = computed(() => [
     { label: '发送人总数', value: list.value.length },
@@ -214,12 +214,12 @@
   ])
   const drawerSummary = computed(() =>
     isCollaborationScope.value
-      ? `保存后会作为 ${currentWorkspaceLabel.value} 下 ${currentCollaborationWorkspaceName.value} 的可选发送人。`
-      : '保存后会作为个人空间消息发送页的可选发送人。'
+      ? `保存后会作为 ${currentWorkspaceLabel.value} 下 ${currentCollaborationName.value} 的可选发送人。`
+      : '保存后会作为全局消息发送页的可选发送人。'
   )
 
   const createDefaultModel = (): SenderDrawerModel => ({
-    name: isCollaborationScope.value ? '协作空间' : '个人空间',
+    name: isCollaborationScope.value ? '协作空间' : '全局消息中心',
     description: '',
     avatar_url: '',
     is_default: list.value.length === 0,
@@ -454,3 +454,4 @@
     }
   }
 </style>
+

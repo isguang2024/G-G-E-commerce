@@ -50,11 +50,11 @@ import (
 type ctxKey string
 
 const (
-	CtxUserID                   ctxKey = "user_id"
-	CtxAuthWorkspaceID          ctxKey = "auth_workspace_id"
-	CtxAuthWorkspaceType        ctxKey = "auth_workspace_type"
-	CtxCollaborationWorkspaceID ctxKey = "collaboration_workspace_id"
-	CtxAuthTime                 ctxKey = "auth_time"
+	CtxUserID            ctxKey = "user_id"
+	CtxAuthWorkspaceID   ctxKey = "auth_workspace_id"
+	CtxAuthWorkspaceType ctxKey = "auth_workspace_type"
+	CtxCollaborationID   ctxKey = "collaboration_id"
+	CtxAuthTime          ctxKey = "auth_time"
 )
 
 // handlerBase 把 gen.UnimplementedHandler 下沉一层，让 APIHandler 嵌入的
@@ -424,7 +424,7 @@ func (h *APIHandler) SwitchWorkspace(ctx context.Context, req *gen.WorkspaceSwit
 		Workspace:         *mapWorkspaceToSummary(ws),
 	}
 	if ws.CollaborationWorkspaceID != nil {
-		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
+		out.WorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
 	}
 	return out, nil
 }
@@ -492,7 +492,7 @@ func mapWorkspaceToSummary(ws *models.Workspace) *gen.WorkspaceSummary {
 		out.OwnerUserID = gen.NewOptNilUUID(*ws.OwnerUserID)
 	}
 	if ws.CollaborationWorkspaceID != nil {
-		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
+		out.WorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
 	}
 	return out
 }
@@ -509,7 +509,8 @@ func summaryFromService(item workspace.Summary) gen.WorkspaceSummary {
 		out.OwnerUserID = gen.NewOptNilUUID(*item.OwnerUserID)
 	}
 	if item.CollaborationWorkspaceID != nil {
-		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*item.CollaborationWorkspaceID)
+		out.WorkspaceID = gen.NewOptNilUUID(*item.CollaborationWorkspaceID)
 	}
 	return out
 }
+

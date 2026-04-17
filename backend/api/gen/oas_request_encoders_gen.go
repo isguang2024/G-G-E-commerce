@@ -15,8 +15,8 @@ import (
 	"github.com/ogen-go/ogen/uri"
 )
 
-func encodeAddCollaborationWorkspaceMemberRequest(
-	req *CollaborationWorkspaceMemberAddRequest,
+func encodeAddCollaborationMemberRequest(
+	req *CollaborationMemberAddRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -29,8 +29,8 @@ func encodeAddCollaborationWorkspaceMemberRequest(
 	return nil
 }
 
-func encodeAddCurrentCollaborationWorkspaceMemberRequest(
-	req *CollaborationWorkspaceMemberAddRequest,
+func encodeAddCurrentCollaborationMemberRequest(
+	req *CollaborationMemberAddRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -127,8 +127,8 @@ func encodeCreateApiEndpointCategoryRequest(
 	return nil
 }
 
-func encodeCreateCollaborationWorkspaceRequest(
-	req *CollaborationWorkspaceSaveRequest,
+func encodeCreateCollaborationRequest(
+	req *CollaborationSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -141,8 +141,8 @@ func encodeCreateCollaborationWorkspaceRequest(
 	return nil
 }
 
-func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(
-	req *CollaborationWorkspaceRoleSaveRequest,
+func encodeCreateCurrentCollaborationBoundaryRoleRequest(
+	req *CollaborationRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -155,8 +155,8 @@ func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 	return nil
 }
 
-func encodeCreateCurrentCollaborationWorkspaceRoleRequest(
-	req *CollaborationWorkspaceRoleSaveRequest,
+func encodeCreateCurrentCollaborationRoleRequest(
+	req *CollaborationRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -701,7 +701,7 @@ func encodeSavePermissionActionBatchTemplateRequest(
 	return nil
 }
 
-func encodeSetCollaborationWorkspaceActionsRequest(
+func encodeSetCollaborationActionsRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -715,7 +715,7 @@ func encodeSetCollaborationWorkspaceActionsRequest(
 	return nil
 }
 
-func encodeSetCollaborationWorkspaceMenusRequest(
+func encodeSetCollaborationMenusRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -729,7 +729,7 @@ func encodeSetCollaborationWorkspaceMenusRequest(
 	return nil
 }
 
-func encodeSetCollaborationWorkspacePackagesRequest(
+func encodeSetCollaborationPackagesRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -743,7 +743,7 @@ func encodeSetCollaborationWorkspacePackagesRequest(
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(
+func encodeSetCurrentCollaborationBoundaryRoleActionsRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -757,7 +757,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
+func encodeSetCurrentCollaborationBoundaryRoleMenusRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -771,7 +771,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(
+func encodeSetCurrentCollaborationBoundaryRolePackagesRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -785,7 +785,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceMemberRolesRequest(
+func encodeSetCurrentCollaborationMemberRolesRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -827,7 +827,7 @@ func encodeSetFeaturePackageChildrenRequest(
 	return nil
 }
 
-func encodeSetFeaturePackageCollaborationWorkspacesRequest(
+func encodeSetFeaturePackageCollaborationsRequest(
 	req *UUIDListRequest,
 	r *http.Request,
 ) error {
@@ -1009,8 +1009,8 @@ func encodeUpdateApiEndpointContextScopeRequest(
 	return nil
 }
 
-func encodeUpdateCollaborationWorkspaceRequest(
-	req *CollaborationWorkspaceSaveRequest,
+func encodeUpdateCollaborationRequest(
+	req *CollaborationSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -1023,8 +1023,8 @@ func encodeUpdateCollaborationWorkspaceRequest(
 	return nil
 }
 
-func encodeUpdateCollaborationWorkspaceMemberRoleRequest(
-	req *CollaborationWorkspaceMemberRoleRequest,
+func encodeUpdateCollaborationMemberRoleRequest(
+	req *CollaborationMemberRoleRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -1037,8 +1037,8 @@ func encodeUpdateCollaborationWorkspaceMemberRoleRequest(
 	return nil
 }
 
-func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
-	req *CollaborationWorkspaceRoleSaveRequest,
+func encodeUpdateCurrentCollaborationBoundaryRoleRequest(
+	req *CollaborationRoleSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -1051,8 +1051,8 @@ func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(
 	return nil
 }
 
-func encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(
-	req *CollaborationWorkspaceMemberRoleRequest,
+func encodeUpdateCurrentCollaborationMemberRoleRequest(
+	req *CollaborationMemberRoleRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -9,27 +9,28 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/maben/backend/api/gen"
+	"github.com/maben/backend/internal/modules/system/models"
 	"github.com/maben/backend/internal/modules/system/user"
 )
 
-// ─── ListCurrentCollaborationWorkspaceRoles ───────────────────────────────────
+// ─── ListCurrentCollaborationRoles ───────────────────────────────────
 
-func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
+func (h *cwAPIHandler) ListCurrentCollaborationRoles(ctx context.Context) (*gen.CollaborationRoleList, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceRoleList{Records: []gen.CollaborationWorkspaceRoleItem{}, Total: 0}, nil
+		return &gen.CollaborationRoleList{Records: []gen.CollaborationRoleItem{}, Total: 0}, nil
 	}
 	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(member.CollaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("list cw roles failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
+	return &gen.CollaborationRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
 }
 
-// ─── CreateCurrentCollaborationWorkspaceRole ──────────────────────────────────
+// ─── CreateCurrentCollaborationRole ──────────────────────────────────
 
-func (h *cwAPIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) CreateCurrentCollaborationRole(ctx context.Context, req *gen.CollaborationRoleSaveRequest) (*gen.MutationResult, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, err
@@ -65,21 +66,21 @@ func (h *cwAPIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Conte
 	return ok(), nil
 }
 
-// ─── ListCurrentCollaborationWorkspaceBoundaryRoles ───────────────────────────
+// ─── ListCurrentCollaborationBoundaryRoles ───────────────────────────
 
-func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
-	return h.ListCurrentCollaborationWorkspaceRoles(ctx)
+func (h *cwAPIHandler) ListCurrentCollaborationBoundaryRoles(ctx context.Context) (*gen.CollaborationRoleList, error) {
+	return h.ListCurrentCollaborationRoles(ctx)
 }
 
-// ─── CreateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
+// ─── CreateCurrentCollaborationBoundaryRole ─────────────────────────
 
-func (h *cwAPIHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest) (*gen.MutationResult, error) {
-	return h.CreateCurrentCollaborationWorkspaceRole(ctx, req)
+func (h *cwAPIHandler) CreateCurrentCollaborationBoundaryRole(ctx context.Context, req *gen.CollaborationRoleSaveRequest) (*gen.MutationResult, error) {
+	return h.CreateCurrentCollaborationRole(ctx, req)
 }
 
-// ─── UpdateCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
+// ─── UpdateCurrentCollaborationBoundaryRole ─────────────────────────
 
-func (h *cwAPIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *gen.CollaborationWorkspaceRoleSaveRequest, params gen.UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) UpdateCurrentCollaborationBoundaryRole(ctx context.Context, req *gen.CollaborationRoleSaveRequest, params gen.UpdateCurrentCollaborationBoundaryRoleParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -112,16 +113,22 @@ func (h *cwAPIHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx conte
 	return ok(), nil
 }
 
-// ─── DeleteCurrentCollaborationWorkspaceBoundaryRole ─────────────────────────
+// ─── DeleteCurrentCollaborationBoundaryRole ─────────────────────────
 
-func (h *cwAPIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params gen.DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) DeleteCurrentCollaborationBoundaryRole(ctx context.Context, params gen.DeleteCurrentCollaborationBoundaryRoleParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
 	}
 	if err := h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("role_id = ? AND collaboration_workspace_id = ?", role.ID, member.CollaborationWorkspaceID).
-			Delete(&user.UserRole{}).Error; err != nil {
+		var workspace user.Workspace
+		if err := tx.
+			Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, member.CollaborationWorkspaceID).
+			First(&workspace).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ? AND workspace_id = ?", role.ID, workspace.ID).
+			Delete(&user.WorkspaceRoleBinding{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
@@ -136,6 +143,9 @@ func (h *cwAPIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx conte
 		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleDataPermission{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleScope{}).Error; err != nil {
+			return err
+		}
 		return tx.Delete(&user.Role{}, role.ID).Error
 	}); err != nil {
 		h.logger.Error("delete cw role failed", zap.Error(err))
@@ -144,14 +154,14 @@ func (h *cwAPIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx conte
 	return ok(), nil
 }
 
-// ─── ListCollaborationWorkspaceRoles ──────────────────────────────────────────
+// ─── ListCollaborationRoles ──────────────────────────────────────────
 
-func (h *cwAPIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params gen.ListCollaborationWorkspaceRolesParams) (*gen.CollaborationWorkspaceRoleList, error) {
+func (h *cwAPIHandler) ListCollaborationRoles(ctx context.Context, params gen.ListCollaborationRolesParams) (*gen.CollaborationRoleList, error) {
 	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(params.ID)
 	if err != nil {
 		h.logger.Error("list cw roles failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
+	return &gen.CollaborationRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
 }
 

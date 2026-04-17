@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -17,3 +17,4 @@ type mediaAPIHandler struct {
 func newMediaAPIHandler(uploadSvc upload.Service, eval evaluator.Evaluator, logger *zap.Logger) *mediaAPIHandler {
 	return &mediaAPIHandler{uploadSvc: uploadSvc, evaluator: eval, logger: logger}
 }
+

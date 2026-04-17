@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"flag"
@@ -15,6 +15,7 @@ import (
 	"github.com/maben/backend/internal/pkg/database"
 	"github.com/maben/backend/internal/pkg/logger"
 	"github.com/maben/backend/internal/pkg/password"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 func main() {
@@ -118,21 +119,34 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 		return err
 	}
 
-	var userRole user.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ? AND collaboration_workspace_id IS NULL", userID, adminRole.ID).First(&userRole)
-	if result.Error == gorm.ErrRecordNotFound {
-		userRole = user.UserRole{
-			UserID:                   userID,
-			RoleID:                   adminRole.ID,
-			CollaborationWorkspaceID: nil,
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		workspace, err := workspacerolebinding.EnsurePersonalWorkspace(tx, userID)
+		if err != nil {
+			logger.Error("Failed to ensure personal workspace", zap.Error(err))
+			return err
 		}
-		if err := database.DB.Create(&userRole).Error; err != nil {
+
+		var binding user.WorkspaceRoleBinding
+		result := tx.Where("workspace_id = ? AND user_id = ? AND role_id = ? AND deleted_at IS NULL", workspace.ID, userID, adminRole.ID).First(&binding)
+		if result.Error == nil {
+			return nil
+		}
+		if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+			logger.Error("Failed to query workspace role binding", zap.Error(result.Error))
+			return result.Error
+		}
+
+		binding = user.WorkspaceRoleBinding{
+			WorkspaceID: workspace.ID,
+			UserID:      userID,
+			RoleID:      adminRole.ID,
+			Enabled:     true,
+		}
+		if err := tx.Create(&binding).Error; err != nil {
 			logger.Error("Failed to assign admin role", zap.Error(err))
 			return err
 		}
-		logger.Info("Admin role assigned", zap.String("user_id", userID.String()))
-	}
-
-	return nil
+		logger.Info("Admin role assigned", zap.String("user_id", userID.String()), zap.String("workspace_id", workspace.ID.String()))
+		return nil
+	})
 }
-

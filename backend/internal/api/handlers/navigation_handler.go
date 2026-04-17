@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -22,3 +22,4 @@ func newNavigationAPIHandler(navSvc navigation.Compiler, logger *zap.Logger) *na
 		logger: logger,
 	}
 }
+

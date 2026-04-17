@@ -14,9 +14,9 @@ import (
 	"github.com/maben/backend/internal/pkg/appscope"
 )
 
-// ─── GetCurrentCollaborationWorkspaceBoundaryRolePackages ─────────────────────
+// ─── GetCurrentCollaborationBoundaryRolePackages ─────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*gen.CollaborationWorkspaceBoundaryRolePackagesResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationBoundaryRolePackages(ctx context.Context, params gen.GetCurrentCollaborationBoundaryRolePackagesParams) (*gen.CollaborationBoundaryRolePackagesResponse, error) {
 	member, role, err := h.resolveCWRole(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -31,16 +31,16 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx 
 	if err != nil {
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceBoundaryRolePackagesResponse{
+	return &gen.CollaborationBoundaryRolePackagesResponse{
 		PackageIds: snapshot.PackageIDs,
 		Packages:   featurePackageRefsFromModels(pkgs),
 		Inherited:  snapshot.Inherited,
 	}, nil
 }
 
-// ─── SetCurrentCollaborationWorkspaceBoundaryRolePackages ─────────────────────
+// ─── SetCurrentCollaborationBoundaryRolePackages ─────────────────────
 
-func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCurrentCollaborationBoundaryRolePackages(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationBoundaryRolePackagesParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -69,9 +69,9 @@ func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx 
 	return ok(), nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceBoundaryRoleMenus ────────────────────────
+// ─── GetCurrentCollaborationBoundaryRoleMenus ────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*gen.RoleMenusResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, params gen.GetCurrentCollaborationBoundaryRoleMenusParams) (*gen.RoleMenusResponse, error) {
 	member, role, err := h.resolveCWRole(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -91,9 +91,9 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx con
 	}, nil
 }
 
-// ─── SetCurrentCollaborationWorkspaceBoundaryRoleMenus ────────────────────────
+// ─── SetCurrentCollaborationBoundaryRoleMenus ────────────────────────
 
-func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationBoundaryRoleMenusParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -120,9 +120,9 @@ func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx con
 	return ok(), nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceBoundaryRoleActions ──────────────────────
+// ─── GetCurrentCollaborationBoundaryRoleActions ──────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*gen.RoleActionsResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationBoundaryRoleActions(ctx context.Context, params gen.GetCurrentCollaborationBoundaryRoleActionsParams) (*gen.RoleActionsResponse, error) {
 	member, role, err := h.resolveCWRole(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -147,9 +147,9 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx c
 	}, nil
 }
 
-// ─── SetCurrentCollaborationWorkspaceBoundaryRoleActions ──────────────────────
+// ─── SetCurrentCollaborationBoundaryRoleActions ──────────────────────
 
-func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCurrentCollaborationBoundaryRoleActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationBoundaryRoleActionsParams) (*gen.MutationResult, error) {
 	member, role, err := h.resolveCWRoleEditable(ctx, params.RoleId)
 	if err != nil {
 		return nil, err
@@ -176,9 +176,9 @@ func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx c
 	return ok(), nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceBoundaryPackages ─────────────────────────
+// ─── GetCurrentCollaborationBoundaryPackages ─────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*gen.FeaturePackageAssignmentResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationBoundaryPackages(ctx context.Context) (*gen.FeaturePackageAssignmentResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return &gen.FeaturePackageAssignmentResponse{
@@ -221,27 +221,27 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx cont
 	}, nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceMenus ────────────────────────────────────
+// ─── GetCurrentCollaborationMenus ────────────────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (*gen.CollaborationWorkspaceMenusResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationMenus(ctx context.Context) (*gen.CollaborationMenusResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceMenusResponse{MenuIds: []uuid.UUID{}}, nil
+		return &gen.CollaborationMenusResponse{MenuIds: []uuid.UUID{}}, nil
 	}
 	snapshot, err := h.boundarySvc.GetMenuSnapshot(member.CollaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("get current cw menus failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceMenusResponse{MenuIds: snapshot.EffectiveIDs}, nil
+	return &gen.CollaborationMenusResponse{MenuIds: snapshot.EffectiveIDs}, nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceMenuOrigins ──────────────────────────────
+// ─── GetCurrentCollaborationMenuOrigins ──────────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*gen.CollaborationWorkspaceMenuOriginsResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationMenuOrigins(ctx context.Context) (*gen.CollaborationMenuOriginsResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceMenuOriginsResponse{
+		return &gen.CollaborationMenuOriginsResponse{
 			DerivedMenuIds: []uuid.UUID{},
 			DerivedSources: []gen.MenuSourceEntry{},
 			BlockedMenuIds: []uuid.UUID{},
@@ -252,19 +252,19 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.C
 		h.logger.Error("get current cw menu origins failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceMenuOriginsResponse{
+	return &gen.CollaborationMenuOriginsResponse{
 		DerivedMenuIds: snapshot.DerivedIDs,
 		DerivedSources: menuSourceEntriesFromMap(snapshot.DerivedMap),
 		BlockedMenuIds: snapshot.BlockedIDs,
 	}, nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceActions ──────────────────────────────────
+// ─── GetCurrentCollaborationActions ──────────────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (*gen.CollaborationWorkspaceActionsResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationActions(ctx context.Context) (*gen.CollaborationActionsResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceActionsResponse{
+		return &gen.CollaborationActionsResponse{
 			ActionIds: []uuid.UUID{},
 			Actions:   []gen.PermissionActionRef{},
 		}, nil
@@ -278,18 +278,18 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceActions(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceActionsResponse{
+	return &gen.CollaborationActionsResponse{
 		ActionIds: snapshot.EffectiveIDs,
 		Actions:   permissionActionRefsFromModels(actions),
 	}, nil
 }
 
-// ─── GetCurrentCollaborationWorkspaceActionOrigins ────────────────────────────
+// ─── GetCurrentCollaborationActionOrigins ────────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*gen.CollaborationWorkspaceActionOriginsResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationActionOrigins(ctx context.Context) (*gen.CollaborationActionOriginsResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceActionOriginsResponse{
+		return &gen.CollaborationActionOriginsResponse{
 			DerivedActionIds: []uuid.UUID{},
 			DerivedSources:   []gen.ActionSourceEntry{},
 			BlockedActionIds: []uuid.UUID{},
@@ -300,42 +300,42 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx context
 		h.logger.Error("get current cw action origins failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceActionOriginsResponse{
+	return &gen.CollaborationActionOriginsResponse{
 		DerivedActionIds: snapshot.DerivedIDs,
 		DerivedSources:   actionSourceEntriesFromMap(snapshot.DerivedMap),
 		BlockedActionIds: snapshot.BlockedIDs,
 	}, nil
 }
 
-// ─── GetCollaborationWorkspaceMenus ──────────────────────────────────────────
+// ─── GetCollaborationMenus ──────────────────────────────────────────
 
-func (h *cwAPIHandler) GetCollaborationWorkspaceMenus(ctx context.Context, params gen.GetCollaborationWorkspaceMenusParams) (*gen.CollaborationWorkspaceMenusResponse, error) {
+func (h *cwAPIHandler) GetCollaborationMenus(ctx context.Context, params gen.GetCollaborationMenusParams) (*gen.CollaborationMenusResponse, error) {
 	snapshot, err := h.boundarySvc.GetMenuSnapshot(params.ID)
 	if err != nil {
 		h.logger.Error("get cw menus failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceMenusResponse{MenuIds: snapshot.EffectiveIDs}, nil
+	return &gen.CollaborationMenusResponse{MenuIds: snapshot.EffectiveIDs}, nil
 }
 
-// ─── GetCollaborationWorkspaceMenuOrigins ─────────────────────────────────────
+// ─── GetCollaborationMenuOrigins ─────────────────────────────────────
 
-func (h *cwAPIHandler) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params gen.GetCollaborationWorkspaceMenuOriginsParams) (*gen.CollaborationWorkspaceMenuOriginsResponse, error) {
+func (h *cwAPIHandler) GetCollaborationMenuOrigins(ctx context.Context, params gen.GetCollaborationMenuOriginsParams) (*gen.CollaborationMenuOriginsResponse, error) {
 	snapshot, err := h.boundarySvc.GetMenuSnapshot(params.ID)
 	if err != nil {
 		h.logger.Error("get cw menu origins failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceMenuOriginsResponse{
+	return &gen.CollaborationMenuOriginsResponse{
 		DerivedMenuIds: snapshot.DerivedIDs,
 		DerivedSources: menuSourceEntriesFromMap(snapshot.DerivedMap),
 		BlockedMenuIds: snapshot.BlockedIDs,
 	}, nil
 }
 
-// ─── SetCollaborationWorkspaceMenus ──────────────────────────────────────────
+// ─── SetCollaborationMenus ──────────────────────────────────────────
 
-func (h *cwAPIHandler) SetCollaborationWorkspaceMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationWorkspaceMenusParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCollaborationMenus(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationMenusParams) (*gen.MutationResult, error) {
 	menuIDs := uuidIDsFromRequest(req)
 	snapshot, err := h.boundarySvc.GetMenuSnapshot(params.ID)
 	if err != nil {
@@ -350,9 +350,9 @@ func (h *cwAPIHandler) SetCollaborationWorkspaceMenus(ctx context.Context, req *
 	return ok(), nil
 }
 
-// ─── GetCollaborationWorkspaceActions ─────────────────────────────────────────
+// ─── GetCollaborationActions ─────────────────────────────────────────
 
-func (h *cwAPIHandler) GetCollaborationWorkspaceActions(ctx context.Context, params gen.GetCollaborationWorkspaceActionsParams) (*gen.CollaborationWorkspaceActionsResponse, error) {
+func (h *cwAPIHandler) GetCollaborationActions(ctx context.Context, params gen.GetCollaborationActionsParams) (*gen.CollaborationActionsResponse, error) {
 	snapshot, err := h.boundarySvc.GetSnapshot(params.ID)
 	if err != nil {
 		h.logger.Error("get cw actions failed", zap.Error(err))
@@ -362,30 +362,30 @@ func (h *cwAPIHandler) GetCollaborationWorkspaceActions(ctx context.Context, par
 	if err != nil {
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceActionsResponse{
+	return &gen.CollaborationActionsResponse{
 		ActionIds: snapshot.EffectiveIDs,
 		Actions:   permissionActionRefsFromModels(actions),
 	}, nil
 }
 
-// ─── GetCollaborationWorkspaceActionOrigins ───────────────────────────────────
+// ─── GetCollaborationActionOrigins ───────────────────────────────────
 
-func (h *cwAPIHandler) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params gen.GetCollaborationWorkspaceActionOriginsParams) (*gen.CollaborationWorkspaceActionOriginsResponse, error) {
+func (h *cwAPIHandler) GetCollaborationActionOrigins(ctx context.Context, params gen.GetCollaborationActionOriginsParams) (*gen.CollaborationActionOriginsResponse, error) {
 	snapshot, err := h.boundarySvc.GetSnapshot(params.ID)
 	if err != nil {
 		h.logger.Error("get cw action origins failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceActionOriginsResponse{
+	return &gen.CollaborationActionOriginsResponse{
 		DerivedActionIds: snapshot.DerivedIDs,
 		DerivedSources:   actionSourceEntriesFromMap(snapshot.DerivedMap),
 		BlockedActionIds: snapshot.BlockedIDs,
 	}, nil
 }
 
-// ─── SetCollaborationWorkspaceActions ─────────────────────────────────────────
+// ─── SetCollaborationActions ─────────────────────────────────────────
 
-func (h *cwAPIHandler) SetCollaborationWorkspaceActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationWorkspaceActionsParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCollaborationActions(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCollaborationActionsParams) (*gen.MutationResult, error) {
 	actionIDs := uuidIDsFromRequest(req)
 	snapshot, err := h.boundarySvc.GetSnapshot(params.ID)
 	if err != nil {
@@ -403,4 +403,5 @@ func (h *cwAPIHandler) SetCollaborationWorkspaceActions(ctx context.Context, req
 	}
 	return ok(), nil
 }
+
 

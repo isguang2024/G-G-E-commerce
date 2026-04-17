@@ -21,7 +21,7 @@
   defineOptions({ name: 'MessageWorkspaceNav' })
 
   const props = defineProps<{
-    scope: 'personal' | 'collaboration'
+    scope: 'global' | 'collaboration'
     current: 'dispatch' | 'template' | 'sender' | 'group' | 'record'
   }>()
 
@@ -132,3 +132,4 @@
     }
   }
 </style>
+

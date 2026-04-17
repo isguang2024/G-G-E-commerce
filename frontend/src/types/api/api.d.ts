@@ -146,9 +146,9 @@ declare namespace Api {
       code: string
       ownerUserId?: string
       collaborationWorkspaceId?: string
-      currentCollaborationWorkspaceId?: string
+      currentCollaborationId?: string
       current_collaboration_workspace_id?: string
-      currentCollaborationWorkspaceName?: string
+      currentCollaborationName?: string
       current_collaboration_workspace_name?: string
       status: string
     }
@@ -183,7 +183,7 @@ declare namespace Api {
       accessMode?:
         | 'all'
         | 'personal_workspace_admin'
-        | 'collaboration_workspace_admin'
+        | 'collaboration_admin'
         | 'role_codes'
         | string
       allowedRoleCodes?: string[]
@@ -408,7 +408,7 @@ declare namespace Api {
       access_mode?:
         | 'all'
         | 'personal_workspace_admin'
-        | 'collaboration_workspace_admin'
+        | 'collaboration_admin'
         | 'role_codes'
         | string
       allowed_role_codes?: string[]
@@ -1517,7 +1517,7 @@ declare namespace Api {
     }
 
     /** 协作空间搜索参数 */
-    interface CollaborationWorkspaceSearchParams extends Api.Common.CommonSearchParams {
+    interface CollaborationSearchParams extends Api.Common.CommonSearchParams {
       name?: string
       status?: string
     }
@@ -1552,7 +1552,7 @@ declare namespace Api {
       workspaceType?: 'personal' | 'collaboration' | string
       userId: string
       role: string // 角色名称（如"协作空间管理员"、"协作空间成员"）
-      roleCode?: string // 角色编码（如"collaboration_workspace_admin"、"collaboration_workspace_member"）
+      roleCode?: string // 角色编码（如"collaboration_admin"、"collaboration_member"）
       memberType?: string
       status: string
       joinedAt: string | null
@@ -1687,8 +1687,8 @@ declare namespace Api {
     type ActionType = 'route' | 'external_link' | 'api' | 'none' | string
     type AudienceType =
       | 'all_users'
-      | 'collaboration_workspace_admins'
-      | 'collaboration_workspace_users'
+      | 'collaboration_admins'
+      | 'collaboration_users'
       | 'specified_users'
       | 'recipient_group'
       | 'role'
@@ -1717,6 +1717,8 @@ declare namespace Api {
       done_at?: string
       last_action_at?: string
       recipient_collaboration_workspace_id?: string
+      recipient_scope_type?: string
+      recipient_scope_id?: string
       title: string
       summary?: string
       content?: string
@@ -1733,7 +1735,8 @@ declare namespace Api {
       sender_service_key?: string
       audience_type?: string
       audience_scope?: string
-      target_collaboration_workspace_id?: string
+      target_scope_type?: string
+      target_scope_id?: string
       target_collaboration_workspace_id?: string
       published_at?: string
       expired_at?: string
@@ -1760,7 +1763,8 @@ declare namespace Api {
       name: string
       description: string
       message_type: BoxType
-      owner_scope: 'personal' | 'collaboration' | string
+      owner_scope: 'global' | 'personal' | 'collaboration' | string
+      owner_scope_id?: string
       audience_type: AudienceType
       title_template?: string
       summary_template?: string
@@ -1806,7 +1810,7 @@ declare namespace Api {
     }
 
     interface DispatchOptions {
-      sender_scope: 'personal' | 'collaboration' | string
+      sender_scope: 'global' | 'personal' | 'collaboration' | string
       current_collaboration_workspace_id?: string
       current_collaboration_workspace_name?: string
       sender_options: DispatchSenderOption[]
@@ -1870,7 +1874,8 @@ declare namespace Api {
       name: string
       description?: string
       message_type: BoxType
-      owner_scope: 'personal' | 'collaboration' | string
+      owner_scope: 'global' | 'personal' | 'collaboration' | string
+      owner_scope_id?: string
       owner_collaboration_workspace_id?: string
       owner_collaboration_workspace_name?: string
       audience_type: AudienceType
@@ -1900,7 +1905,7 @@ declare namespace Api {
 
     interface MessageSenderItem {
       id: string
-      scope_type: 'personal' | 'collaboration' | string
+      scope_type: 'global' | 'personal' | 'collaboration' | string
       scope_id?: string
       name: string
       description?: string
@@ -1930,13 +1935,15 @@ declare namespace Api {
       id: string
       target_type:
         | 'user'
-        | 'collaboration_workspace_users'
-        | 'collaboration_workspace_admins'
+        | 'collaboration_users'
+        | 'collaboration_admins'
         | string
       user_id?: string
       user_name?: string
       collaboration_workspace_id?: string
       collaboration_workspace_name?: string
+      target_scope_type?: string
+      target_scope_id?: string
       role_code?: string
       role_name?: string
       package_key?: string
@@ -1947,7 +1954,7 @@ declare namespace Api {
 
     interface MessageRecipientGroupItem {
       id: string
-      scope_type: 'personal' | 'collaboration' | string
+      scope_type: 'global' | 'personal' | 'collaboration' | string
       scope_id?: string
       name: string
       description?: string
@@ -1968,14 +1975,16 @@ declare namespace Api {
     interface MessageRecipientGroupTargetSaveParams {
       target_type:
         | 'user'
-        | 'collaboration_workspace_users'
-        | 'collaboration_workspace_admins'
+        | 'collaboration_users'
+        | 'collaboration_admins'
         | 'role'
         | 'feature_package'
         | string
       user_id?: string
       collaboration_workspace_id?: string
       collaboration_workspace_name?: string
+      target_scope_type?: string
+      target_scope_id?: string
       role_code?: string
       package_key?: string
       sort_order?: number
@@ -2011,8 +2020,10 @@ declare namespace Api {
       content?: string
       message_type: BoxType
       audience_type: AudienceType
-      scope_type: 'personal' | 'collaboration' | string
+      scope_type: 'global' | 'personal' | 'collaboration' | string
       scope_id?: string
+      target_scope_type?: string
+      target_scope_id?: string
       target_collaboration_workspace_id?: string
       target_collaboration_workspace_name?: string
       sender_name?: string
@@ -2031,6 +2042,8 @@ declare namespace Api {
       id: string
       recipient_user_id: string
       recipient_name: string
+      recipient_scope_type?: string
+      recipient_scope_id?: string
       recipient_collaboration_workspace_id?: string
       recipient_collaboration_workspace_name?: string
       delivery_status: DeliveryStatus

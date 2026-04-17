@@ -1,4 +1,4 @@
-// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
+﻿// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
 // (feature package, permission, menu, page).
 package handlers
 
@@ -244,8 +244,8 @@ func (h *extrasAPIHandler) GetPageAccessTrace(ctx context.Context, params gen.Ge
 		AppKey: strings.TrimSpace(params.AppKey),
 		UserID: params.UserID.String(),
 	}
-	if params.CollaborationWorkspaceID.Set {
-		req.CollaborationWorkspaceID = params.CollaborationWorkspaceID.Value.String()
+	if params.WorkspaceID.Set {
+		req.CollaborationWorkspaceID = params.WorkspaceID.Value.String()
 	}
 	if params.MenuSpaceKey.Set {
 		req.MenuSpaceKey = params.MenuSpaceKey.Value
@@ -270,3 +270,4 @@ func (h *extrasAPIHandler) GetPageAccessTrace(ctx context.Context, params gen.Ge
 	}
 	return &out, nil
 }
+

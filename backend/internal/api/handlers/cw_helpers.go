@@ -1,4 +1,4 @@
-﻿// cw_helpers.go — shared helpers for CW boundary handlers.
+// cw_helpers.go — shared helpers for CW boundary handlers.
 package handlers
 
 import (
@@ -14,10 +14,10 @@ import (
 
 // ─── context helpers ──────────────────────────────────────────────────────────
 
-// cwIDFromCtx reads the collaboration_workspace_id injected by the router
+// cwIDFromCtx reads the collaboration_id injected by the router
 // middleware into the request context.
 func cwIDFromCtx(ctx context.Context) (uuid.UUID, bool) {
-	raw := stringFromCtx(ctx, CtxCollaborationWorkspaceID)
+	raw := stringFromCtx(ctx, CtxCollaborationID)
 	if raw == "" {
 		return uuid.Nil, false
 	}
@@ -157,7 +157,7 @@ func roleToMap(r user.Role) map[string]interface{} {
 		"description":                r.Description,
 		"status":                     r.Status,
 		"is_system":                  r.IsSystem,
-		"collaboration_workspace_id": cwID,
+		"collaboration_id": cwID,
 		"is_global":                  r.CollaborationWorkspaceID == nil,
 		"create_time":                r.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
@@ -251,4 +251,5 @@ func cwDefaultString(value, fallback string) string {
 	}
 	return value
 }
+
 

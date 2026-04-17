@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-group-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-group-hero__actions">
@@ -71,7 +71,7 @@
 
           <div class="message-group-card__meta">
             <span>{{
-              item.scope_type === 'collaboration' ? '协作空间接收组' : '个人空间接收组'
+              item.scope_type === 'collaboration' ? '协作空间接收组' : '全局接收组'
             }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
@@ -103,7 +103,7 @@
           </div>
           <div class="message-group-drawer__summary-tags">
             <ElTag effect="plain">{{
-              isCollaborationScope ? '协作空间接收组' : '个人空间接收组'
+              isCollaborationScope ? '协作空间接收组' : '全局接收组'
             }}</ElTag>
             <ElTag effect="plain" type="info">预估 {{ estimatedRecipients }} 人</ElTag>
           </div>
@@ -116,7 +116,7 @@
                 v-model="drawerModel.name"
                 maxlength="60"
                 show-word-limit
-                placeholder="例如：个人空间重点关注用户 / 当前协作空间管理员"
+                placeholder="例如：全局重点关注用户 / 当前协作空间管理员"
               />
             </ElFormItem>
 
@@ -164,11 +164,11 @@
                     <ElSelect v-model="item.target_type" @change="handleTargetTypeChange(item)">
                       <ElOption value="user" label="指定用户" />
                       <ElOption
-                        value="collaboration_workspace_users"
+                        value="collaboration_users"
                         :label="isCollaborationScope ? '当前协作空间成员' : '指定协作空间成员'"
                       />
                       <ElOption
-                        value="collaboration_workspace_admins"
+                        value="collaboration_admins"
                         :label="isCollaborationScope ? '当前协作空间管理员' : '指定协作空间管理员'"
                       />
                       <ElOption value="role" label="按角色命中" />
@@ -204,13 +204,13 @@
 
                 <ElFormItem
                   v-else-if="
-                    item.target_type === 'collaboration_workspace_users' ||
-                    item.target_type === 'collaboration_workspace_admins'
+                    item.target_type === 'collaboration_users' ||
+                    item.target_type === 'collaboration_admins'
                   "
                   label="目标协作空间"
                 >
                   <div v-if="isCollaborationScope" class="message-group-fixed-target">
-                    <strong>{{ currentCollaborationWorkspaceName }}</strong>
+                    <strong>{{ currentCollaborationName }}</strong>
                     <span>协作空间侧规则固定作用于当前协作空间。</span>
                   </div>
                   <ElSelect
@@ -291,15 +291,15 @@
   defineOptions({ name: 'MessageRecipientGroupConsole' })
 
   const props = defineProps<{
-    scope: 'personal' | 'collaboration'
+    scope: 'global' | 'collaboration'
   }>()
 
   interface DrawerTargetModel {
     local_id: string
     target_type:
       | 'user'
-      | 'collaboration_workspace_users'
-      | 'collaboration_workspace_admins'
+      | 'collaboration_users'
+      | 'collaboration_admins'
       | 'role'
       | 'feature_package'
       | string
@@ -320,8 +320,8 @@
   const {
     isCollaborationScope,
     skipCollaborationWorkspaceHeader,
-    currentCollaborationWorkspaceId,
-    currentCollaborationWorkspaceName,
+    currentCollaborationId,
+    currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
     ensureCollaborationWorkspaceContext,
@@ -348,13 +348,13 @@
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间接收组' : '接收组管理'))
   const pageDescription = computed(() =>
     isCollaborationScope.value
-      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationWorkspaceName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
-      : '维护个人空间消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
+      : '维护全局消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
   )
   const toolbarDescription = computed(() =>
     isCollaborationScope.value
       ? `协作空间接收组只作用于当前协作空间消息发送页（${currentWorkspaceLabel.value}）。`
-      : '个人空间接收组可给个人空间发送页直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
+      : '全局接收组可给全局发送页直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
   )
   const heroMetrics = computed(() => [
     { label: '接收组总数', value: list.value.length },
@@ -366,8 +366,8 @@
   ])
   const drawerSummary = computed(() =>
     isCollaborationScope.value
-      ? `保存后会作为 ${currentCollaborationWorkspaceName.value}（${currentWorkspaceName.value}）的可选接收组。`
-      : '保存后会作为个人空间消息发送页的可选接收组。'
+      ? `保存后会作为 ${currentCollaborationName.value}（${currentWorkspaceName.value}）的可选接收组。`
+      : '保存后会作为全局消息发送页的可选接收组。'
   )
   const estimatedRecipients = computed(() =>
     estimateDrawerRecipients(drawerModel.value?.targets || [])
@@ -388,7 +388,7 @@
     collaborationWorkspaceId:
       target?.collaboration_workspace_id ||
       target?.collaboration_workspace_id ||
-      (isCollaborationScope.value ? currentCollaborationWorkspaceId.value || '' : ''),
+      (isCollaborationScope.value ? currentCollaborationId.value || '' : ''),
     role_code: target?.role_code || '',
     package_key: target?.package_key || '',
     sort_order: target?.sort_order || sequence.value
@@ -439,8 +439,8 @@
         ? item.collaboration_workspace_name
         : collaborationWorkspaceOptions.value.find(
             (workspace) => workspace.id === resolveTargetCollaborationWorkspaceId(item)
-          )?.name || currentCollaborationWorkspaceName.value
-    if (item.target_type === 'collaboration_workspace_admins') {
+          )?.name || currentCollaborationName.value
+    if (item.target_type === 'collaboration_admins') {
       return `${collaborationWorkspaceName} · 协作空间管理员`
     }
     return `${collaborationWorkspaceName} · 协作空间成员`
@@ -471,17 +471,17 @@
         return
       }
       if (!isCollaborationScope.value) return
-      if (item.target_type === 'collaboration_workspace_admins') {
+      if (item.target_type === 'collaboration_admins') {
         userOptions.value
           .filter(
             (user) =>
               (user.collaboration_workspace_name || user.current_collaboration_workspace_name) ===
-              currentCollaborationWorkspaceName.value
+              currentCollaborationName.value
           )
           .forEach((user) => seen.add(user.id))
         return
       }
-      if (item.target_type === 'collaboration_workspace_users') {
+      if (item.target_type === 'collaboration_users') {
         userOptions.value.forEach((user) => seen.add(user.id))
       }
     })
@@ -559,7 +559,7 @@
   const handleTargetTypeChange = (item: DrawerTargetModel) => {
     item.user_id = ''
     item.collaborationWorkspaceId = isCollaborationScope.value
-      ? currentCollaborationWorkspaceId.value || ''
+      ? currentCollaborationId.value || ''
       : ''
     item.role_code = ''
     item.package_key = ''
@@ -582,8 +582,8 @@
       }
       if (
         !isCollaborationScope.value &&
-        (item.target_type === 'collaboration_workspace_users' ||
-          item.target_type === 'collaboration_workspace_admins') &&
+        (item.target_type === 'collaboration_users' ||
+          item.target_type === 'collaboration_admins') &&
         !item.collaborationWorkspaceId
       ) {
         ElMessage.warning('协作空间规则必须选择目标协作空间')
@@ -609,10 +609,10 @@
           target_type: item.target_type,
           user_id: item.target_type === 'user' ? item.user_id || undefined : undefined,
           collaboration_workspace_id:
-            item.target_type === 'collaboration_workspace_users' ||
-            item.target_type === 'collaboration_workspace_admins'
+            item.target_type === 'collaboration_users' ||
+            item.target_type === 'collaboration_admins'
               ? isCollaborationScope.value
-                ? currentCollaborationWorkspaceId.value || undefined
+                ? currentCollaborationId.value || undefined
                 : item.collaborationWorkspaceId || undefined
               : undefined,
           role_code: item.target_type === 'role' ? item.role_code || undefined : undefined,
@@ -843,3 +843,4 @@
     }
   }
 </style>
+

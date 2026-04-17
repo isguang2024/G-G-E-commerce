@@ -78,8 +78,8 @@ export const useWorkspaceStore = defineStore(
     const ensureCurrentWorkspace = (options?: {
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
-      preferredCollaborationWorkspaceId?: string
-      preferredCollaborationWorkspaceIdFromRecord?: string
+      preferredCollaborationId?: string
+      preferredCollaborationIdFromRecord?: string
       preferPersonal?: boolean
     }) => {
       if (!workspaceList.value.length) {
@@ -99,13 +99,13 @@ export const useWorkspaceStore = defineStore(
         }
       }
 
-      const preferredCollaborationWorkspaceId =
-        `${options?.preferredCollaborationWorkspaceId || ''}`.trim()
-      if (preferredCollaborationWorkspaceId) {
+      const preferredCollaborationId =
+        `${options?.preferredCollaborationId || ''}`.trim()
+      if (preferredCollaborationId) {
         const matchedByCollaborationWorkspaceId = workspaceList.value.find(
           (item) =>
             normalizeWorkspaceType(item.workspaceType) === 'collaboration' &&
-            item.id === preferredCollaborationWorkspaceId
+            item.id === preferredCollaborationId
         )
         if (matchedByCollaborationWorkspaceId) {
           setCurrentAuthWorkspace(
@@ -116,14 +116,14 @@ export const useWorkspaceStore = defineStore(
         }
       }
 
-      const preferredCollaborationWorkspaceIdFromRecord =
-        `${options?.preferredCollaborationWorkspaceIdFromRecord || ''}`.trim()
-      if (preferredCollaborationWorkspaceIdFromRecord) {
+      const preferredCollaborationIdFromRecord =
+        `${options?.preferredCollaborationIdFromRecord || ''}`.trim()
+      if (preferredCollaborationIdFromRecord) {
         const matchedByCollaborationWorkspaceRecord = workspaceList.value.find(
           (item) =>
             normalizeWorkspaceType(item.workspaceType) === 'collaboration' &&
             `${item.collaborationWorkspaceId || ''}`.trim() ===
-              preferredCollaborationWorkspaceIdFromRecord
+              preferredCollaborationIdFromRecord
         )
         if (matchedByCollaborationWorkspaceRecord) {
           setCurrentAuthWorkspace(
@@ -156,8 +156,8 @@ export const useWorkspaceStore = defineStore(
     const loadMyWorkspaces = async (options?: {
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
-      preferredCollaborationWorkspaceId?: string
-      preferredCollaborationWorkspaceIdFromRecord?: string
+      preferredCollaborationId?: string
+      preferredCollaborationIdFromRecord?: string
       preferPersonal?: boolean
     }) => {
       loading.value = true

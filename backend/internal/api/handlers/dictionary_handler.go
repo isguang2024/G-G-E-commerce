@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -30,3 +30,4 @@ func newDictionaryAPIHandler(db *gorm.DB, logger *zap.Logger) *dictionaryAPIHand
 		logger:  logger,
 	}
 }
+

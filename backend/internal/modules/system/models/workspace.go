@@ -8,6 +8,10 @@ import (
 )
 
 const (
+	ScopeTypeGlobal        = "global"
+	ScopeTypePersonal      = "personal"
+	ScopeTypeCollaboration = "collaboration"
+
 	WorkspaceTypePersonal      = "personal"
 	WorkspaceTypeCollaboration = "collaboration"
 
@@ -66,6 +70,20 @@ type WorkspaceRoleBinding struct {
 
 func (WorkspaceRoleBinding) TableName() string {
 	return "workspace_role_bindings"
+}
+
+type RoleScope struct {
+	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	RoleID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"role_id"`
+	ScopeType string         `gorm:"type:varchar(20);not null;default:'global';index" json:"scope_type"`
+	ScopeID   *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id,omitempty"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (RoleScope) TableName() string {
+	return "role_scopes"
 }
 
 type WorkspaceFeaturePackage struct {

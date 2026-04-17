@@ -226,12 +226,12 @@ func newOgenBridges(ogenServer http.Handler) (publicBridge, ogenBridge gin.Handl
 			ctx = context.WithValue(ctx, handlers.CtxUserID, userID)
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
 			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
-			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
+			ctx = context.WithValue(ctx, handlers.CtxCollaborationID, c.GetString("collaboration_id"))
 			if authTime, exists := c.Get("auth_time"); exists {
 				ctx = context.WithValue(ctx, handlers.CtxAuthTime, authTime)
 			}
 			ctx = pkgLogger.WithActor(ctx, userID, "user")
-			ctx = pkgLogger.WithWorkspace(ctx, c.GetString("collaboration_workspace_id"))
+			ctx = pkgLogger.WithWorkspace(ctx, c.GetString("auth_workspace_id"))
 		}
 		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
 		requestHost := strings.TrimSpace(c.GetString("request_host"))

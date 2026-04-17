@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -15,3 +15,4 @@ type permissionAPIHandler struct {
 func newPermissionAPIHandler(permSvc permission.PermissionService, logger *zap.Logger) *permissionAPIHandler {
 	return &permissionAPIHandler{permSvc: permSvc, logger: logger}
 }
+

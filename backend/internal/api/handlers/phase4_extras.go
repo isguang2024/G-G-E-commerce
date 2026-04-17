@@ -144,21 +144,21 @@ func (h *phase4ExtrasAPIHandler) GetSystemViewPages(ctx context.Context, params 
 
 // ── user collaboration workspaces ───────────────────────────────────────────
 
-func (h *phase4ExtrasAPIHandler) GetUserCollaborationWorkspaces(ctx context.Context, params gen.GetUserCollaborationWorkspacesParams) (*gen.UserCollaborationWorkspacesResponse, error) {
+func (h *phase4ExtrasAPIHandler) GetUserCollaborations(ctx context.Context, params gen.GetUserCollaborationsParams) (*gen.UserCollaborationsResponse, error) {
 	if _, err := h.userSvc.Get(params.ID); err != nil {
 		return nil, err
 	}
 	if h.cwMemberRepo == nil {
-		return &gen.UserCollaborationWorkspacesResponse{Records: []gen.UserCollaborationWorkspacesResponseRecordsItem{}}, nil
+		return &gen.UserCollaborationsResponse{Records: []gen.UserCollaborationsResponseRecordsItem{}}, nil
 	}
 	items, err := h.cwMemberRepo.GetCollaborationWorkspacesByUserID(params.ID)
 	if err != nil {
 		h.logger.Error("get user collaboration workspaces failed", zap.Error(err))
 		return nil, err
 	}
-	out := &gen.UserCollaborationWorkspacesResponse{Records: make([]gen.UserCollaborationWorkspacesResponseRecordsItem, 0, len(items))}
+	out := &gen.UserCollaborationsResponse{Records: make([]gen.UserCollaborationsResponseRecordsItem, 0, len(items))}
 	for _, item := range items {
-		out.Records = append(out.Records, gen.UserCollaborationWorkspacesResponseRecordsItem{
+		out.Records = append(out.Records, gen.UserCollaborationsResponseRecordsItem{
 			ID:     item.ID,
 			Name:   item.Name,
 			Status: item.Status,
@@ -181,4 +181,5 @@ func (h *phase4ExtrasAPIHandler) RefreshUserPermissionSnapshot(ctx context.Conte
 	}
 	return ok(), nil
 }
+
 

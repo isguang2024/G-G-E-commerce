@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"net/http"
@@ -47,7 +47,7 @@ func DynamicAppSecurity(db *gorm.DB, logger *zap.Logger, env string) gin.Handler
 		allowedOrigins, hasConfiguredAllowlist := resolveAllowedOrigins(profile, requestHost, requestScheme)
 		corsAllowed := origin == "" || allowOrigin(origin, requestHost, allowedOrigins, hasConfiguredAllowlist, env)
 
-		allowHeaders := "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With, X-API-Key, X-Auth-Workspace-Id, X-Collaboration-Workspace-Id"
+		allowHeaders := "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With, X-API-Key, X-Auth-Workspace-Id"
 		c.Writer.Header().Set("Access-Control-Allow-Headers", allowHeaders)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 		c.Writer.Header().Set("Vary", "Origin")
@@ -268,4 +268,3 @@ func toString(value interface{}) string {
 		return ""
 	}
 }
-

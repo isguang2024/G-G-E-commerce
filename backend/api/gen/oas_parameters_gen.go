@@ -16,12 +16,12 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-// AddCollaborationWorkspaceMemberParams is parameters of addCollaborationWorkspaceMember operation.
-type AddCollaborationWorkspaceMemberParams struct {
+// AddCollaborationMemberParams is parameters of addCollaborationMember operation.
+type AddCollaborationMemberParams struct {
 	ID uuid.UUID
 }
 
-func unpackAddCollaborationWorkspaceMemberParams(packed middleware.Parameters) (params AddCollaborationWorkspaceMemberParams) {
+func unpackAddCollaborationMemberParams(packed middleware.Parameters) (params AddCollaborationMemberParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -32,7 +32,7 @@ func unpackAddCollaborationWorkspaceMemberParams(packed middleware.Parameters) (
 	return params
 }
 
-func decodeAddCollaborationWorkspaceMemberParams(args [1]string, argsEscaped bool, r *http.Request) (params AddCollaborationWorkspaceMemberParams, _ error) {
+func decodeAddCollaborationMemberParams(args [1]string, argsEscaped bool, r *http.Request) (params AddCollaborationMemberParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -515,12 +515,12 @@ func decodeDeleteAppHostBindingParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
-// DeleteCollaborationWorkspaceParams is parameters of deleteCollaborationWorkspace operation.
-type DeleteCollaborationWorkspaceParams struct {
+// DeleteCollaborationParams is parameters of deleteCollaboration operation.
+type DeleteCollaborationParams struct {
 	ID uuid.UUID
 }
 
-func unpackDeleteCollaborationWorkspaceParams(packed middleware.Parameters) (params DeleteCollaborationWorkspaceParams) {
+func unpackDeleteCollaborationParams(packed middleware.Parameters) (params DeleteCollaborationParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -531,7 +531,7 @@ func unpackDeleteCollaborationWorkspaceParams(packed middleware.Parameters) (par
 	return params
 }
 
-func decodeDeleteCollaborationWorkspaceParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteCollaborationWorkspaceParams, _ error) {
+func decodeDeleteCollaborationParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteCollaborationParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -580,12 +580,12 @@ func decodeDeleteCollaborationWorkspaceParams(args [1]string, argsEscaped bool, 
 	return params, nil
 }
 
-// DeleteCurrentCollaborationWorkspaceBoundaryRoleParams is parameters of deleteCurrentCollaborationWorkspaceBoundaryRole operation.
-type DeleteCurrentCollaborationWorkspaceBoundaryRoleParams struct {
+// DeleteCurrentCollaborationBoundaryRoleParams is parameters of deleteCurrentCollaborationBoundaryRole operation.
+type DeleteCurrentCollaborationBoundaryRoleParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackDeleteCurrentCollaborationWorkspaceBoundaryRoleParams(packed middleware.Parameters) (params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) {
+func unpackDeleteCurrentCollaborationBoundaryRoleParams(packed middleware.Parameters) (params DeleteCurrentCollaborationBoundaryRoleParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -596,7 +596,7 @@ func unpackDeleteCurrentCollaborationWorkspaceBoundaryRoleParams(packed middlewa
 	return params
 }
 
-func decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams, _ error) {
+func decodeDeleteCurrentCollaborationBoundaryRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteCurrentCollaborationBoundaryRoleParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -2557,12 +2557,12 @@ func decodeGetAuditLogStatsParams(args [0]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
-// GetCollaborationWorkspaceParams is parameters of getCollaborationWorkspace operation.
-type GetCollaborationWorkspaceParams struct {
+// GetCollaborationParams is parameters of getCollaboration operation.
+type GetCollaborationParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetCollaborationWorkspaceParams(packed middleware.Parameters) (params GetCollaborationWorkspaceParams) {
+func unpackGetCollaborationParams(packed middleware.Parameters) (params GetCollaborationParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2573,7 +2573,7 @@ func unpackGetCollaborationWorkspaceParams(packed middleware.Parameters) (params
 	return params
 }
 
-func decodeGetCollaborationWorkspaceParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspaceParams, _ error) {
+func decodeGetCollaborationParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -2622,12 +2622,12 @@ func decodeGetCollaborationWorkspaceParams(args [1]string, argsEscaped bool, r *
 	return params, nil
 }
 
-// GetCollaborationWorkspaceActionOriginsParams is parameters of getCollaborationWorkspaceActionOrigins operation.
-type GetCollaborationWorkspaceActionOriginsParams struct {
+// GetCollaborationActionOriginsParams is parameters of getCollaborationActionOrigins operation.
+type GetCollaborationActionOriginsParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetCollaborationWorkspaceActionOriginsParams(packed middleware.Parameters) (params GetCollaborationWorkspaceActionOriginsParams) {
+func unpackGetCollaborationActionOriginsParams(packed middleware.Parameters) (params GetCollaborationActionOriginsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2638,7 +2638,7 @@ func unpackGetCollaborationWorkspaceActionOriginsParams(packed middleware.Parame
 	return params
 }
 
-func decodeGetCollaborationWorkspaceActionOriginsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspaceActionOriginsParams, _ error) {
+func decodeGetCollaborationActionOriginsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationActionOriginsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -2687,12 +2687,12 @@ func decodeGetCollaborationWorkspaceActionOriginsParams(args [1]string, argsEsca
 	return params, nil
 }
 
-// GetCollaborationWorkspaceActionsParams is parameters of getCollaborationWorkspaceActions operation.
-type GetCollaborationWorkspaceActionsParams struct {
+// GetCollaborationActionsParams is parameters of getCollaborationActions operation.
+type GetCollaborationActionsParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetCollaborationWorkspaceActionsParams(packed middleware.Parameters) (params GetCollaborationWorkspaceActionsParams) {
+func unpackGetCollaborationActionsParams(packed middleware.Parameters) (params GetCollaborationActionsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2703,7 +2703,7 @@ func unpackGetCollaborationWorkspaceActionsParams(packed middleware.Parameters) 
 	return params
 }
 
-func decodeGetCollaborationWorkspaceActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspaceActionsParams, _ error) {
+func decodeGetCollaborationActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationActionsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -2752,12 +2752,12 @@ func decodeGetCollaborationWorkspaceActionsParams(args [1]string, argsEscaped bo
 	return params, nil
 }
 
-// GetCollaborationWorkspaceMenuOriginsParams is parameters of getCollaborationWorkspaceMenuOrigins operation.
-type GetCollaborationWorkspaceMenuOriginsParams struct {
+// GetCollaborationMenuOriginsParams is parameters of getCollaborationMenuOrigins operation.
+type GetCollaborationMenuOriginsParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetCollaborationWorkspaceMenuOriginsParams(packed middleware.Parameters) (params GetCollaborationWorkspaceMenuOriginsParams) {
+func unpackGetCollaborationMenuOriginsParams(packed middleware.Parameters) (params GetCollaborationMenuOriginsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2768,7 +2768,7 @@ func unpackGetCollaborationWorkspaceMenuOriginsParams(packed middleware.Paramete
 	return params
 }
 
-func decodeGetCollaborationWorkspaceMenuOriginsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspaceMenuOriginsParams, _ error) {
+func decodeGetCollaborationMenuOriginsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationMenuOriginsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -2817,12 +2817,12 @@ func decodeGetCollaborationWorkspaceMenuOriginsParams(args [1]string, argsEscape
 	return params, nil
 }
 
-// GetCollaborationWorkspaceMenusParams is parameters of getCollaborationWorkspaceMenus operation.
-type GetCollaborationWorkspaceMenusParams struct {
+// GetCollaborationMenusParams is parameters of getCollaborationMenus operation.
+type GetCollaborationMenusParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetCollaborationWorkspaceMenusParams(packed middleware.Parameters) (params GetCollaborationWorkspaceMenusParams) {
+func unpackGetCollaborationMenusParams(packed middleware.Parameters) (params GetCollaborationMenusParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2833,7 +2833,7 @@ func unpackGetCollaborationWorkspaceMenusParams(packed middleware.Parameters) (p
 	return params
 }
 
-func decodeGetCollaborationWorkspaceMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspaceMenusParams, _ error) {
+func decodeGetCollaborationMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationMenusParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -2882,19 +2882,19 @@ func decodeGetCollaborationWorkspaceMenusParams(args [1]string, argsEscaped bool
 	return params, nil
 }
 
-// GetCollaborationWorkspacePackagesParams is parameters of getCollaborationWorkspacePackages operation.
-type GetCollaborationWorkspacePackagesParams struct {
-	CollaborationWorkspaceId uuid.UUID
-	AppKey                   OptString `json:",omitempty,omitzero"`
+// GetCollaborationPackagesParams is parameters of getCollaborationPackages operation.
+type GetCollaborationPackagesParams struct {
+	WorkspaceId uuid.UUID
+	AppKey      OptString `json:",omitempty,omitzero"`
 }
 
-func unpackGetCollaborationWorkspacePackagesParams(packed middleware.Parameters) (params GetCollaborationWorkspacePackagesParams) {
+func unpackGetCollaborationPackagesParams(packed middleware.Parameters) (params GetCollaborationPackagesParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "collaborationWorkspaceId",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.CollaborationWorkspaceId = packed[key].(uuid.UUID)
+		params.WorkspaceId = packed[key].(uuid.UUID)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2908,9 +2908,9 @@ func unpackGetCollaborationWorkspacePackagesParams(packed middleware.Parameters)
 	return params
 }
 
-func decodeGetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationWorkspacePackagesParams, _ error) {
+func decodeGetCollaborationPackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCollaborationPackagesParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: collaborationWorkspaceId.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2922,7 +2922,7 @@ func decodeGetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "collaborationWorkspaceId",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
@@ -2939,7 +2939,7 @@ func decodeGetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 					return err
 				}
 
-				params.CollaborationWorkspaceId = c
+				params.WorkspaceId = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2950,7 +2950,7 @@ func decodeGetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "collaborationWorkspaceId",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3063,12 +3063,12 @@ func decodeGetCurrentAppParams(args [0]string, argsEscaped bool, r *http.Request
 	return params, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams is parameters of getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
-type GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams struct {
+// GetCurrentCollaborationBoundaryRoleActionsParams is parameters of getCurrentCollaborationBoundaryRoleActions operation.
+type GetCurrentCollaborationBoundaryRoleActionsParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(packed middleware.Parameters) (params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) {
+func unpackGetCurrentCollaborationBoundaryRoleActionsParams(packed middleware.Parameters) (params GetCurrentCollaborationBoundaryRoleActionsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -3079,7 +3079,7 @@ func unpackGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(packed midd
 	return params
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams, _ error) {
+func decodeGetCurrentCollaborationBoundaryRoleActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationBoundaryRoleActionsParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -3128,12 +3128,12 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args [1]str
 	return params, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams is parameters of getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
-type GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams struct {
+// GetCurrentCollaborationBoundaryRoleMenusParams is parameters of getCurrentCollaborationBoundaryRoleMenus operation.
+type GetCurrentCollaborationBoundaryRoleMenusParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(packed middleware.Parameters) (params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) {
+func unpackGetCurrentCollaborationBoundaryRoleMenusParams(packed middleware.Parameters) (params GetCurrentCollaborationBoundaryRoleMenusParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -3144,7 +3144,7 @@ func unpackGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(packed middle
 	return params
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams, _ error) {
+func decodeGetCurrentCollaborationBoundaryRoleMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationBoundaryRoleMenusParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -3193,12 +3193,12 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args [1]strin
 	return params, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams is parameters of getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
-type GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams struct {
+// GetCurrentCollaborationBoundaryRolePackagesParams is parameters of getCurrentCollaborationBoundaryRolePackages operation.
+type GetCurrentCollaborationBoundaryRolePackagesParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(packed middleware.Parameters) (params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) {
+func unpackGetCurrentCollaborationBoundaryRolePackagesParams(packed middleware.Parameters) (params GetCurrentCollaborationBoundaryRolePackagesParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -3209,7 +3209,7 @@ func unpackGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(packed mid
 	return params
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams, _ error) {
+func decodeGetCurrentCollaborationBoundaryRolePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationBoundaryRolePackagesParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -3258,12 +3258,12 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args [1]st
 	return params, nil
 }
 
-// GetCurrentCollaborationWorkspaceMemberRolesParams is parameters of getCurrentCollaborationWorkspaceMemberRoles operation.
-type GetCurrentCollaborationWorkspaceMemberRolesParams struct {
+// GetCurrentCollaborationMemberRolesParams is parameters of getCurrentCollaborationMemberRoles operation.
+type GetCurrentCollaborationMemberRolesParams struct {
 	UserId uuid.UUID
 }
 
-func unpackGetCurrentCollaborationWorkspaceMemberRolesParams(packed middleware.Parameters) (params GetCurrentCollaborationWorkspaceMemberRolesParams) {
+func unpackGetCurrentCollaborationMemberRolesParams(packed middleware.Parameters) (params GetCurrentCollaborationMemberRolesParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "userId",
@@ -3274,7 +3274,7 @@ func unpackGetCurrentCollaborationWorkspaceMemberRolesParams(packed middleware.P
 	return params
 }
 
-func decodeGetCurrentCollaborationWorkspaceMemberRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationWorkspaceMemberRolesParams, _ error) {
+func decodeGetCurrentCollaborationMemberRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetCurrentCollaborationMemberRolesParams, _ error) {
 	// Decode path: userId.
 	if err := func() error {
 		param := args[0]
@@ -3860,13 +3860,13 @@ func decodeGetFeaturePackageChildrenParams(args [1]string, argsEscaped bool, r *
 	return params, nil
 }
 
-// GetFeaturePackageCollaborationWorkspacesParams is parameters of getFeaturePackageCollaborationWorkspaces operation.
-type GetFeaturePackageCollaborationWorkspacesParams struct {
+// GetFeaturePackageCollaborationsParams is parameters of getFeaturePackageCollaborations operation.
+type GetFeaturePackageCollaborationsParams struct {
 	ID     uuid.UUID
 	AppKey OptString `json:",omitempty,omitzero"`
 }
 
-func unpackGetFeaturePackageCollaborationWorkspacesParams(packed middleware.Parameters) (params GetFeaturePackageCollaborationWorkspacesParams) {
+func unpackGetFeaturePackageCollaborationsParams(packed middleware.Parameters) (params GetFeaturePackageCollaborationsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -3886,7 +3886,7 @@ func unpackGetFeaturePackageCollaborationWorkspacesParams(packed middleware.Para
 	return params
 }
 
-func decodeGetFeaturePackageCollaborationWorkspacesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetFeaturePackageCollaborationWorkspacesParams, _ error) {
+func decodeGetFeaturePackageCollaborationsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetFeaturePackageCollaborationsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
 	// Decode path: id.
 	if err := func() error {
@@ -5278,7 +5278,7 @@ type GetPageAccessTraceParams struct {
 	// 被测用户 ID (UUID).
 	UserID uuid.UUID
 	// 协作空间 ID；为空表示个人空间链路.
-	CollaborationWorkspaceID OptUUID `json:",omitempty,omitzero"`
+	WorkspaceID OptUUID `json:",omitempty,omitzero"`
 	// 菜单空间 key；为空自动解析默认空间.
 	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 	// 单个页面 key，留空则返回运行时可见全部页面.
@@ -5306,11 +5306,11 @@ func unpackGetPageAccessTraceParams(packed middleware.Parameters) (params GetPag
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "collaboration_workspace_id",
+			Name: "workspace_id",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.CollaborationWorkspaceID = v.(OptUUID)
+			params.WorkspaceID = v.(OptUUID)
 		}
 	}
 	{
@@ -5426,17 +5426,17 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 			Err:  err,
 		}
 	}
-	// Decode query: collaboration_workspace_id.
+	// Decode query: workspace_id.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "collaboration_workspace_id",
+			Name:    "workspace_id",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotCollaborationWorkspaceIDVal uuid.UUID
+				var paramsDotWorkspaceIDVal uuid.UUID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -5448,12 +5448,12 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 						return err
 					}
 
-					paramsDotCollaborationWorkspaceIDVal = c
+					paramsDotWorkspaceIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.CollaborationWorkspaceID.SetTo(paramsDotCollaborationWorkspaceIDVal)
+				params.WorkspaceID.SetTo(paramsDotWorkspaceIDVal)
 				return nil
 			}); err != nil {
 				return err
@@ -5462,7 +5462,7 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "collaboration_workspace_id",
+			Name: "workspace_id",
 			In:   "query",
 			Err:  err,
 		}
@@ -6793,12 +6793,12 @@ func decodeGetUserParams(args [1]string, argsEscaped bool, r *http.Request) (par
 	return params, nil
 }
 
-// GetUserCollaborationWorkspacesParams is parameters of getUserCollaborationWorkspaces operation.
-type GetUserCollaborationWorkspacesParams struct {
+// GetUserCollaborationsParams is parameters of getUserCollaborations operation.
+type GetUserCollaborationsParams struct {
 	ID uuid.UUID
 }
 
-func unpackGetUserCollaborationWorkspacesParams(packed middleware.Parameters) (params GetUserCollaborationWorkspacesParams) {
+func unpackGetUserCollaborationsParams(packed middleware.Parameters) (params GetUserCollaborationsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -6809,7 +6809,7 @@ func unpackGetUserCollaborationWorkspacesParams(packed middleware.Parameters) (p
 	return params
 }
 
-func decodeGetUserCollaborationWorkspacesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetUserCollaborationWorkspacesParams, _ error) {
+func decodeGetUserCollaborationsParams(args [1]string, argsEscaped bool, r *http.Request) (params GetUserCollaborationsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -7094,10 +7094,10 @@ func decodeGetUserPackagesParams(args [1]string, argsEscaped bool, r *http.Reque
 
 // GetUserPermissionDiagnosisParams is parameters of getUserPermissionDiagnosis operation.
 type GetUserPermissionDiagnosisParams struct {
-	ID                       uuid.UUID
-	AppKey                   OptString `json:",omitempty,omitzero"`
-	PermissionKey            OptString `json:",omitempty,omitzero"`
-	CollaborationWorkspaceID OptString `json:",omitempty,omitzero"`
+	ID            uuid.UUID
+	AppKey        OptString `json:",omitempty,omitzero"`
+	PermissionKey OptString `json:",omitempty,omitzero"`
+	WorkspaceID   OptString `json:",omitempty,omitzero"`
 }
 
 func unpackGetUserPermissionDiagnosisParams(packed middleware.Parameters) (params GetUserPermissionDiagnosisParams) {
@@ -7128,11 +7128,11 @@ func unpackGetUserPermissionDiagnosisParams(packed middleware.Parameters) (param
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "collaboration_workspace_id",
+			Name: "workspace_id",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.CollaborationWorkspaceID = v.(OptString)
+			params.WorkspaceID = v.(OptString)
 		}
 	}
 	return params
@@ -7267,17 +7267,17 @@ func decodeGetUserPermissionDiagnosisParams(args [1]string, argsEscaped bool, r 
 			Err:  err,
 		}
 	}
-	// Decode query: collaboration_workspace_id.
+	// Decode query: workspace_id.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "collaboration_workspace_id",
+			Name:    "workspace_id",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotCollaborationWorkspaceIDVal string
+				var paramsDotWorkspaceIDVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -7289,12 +7289,12 @@ func decodeGetUserPermissionDiagnosisParams(args [1]string, argsEscaped bool, r 
 						return err
 					}
 
-					paramsDotCollaborationWorkspaceIDVal = c
+					paramsDotWorkspaceIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.CollaborationWorkspaceID.SetTo(paramsDotCollaborationWorkspaceIDVal)
+				params.WorkspaceID.SetTo(paramsDotWorkspaceIDVal)
 				return nil
 			}); err != nil {
 				return err
@@ -7303,7 +7303,7 @@ func decodeGetUserPermissionDiagnosisParams(args [1]string, argsEscaped bool, r 
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "collaboration_workspace_id",
+			Name: "workspace_id",
 			In:   "query",
 			Err:  err,
 		}
@@ -8784,12 +8784,12 @@ func decodeListAuditLogsParams(args [0]string, argsEscaped bool, r *http.Request
 	return params, nil
 }
 
-// ListCollaborationWorkspaceMembersParams is parameters of listCollaborationWorkspaceMembers operation.
-type ListCollaborationWorkspaceMembersParams struct {
+// ListCollaborationMembersParams is parameters of listCollaborationMembers operation.
+type ListCollaborationMembersParams struct {
 	ID uuid.UUID
 }
 
-func unpackListCollaborationWorkspaceMembersParams(packed middleware.Parameters) (params ListCollaborationWorkspaceMembersParams) {
+func unpackListCollaborationMembersParams(packed middleware.Parameters) (params ListCollaborationMembersParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -8800,7 +8800,7 @@ func unpackListCollaborationWorkspaceMembersParams(packed middleware.Parameters)
 	return params
 }
 
-func decodeListCollaborationWorkspaceMembersParams(args [1]string, argsEscaped bool, r *http.Request) (params ListCollaborationWorkspaceMembersParams, _ error) {
+func decodeListCollaborationMembersParams(args [1]string, argsEscaped bool, r *http.Request) (params ListCollaborationMembersParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -8849,12 +8849,12 @@ func decodeListCollaborationWorkspaceMembersParams(args [1]string, argsEscaped b
 	return params, nil
 }
 
-// ListCollaborationWorkspaceRolesParams is parameters of listCollaborationWorkspaceRoles operation.
-type ListCollaborationWorkspaceRolesParams struct {
+// ListCollaborationRolesParams is parameters of listCollaborationRoles operation.
+type ListCollaborationRolesParams struct {
 	ID uuid.UUID
 }
 
-func unpackListCollaborationWorkspaceRolesParams(packed middleware.Parameters) (params ListCollaborationWorkspaceRolesParams) {
+func unpackListCollaborationRolesParams(packed middleware.Parameters) (params ListCollaborationRolesParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -8865,7 +8865,7 @@ func unpackListCollaborationWorkspaceRolesParams(packed middleware.Parameters) (
 	return params
 }
 
-func decodeListCollaborationWorkspaceRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params ListCollaborationWorkspaceRolesParams, _ error) {
+func decodeListCollaborationRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params ListCollaborationRolesParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -8914,14 +8914,14 @@ func decodeListCollaborationWorkspaceRolesParams(args [1]string, argsEscaped boo
 	return params, nil
 }
 
-// ListCollaborationWorkspacesParams is parameters of listCollaborationWorkspaces operation.
-type ListCollaborationWorkspacesParams struct {
+// ListCollaborationsParams is parameters of listCollaborations operation.
+type ListCollaborationsParams struct {
 	Current OptInt    `json:",omitempty,omitzero"`
 	Size    OptInt    `json:",omitempty,omitzero"`
 	Keyword OptString `json:",omitempty,omitzero"`
 }
 
-func unpackListCollaborationWorkspacesParams(packed middleware.Parameters) (params ListCollaborationWorkspacesParams) {
+func unpackListCollaborationsParams(packed middleware.Parameters) (params ListCollaborationsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "current",
@@ -8952,7 +8952,7 @@ func unpackListCollaborationWorkspacesParams(packed middleware.Parameters) (para
 	return params
 }
 
-func decodeListCollaborationWorkspacesParams(args [0]string, argsEscaped bool, r *http.Request) (params ListCollaborationWorkspacesParams, _ error) {
+func decodeListCollaborationsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListCollaborationsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
 	// Set default value for query: current.
 	{
@@ -15163,13 +15163,13 @@ func decodeRefreshUserPermissionSnapshotParams(args [1]string, argsEscaped bool,
 	return params, nil
 }
 
-// RemoveCollaborationWorkspaceMemberParams is parameters of removeCollaborationWorkspaceMember operation.
-type RemoveCollaborationWorkspaceMemberParams struct {
+// RemoveCollaborationMemberParams is parameters of removeCollaborationMember operation.
+type RemoveCollaborationMemberParams struct {
 	ID     uuid.UUID
 	UserId uuid.UUID
 }
 
-func unpackRemoveCollaborationWorkspaceMemberParams(packed middleware.Parameters) (params RemoveCollaborationWorkspaceMemberParams) {
+func unpackRemoveCollaborationMemberParams(packed middleware.Parameters) (params RemoveCollaborationMemberParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -15187,7 +15187,7 @@ func unpackRemoveCollaborationWorkspaceMemberParams(packed middleware.Parameters
 	return params
 }
 
-func decodeRemoveCollaborationWorkspaceMemberParams(args [2]string, argsEscaped bool, r *http.Request) (params RemoveCollaborationWorkspaceMemberParams, _ error) {
+func decodeRemoveCollaborationMemberParams(args [2]string, argsEscaped bool, r *http.Request) (params RemoveCollaborationMemberParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -15281,12 +15281,12 @@ func decodeRemoveCollaborationWorkspaceMemberParams(args [2]string, argsEscaped 
 	return params, nil
 }
 
-// RemoveCurrentCollaborationWorkspaceMemberParams is parameters of removeCurrentCollaborationWorkspaceMember operation.
-type RemoveCurrentCollaborationWorkspaceMemberParams struct {
+// RemoveCurrentCollaborationMemberParams is parameters of removeCurrentCollaborationMember operation.
+type RemoveCurrentCollaborationMemberParams struct {
 	UserId uuid.UUID
 }
 
-func unpackRemoveCurrentCollaborationWorkspaceMemberParams(packed middleware.Parameters) (params RemoveCurrentCollaborationWorkspaceMemberParams) {
+func unpackRemoveCurrentCollaborationMemberParams(packed middleware.Parameters) (params RemoveCurrentCollaborationMemberParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "userId",
@@ -15297,7 +15297,7 @@ func unpackRemoveCurrentCollaborationWorkspaceMemberParams(packed middleware.Par
 	return params
 }
 
-func decodeRemoveCurrentCollaborationWorkspaceMemberParams(args [1]string, argsEscaped bool, r *http.Request) (params RemoveCurrentCollaborationWorkspaceMemberParams, _ error) {
+func decodeRemoveCurrentCollaborationMemberParams(args [1]string, argsEscaped bool, r *http.Request) (params RemoveCurrentCollaborationMemberParams, _ error) {
 	// Decode path: userId.
 	if err := func() error {
 		param := args[0]
@@ -15831,12 +15831,12 @@ func decodeSaveDictItemsParams(args [1]string, argsEscaped bool, r *http.Request
 	return params, nil
 }
 
-// SetCollaborationWorkspaceActionsParams is parameters of setCollaborationWorkspaceActions operation.
-type SetCollaborationWorkspaceActionsParams struct {
+// SetCollaborationActionsParams is parameters of setCollaborationActions operation.
+type SetCollaborationActionsParams struct {
 	ID uuid.UUID
 }
 
-func unpackSetCollaborationWorkspaceActionsParams(packed middleware.Parameters) (params SetCollaborationWorkspaceActionsParams) {
+func unpackSetCollaborationActionsParams(packed middleware.Parameters) (params SetCollaborationActionsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -15847,7 +15847,7 @@ func unpackSetCollaborationWorkspaceActionsParams(packed middleware.Parameters) 
 	return params
 }
 
-func decodeSetCollaborationWorkspaceActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationWorkspaceActionsParams, _ error) {
+func decodeSetCollaborationActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationActionsParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -15896,12 +15896,12 @@ func decodeSetCollaborationWorkspaceActionsParams(args [1]string, argsEscaped bo
 	return params, nil
 }
 
-// SetCollaborationWorkspaceMenusParams is parameters of setCollaborationWorkspaceMenus operation.
-type SetCollaborationWorkspaceMenusParams struct {
+// SetCollaborationMenusParams is parameters of setCollaborationMenus operation.
+type SetCollaborationMenusParams struct {
 	ID uuid.UUID
 }
 
-func unpackSetCollaborationWorkspaceMenusParams(packed middleware.Parameters) (params SetCollaborationWorkspaceMenusParams) {
+func unpackSetCollaborationMenusParams(packed middleware.Parameters) (params SetCollaborationMenusParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -15912,7 +15912,7 @@ func unpackSetCollaborationWorkspaceMenusParams(packed middleware.Parameters) (p
 	return params
 }
 
-func decodeSetCollaborationWorkspaceMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationWorkspaceMenusParams, _ error) {
+func decodeSetCollaborationMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationMenusParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -15961,19 +15961,19 @@ func decodeSetCollaborationWorkspaceMenusParams(args [1]string, argsEscaped bool
 	return params, nil
 }
 
-// SetCollaborationWorkspacePackagesParams is parameters of setCollaborationWorkspacePackages operation.
-type SetCollaborationWorkspacePackagesParams struct {
-	CollaborationWorkspaceId uuid.UUID
-	AppKey                   OptString `json:",omitempty,omitzero"`
+// SetCollaborationPackagesParams is parameters of setCollaborationPackages operation.
+type SetCollaborationPackagesParams struct {
+	WorkspaceId uuid.UUID
+	AppKey      OptString `json:",omitempty,omitzero"`
 }
 
-func unpackSetCollaborationWorkspacePackagesParams(packed middleware.Parameters) (params SetCollaborationWorkspacePackagesParams) {
+func unpackSetCollaborationPackagesParams(packed middleware.Parameters) (params SetCollaborationPackagesParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "collaborationWorkspaceId",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.CollaborationWorkspaceId = packed[key].(uuid.UUID)
+		params.WorkspaceId = packed[key].(uuid.UUID)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -15987,9 +15987,9 @@ func unpackSetCollaborationWorkspacePackagesParams(packed middleware.Parameters)
 	return params
 }
 
-func decodeSetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationWorkspacePackagesParams, _ error) {
+func decodeSetCollaborationPackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCollaborationPackagesParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: collaborationWorkspaceId.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -16001,7 +16001,7 @@ func decodeSetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "collaborationWorkspaceId",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
@@ -16018,7 +16018,7 @@ func decodeSetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 					return err
 				}
 
-				params.CollaborationWorkspaceId = c
+				params.WorkspaceId = c
 				return nil
 			}(); err != nil {
 				return err
@@ -16029,7 +16029,7 @@ func decodeSetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "collaborationWorkspaceId",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -16078,12 +16078,12 @@ func decodeSetCollaborationWorkspacePackagesParams(args [1]string, argsEscaped b
 	return params, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams is parameters of setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
-type SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams struct {
+// SetCurrentCollaborationBoundaryRoleActionsParams is parameters of setCurrentCollaborationBoundaryRoleActions operation.
+type SetCurrentCollaborationBoundaryRoleActionsParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(packed middleware.Parameters) (params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) {
+func unpackSetCurrentCollaborationBoundaryRoleActionsParams(packed middleware.Parameters) (params SetCurrentCollaborationBoundaryRoleActionsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -16094,7 +16094,7 @@ func unpackSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(packed midd
 	return params
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams, _ error) {
+func decodeSetCurrentCollaborationBoundaryRoleActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationBoundaryRoleActionsParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -16143,12 +16143,12 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args [1]str
 	return params, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams is parameters of setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
-type SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams struct {
+// SetCurrentCollaborationBoundaryRoleMenusParams is parameters of setCurrentCollaborationBoundaryRoleMenus operation.
+type SetCurrentCollaborationBoundaryRoleMenusParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(packed middleware.Parameters) (params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) {
+func unpackSetCurrentCollaborationBoundaryRoleMenusParams(packed middleware.Parameters) (params SetCurrentCollaborationBoundaryRoleMenusParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -16159,7 +16159,7 @@ func unpackSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(packed middle
 	return params
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams, _ error) {
+func decodeSetCurrentCollaborationBoundaryRoleMenusParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationBoundaryRoleMenusParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -16208,12 +16208,12 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args [1]strin
 	return params, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams is parameters of setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
-type SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams struct {
+// SetCurrentCollaborationBoundaryRolePackagesParams is parameters of setCurrentCollaborationBoundaryRolePackages operation.
+type SetCurrentCollaborationBoundaryRolePackagesParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(packed middleware.Parameters) (params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) {
+func unpackSetCurrentCollaborationBoundaryRolePackagesParams(packed middleware.Parameters) (params SetCurrentCollaborationBoundaryRolePackagesParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -16224,7 +16224,7 @@ func unpackSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(packed mid
 	return params
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams, _ error) {
+func decodeSetCurrentCollaborationBoundaryRolePackagesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationBoundaryRolePackagesParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -16273,12 +16273,12 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args [1]st
 	return params, nil
 }
 
-// SetCurrentCollaborationWorkspaceMemberRolesParams is parameters of setCurrentCollaborationWorkspaceMemberRoles operation.
-type SetCurrentCollaborationWorkspaceMemberRolesParams struct {
+// SetCurrentCollaborationMemberRolesParams is parameters of setCurrentCollaborationMemberRoles operation.
+type SetCurrentCollaborationMemberRolesParams struct {
 	UserId uuid.UUID
 }
 
-func unpackSetCurrentCollaborationWorkspaceMemberRolesParams(packed middleware.Parameters) (params SetCurrentCollaborationWorkspaceMemberRolesParams) {
+func unpackSetCurrentCollaborationMemberRolesParams(packed middleware.Parameters) (params SetCurrentCollaborationMemberRolesParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "userId",
@@ -16289,7 +16289,7 @@ func unpackSetCurrentCollaborationWorkspaceMemberRolesParams(packed middleware.P
 	return params
 }
 
-func decodeSetCurrentCollaborationWorkspaceMemberRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationWorkspaceMemberRolesParams, _ error) {
+func decodeSetCurrentCollaborationMemberRolesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetCurrentCollaborationMemberRolesParams, _ error) {
 	// Decode path: userId.
 	if err := func() error {
 		param := args[0]
@@ -16572,13 +16572,13 @@ func decodeSetFeaturePackageChildrenParams(args [1]string, argsEscaped bool, r *
 	return params, nil
 }
 
-// SetFeaturePackageCollaborationWorkspacesParams is parameters of setFeaturePackageCollaborationWorkspaces operation.
-type SetFeaturePackageCollaborationWorkspacesParams struct {
+// SetFeaturePackageCollaborationsParams is parameters of setFeaturePackageCollaborations operation.
+type SetFeaturePackageCollaborationsParams struct {
 	ID     uuid.UUID
 	AppKey OptString `json:",omitempty,omitzero"`
 }
 
-func unpackSetFeaturePackageCollaborationWorkspacesParams(packed middleware.Parameters) (params SetFeaturePackageCollaborationWorkspacesParams) {
+func unpackSetFeaturePackageCollaborationsParams(packed middleware.Parameters) (params SetFeaturePackageCollaborationsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -16598,7 +16598,7 @@ func unpackSetFeaturePackageCollaborationWorkspacesParams(packed middleware.Para
 	return params
 }
 
-func decodeSetFeaturePackageCollaborationWorkspacesParams(args [1]string, argsEscaped bool, r *http.Request) (params SetFeaturePackageCollaborationWorkspacesParams, _ error) {
+func decodeSetFeaturePackageCollaborationsParams(args [1]string, argsEscaped bool, r *http.Request) (params SetFeaturePackageCollaborationsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
 	// Decode path: id.
 	if err := func() error {
@@ -17648,12 +17648,12 @@ func decodeUpdateApiEndpointContextScopeParams(args [1]string, argsEscaped bool,
 	return params, nil
 }
 
-// UpdateCollaborationWorkspaceParams is parameters of updateCollaborationWorkspace operation.
-type UpdateCollaborationWorkspaceParams struct {
+// UpdateCollaborationParams is parameters of updateCollaboration operation.
+type UpdateCollaborationParams struct {
 	ID uuid.UUID
 }
 
-func unpackUpdateCollaborationWorkspaceParams(packed middleware.Parameters) (params UpdateCollaborationWorkspaceParams) {
+func unpackUpdateCollaborationParams(packed middleware.Parameters) (params UpdateCollaborationParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -17664,7 +17664,7 @@ func unpackUpdateCollaborationWorkspaceParams(packed middleware.Parameters) (par
 	return params
 }
 
-func decodeUpdateCollaborationWorkspaceParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCollaborationWorkspaceParams, _ error) {
+func decodeUpdateCollaborationParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCollaborationParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -17713,13 +17713,13 @@ func decodeUpdateCollaborationWorkspaceParams(args [1]string, argsEscaped bool, 
 	return params, nil
 }
 
-// UpdateCollaborationWorkspaceMemberRoleParams is parameters of updateCollaborationWorkspaceMemberRole operation.
-type UpdateCollaborationWorkspaceMemberRoleParams struct {
+// UpdateCollaborationMemberRoleParams is parameters of updateCollaborationMemberRole operation.
+type UpdateCollaborationMemberRoleParams struct {
 	ID     uuid.UUID
 	UserId uuid.UUID
 }
 
-func unpackUpdateCollaborationWorkspaceMemberRoleParams(packed middleware.Parameters) (params UpdateCollaborationWorkspaceMemberRoleParams) {
+func unpackUpdateCollaborationMemberRoleParams(packed middleware.Parameters) (params UpdateCollaborationMemberRoleParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -17737,7 +17737,7 @@ func unpackUpdateCollaborationWorkspaceMemberRoleParams(packed middleware.Parame
 	return params
 }
 
-func decodeUpdateCollaborationWorkspaceMemberRoleParams(args [2]string, argsEscaped bool, r *http.Request) (params UpdateCollaborationWorkspaceMemberRoleParams, _ error) {
+func decodeUpdateCollaborationMemberRoleParams(args [2]string, argsEscaped bool, r *http.Request) (params UpdateCollaborationMemberRoleParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -17831,12 +17831,12 @@ func decodeUpdateCollaborationWorkspaceMemberRoleParams(args [2]string, argsEsca
 	return params, nil
 }
 
-// UpdateCurrentCollaborationWorkspaceBoundaryRoleParams is parameters of updateCurrentCollaborationWorkspaceBoundaryRole operation.
-type UpdateCurrentCollaborationWorkspaceBoundaryRoleParams struct {
+// UpdateCurrentCollaborationBoundaryRoleParams is parameters of updateCurrentCollaborationBoundaryRole operation.
+type UpdateCurrentCollaborationBoundaryRoleParams struct {
 	RoleId uuid.UUID
 }
 
-func unpackUpdateCurrentCollaborationWorkspaceBoundaryRoleParams(packed middleware.Parameters) (params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) {
+func unpackUpdateCurrentCollaborationBoundaryRoleParams(packed middleware.Parameters) (params UpdateCurrentCollaborationBoundaryRoleParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "roleId",
@@ -17847,7 +17847,7 @@ func unpackUpdateCurrentCollaborationWorkspaceBoundaryRoleParams(packed middlewa
 	return params
 }
 
-func decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams, _ error) {
+func decodeUpdateCurrentCollaborationBoundaryRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCurrentCollaborationBoundaryRoleParams, _ error) {
 	// Decode path: roleId.
 	if err := func() error {
 		param := args[0]
@@ -17896,12 +17896,12 @@ func decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleParams(args [1]string,
 	return params, nil
 }
 
-// UpdateCurrentCollaborationWorkspaceMemberRoleParams is parameters of updateCurrentCollaborationWorkspaceMemberRole operation.
-type UpdateCurrentCollaborationWorkspaceMemberRoleParams struct {
+// UpdateCurrentCollaborationMemberRoleParams is parameters of updateCurrentCollaborationMemberRole operation.
+type UpdateCurrentCollaborationMemberRoleParams struct {
 	UserId uuid.UUID
 }
 
-func unpackUpdateCurrentCollaborationWorkspaceMemberRoleParams(packed middleware.Parameters) (params UpdateCurrentCollaborationWorkspaceMemberRoleParams) {
+func unpackUpdateCurrentCollaborationMemberRoleParams(packed middleware.Parameters) (params UpdateCurrentCollaborationMemberRoleParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "userId",
@@ -17912,7 +17912,7 @@ func unpackUpdateCurrentCollaborationWorkspaceMemberRoleParams(packed middleware
 	return params
 }
 
-func decodeUpdateCurrentCollaborationWorkspaceMemberRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCurrentCollaborationWorkspaceMemberRoleParams, _ error) {
+func decodeUpdateCurrentCollaborationMemberRoleParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateCurrentCollaborationMemberRoleParams, _ error) {
 	// Decode path: userId.
 	if err := func() error {
 		param := args[0]

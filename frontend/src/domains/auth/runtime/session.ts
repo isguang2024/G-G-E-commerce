@@ -7,8 +7,8 @@ import {
 import { useUserStore } from '@/domains/auth/store'
 import {
   hasPersonalWorkspaceAccessByUserInfo,
-  useCollaborationWorkspaceStore
-} from '@/store/modules/collaboration-workspace'
+  useCollaborationStore
+} from '@/store/modules/collaboration'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
 function mapBackendRolesToFrontend(data: {
@@ -36,7 +36,7 @@ export async function refreshSessionContext(
   options: RestoreSessionOptions = {}
 ): Promise<Api.Auth.UserInfo> {
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const data = options.prefetchedUser ?? (await fetchGetUserInfo())
@@ -47,7 +47,7 @@ export async function refreshSessionContext(
   userStore.setLoginStatus(true)
   userStore.checkAndClearWorktabs()
 
-  collaborationWorkspaceStore.setPersonalWorkspaceAccess(
+  collaborationStore.setPersonalWorkspaceAccess(
     hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
   )
   menuSpaceStore.syncRuntimeHost()
@@ -57,9 +57,9 @@ export async function refreshSessionContext(
       await menuSpaceStore.refreshRuntimeConfig(options.forceRefresh !== false)
       await menuSpaceStore.syncResolvedCurrentSpace(options.preferredSpaceKey || '')
     })(),
-    collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-      preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-      preferredLegacyCollaborationWorkspaceId:
+    collaborationStore.loadMyCollaborations({
+      preferredCollaborationId: data.current_collaboration_workspace_id || '',
+      preferredLegacyCollaborationId:
         data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
       preferredWorkspaceId: data.current_auth_workspace_id || '',
       preferredWorkspaceType: data.current_auth_workspace_type || '',

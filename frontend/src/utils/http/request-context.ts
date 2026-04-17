@@ -14,7 +14,7 @@ type WorkspaceContextHandlers = {
 }
 
 type CollaborationContextHandlers = {
-  getCurrentCollaborationWorkspaceId?: () => string
+  getCurrentCollaborationId?: () => string
   getCurrentContextMode?: () => string
 }
 
@@ -74,8 +74,8 @@ export function getCurrentAuthWorkspaceId(): string {
   return `${workspaceContextHandlers.getCurrentAuthWorkspaceId?.() || ''}`.trim()
 }
 
-export function getCurrentCollaborationWorkspaceId(): string {
-  return `${collaborationContextHandlers.getCurrentCollaborationWorkspaceId?.() || ''}`.trim()
+export function getCurrentCollaborationId(): string {
+  return `${collaborationContextHandlers.getCurrentCollaborationId?.() || ''}`.trim()
 }
 
 export function getCurrentContextMode(): string {

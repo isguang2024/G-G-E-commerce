@@ -1,4 +1,4 @@
-﻿package permissionrefresh
+package permissionrefresh
 
 import (
 	"database/sql"
@@ -88,10 +88,11 @@ func (s *service) RefreshAllCollaborationWorkspaces() error {
 		return nil
 	}
 	type collaborationWorkspaceIDOnly struct {
-		ID uuid.UUID
+		CollaborationWorkspaceID uuid.UUID `gorm:"column:collaboration_workspace_id"`
 	}
-	return s.db.Model(&models.CollaborationWorkspace{}).
-		Select("id").
+	return s.db.Model(&models.Workspace{}).
+		Select("collaboration_workspace_id").
+		Where("workspace_type = ? AND collaboration_workspace_id IS NOT NULL AND deleted_at IS NULL", models.WorkspaceTypeCollaboration).
 		FindInBatches(&[]collaborationWorkspaceIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
 			rows, ok := tx.Statement.Dest.(*[]collaborationWorkspaceIDOnly)
 			if !ok || len(*rows) == 0 {
@@ -99,8 +100,8 @@ func (s *service) RefreshAllCollaborationWorkspaces() error {
 			}
 			collaborationWorkspaceIDs := make([]uuid.UUID, 0, len(*rows))
 			for _, row := range *rows {
-				if row.ID != uuid.Nil {
-					collaborationWorkspaceIDs = append(collaborationWorkspaceIDs, row.ID)
+				if row.CollaborationWorkspaceID != uuid.Nil {
+					collaborationWorkspaceIDs = append(collaborationWorkspaceIDs, row.CollaborationWorkspaceID)
 				}
 			}
 			return s.RefreshCollaborationWorkspaces(collaborationWorkspaceIDs)
@@ -211,8 +212,9 @@ func (s *service) RefreshAllPersonalWorkspaceRoles() error {
 		ID uuid.UUID
 	}
 	return s.db.Model(&models.Role{}).
-		Select("id").
-		Where("collaboration_workspace_id IS NULL").
+		Select("roles.id").
+		Where("roles.deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 		FindInBatches(&[]roleIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
 			rows, ok := tx.Statement.Dest.(*[]roleIDOnly)
 			if !ok || len(*rows) == 0 {
@@ -365,19 +367,7 @@ func (s *service) getCollaborationWorkspaceIDsByPackageIDs(packageIDs []uuid.UUI
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	workspaceCollaborationWorkspaceIDs, err := workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, packageIDs, "")
-	if err != nil {
-		return nil, err
-	}
-	var collaborationWorkspaceIDs []uuid.UUID
-	err = s.db.Model(&models.CollaborationWorkspaceFeaturePackage{}).
-		Where("package_id IN ? AND enabled = ?", packageIDs, true).
-		Distinct("collaboration_workspace_id").
-		Pluck("collaboration_workspace_id", &collaborationWorkspaceIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return dedupeUUIDs(append(workspaceCollaborationWorkspaceIDs, collaborationWorkspaceIDs...)), nil
+	return workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, packageIDs, "")
 }
 
 func (s *service) getRoleBindingsByPackageIDs(packageIDs []uuid.UUID) ([]roleBinding, error) {
@@ -386,9 +376,12 @@ func (s *service) getRoleBindingsByPackageIDs(packageIDs []uuid.UUID) ([]roleBin
 	}
 	var rows []roleBindingRow
 	err := s.db.Model(&models.RoleFeaturePackage{}).
-		Select("roles.id AS role_id, roles.collaboration_workspace_id AS collaboration_workspace_id").
+		Select("roles.id AS role_id, workspaces.collaboration_workspace_id AS collaboration_workspace_id").
 		Joins("JOIN roles ON roles.id = role_feature_packages.role_id").
+		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id AND role_scopes.deleted_at IS NULL").
+		Joins("LEFT JOIN workspaces ON workspaces.id = role_scopes.scope_id AND role_scopes.scope_type = ? AND workspaces.deleted_at IS NULL", models.ScopeTypeCollaboration).
 		Where("role_feature_packages.package_id IN ? AND role_feature_packages.enabled = ?", packageIDs, true).
+		Where("roles.deleted_at IS NULL").
 		Distinct().
 		Scan(&rows).Error
 	if err != nil {
@@ -414,43 +407,14 @@ func (s *service) getPlatformUserIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, packageIDs, "")
-	if err != nil {
-		return nil, err
-	}
-	var userIDs []uuid.UUID
-	err = s.db.Model(&models.UserFeaturePackage{}).
-		Where("package_id IN ? AND enabled = ?", packageIDs, true).
-		Distinct("user_id").
-		Pluck("user_id", &userIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return dedupeUUIDs(append(workspaceUserIDs, userIDs...)), nil
+	return workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, packageIDs, "")
 }
 
 func (s *service) getPlatformUserIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
 	if len(roleIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-
-	workspaceUserIDs, err := workspacerolebinding.ListPlatformUserIDsByRoleIDs(s.db, roleIDs)
-	if err != nil {
-		return nil, err
-	}
-	var userIDs []uuid.UUID
-	err = s.db.Model(&models.UserRole{}).
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("user_roles.role_id IN ?", roleIDs).
-		Where("user_roles.collaboration_workspace_id IS NULL").
-		Where("roles.collaboration_workspace_id IS NULL").
-		Where("roles.deleted_at IS NULL").
-		Distinct("user_roles.user_id").
-		Pluck("user_roles.user_id", &userIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return dedupeUUIDs(append(workspaceUserIDs, userIDs...)), nil
+	return workspacerolebinding.ListPlatformUserIDsByRoleIDs(s.db, roleIDs)
 }
 
 func (s *service) getPackageIDsByMenuID(menuID uuid.UUID) ([]uuid.UUID, error) {
@@ -511,4 +475,3 @@ func dedupeStrings(items []string) []string {
 	}
 	return result
 }
-

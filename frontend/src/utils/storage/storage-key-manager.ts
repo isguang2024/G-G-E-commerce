@@ -44,7 +44,7 @@ export class StorageKeyManager {
   private static readonly DEPRECATED_STORE_IDS = [
     'tenant',
     'workspace',
-    'collaboration-workspace-adapter'
+    'collaboration-adapter'
   ]
 
   private static readonly APP_SCOPED_STORE_IDS = new Set([

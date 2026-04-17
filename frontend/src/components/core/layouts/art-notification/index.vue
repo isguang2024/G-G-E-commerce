@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="art-notification-panel art-card-sm !shadow-xl"
     :style="{
@@ -104,7 +104,7 @@
   import { storeToRefs } from 'pinia'
   import { useMessageStore } from '@/store/modules/message'
   import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
-  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useCollaborationStore } from '@/store/modules/collaboration'
   import { useWorkspaceStore } from '@/store/modules/workspace'
 
   defineOptions({ name: 'ArtNotification' })
@@ -120,7 +120,7 @@
   const router = useRouter()
   const messageStore = useMessageStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
   const { previewMap } = storeToRefs(messageStore)
 
@@ -246,7 +246,7 @@
           item.scope_id
     if (!collaborationWorkspaceId) return ''
     const collaborationWorkspaceName =
-      collaborationWorkspaceStore.collaborationWorkspaceList.find(
+      collaborationStore.collaborationList.find(
         (workspace) => workspace.id === collaborationWorkspaceId
       )?.name || ''
     return collaborationWorkspaceName ? `协作空间 · ${collaborationWorkspaceName}` : ''

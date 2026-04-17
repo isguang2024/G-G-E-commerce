@@ -33,7 +33,7 @@
           </div>
         </div>
         <div v-if="workspaceList.length" class="workspace-switcher-wrap">
-          <ArtCollaborationWorkspaceSwitcher compact />
+          <ArtCollaborationSwitcher compact />
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
           <li
@@ -81,13 +81,13 @@
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/domains/auth/store'
-  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useCollaborationStore } from '@/store/modules/collaboration'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import { useMenuStore } from '@/domains/navigation/menu'
   import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { refreshSessionContext } from '@/domains/auth/runtime/session'
   import { refreshUserMenus } from '@/domains/navigation/runtime/navigation'
-  import ArtCollaborationWorkspaceSwitcher from './ArtCollaborationWorkspaceSwitcher.vue'
+  import ArtCollaborationSwitcher from './ArtCollaborationSwitcher.vue'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -95,13 +95,13 @@
   const router = useRouter()
   const { t } = useI18n()
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
   const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
-  const { hasPersonalWorkspaceAccess } = storeToRefs(collaborationWorkspaceStore)
+  const { hasPersonalWorkspaceAccess } = storeToRefs(collaborationStore)
   const { workspaceList, personalWorkspace, currentAuthWorkspaceType } = storeToRefs(workspaceStore)
   const userMenuPopover = ref()
 

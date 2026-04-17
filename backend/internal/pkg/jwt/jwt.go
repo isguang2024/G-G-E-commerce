@@ -14,22 +14,25 @@ var (
 
 // Claims JWT 声明
 type Claims struct {
-	UserID                   string `json:"user_id"`
-	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
-	Email                    string `json:"email"`
-	AuthTime                 int64  `json:"auth_time,omitempty"`
+	UserID            string `json:"user_id"`
+	AuthWorkspaceID   string `json:"auth_workspace_id,omitempty"`
+	AuthWorkspaceType string `json:"auth_workspace_type,omitempty"`
+	CollaborationID   string `json:"collaboration_id,omitempty"`
+	Email             string `json:"email"`
+	AuthTime          int64  `json:"auth_time,omitempty"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken 生成 Token
-func GenerateToken(secret string, userID, collaborationWorkspaceID, email string, expiresInMinutes int) (string, error) {
+func GenerateToken(secret string, userID, collaborationID, email string, expiresInMinutes int) (string, error) {
 	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
 
 	claims := &Claims{
-		UserID:                   userID,
-		CollaborationWorkspaceID: collaborationWorkspaceID,
-		Email:                    email,
-		AuthTime:                 time.Now().Unix(),
+		UserID:          userID,
+		AuthWorkspaceID: collaborationID,
+		CollaborationID: collaborationID,
+		Email:           email,
+		AuthTime:        time.Now().Unix(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -74,10 +77,12 @@ func RefreshToken(tokenString, secret string, expiresInMinutes int) (string, err
 
 	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
 	newClaims := &Claims{
-		UserID:                   claims.UserID,
-		CollaborationWorkspaceID: claims.CollaborationWorkspaceID,
-		Email:                    claims.Email,
-		AuthTime:                 claims.AuthTime,
+		UserID:            claims.UserID,
+		AuthWorkspaceID:   claims.AuthWorkspaceID,
+		AuthWorkspaceType: claims.AuthWorkspaceType,
+		CollaborationID:   claims.CollaborationID,
+		Email:             claims.Email,
+		AuthTime:          claims.AuthTime,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

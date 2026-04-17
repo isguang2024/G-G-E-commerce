@@ -36,9 +36,9 @@ export function formatMemberStatus(status?: string) {
 
 export function formatRoleCode(roleCode?: string) {
   switch (roleCode) {
-    case 'collaboration_workspace_admin':
+    case 'collaboration_admin':
       return '协作空间管理员'
-    case 'collaboration_workspace_member':
+    case 'collaboration_member':
       return '协作空间成员'
     default:
       return roleCode || '-'

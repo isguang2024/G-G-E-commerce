@@ -13,21 +13,21 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
-// AddCollaborationWorkspaceMember implements addCollaborationWorkspaceMember operation.
+// AddCollaborationMember implements addCollaborationMember operation.
 //
 // 添加协作空间成员.
 //
-// POST /collaboration-workspaces/{id}/members
-func (UnimplementedHandler) AddCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (r *MutationResult, _ error) {
+// POST /workspaces/collaboration/{id}/members
+func (UnimplementedHandler) AddCollaborationMember(ctx context.Context, req *CollaborationMemberAddRequest, params AddCollaborationMemberParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// AddCurrentCollaborationWorkspaceMember implements addCurrentCollaborationWorkspaceMember operation.
+// AddCurrentCollaborationMember implements addCurrentCollaborationMember operation.
 //
 // 添加当前协作空间成员.
 //
-// POST /collaboration-workspaces/current/members
-func (UnimplementedHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req *CollaborationWorkspaceMemberAddRequest) (r *MutationResult, _ error) {
+// POST /collaboration/current/members
+func (UnimplementedHandler) AddCurrentCollaborationMember(ctx context.Context, req *CollaborationMemberAddRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -94,30 +94,30 @@ func (UnimplementedHandler) CreateApiEndpointCategory(ctx context.Context, req *
 	return r, ht.ErrNotImplemented
 }
 
-// CreateCollaborationWorkspace implements createCollaborationWorkspace operation.
+// CreateCollaboration implements createCollaboration operation.
 //
 // 创建协作空间.
 //
-// POST /collaboration-workspaces
-func (UnimplementedHandler) CreateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest) (r *IDResult, _ error) {
+// POST /workspaces/collaboration
+func (UnimplementedHandler) CreateCollaboration(ctx context.Context, req *CollaborationSaveRequest) (r *IDResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// CreateCurrentCollaborationWorkspaceBoundaryRole implements createCurrentCollaborationWorkspaceBoundaryRole operation.
+// CreateCurrentCollaborationBoundaryRole implements createCurrentCollaborationBoundaryRole operation.
 //
 // 创建当前协作空间角色(边界管理).
 //
-// POST /collaboration-workspaces/current/boundary/roles
-func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (r *MutationResult, _ error) {
+// POST /collaboration/current/boundary/roles
+func (UnimplementedHandler) CreateCurrentCollaborationBoundaryRole(ctx context.Context, req *CollaborationRoleSaveRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// CreateCurrentCollaborationWorkspaceRole implements createCurrentCollaborationWorkspaceRole operation.
+// CreateCurrentCollaborationRole implements createCurrentCollaborationRole operation.
 //
 // 创建当前协作空间角色.
 //
-// POST /collaboration-workspaces/current/roles
-func (UnimplementedHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest) (r *MutationResult, _ error) {
+// POST /collaboration/current/roles
+func (UnimplementedHandler) CreateCurrentCollaborationRole(ctx context.Context, req *CollaborationRoleSaveRequest) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -301,21 +301,21 @@ func (UnimplementedHandler) DeleteAppHostBinding(ctx context.Context, params Del
 	return r, ht.ErrNotImplemented
 }
 
-// DeleteCollaborationWorkspace implements deleteCollaborationWorkspace operation.
+// DeleteCollaboration implements deleteCollaboration operation.
 //
 // 删除协作空间.
 //
-// DELETE /collaboration-workspaces/{id}
-func (UnimplementedHandler) DeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (r *MutationResult, _ error) {
+// DELETE /workspaces/collaboration/{id}
+func (UnimplementedHandler) DeleteCollaboration(ctx context.Context, params DeleteCollaborationParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// DeleteCurrentCollaborationWorkspaceBoundaryRole implements deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+// DeleteCurrentCollaborationBoundaryRole implements deleteCurrentCollaborationBoundaryRole operation.
 //
 // 删除当前协作空间角色(边界管理).
 //
-// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
-func (UnimplementedHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
+// DELETE /collaboration/current/boundary/roles/{roleId}
+func (UnimplementedHandler) DeleteCurrentCollaborationBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationBoundaryRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -585,57 +585,57 @@ func (UnimplementedHandler) GetAuthMe(ctx context.Context) (r GetAuthMeRes, _ er
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspace implements getCollaborationWorkspace operation.
+// GetCollaboration implements getCollaboration operation.
 //
 // 获取协作空间详情.
 //
-// GET /collaboration-workspaces/{id}
-func (UnimplementedHandler) GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (r *CollaborationWorkspaceItem, _ error) {
+// GET /workspaces/collaboration/{id}
+func (UnimplementedHandler) GetCollaboration(ctx context.Context, params GetCollaborationParams) (r *CollaborationItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspaceActionOrigins implements getCollaborationWorkspaceActionOrigins operation.
+// GetCollaborationActionOrigins implements getCollaborationActionOrigins operation.
 //
 // 获取协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/{id}/action-origins
-func (UnimplementedHandler) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (r *CollaborationWorkspaceActionOriginsResponse, _ error) {
+// GET /workspaces/collaboration/{id}/action-origins
+func (UnimplementedHandler) GetCollaborationActionOrigins(ctx context.Context, params GetCollaborationActionOriginsParams) (r *CollaborationActionOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspaceActions implements getCollaborationWorkspaceActions operation.
+// GetCollaborationActions implements getCollaborationActions operation.
 //
 // 获取协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/{id}/actions
-func (UnimplementedHandler) GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (r *CollaborationWorkspaceActionsResponse, _ error) {
+// GET /workspaces/collaboration/{id}/actions
+func (UnimplementedHandler) GetCollaborationActions(ctx context.Context, params GetCollaborationActionsParams) (r *CollaborationActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspaceMenuOrigins implements getCollaborationWorkspaceMenuOrigins operation.
+// GetCollaborationMenuOrigins implements getCollaborationMenuOrigins operation.
 //
 // 获取协作空间菜单来源.
 //
-// GET /collaboration-workspaces/{id}/menu-origins
-func (UnimplementedHandler) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (r *CollaborationWorkspaceMenuOriginsResponse, _ error) {
+// GET /workspaces/collaboration/{id}/menu-origins
+func (UnimplementedHandler) GetCollaborationMenuOrigins(ctx context.Context, params GetCollaborationMenuOriginsParams) (r *CollaborationMenuOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspaceMenus implements getCollaborationWorkspaceMenus operation.
+// GetCollaborationMenus implements getCollaborationMenus operation.
 //
 // 获取协作空间菜单边界.
 //
-// GET /collaboration-workspaces/{id}/menus
-func (UnimplementedHandler) GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (r *CollaborationWorkspaceMenusResponse, _ error) {
+// GET /workspaces/collaboration/{id}/menus
+func (UnimplementedHandler) GetCollaborationMenus(ctx context.Context, params GetCollaborationMenusParams) (r *CollaborationMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCollaborationWorkspacePackages implements getCollaborationWorkspacePackages operation.
+// GetCollaborationPackages implements getCollaborationPackages operation.
 //
 // 获取协作空间功能包.
 //
-// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (UnimplementedHandler) GetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (r *FeaturePackageAssignmentResponse, _ error) {
+// GET /feature-packages/workspaces/collaboration/{workspaceId}
+func (UnimplementedHandler) GetCollaborationPackages(ctx context.Context, params GetCollaborationPackagesParams) (r *FeaturePackageAssignmentResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -648,93 +648,93 @@ func (UnimplementedHandler) GetCurrentApp(ctx context.Context, params GetCurrent
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspace implements getCurrentCollaborationWorkspace operation.
+// GetCurrentCollaboration implements getCurrentCollaboration operation.
 //
 // 获取当前协作空间详情.
 //
-// GET /collaboration-workspaces/current
-func (UnimplementedHandler) GetCurrentCollaborationWorkspace(ctx context.Context) (r *CollaborationWorkspaceItem, _ error) {
+// GET /collaboration/current
+func (UnimplementedHandler) GetCurrentCollaboration(ctx context.Context) (r *CollaborationItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceActionOrigins implements getCurrentCollaborationWorkspaceActionOrigins operation.
+// GetCurrentCollaborationActionOrigins implements getCurrentCollaborationActionOrigins operation.
 //
 // 获取当前协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/current/action-origins
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (r *CollaborationWorkspaceActionOriginsResponse, _ error) {
+// GET /collaboration/current/action-origins
+func (UnimplementedHandler) GetCurrentCollaborationActionOrigins(ctx context.Context) (r *CollaborationActionOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceActions implements getCurrentCollaborationWorkspaceActions operation.
+// GetCurrentCollaborationActions implements getCurrentCollaborationActions operation.
 //
 // 获取当前协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/current/actions
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (r *CollaborationWorkspaceActionsResponse, _ error) {
+// GET /collaboration/current/actions
+func (UnimplementedHandler) GetCurrentCollaborationActions(ctx context.Context) (r *CollaborationActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryPackages implements getCurrentCollaborationWorkspaceBoundaryPackages operation.
+// GetCurrentCollaborationBoundaryPackages implements getCurrentCollaborationBoundaryPackages operation.
 //
 // 获取当前协作空间已开通功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/packages
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (r *FeaturePackageAssignmentResponse, _ error) {
+// GET /collaboration/current/boundary/packages
+func (UnimplementedHandler) GetCurrentCollaborationBoundaryPackages(ctx context.Context) (r *FeaturePackageAssignmentResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleActions implements getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// GetCurrentCollaborationBoundaryRoleActions implements getCurrentCollaborationBoundaryRoleActions operation.
 //
 // 获取当前协作空间角色功能权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (r *RoleActionsResponse, _ error) {
+// GET /collaboration/current/boundary/roles/{roleId}/actions
+func (UnimplementedHandler) GetCurrentCollaborationBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationBoundaryRoleActionsParams) (r *RoleActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleMenus implements getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// GetCurrentCollaborationBoundaryRoleMenus implements getCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 获取当前协作空间角色菜单权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (r *RoleMenusResponse, _ error) {
+// GET /collaboration/current/boundary/roles/{roleId}/menus
+func (UnimplementedHandler) GetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationBoundaryRoleMenusParams) (r *RoleMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRolePackages implements getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// GetCurrentCollaborationBoundaryRolePackages implements getCurrentCollaborationBoundaryRolePackages operation.
 //
 // 获取当前协作空间角色功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (r *CollaborationWorkspaceBoundaryRolePackagesResponse, _ error) {
+// GET /collaboration/current/boundary/roles/{roleId}/packages
+func (UnimplementedHandler) GetCurrentCollaborationBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationBoundaryRolePackagesParams) (r *CollaborationBoundaryRolePackagesResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceMemberRoles implements getCurrentCollaborationWorkspaceMemberRoles operation.
+// GetCurrentCollaborationMemberRoles implements getCurrentCollaborationMemberRoles operation.
 //
 // 获取当前协作空间成员角色.
 //
-// GET /collaboration-workspaces/current/members/{userId}/roles
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (r *CollaborationWorkspaceMemberRolesResponse, _ error) {
+// GET /collaboration/current/members/{userId}/roles
+func (UnimplementedHandler) GetCurrentCollaborationMemberRoles(ctx context.Context, params GetCurrentCollaborationMemberRolesParams) (r *CollaborationMemberRolesResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceMenuOrigins implements getCurrentCollaborationWorkspaceMenuOrigins operation.
+// GetCurrentCollaborationMenuOrigins implements getCurrentCollaborationMenuOrigins operation.
 //
 // 获取当前协作空间菜单来源.
 //
-// GET /collaboration-workspaces/current/menu-origins
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (r *CollaborationWorkspaceMenuOriginsResponse, _ error) {
+// GET /collaboration/current/menu-origins
+func (UnimplementedHandler) GetCurrentCollaborationMenuOrigins(ctx context.Context) (r *CollaborationMenuOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetCurrentCollaborationWorkspaceMenus implements getCurrentCollaborationWorkspaceMenus operation.
+// GetCurrentCollaborationMenus implements getCurrentCollaborationMenus operation.
 //
 // 获取当前协作空间菜单边界.
 //
-// GET /collaboration-workspaces/current/menus
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (r *CollaborationWorkspaceMenusResponse, _ error) {
+// GET /collaboration/current/menus
+func (UnimplementedHandler) GetCurrentCollaborationMenus(ctx context.Context) (r *CollaborationMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -810,12 +810,12 @@ func (UnimplementedHandler) GetFeaturePackageChildren(ctx context.Context, param
 	return r, ht.ErrNotImplemented
 }
 
-// GetFeaturePackageCollaborationWorkspaces implements getFeaturePackageCollaborationWorkspaces operation.
+// GetFeaturePackageCollaborations implements getFeaturePackageCollaborations operation.
 //
 // 获取功能包协作空间.
 //
-// GET /feature-packages/{id}/collaboration-workspaces
-func (UnimplementedHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (r *FeaturePackageCollaborationWorkspaceList, _ error) {
+// GET /feature-packages/{id}/workspaces/collaboration
+func (UnimplementedHandler) GetFeaturePackageCollaborations(ctx context.Context, params GetFeaturePackageCollaborationsParams) (r *FeaturePackageCollaborationList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1126,12 +1126,12 @@ func (UnimplementedHandler) GetUser(ctx context.Context, params GetUserParams) (
 	return r, ht.ErrNotImplemented
 }
 
-// GetUserCollaborationWorkspaces implements getUserCollaborationWorkspaces operation.
+// GetUserCollaborations implements getUserCollaborations operation.
 //
 // 获取用户所在协作空间列表.
 //
-// GET /users/{id}/collaboration-workspaces
-func (UnimplementedHandler) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (r *UserCollaborationWorkspacesResponse, _ error) {
+// GET /users/{id}/collaborations
+func (UnimplementedHandler) GetUserCollaborations(ctx context.Context, params GetUserCollaborationsParams) (r *UserCollaborationsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1257,66 +1257,66 @@ func (UnimplementedHandler) ListAuditLogs(ctx context.Context, params ListAuditL
 	return r, ht.ErrNotImplemented
 }
 
-// ListCollaborationWorkspaceMembers implements listCollaborationWorkspaceMembers operation.
+// ListCollaborationMembers implements listCollaborationMembers operation.
 //
 // 获取协作空间成员列表.
 //
-// GET /collaboration-workspaces/{id}/members
-func (UnimplementedHandler) ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (r *CollaborationWorkspaceMemberList, _ error) {
+// GET /workspaces/collaboration/{id}/members
+func (UnimplementedHandler) ListCollaborationMembers(ctx context.Context, params ListCollaborationMembersParams) (r *CollaborationMemberList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCollaborationWorkspaceOptions implements listCollaborationWorkspaceOptions operation.
+// ListCollaborationOptions implements listCollaborationOptions operation.
 //
 // 获取协作空间候选.
 //
-// GET /collaboration-workspaces/options
-func (UnimplementedHandler) ListCollaborationWorkspaceOptions(ctx context.Context) (r *CollaborationWorkspaceList, _ error) {
+// GET /workspaces/collaboration/options
+func (UnimplementedHandler) ListCollaborationOptions(ctx context.Context) (r *CollaborationList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCollaborationWorkspaceRoles implements listCollaborationWorkspaceRoles operation.
+// ListCollaborationRoles implements listCollaborationRoles operation.
 //
 // 获取协作空间可分配角色.
 //
-// GET /collaboration-workspaces/{id}/roles
-func (UnimplementedHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (r *CollaborationWorkspaceRoleList, _ error) {
+// GET /workspaces/collaboration/{id}/roles
+func (UnimplementedHandler) ListCollaborationRoles(ctx context.Context, params ListCollaborationRolesParams) (r *CollaborationRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCollaborationWorkspaces implements listCollaborationWorkspaces operation.
+// ListCollaborations implements listCollaborations operation.
 //
 // 获取协作空间列表.
 //
-// GET /collaboration-workspaces
-func (UnimplementedHandler) ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (r *CollaborationWorkspaceList, _ error) {
+// GET /workspaces/collaboration
+func (UnimplementedHandler) ListCollaborations(ctx context.Context, params ListCollaborationsParams) (r *CollaborationList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCurrentCollaborationWorkspaceBoundaryRoles implements listCurrentCollaborationWorkspaceBoundaryRoles operation.
+// ListCurrentCollaborationBoundaryRoles implements listCurrentCollaborationBoundaryRoles operation.
 //
 // 获取当前协作空间边界可见角色.
 //
-// GET /collaboration-workspaces/current/boundary/roles
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (r *CollaborationWorkspaceRoleList, _ error) {
+// GET /collaboration/current/boundary/roles
+func (UnimplementedHandler) ListCurrentCollaborationBoundaryRoles(ctx context.Context) (r *CollaborationRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCurrentCollaborationWorkspaceMembers implements listCurrentCollaborationWorkspaceMembers operation.
+// ListCurrentCollaborationMembers implements listCurrentCollaborationMembers operation.
 //
 // 获取当前协作空间成员列表.
 //
-// GET /collaboration-workspaces/current/members
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (r *CollaborationWorkspaceMemberList, _ error) {
+// GET /collaboration/current/members
+func (UnimplementedHandler) ListCurrentCollaborationMembers(ctx context.Context) (r *CollaborationMemberList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// ListCurrentCollaborationWorkspaceRoles implements listCurrentCollaborationWorkspaceRoles operation.
+// ListCurrentCollaborationRoles implements listCurrentCollaborationRoles operation.
 //
 // 获取当前协作空间可分配角色.
 //
-// GET /collaboration-workspaces/current/roles
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (r *CollaborationWorkspaceRoleList, _ error) {
+// GET /collaboration/current/roles
+func (UnimplementedHandler) ListCurrentCollaborationRoles(ctx context.Context) (r *CollaborationRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1473,12 +1473,12 @@ func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *Messag
 	return r, ht.ErrNotImplemented
 }
 
-// ListMyCollaborationWorkspaces implements listMyCollaborationWorkspaces operation.
+// ListMyCollaborations implements listMyCollaborations operation.
 //
 // 获取我的协作空间列表.
 //
-// GET /collaboration-workspaces/mine
-func (UnimplementedHandler) ListMyCollaborationWorkspaces(ctx context.Context) (r *CollaborationWorkspaceList, _ error) {
+// GET /workspaces/collaboration/mine
+func (UnimplementedHandler) ListMyCollaborations(ctx context.Context) (r *CollaborationList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1834,21 +1834,21 @@ func (UnimplementedHandler) Register(ctx context.Context, req *RegisterRequest) 
 	return r, ht.ErrNotImplemented
 }
 
-// RemoveCollaborationWorkspaceMember implements removeCollaborationWorkspaceMember operation.
+// RemoveCollaborationMember implements removeCollaborationMember operation.
 //
 // 移除协作空间成员.
 //
-// DELETE /collaboration-workspaces/{id}/members/{userId}
-func (UnimplementedHandler) RemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (r *MutationResult, _ error) {
+// DELETE /workspaces/collaboration/{id}/members/{userId}
+func (UnimplementedHandler) RemoveCollaborationMember(ctx context.Context, params RemoveCollaborationMemberParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// RemoveCurrentCollaborationWorkspaceMember implements removeCurrentCollaborationWorkspaceMember operation.
+// RemoveCurrentCollaborationMember implements removeCurrentCollaborationMember operation.
 //
 // 移除当前协作空间成员.
 //
-// DELETE /collaboration-workspaces/current/members/{userId}
-func (UnimplementedHandler) RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (r *MutationResult, _ error) {
+// DELETE /collaboration/current/members/{userId}
+func (UnimplementedHandler) RemoveCurrentCollaborationMember(ctx context.Context, params RemoveCurrentCollaborationMemberParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1951,66 +1951,66 @@ func (UnimplementedHandler) SavePermissionActionBatchTemplate(ctx context.Contex
 	return r, ht.ErrNotImplemented
 }
 
-// SetCollaborationWorkspaceActions implements setCollaborationWorkspaceActions operation.
+// SetCollaborationActions implements setCollaborationActions operation.
 //
 // 配置协作空间功能权限边界.
 //
-// PUT /collaboration-workspaces/{id}/actions
-func (UnimplementedHandler) SetCollaborationWorkspaceActions(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (r *MutationResult, _ error) {
+// PUT /workspaces/collaboration/{id}/actions
+func (UnimplementedHandler) SetCollaborationActions(ctx context.Context, req *UUIDListRequest, params SetCollaborationActionsParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCollaborationWorkspaceMenus implements setCollaborationWorkspaceMenus operation.
+// SetCollaborationMenus implements setCollaborationMenus operation.
 //
 // 配置协作空间菜单边界.
 //
-// PUT /collaboration-workspaces/{id}/menus
-func (UnimplementedHandler) SetCollaborationWorkspaceMenus(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (r *MutationResult, _ error) {
+// PUT /workspaces/collaboration/{id}/menus
+func (UnimplementedHandler) SetCollaborationMenus(ctx context.Context, req *UUIDListRequest, params SetCollaborationMenusParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCollaborationWorkspacePackages implements setCollaborationWorkspacePackages operation.
+// SetCollaborationPackages implements setCollaborationPackages operation.
 //
 // 配置协作空间功能包.
 //
-// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (UnimplementedHandler) SetCollaborationWorkspacePackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (r *FeaturePackageMutationResult, _ error) {
+// PUT /feature-packages/workspaces/collaboration/{workspaceId}
+func (UnimplementedHandler) SetCollaborationPackages(ctx context.Context, req *UUIDListRequest, params SetCollaborationPackagesParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleActions implements setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// SetCurrentCollaborationBoundaryRoleActions implements setCurrentCollaborationBoundaryRoleActions operation.
 //
 // 配置当前协作空间角色功能权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (UnimplementedHandler) SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/boundary/roles/{roleId}/actions
+func (UnimplementedHandler) SetCurrentCollaborationBoundaryRoleActions(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleActionsParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleMenus implements setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// SetCurrentCollaborationBoundaryRoleMenus implements setCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 配置当前协作空间角色菜单权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (UnimplementedHandler) SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/boundary/roles/{roleId}/menus
+func (UnimplementedHandler) SetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleMenusParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRolePackages implements setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// SetCurrentCollaborationBoundaryRolePackages implements setCurrentCollaborationBoundaryRolePackages operation.
 //
 // 配置当前协作空间角色功能包(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (UnimplementedHandler) SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/boundary/roles/{roleId}/packages
+func (UnimplementedHandler) SetCurrentCollaborationBoundaryRolePackages(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationBoundaryRolePackagesParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// SetCurrentCollaborationWorkspaceMemberRoles implements setCurrentCollaborationWorkspaceMemberRoles operation.
+// SetCurrentCollaborationMemberRoles implements setCurrentCollaborationMemberRoles operation.
 //
 // 配置当前协作空间成员角色.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/roles
-func (UnimplementedHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/members/{userId}/roles
+func (UnimplementedHandler) SetCurrentCollaborationMemberRoles(ctx context.Context, req *UUIDListRequest, params SetCurrentCollaborationMemberRolesParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2032,12 +2032,12 @@ func (UnimplementedHandler) SetFeaturePackageChildren(ctx context.Context, req *
 	return r, ht.ErrNotImplemented
 }
 
-// SetFeaturePackageCollaborationWorkspaces implements setFeaturePackageCollaborationWorkspaces operation.
+// SetFeaturePackageCollaborations implements setFeaturePackageCollaborations operation.
 //
 // 配置功能包协作空间.
 //
-// PUT /feature-packages/{id}/collaboration-workspaces
-func (UnimplementedHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (r *FeaturePackageMutationResult, _ error) {
+// PUT /feature-packages/{id}/workspaces/collaboration
+func (UnimplementedHandler) SetFeaturePackageCollaborations(ctx context.Context, req *UUIDListRequest, params SetFeaturePackageCollaborationsParams) (r *FeaturePackageMutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2176,39 +2176,39 @@ func (UnimplementedHandler) UpdateApiEndpointContextScope(ctx context.Context, r
 	return r, ht.ErrNotImplemented
 }
 
-// UpdateCollaborationWorkspace implements updateCollaborationWorkspace operation.
+// UpdateCollaboration implements updateCollaboration operation.
 //
 // 更新协作空间.
 //
-// PUT /collaboration-workspaces/{id}
-func (UnimplementedHandler) UpdateCollaborationWorkspace(ctx context.Context, req *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (r *MutationResult, _ error) {
+// PUT /workspaces/collaboration/{id}
+func (UnimplementedHandler) UpdateCollaboration(ctx context.Context, req *CollaborationSaveRequest, params UpdateCollaborationParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// UpdateCollaborationWorkspaceMemberRole implements updateCollaborationWorkspaceMemberRole operation.
+// UpdateCollaborationMemberRole implements updateCollaborationMemberRole operation.
 //
 // 更新协作空间成员身份.
 //
-// PUT /collaboration-workspaces/{id}/members/{userId}/role
-func (UnimplementedHandler) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+// PUT /workspaces/collaboration/{id}/members/{userId}/role
+func (UnimplementedHandler) UpdateCollaborationMemberRole(ctx context.Context, req *CollaborationMemberRoleRequest, params UpdateCollaborationMemberRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// UpdateCurrentCollaborationWorkspaceBoundaryRole implements updateCurrentCollaborationWorkspaceBoundaryRole operation.
+// UpdateCurrentCollaborationBoundaryRole implements updateCurrentCollaborationBoundaryRole operation.
 //
 // 更新当前协作空间角色(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, req *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/boundary/roles/{roleId}
+func (UnimplementedHandler) UpdateCurrentCollaborationBoundaryRole(ctx context.Context, req *CollaborationRoleSaveRequest, params UpdateCurrentCollaborationBoundaryRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// UpdateCurrentCollaborationWorkspaceMemberRole implements updateCurrentCollaborationWorkspaceMemberRole operation.
+// UpdateCurrentCollaborationMemberRole implements updateCurrentCollaborationMemberRole operation.
 //
 // 更新当前协作空间成员身份.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/role
-func (UnimplementedHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (r *MutationResult, _ error) {
+// PUT /collaboration/current/members/{userId}/role
+func (UnimplementedHandler) UpdateCurrentCollaborationMemberRole(ctx context.Context, req *CollaborationMemberRoleRequest, params UpdateCurrentCollaborationMemberRoleParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

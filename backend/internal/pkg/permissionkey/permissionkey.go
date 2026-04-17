@@ -56,7 +56,7 @@ var mappings = map[string]Mapping{
 	"page:sync":                              {Key: "system.page.sync", ResourceCode: "page", ActionCode: "sync", Name: "页面注册同步", Description: "允许同步页面注册表", ContextType: "personal"},
 	"fast_enter:manage":                      {Key: "system.fast_enter.manage", ResourceCode: "fast_enter", ActionCode: "manage", Name: "快捷应用管理", Description: "允许维护顶部快捷应用和快捷链接配置", ContextType: "personal"},
 	"message:manage":                         {Key: "message.manage", ResourceCode: "message", ActionCode: "manage", Name: "消息管理", Description: "允许发送站内通知、消息和待办", ContextType: "personal"},
-	"collaboration_workspace_message:manage": {Key: "collaboration_workspace.message.manage", ResourceCode: "collaboration_workspace_message", ActionCode: "manage", Name: "协作空间消息发送", Description: "允许协作空间管理员向当前协作空间发送站内通知、消息和待办", ContextType: "collaboration"},
+	"collaboration_workspace_message:manage": {Key: "collaboration.message.manage", ResourceCode: "collaboration_message", ActionCode: "manage", Name: "协作消息发送", Description: "允许协作空间管理员向当前协作上下文发送站内通知、消息和待办", ContextType: "collaboration"},
 	"feature_package:list":                   {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包", ContextType: "personal"},
 	"feature_package:get":                    {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包", ContextType: "personal"},
 	"feature_package:create":                 {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包", ContextType: "personal"},
@@ -64,28 +64,28 @@ var mappings = map[string]Mapping{
 	"feature_package:delete":                 {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包", ContextType: "personal"},
 	"feature_package:assign_action":          {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包", ContextType: "personal"},
 	"feature_package:assign_bundle":          {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包组合关系", ContextType: "personal"},
-	"feature_package:assign_collaboration_workspace":             {Key: "feature_package.assign_collaboration_workspace", ResourceCode: "feature_package", ActionCode: "assign_collaboration_workspace", Name: "协作空间功能包开通", Description: "允许为协作空间开通和配置功能包", ContextType: "personal"},
+	"feature_package:assign_collaboration_workspace":             {Key: "feature_package.assign_workspace", ResourceCode: "feature_package", ActionCode: "assign_workspace", Name: "工作空间功能包开通", Description: "允许为工作空间开通和配置功能包", ContextType: "personal"},
 	"feature_package:assign_menu":                                {Key: "feature_package.manage", ResourceCode: "feature_package", ActionCode: "assign_menu", Name: "个人空间功能包管理", Description: "允许查看和维护个人空间功能包菜单", ContextType: "personal"},
 	"system:view_page_catalog":                                   {Key: "system.page_catalog.view", ResourceCode: "system", ActionCode: "view_page_catalog", Name: "查看页面文件映射", Description: "允许查看页面文件映射", ContextType: "personal"},
-	"collaboration_workspace:list":                               {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间", ContextType: "personal"},
-	"collaboration_workspace:get":                                {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间", ContextType: "personal"},
-	"collaboration_workspace:create":                             {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间", ContextType: "personal"},
-	"collaboration_workspace:update":                             {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间", ContextType: "personal"},
-	"collaboration_workspace:delete":                             {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间", ContextType: "personal"},
-	"collaboration_workspace:configure_action_boundary":          {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其边界", ContextType: "personal"},
-	"collaboration_workspace:configure_menu_boundary":            {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其边界", ContextType: "personal"},
-	"collaboration_workspace_member_admin:list":                  {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其成员", ContextType: "personal"},
-	"collaboration_workspace_member_admin:create":                {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其成员", ContextType: "personal"},
-	"collaboration_workspace_member_admin:delete":                {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其成员", ContextType: "personal"},
-	"collaboration_workspace_member_admin:update_role":           {Key: "collaboration_workspace.manage", ResourceCode: "collaboration_workspace", ActionCode: "manage", Name: "协作空间管理", Description: "允许查看和维护协作空间及其成员", ContextType: "personal"},
-	"collaboration_workspace_member:create":                      {Key: "collaboration_workspace.member.manage", ResourceCode: "collaboration_workspace_member", ActionCode: "manage", Name: "当前协作空间成员管理", Description: "允许在当前协作空间上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
-	"collaboration_workspace_member:delete":                      {Key: "collaboration_workspace.member.manage", ResourceCode: "collaboration_workspace_member", ActionCode: "manage", Name: "当前协作空间成员管理", Description: "允许在当前协作空间上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
-	"collaboration_workspace_member:update_role":                 {Key: "collaboration_workspace.member.manage", ResourceCode: "collaboration_workspace_member", ActionCode: "manage", Name: "当前协作空间成员管理", Description: "允许在当前协作空间上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
-	"collaboration_workspace_member:assign_role":                 {Key: "collaboration_workspace.member.manage", ResourceCode: "collaboration_workspace_member", ActionCode: "manage", Name: "当前协作空间成员管理", Description: "允许在当前协作空间上下文中为本协作空间成员分配角色", ContextType: "collaboration"},
-	"collaboration_workspace_member:assign_action":               {Key: "collaboration_workspace.member.manage", ResourceCode: "collaboration_workspace_member", ActionCode: "manage", Name: "当前协作空间成员管理", Description: "允许在当前协作空间上下文中为本协作空间成员配置功能权限", ContextType: "collaboration"},
-	"collaboration_workspace_boundary:configure_action_boundary": {Key: "collaboration_workspace.boundary.manage", ResourceCode: "collaboration_workspace_boundary", ActionCode: "manage", Name: "当前协作空间功能边界管理", Description: "允许在当前协作空间上下文中查看和配置本协作空间的功能边界", ContextType: "collaboration"},
-	"collaboration_workspace:configure_menu_boundary_current":    {Key: "collaboration_workspace.boundary.manage", ResourceCode: "collaboration_workspace", ActionCode: "configure_action_boundary", Name: "当前协作空间功能边界管理", Description: "允许在当前协作空间上下文中查看和配置本协作空间的菜单边界", ContextType: "collaboration"},
-	"collaboration_workspace:configure_action_boundary_current":  {Key: "collaboration_workspace.boundary.manage", ResourceCode: "collaboration_workspace", ActionCode: "configure_action_boundary", Name: "当前协作空间功能边界管理", Description: "允许在当前协作空间上下文中查看和配置本协作空间的功能边界", ContextType: "collaboration"},
+	"collaboration_workspace:list":                               {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间", ContextType: "personal"},
+	"collaboration_workspace:get":                                {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间", ContextType: "personal"},
+	"collaboration_workspace:create":                             {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间", ContextType: "personal"},
+	"collaboration_workspace:update":                             {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间", ContextType: "personal"},
+	"collaboration_workspace:delete":                             {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间", ContextType: "personal"},
+	"collaboration_workspace:configure_action_boundary":          {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其边界", ContextType: "personal"},
+	"collaboration_workspace:configure_menu_boundary":            {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其边界", ContextType: "personal"},
+	"collaboration_workspace_member_admin:list":                  {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其成员", ContextType: "personal"},
+	"collaboration_workspace_member_admin:create":                {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其成员", ContextType: "personal"},
+	"collaboration_workspace_member_admin:delete":                {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其成员", ContextType: "personal"},
+	"collaboration_workspace_member_admin:update_role":           {Key: "workspace.manage", ResourceCode: "workspace", ActionCode: "manage", Name: "工作空间管理", Description: "允许查看和维护协作工作空间及其成员", ContextType: "personal"},
+	"collaboration_workspace_member:create":                      {Key: "collaboration.member.manage", ResourceCode: "collaboration_member", ActionCode: "manage", Name: "当前协作成员管理", Description: "允许在当前协作上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
+	"collaboration_workspace_member:delete":                      {Key: "collaboration.member.manage", ResourceCode: "collaboration_member", ActionCode: "manage", Name: "当前协作成员管理", Description: "允许在当前协作上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
+	"collaboration_workspace_member:update_role":                 {Key: "collaboration.member.manage", ResourceCode: "collaboration_member", ActionCode: "manage", Name: "当前协作成员管理", Description: "允许在当前协作上下文中查看和维护本协作空间成员", ContextType: "collaboration"},
+	"collaboration_workspace_member:assign_role":                 {Key: "collaboration.member.manage", ResourceCode: "collaboration_member", ActionCode: "manage", Name: "当前协作成员管理", Description: "允许在当前协作上下文中为本协作空间成员分配角色", ContextType: "collaboration"},
+	"collaboration_workspace_member:assign_action":               {Key: "collaboration.member.manage", ResourceCode: "collaboration_member", ActionCode: "manage", Name: "当前协作成员管理", Description: "允许在当前协作上下文中为本协作空间成员配置功能权限", ContextType: "collaboration"},
+	"collaboration_workspace_boundary:configure_action_boundary": {Key: "collaboration.boundary.manage", ResourceCode: "collaboration_boundary", ActionCode: "manage", Name: "当前协作功能边界管理", Description: "允许在当前协作上下文中查看和配置本协作空间的功能边界", ContextType: "collaboration"},
+	"collaboration_workspace:configure_menu_boundary_current":    {Key: "collaboration.boundary.manage", ResourceCode: "workspace", ActionCode: "configure_action_boundary", Name: "当前协作功能边界管理", Description: "允许在当前协作上下文中查看和配置本协作空间的菜单边界", ContextType: "collaboration"},
+	"collaboration_workspace:configure_action_boundary_current":  {Key: "collaboration.boundary.manage", ResourceCode: "workspace", ActionCode: "configure_action_boundary", Name: "当前协作功能边界管理", Description: "允许在当前协作上下文中查看和配置本协作空间的功能边界", ContextType: "collaboration"},
 	"system_permission:manage_action_registry":                   {Key: "system.permission.manage", ResourceCode: "permission_key", ActionCode: "manage", Name: "功能权限管理", Description: "允许查看和维护功能权限", ContextType: "personal"},
 	"system_permission:assign_role_action":                       {Key: "system.role.assign", ResourceCode: "role", ActionCode: "assign", Name: "配置角色权限", Description: "允许为角色配置菜单、功能、数据权限", ContextType: "personal"},
 	"system.upload.config:manage":                                {Key: "system.upload.config.manage", ResourceCode: "upload", ActionCode: "manage", Name: "上传配置管理", Description: "允许管理存储 Provider / Bucket / UploadKey / Rule 配置", ContextType: "personal"},
@@ -118,7 +118,20 @@ func Normalize(key string) string {
 		}
 		return strings.ReplaceAll(target, ":", ".")
 	}
-	return target
+	switch {
+	case target == "collaboration_workspace.manage":
+		return "workspace.manage"
+	case target == "feature_package.assign_collaboration_workspace":
+		return "feature_package.assign_workspace"
+	case strings.HasPrefix(target, "collaboration_workspace.member."):
+		return "collaboration." + strings.TrimPrefix(target, "collaboration_workspace.")
+	case strings.HasPrefix(target, "collaboration_workspace.boundary."):
+		return "collaboration." + strings.TrimPrefix(target, "collaboration_workspace.")
+	case strings.HasPrefix(target, "collaboration_workspace.message."):
+		return "collaboration." + strings.TrimPrefix(target, "collaboration_workspace.")
+	default:
+		return target
+	}
 }
 
 func ListMappings() []Mapping {
@@ -204,7 +217,10 @@ func deriveContextType(permissionKey string) string {
 	switch {
 	case strings.HasPrefix(target, "personal."):
 		return "personal"
-	case strings.HasPrefix(target, "collaboration_workspace."):
+	case strings.HasPrefix(target, "workspace."):
+		return "personal"
+	case strings.HasPrefix(target, "collaboration."),
+		strings.HasPrefix(target, "collaboration_workspace."):
 		return "collaboration"
 	default:
 		return "common"
@@ -217,7 +233,10 @@ func normalizeContextTypeForKey(permissionKey, contextType, moduleCode string) s
 	switch {
 	case strings.HasPrefix(key, "personal."):
 		return "personal"
-	case strings.HasPrefix(key, "collaboration_workspace."):
+	case strings.HasPrefix(key, "workspace."):
+		return "personal"
+	case strings.HasPrefix(key, "collaboration."),
+		strings.HasPrefix(key, "collaboration_workspace."):
 		return "collaboration"
 	case strings.HasPrefix(key, "system."),
 		strings.HasPrefix(key, "feature_package."),

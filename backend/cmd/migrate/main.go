@@ -34,6 +34,7 @@ import (
 	"github.com/maben/backend/internal/pkg/permissionseed"
 	"github.com/maben/backend/internal/pkg/platformaccess"
 	"github.com/maben/backend/internal/pkg/platformroleaccess"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 func main() {
@@ -161,6 +162,7 @@ func main() {
 
 	runOptionalMigrationTasks(logger, "runtime-sync", []migrationTask{
 		{Name: "sync.consolidate_permission_keys", Run: consolidatePermissionKeys},
+		{Name: "sync.consolidate_navigation_seeds", Run: consolidateNavigationSeeds},
 		{Name: "sync.prune_feature_package_keys", Run: pruneBuiltinFeaturePackageKeys},
 		{Name: "sync.backfill_media_upload_on_manage", Run: backfillCustomMediaUploadOnManage},
 		{Name: "sync.openapi_endpoints", Run: initOpenAPIEndpoints},
@@ -334,7 +336,7 @@ func removePermissionSimulatorNavigation(logger *zap.Logger) error {
 			tables := []string{
 				"feature_package_menus",
 				"role_hidden_menus",
-				"collaboration_workspace_blocked_menus",
+				"workspace_blocked_menus",
 				"user_hidden_menus",
 			}
 			for _, table := range tables {
@@ -716,18 +718,18 @@ func rebindPermissionKeyReferences(fromID, toID uuid.UUID) error {
 			args: []interface{}{fromID},
 		},
 		{
-			sql: `UPDATE collaboration_workspace_blocked_actions target
+			sql: `UPDATE workspace_blocked_actions target
 				    SET action_id = ?
 				  WHERE action_id = ?
 				    AND NOT EXISTS (
-				      SELECT 1 FROM collaboration_workspace_blocked_actions existing
-				      WHERE existing.collaboration_workspace_id = target.collaboration_workspace_id
+				      SELECT 1 FROM workspace_blocked_actions existing
+				      WHERE existing.workspace_id = target.workspace_id
 				        AND existing.action_id = ?
 				    )`,
 			args: []interface{}{toID, fromID, toID},
 		},
 		{
-			sql:  `DELETE FROM collaboration_workspace_blocked_actions WHERE action_id = ?`,
+			sql:  `DELETE FROM workspace_blocked_actions WHERE action_id = ?`,
 			args: []interface{}{fromID},
 		},
 	}
@@ -807,7 +809,7 @@ func rebindAPIBindingPermissionKey(fromKey, toKey string) error {
 // 规范 key 上。合并对由 permissionKeyConsolidations() 维护，任务会幂等执行：
 //
 //  1. 将 feature_package_keys / user_action_permissions / role_disabled_actions /
-//     collaboration_workspace_blocked_actions 的 action_id 从旧 key 重绑到新 key。
+//     workspace_blocked_actions 的 action_id 从旧 key 重绑到新 key。
 //  2. 将 api_endpoint_permission_bindings.permission_key 的值重写。
 //  3. 将 ui_pages.permission_key 的值重写。
 //  4. 软删除旧 permission_keys 行。
@@ -870,6 +872,259 @@ func consolidatePermissionKeys(logger *zap.Logger) error {
 	}
 	logger.Info("permission key consolidation applied", zap.Int("pairs", mergedPairs))
 	return nil
+}
+
+type legacyMenuSeedConsolidation struct {
+	LegacyKey    string
+	CanonicalKey string
+}
+
+type legacyPageSeedConsolidation struct {
+	LegacyKey    string
+	CanonicalKey string
+}
+
+func consolidateNavigationSeeds(logger *zap.Logger) error {
+	menuPairs := []legacyMenuSeedConsolidation{
+		{LegacyKey: "CollaborationWorkspaceRoot", CanonicalKey: "CollaborationRoot"},
+		{LegacyKey: "CollaborationWorkspaceManage", CanonicalKey: "CollaborationManage"},
+		{LegacyKey: "CollaborationWorkspaceMembers", CanonicalKey: "CollaborationMembers"},
+		{LegacyKey: "CollaborationWorkspaceRolesAndPermissions", CanonicalKey: "CollaborationRolesAndPermissions"},
+		{LegacyKey: "CollaborationWorkspaceMessageManage", CanonicalKey: "CollaborationMessageManage"},
+	}
+	pagePairs := []legacyPageSeedConsolidation{
+		{LegacyKey: "collaboration_workspace.message.template.manage", CanonicalKey: "collaboration.message.template.manage"},
+		{LegacyKey: "collaboration_workspace.message.sender.manage", CanonicalKey: "collaboration.message.sender.manage"},
+		{LegacyKey: "collaboration_workspace.message.recipient_group.manage", CanonicalKey: "collaboration.message.recipient_group.manage"},
+		{LegacyKey: "collaboration_workspace.message.record.manage", CanonicalKey: "collaboration.message.record.manage"},
+		{LegacyKey: "collaboration_workspace.message.more", CanonicalKey: "collaboration.message.more"},
+	}
+
+	mergedMenus := 0
+	for _, pair := range menuPairs {
+		changed, err := consolidateLegacyMenuSeed(pair)
+		if err != nil {
+			return err
+		}
+		if changed {
+			mergedMenus++
+			logger.Info("consolidated legacy menu seed",
+				zap.String("from", pair.LegacyKey),
+				zap.String("to", pair.CanonicalKey))
+		}
+	}
+
+	mergedPages := 0
+	for _, pair := range pagePairs {
+		changed, err := consolidateLegacyUIPageSeed(pair)
+		if err != nil {
+			return err
+		}
+		if changed {
+			mergedPages++
+			logger.Info("consolidated legacy ui_page seed",
+				zap.String("from", pair.LegacyKey),
+				zap.String("to", pair.CanonicalKey))
+		}
+	}
+
+	logger.Info("navigation seed consolidation applied",
+		zap.Int("menus", mergedMenus),
+		zap.Int("pages", mergedPages))
+	return nil
+}
+
+func consolidateLegacyMenuSeed(pair legacyMenuSeedConsolidation) (bool, error) {
+	legacyKey := strings.TrimSpace(pair.LegacyKey)
+	canonicalKey := strings.TrimSpace(pair.CanonicalKey)
+	if legacyKey == "" || canonicalKey == "" || legacyKey == canonicalKey {
+		return false, nil
+	}
+
+	canonical, err := ensureDefaultMenuSeedByName(canonicalKey)
+	if err != nil {
+		return false, fmt.Errorf("ensure canonical menu %s: %w", canonicalKey, err)
+	}
+
+	var legacy systemmodels.MenuDefinition
+	err = database.DB.
+		Where("app_key = ? AND menu_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+		First(&legacy).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("lookup legacy menu %s: %w", legacyKey, err)
+	}
+
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		var placements []systemmodels.SpaceMenuPlacement
+		if err := tx.
+			Where("app_key = ? AND menu_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+			Find(&placements).Error; err != nil {
+			return fmt.Errorf("load legacy placements for %s: %w", legacyKey, err)
+		}
+
+		for _, placement := range placements {
+			var existing systemmodels.SpaceMenuPlacement
+			err := tx.
+				Where(
+					"app_key = ? AND menu_space_key = ? AND menu_key = ? AND deleted_at IS NULL",
+					systemmodels.DefaultAppKey,
+					placement.MenuSpaceKey,
+					canonicalKey,
+				).
+				First(&existing).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				if err := tx.Model(&systemmodels.SpaceMenuPlacement{}).
+					Where("id = ?", placement.ID).
+					Updates(map[string]any{
+						"menu_key":   canonicalKey,
+						"updated_at": time.Now(),
+					}).Error; err != nil {
+					return fmt.Errorf("rewrite placement %s->%s: %w", legacyKey, canonicalKey, err)
+				}
+			case err != nil:
+				return fmt.Errorf("lookup canonical placement %s/%s: %w", placement.MenuSpaceKey, canonicalKey, err)
+			default:
+				if err := tx.Delete(&systemmodels.SpaceMenuPlacement{}, "id = ?", placement.ID).Error; err != nil {
+					return fmt.Errorf("delete duplicate legacy placement %s: %w", legacyKey, err)
+				}
+			}
+		}
+
+		if err := tx.Model(&systemmodels.SpaceMenuPlacement{}).
+			Where("app_key = ? AND parent_menu_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+			Updates(map[string]any{
+				"parent_menu_key": canonicalKey,
+				"updated_at":      time.Now(),
+			}).Error; err != nil {
+			return fmt.Errorf("rewrite parent menu key %s->%s: %w", legacyKey, canonicalKey, err)
+		}
+
+		if err := tx.Model(&systemmodels.UIPage{}).
+			Where("app_key = ? AND parent_menu_id = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacy.ID).
+			Updates(map[string]any{
+				"parent_menu_id": canonical.ID,
+				"updated_at":     time.Now(),
+			}).Error; err != nil {
+			return fmt.Errorf("rewrite ui_pages parent_menu_id %s->%s: %w", legacyKey, canonicalKey, err)
+		}
+
+		if err := tx.Delete(&legacy).Error; err != nil {
+			return fmt.Errorf("delete legacy menu %s: %w", legacyKey, err)
+		}
+		return nil
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func consolidateLegacyUIPageSeed(pair legacyPageSeedConsolidation) (bool, error) {
+	legacyKey := strings.TrimSpace(pair.LegacyKey)
+	canonicalKey := strings.TrimSpace(pair.CanonicalKey)
+	if legacyKey == "" || canonicalKey == "" || legacyKey == canonicalKey {
+		return false, nil
+	}
+
+	if _, err := syncDefaultPageSeedByKey(canonicalKey); err != nil {
+		return false, fmt.Errorf("ensure canonical page %s: %w", canonicalKey, err)
+	}
+
+	var legacy systemmodels.UIPage
+	err := database.DB.
+		Where("app_key = ? AND page_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+		First(&legacy).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("lookup legacy ui_page %s: %w", legacyKey, err)
+	}
+
+	var canonical systemmodels.UIPage
+	if err := database.DB.
+		Where("app_key = ? AND page_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, canonicalKey).
+		First(&canonical).Error; err != nil {
+		return false, fmt.Errorf("lookup canonical ui_page %s: %w", canonicalKey, err)
+	}
+
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		var bindings []systemmodels.PageSpaceBinding
+		if err := tx.
+			Where("app_key = ? AND page_id = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacy.ID).
+			Find(&bindings).Error; err != nil {
+			return fmt.Errorf("load legacy page bindings for %s: %w", legacyKey, err)
+		}
+
+		for _, binding := range bindings {
+			var existing systemmodels.PageSpaceBinding
+			err := tx.
+				Where(
+					"app_key = ? AND page_id = ? AND menu_space_key = ? AND deleted_at IS NULL",
+					systemmodels.DefaultAppKey,
+					canonical.ID,
+					binding.MenuSpaceKey,
+				).
+				First(&existing).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				if err := tx.Model(&systemmodels.PageSpaceBinding{}).
+					Where("id = ?", binding.ID).
+					Updates(map[string]any{
+						"page_id":    canonical.ID,
+						"updated_at": time.Now(),
+					}).Error; err != nil {
+					return fmt.Errorf("rewrite page binding %s->%s: %w", legacyKey, canonicalKey, err)
+				}
+			case err != nil:
+				return fmt.Errorf("lookup canonical page binding %s/%s: %w", canonicalKey, binding.MenuSpaceKey, err)
+			default:
+				if err := tx.Delete(&systemmodels.PageSpaceBinding{}, "id = ?", binding.ID).Error; err != nil {
+					return fmt.Errorf("delete duplicate legacy page binding %s: %w", legacyKey, err)
+				}
+			}
+		}
+
+		if err := tx.Model(&systemmodels.UIPage{}).
+			Where("app_key = ? AND parent_page_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+			Updates(map[string]any{
+				"parent_page_key": canonicalKey,
+				"updated_at":      time.Now(),
+			}).Error; err != nil {
+			return fmt.Errorf("rewrite parent_page_key %s->%s: %w", legacyKey, canonicalKey, err)
+		}
+
+		if err := tx.Model(&systemmodels.UIPage{}).
+			Where("app_key = ? AND display_group_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+			Updates(map[string]any{
+				"display_group_key": canonicalKey,
+				"updated_at":        time.Now(),
+			}).Error; err != nil {
+			return fmt.Errorf("rewrite display_group_key %s->%s: %w", legacyKey, canonicalKey, err)
+		}
+
+		if err := tx.Model(&systemmodels.MenuDefinition{}).
+			Where("app_key = ? AND page_key = ? AND deleted_at IS NULL", systemmodels.DefaultAppKey, legacyKey).
+			Updates(map[string]any{
+				"page_key":   canonicalKey,
+				"updated_at": time.Now(),
+			}).Error; err != nil {
+			return fmt.Errorf("rewrite menu page_key %s->%s: %w", legacyKey, canonicalKey, err)
+		}
+
+		if err := tx.Delete(&legacy).Error; err != nil {
+			return fmt.Errorf("delete legacy ui_page %s: %w", legacyKey, err)
+		}
+		return nil
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // pruneBuiltinFeaturePackageKeys 将 IsBuiltin=true 功能包的 feature_package_keys
@@ -993,6 +1248,11 @@ func permissionKeyConsolidations() []struct{ From, To string } {
 		{From: "system.register_log.read", To: "observability.log.read"},
 		{From: "observability.policy.read", To: "observability.policy.manage"},
 		{From: "observability.policy.write", To: "observability.policy.manage"},
+		{From: "collaboration_workspace.manage", To: "workspace.manage"},
+		{From: "collaboration_workspace.boundary.manage", To: "collaboration.boundary.manage"},
+		{From: "collaboration_workspace.member.manage", To: "collaboration.member.manage"},
+		{From: "collaboration_workspace.message.manage", To: "collaboration.message.manage"},
+		{From: "feature_package.assign_collaboration_workspace", To: "feature_package.assign_workspace"},
 		{From: "user.list", To: "system.user.manage"},
 		{From: "user.read", To: "system.user.manage"},
 		{From: "user.get", To: "system.user.manage"},
@@ -1025,7 +1285,7 @@ func countPermissionKeyReferences(actionID uuid.UUID, permissionKey string) (int
 			SELECT COUNT(*) FROM role_disabled_actions WHERE action_id = ?
 		), 0) +
 		COALESCE((
-			SELECT COUNT(*) FROM collaboration_workspace_blocked_actions WHERE action_id = ?
+			SELECT COUNT(*) FROM workspace_blocked_actions WHERE action_id = ?
 		), 0) +
 		COALESCE((
 			SELECT COUNT(*) FROM ui_pages WHERE permission_key = ? AND deleted_at IS NULL
@@ -1079,17 +1339,18 @@ func initDefaultRolesNoScope(logger *zap.Logger) error {
 		SortOrder   int
 	}{
 		{"admin", "管理员", "系统管理员，拥有所有权限", 1},
-		{"collaboration_workspace_admin", "协作空间管理员", "协作空间管理员，可以管理协作空间成员和协作空间内容", 2},
-		{"collaboration_workspace_member", "协作空间成员", "协作空间成员，可以查看和编辑协作空间内容", 3},
+		{"collaboration_admin", "协作空间管理员", "协作空间管理员，可以管理协作空间成员和协作空间内容", 2},
+		{"collaboration_member", "协作空间成员", "协作空间成员，可以查看和编辑协作空间内容", 3},
 	}
 
 	for _, roleData := range roles {
 		var role usermodel.Role
-		result := database.DB.Where("code = ? AND collaboration_workspace_id IS NULL", roleData.Code).First(&role)
+		result := globalRoleQuery(database.DB).Where("code = ?", roleData.Code).First(&role)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				role = usermodel.Role{
 					Code:        roleData.Code,
+					ScopeType:   systemmodels.ScopeTypeGlobal,
 					Name:        roleData.Name,
 					Description: roleData.Description,
 					SortOrder:   roleData.SortOrder,
@@ -1097,6 +1358,9 @@ func initDefaultRolesNoScope(logger *zap.Logger) error {
 				}
 				if err := database.DB.Create(&role).Error; err != nil {
 					logger.Error("Failed to create role", zap.String("code", roleData.Code), zap.Error(err))
+					return err
+				}
+				if err := ensureGlobalRoleScope(database.DB, role.ID); err != nil {
 					return err
 				}
 				logger.Info("Role created", zap.String("code", roleData.Code), zap.String("name", roleData.Name))
@@ -1109,11 +1373,38 @@ func initDefaultRolesNoScope(logger *zap.Logger) error {
 				"description": roleData.Description,
 				"sort_order":  roleData.SortOrder,
 				"is_system":   true,
+				"scope_type":  systemmodels.ScopeTypeGlobal,
 			}).Error
+			if err := ensureGlobalRoleScope(database.DB, role.ID); err != nil {
+				return err
+			}
 			logger.Info("Role already exists", zap.String("code", roleData.Code))
 		}
 	}
 	return nil
+}
+
+func globalRoleQuery(tx *gorm.DB) *gorm.DB {
+	return tx.Model(&usermodel.Role{}).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", systemmodels.ScopeTypeGlobal)
+}
+
+func ensureGlobalRoleScope(tx *gorm.DB, roleID uuid.UUID) error {
+	if tx == nil || roleID == uuid.Nil {
+		return nil
+	}
+	var scope systemmodels.RoleScope
+	err := tx.Where("role_id = ? AND scope_type = ? AND deleted_at IS NULL", roleID, systemmodels.ScopeTypeGlobal).First(&scope).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	return tx.Create(&systemmodels.RoleScope{
+		RoleID:    roleID,
+		ScopeType: systemmodels.ScopeTypeGlobal,
+	}).Error
 }
 
 func initDefaultAdmin(logger *zap.Logger) error {
@@ -1185,34 +1476,44 @@ func initDefaultAdmin(logger *zap.Logger) error {
 }
 
 func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
-	var adminRole usermodel.Role
-	if err := database.DB.Where("code = ? AND collaboration_workspace_id IS NULL", "admin").First(&adminRole).Error; err != nil {
-		logger.Error("Failed to find admin role", zap.Error(err))
-		return err
-	}
-
-	var userRole usermodel.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ? AND collaboration_workspace_id IS NULL", userID, adminRole.ID).First(&userRole)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			userRole = usermodel.UserRole{
-				UserID:                   userID,
-				RoleID:                   adminRole.ID,
-				CollaborationWorkspaceID: nil,
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		var adminRole usermodel.Role
+		if err := globalRoleQuery(tx).Where("code = ?", "admin").First(&adminRole).Error; err != nil {
+			logger.Error("Failed to find admin role", zap.Error(err))
+			return err
+		}
+		workspace, err := workspacerolebinding.EnsurePersonalWorkspace(tx, userID)
+		if err != nil {
+			logger.Error("Failed to ensure admin personal workspace", zap.Error(err))
+			return err
+		}
+		var binding usermodel.WorkspaceRoleBinding
+		result := tx.Where("workspace_id = ? AND user_id = ? AND role_id = ? AND deleted_at IS NULL", workspace.ID, userID, adminRole.ID).First(&binding)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				binding = usermodel.WorkspaceRoleBinding{
+					WorkspaceID: workspace.ID,
+					UserID:      userID,
+					RoleID:      adminRole.ID,
+					Enabled:     true,
+				}
+				if err := tx.Create(&binding).Error; err != nil {
+					logger.Error("Failed to assign admin role", zap.Error(err))
+					return err
+				}
+				logger.Info("Admin role assigned", zap.String("user_id", userID.String()), zap.String("workspace_id", workspace.ID.String()))
+				return nil
 			}
-			if err := database.DB.Create(&userRole).Error; err != nil {
-				logger.Error("Failed to assign admin role", zap.Error(err))
-				return err
-			}
-			logger.Info("Admin role assigned", zap.String("user_id", userID.String()))
-		} else {
 			return result.Error
 		}
-	} else {
-		logger.Info("Admin role already assigned", zap.String("user_id", userID.String()))
-	}
-
-	return nil
+		if !binding.Enabled {
+			if err := tx.Model(&binding).Update("enabled", true).Error; err != nil {
+				return err
+			}
+		}
+		logger.Info("Admin role already assigned", zap.String("user_id", userID.String()), zap.String("workspace_id", workspace.ID.String()))
+		return nil
+	})
 }
 
 func initDefaultMenusNoScope(logger *zap.Logger) error {
@@ -1818,12 +2119,12 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 			Meta:            systemmodels.MetaJSON{"builtin": true},
 		},
 		{
-			TemplateKey:     "personal.notice.collaboration_workspace_admins",
+			TemplateKey:     "personal.notice.collaboration_admins",
 			Name:            "个人空间协作空间管理员提醒",
 			Description:     "个人空间向协作空间管理员发送治理提醒",
 			MessageType:     "message",
 			OwnerScope:      "personal",
-			AudienceType:    "collaboration_workspace_admins",
+			AudienceType:    "collaboration_admins",
 			TitleTemplate:   "{{title}}",
 			SummaryTemplate: "{{summary}}",
 			ContentTemplate: "{{content}}",
@@ -1832,12 +2133,12 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 			Meta:            systemmodels.MetaJSON{"builtin": true},
 		},
 		{
-			TemplateKey:     "collaboration_workspace.notice.collaboration_workspace_users",
+			TemplateKey:     "collaboration.notice.collaboration_users",
 			Name:            "协作空间公告模板",
 			Description:     "协作空间管理员向指定协作空间发送公告或待办",
 			MessageType:     "todo",
 			OwnerScope:      "collaboration",
-			AudienceType:    "collaboration_workspace_users",
+			AudienceType:    "collaboration_users",
 			TitleTemplate:   "{{title}}",
 			SummaryTemplate: "{{summary}}",
 			ContentTemplate: "{{content}}",
@@ -2019,7 +2320,7 @@ func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
 
 	defaultRoleCodes := permissionseed.DefaultRoleCodes()
 	var roles []usermodel.Role
-	if err := database.DB.Where("collaboration_workspace_id IS NULL AND code IN ?", defaultRoleCodes).Find(&roles).Error; err != nil {
+	if err := globalRoleQuery(database.DB).Where("code IN ?", defaultRoleCodes).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleIDs := make([]uuid.UUID, 0, len(roles))
@@ -2219,10 +2520,10 @@ func transferMenuReferences(tx *gorm.DB, sourceMenuID, targetMenuID uuid.UUID) e
 		 SELECT role_id, ?, created_at FROM role_hidden_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,
 		`DELETE FROM role_hidden_menus WHERE menu_id = ?`,
-		`INSERT INTO collaboration_workspace_blocked_menus (collaboration_workspace_id, menu_id, created_at, updated_at)
-		 SELECT collaboration_workspace_id, ?, created_at, updated_at FROM collaboration_workspace_blocked_menus WHERE menu_id = ?
+		`INSERT INTO workspace_blocked_menus (workspace_id, menu_id, created_at, updated_at)
+		 SELECT workspace_id, ?, created_at, updated_at FROM workspace_blocked_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,
-		`DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id = ?`,
+		`DELETE FROM workspace_blocked_menus WHERE menu_id = ?`,
 		`INSERT INTO user_hidden_menus (user_id, menu_id, created_at, updated_at)
 		 SELECT user_id, ?, created_at, updated_at FROM user_hidden_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,

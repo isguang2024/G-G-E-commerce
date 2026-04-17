@@ -212,8 +212,8 @@ func (h *userAPIHandler) GetUserPermissionDiagnosis(ctx context.Context, params 
 	}
 
 	var collaborationWorkspaceID *uuid.UUID
-	if params.CollaborationWorkspaceID.Set && params.CollaborationWorkspaceID.Value != "" {
-		parsed, parseErr := uuid.Parse(params.CollaborationWorkspaceID.Value)
+	if params.WorkspaceID.Set && params.WorkspaceID.Value != "" {
+		parsed, parseErr := uuid.Parse(params.WorkspaceID.Value)
 		if parseErr == nil {
 			collaborationWorkspaceID = &parsed
 		}
@@ -236,7 +236,7 @@ func (h *userAPIHandler) GetUserPermissionDiagnosis(ctx context.Context, params 
 			Context:                        buildUserPermissionDiagnosisContext("personal", "", "", ""),
 			Snapshot:                       buildPersonalSnapshotSummary(snapshot),
 			Roles:                          []gen.UserPermissionRoleResult{},
-			CollaborationWorkspacePackages: []gen.FeaturePackageRef{},
+			WorkspacePackages: []gen.FeaturePackageRef{},
 			Menus:                          []gen.UserPermissionMenuTreeItem{},
 		}
 		if permissionKey != "" {
@@ -262,7 +262,7 @@ func (h *userAPIHandler) GetUserPermissionDiagnosis(ctx context.Context, params 
 		Context:                        buildUserPermissionDiagnosisContext("collaboration", currentCWID, collaborationWorkspaceID.String(), ""),
 		Snapshot:                       buildCollaborationSnapshotSummary(cwSnapshot),
 		Roles:                          []gen.UserPermissionRoleResult{},
-		CollaborationWorkspacePackages: []gen.FeaturePackageRef{},
+		WorkspacePackages: []gen.FeaturePackageRef{},
 		Menus:                          []gen.UserPermissionMenuTreeItem{},
 	}
 	if permissionKey != "" {
@@ -464,8 +464,8 @@ func buildUserPermissionDiagnosisContext(contextType, bindingWorkspaceID, curren
 	return gen.UserPermissionDiagnosisContext{
 		Type:                              contextType,
 		BindingWorkspaceID:                bindingWorkspaceID,
-		CurrentCollaborationWorkspaceID:   currentWorkspaceID,
-		CurrentCollaborationWorkspaceName: currentWorkspaceName,
+		CurrentWorkspaceID:   currentWorkspaceID,
+		CurrentWorkspaceName: currentWorkspaceName,
 	}
 }
 
@@ -476,7 +476,7 @@ func buildUserPermissionDiagnosisResult(permissionKey string) gen.UserPermission
 		Reasons:                         []string{},
 		MatchedInSnapshot:               false,
 		BypassedBySuperAdmin:            false,
-		BlockedByCollaborationWorkspace: false,
+		BlockedByCollaboration: false,
 		MemberMatched:                   false,
 		BoundaryConfigured:              false,
 		RoleChainMatched:                false,
@@ -486,4 +486,5 @@ func buildUserPermissionDiagnosisResult(permissionKey string) gen.UserPermission
 		RoleResults:                     []gen.UserPermissionRoleResult{},
 	}
 }
+
 

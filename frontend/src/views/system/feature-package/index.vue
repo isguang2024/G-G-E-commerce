@@ -129,8 +129,8 @@
       @success="handleRefresh"
     />
 
-    <FeaturePackageCollaborationWorkspacesDialog
-      v-model="collaborationWorkspacesDialogVisible"
+    <FeaturePackageWorkspacesDialog
+      v-model="collaborationDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
       :workspace-scope="currentPackage.workspaceScope || 'all'"
@@ -240,7 +240,7 @@
   import FeaturePackageBundlesDialog from './modules/feature-package-bundles-dialog.vue'
   import FeaturePackageActionsDialog from './modules/feature-package-actions-dialog.vue'
   import FeaturePackageMenusDialog from './modules/feature-package-menus-dialog.vue'
-  import FeaturePackageCollaborationWorkspacesDialog from './modules/feature-package-collaboration-workspaces-dialog.vue'
+  import FeaturePackageWorkspacesDialog from './modules/feature-package-workspaces-dialog.vue'
 
   defineOptions({ name: 'FeaturePackage' })
 
@@ -261,7 +261,7 @@
   const bundlesDialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
   const menusDialogVisible = ref(false)
-  const collaborationWorkspacesDialogVisible = ref(false)
+  const collaborationDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const relationDialogVisible = ref(false)
   const relationLoading = ref(false)
@@ -476,7 +476,7 @@
                       key: 'collaborationWorkspaces',
                       label: '开通协作空间',
                       icon: 'ri:group-line',
-                      auth: 'feature_package.assign_collaboration_workspace',
+                      auth: 'feature_package.assign_workspace',
                     },
                     {
                       key: 'edit',
@@ -508,7 +508,7 @@
                       key: 'collaborationWorkspaces',
                       label: '开通协作空间',
                       icon: 'ri:group-line',
-                      auth: 'feature_package.assign_collaboration_workspace',
+                      auth: 'feature_package.assign_workspace',
                     },
                     {
                       key: 'edit',
@@ -648,7 +648,7 @@
       return
     }
     if (openMode === 'collaborationWorkspaces') {
-      collaborationWorkspacesDialogVisible.value = true
+      collaborationDialogVisible.value = true
       return
     }
     if (openMode === 'edit') {
@@ -688,7 +688,7 @@
     }
     if (command === 'collaborationWorkspaces') {
       currentPackage.value = { ...row }
-      collaborationWorkspacesDialogVisible.value = true
+      collaborationDialogVisible.value = true
       return
     }
     if (command === 'edit') {

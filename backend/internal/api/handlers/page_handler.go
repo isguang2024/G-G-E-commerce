@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -17,3 +17,4 @@ type pageAPIHandler struct {
 func newPageAPIHandler(pageSvc page.Service, auditRecorder audit.Recorder, logger *zap.Logger) *pageAPIHandler {
 	return &pageAPIHandler{pageSvc: pageSvc, audit: auditRecorder, logger: logger}
 }
+

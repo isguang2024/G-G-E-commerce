@@ -633,3 +633,4 @@ func (h *systemAPIHandler) ListRegisterLogs(ctx context.Context, params gen.List
 
 var _ = uuid.Nil
 
+

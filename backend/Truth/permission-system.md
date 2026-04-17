@@ -20,13 +20,13 @@
 ```
 功能包（FeaturePackage）
   └─ 包含多个权限键（permission_keys）
-  └─ 绑定到协作空间（collaboration_workspace）
+  └─ 绑定到工作空间（workspace_feature_packages）
 
 角色（Role）
   └─ 绑定多个功能包（role_feature_packages）
 
 用户（User）
-  └─ 在空间内有角色（collaboration_workspace_members）
+  └─ 在空间内有角色（workspace_role_bindings）
   └─ 角色 → 功能包 → 权限键（运行时交集）
 ```
 
@@ -159,7 +159,7 @@ WARN  permission key in spec but missing in DB  {"key": "widget.read"}
 |------|------|
 | `user.list` | 查看用户列表 |
 | `user.create` | 创建用户 |
-| `feature_package.assign_collaboration_workspace` | 给协作空间分配功能包 |
+| `feature_package.assign_workspace` | 给工作空间分配功能包 |
 | `system.api_registry.view` | 查看 API 注册表 |
 
 第一段为模块名，会自动映射到 `permission_keys.module_code`，同时作为接口分类推断的输入。

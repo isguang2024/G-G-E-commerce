@@ -36,8 +36,8 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
             roles: ['admin'],
             current_auth_workspace_id: 'ws-personal',
             current_auth_workspace_type: 'personal',
-            current_collaboration_workspace_id: '',
-            collaboration_workspace_id: ''
+            current_workspace_id: '',
+            workspace_id: ''
           }
         })
       )
@@ -128,8 +128,8 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
           roles: [{ code: 'admin' }],
           current_auth_workspace_id: 'ws-personal',
           current_auth_workspace_type: 'personal',
-          current_collaboration_workspace_id: '',
-          collaboration_workspace_id: ''
+          current_workspace_id: '',
+          workspace_id: ''
         })
       )
       return
@@ -166,7 +166,7 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
       return
     }
 
-    if (url.pathname === '/api/v1/collaboration-workspaces/mine') {
+    if (url.pathname === '/api/v1/workspaces/collaboration/mine') {
       await route.fulfill(json({ records: [], total: 0 }))
       return
     }

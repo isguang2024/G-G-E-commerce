@@ -218,7 +218,7 @@ export async function fetchGetPageAccessTrace(params: Api.SystemManage.PageAcces
     app_key: params.appKey || '',
     user_id: params.userId,
     ...(params.collaborationWorkspaceId
-      ? { collaboration_workspace_id: params.collaborationWorkspaceId }
+      ? { workspace_id: params.collaborationWorkspaceId }
       : {}),
     ...(params.pageKey ? { page_key: params.pageKey } : {}),
     ...(params.pageKeys ? { page_keys: params.pageKeys } : {}),

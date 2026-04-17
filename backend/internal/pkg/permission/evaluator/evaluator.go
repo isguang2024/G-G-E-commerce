@@ -1,4 +1,4 @@
-﻿// Package evaluator is the single entry point for permission decisions in
+// Package evaluator is the single entry point for permission decisions in
 // MaBen 5.0. The final permission set for a member in a workspace is the
 // intersection of:
 //
@@ -108,6 +108,24 @@ func (e *gormEvaluator) Resolve(ctx context.Context, accountID, workspaceID uuid
 		return resolved, nil
 	}
 
+	workspaceType, err := e.queryWorkspaceType(ctx, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluator: load workspace type: %w", err)
+	}
+
+	if workspaceType == "personal" {
+		roleKeys, err := e.queryRoleKeys(ctx, accountID, workspaceID)
+		if err != nil {
+			return nil, fmt.Errorf("evaluator: load personal role keys: %w", err)
+		}
+		for _, key := range roleKeys {
+			resolved.Keys[key] = struct{}{}
+		}
+		if len(resolved.Keys) > 0 {
+			return resolved, nil
+		}
+	}
+
 	// 1. Workspace (feature-package) side: the upper bound of what this
 	//    workspace as a tenant subject can possibly do.
 	wsKeys, err := e.queryFeaturePackageKeys(ctx, workspaceID)
@@ -193,27 +211,33 @@ LIMIT 1
 }
 
 // queryRoleKeys returns permission_key strings derived from the user's roles
-// in the target workspace. Roles are joined via the legacy
-// workspaces.collaboration_workspace_id back-reference (which is the only
-// link we have until we introduce workspace_member_roles in a later phase).
-// For personal workspaces (no collaboration_workspace_id) we look for
-// account-level roles where user_roles.collaboration_workspace_id IS NULL.
-// role_disabled_actions are subtracted from the final set.
+// bound to the target workspace. role_scopes is the source of truth for role
+// applicability; when no role_scopes row exists we treat the role as global
+// for backward compatibility with old data.
 func (e *gormEvaluator) queryRoleKeys(ctx context.Context, accountID, workspaceID uuid.UUID) ([]string, error) {
 	// Bundle-aware: follows feature_package_bundles so that roles bound to
 	// a parent bundle package also inherit keys from its child packages.
 	const q = `
 WITH ws AS (
-  SELECT collaboration_workspace_id FROM workspaces WHERE id = ? AND deleted_at IS NULL
+  SELECT id, workspace_type
+  FROM workspaces
+  WHERE id = ? AND deleted_at IS NULL
 ),
-user_role_ids AS (
-  SELECT ur.role_id
-  FROM user_roles ur, ws
-  WHERE ur.user_id = ?
+bound_role_ids AS (
+  SELECT DISTINCT wrb.role_id
+  FROM workspace_role_bindings wrb
+  JOIN ws ON ws.id = wrb.workspace_id
+  JOIN roles r ON r.id = wrb.role_id AND r.deleted_at IS NULL
+  LEFT JOIN role_scopes rs ON rs.role_id = wrb.role_id AND rs.deleted_at IS NULL
+  WHERE wrb.workspace_id = ?
+    AND wrb.user_id = ?
+    AND wrb.enabled = true
+    AND wrb.deleted_at IS NULL
     AND (
-      (ws.collaboration_workspace_id IS NOT NULL AND ur.collaboration_workspace_id = ws.collaboration_workspace_id)
-      OR
-      (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
+      rs.role_id IS NULL
+      OR rs.scope_type = 'global'
+      OR (rs.scope_type = 'personal' AND ws.workspace_type = 'personal')
+      OR (rs.scope_type = 'collaboration' AND ws.workspace_type = 'collaboration' AND rs.scope_id = ws.id)
     )
 ),
 pkg_keys AS (
@@ -225,7 +249,7 @@ pkg_keys AS (
 ),
 granted AS (
   SELECT DISTINCT pk.permission_key, urr.role_id, pkeys.action_id
-  FROM user_role_ids urr
+  FROM bound_role_ids urr
   JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
   JOIN pkg_keys pkeys             ON pkeys.package_id = rfp.package_id
   JOIN permission_keys pk        ON pk.id = pkeys.action_id
@@ -240,7 +264,7 @@ WHERE NOT EXISTS (
 )
 `
 	var out []string
-	if err := e.db.WithContext(ctx).Raw(q, workspaceID, accountID).Scan(&out).Error; err != nil {
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID, workspaceID, accountID).Scan(&out).Error; err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -249,16 +273,25 @@ WHERE NOT EXISTS (
 func (e *gormEvaluator) queryRoleKeysBySource(ctx context.Context, accountID, workspaceID uuid.UUID) (map[string][]uuid.UUID, error) {
 	const q = `
 WITH ws AS (
-  SELECT collaboration_workspace_id FROM workspaces WHERE id = ? AND deleted_at IS NULL
+  SELECT id, workspace_type
+  FROM workspaces
+  WHERE id = ? AND deleted_at IS NULL
 ),
-user_role_ids AS (
-  SELECT ur.role_id
-  FROM user_roles ur, ws
-  WHERE ur.user_id = ?
+bound_role_ids AS (
+  SELECT DISTINCT wrb.role_id
+  FROM workspace_role_bindings wrb
+  JOIN ws ON ws.id = wrb.workspace_id
+  JOIN roles r ON r.id = wrb.role_id AND r.deleted_at IS NULL
+  LEFT JOIN role_scopes rs ON rs.role_id = wrb.role_id AND rs.deleted_at IS NULL
+  WHERE wrb.workspace_id = ?
+    AND wrb.user_id = ?
+    AND wrb.enabled = true
+    AND wrb.deleted_at IS NULL
     AND (
-      (ws.collaboration_workspace_id IS NOT NULL AND ur.collaboration_workspace_id = ws.collaboration_workspace_id)
-      OR
-      (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
+      rs.role_id IS NULL
+      OR rs.scope_type = 'global'
+      OR (rs.scope_type = 'personal' AND ws.workspace_type = 'personal')
+      OR (rs.scope_type = 'collaboration' AND ws.workspace_type = 'collaboration' AND rs.scope_id = ws.id)
     )
 ),
 pkg_keys AS (
@@ -270,7 +303,7 @@ pkg_keys AS (
 ),
 granted AS (
   SELECT pk.permission_key, urr.role_id, pkeys.action_id
-  FROM user_role_ids urr
+  FROM bound_role_ids urr
   JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
   JOIN pkg_keys pkeys             ON pkeys.package_id = rfp.package_id
   JOIN permission_keys pk        ON pk.id = pkeys.action_id
@@ -289,7 +322,7 @@ WHERE NOT EXISTS (
 		RoleID        uuid.UUID `gorm:"column:role_id"`
 	}
 	var rows []row
-	if err := e.db.WithContext(ctx).Raw(q, workspaceID, accountID).Scan(&rows).Error; err != nil {
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID, workspaceID, accountID).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make(map[string][]uuid.UUID, len(rows))
@@ -310,6 +343,15 @@ func (e *gormEvaluator) isSuperAdmin(ctx context.Context, accountID uuid.UUID) (
 		return false, err
 	}
 	return flag, nil
+}
+
+func (e *gormEvaluator) queryWorkspaceType(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	const q = `SELECT workspace_type FROM workspaces WHERE id = ? AND deleted_at IS NULL LIMIT 1`
+	var workspaceType string
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID).Scan(&workspaceType).Error; err != nil {
+		return "", err
+	}
+	return workspaceType, nil
 }
 
 func (e *gormEvaluator) queryAllPermissionKeys(ctx context.Context) ([]string, error) {
@@ -407,4 +449,3 @@ WHERE wfp.workspace_id = ?
 	}
 	return out, nil
 }
-

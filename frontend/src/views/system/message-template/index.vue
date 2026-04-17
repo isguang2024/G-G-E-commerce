@@ -1,5 +1,5 @@
 <template>
-  <MessageTemplateConsole scope="personal" />
+  <MessageTemplateConsole scope="global" />
 </template>
 
 <script setup lang="ts">

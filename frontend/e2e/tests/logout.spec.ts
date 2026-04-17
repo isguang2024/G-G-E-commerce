@@ -117,8 +117,8 @@ test('登出后清理会话并拦截后台路由', async ({ page, context }) => 
             roles: ['admin'],
             current_auth_workspace_id: 'ws-personal',
             current_auth_workspace_type: 'personal',
-            current_collaboration_workspace_id: '',
-            collaboration_workspace_id: ''
+            current_workspace_id: '',
+            workspace_id: ''
           }
         })
       )
@@ -137,8 +137,8 @@ test('登出后清理会话并拦截后台路由', async ({ page, context }) => 
           roles: [{ code: 'admin' }],
           current_auth_workspace_id: 'ws-personal',
           current_auth_workspace_type: 'personal',
-          current_collaboration_workspace_id: '',
-          collaboration_workspace_id: ''
+          current_workspace_id: '',
+          workspace_id: ''
         })
       )
       return
@@ -215,7 +215,7 @@ test('登出后清理会话并拦截后台路由', async ({ page, context }) => 
       return
     }
 
-    if (url.pathname === '/api/v1/collaboration-workspaces/mine') {
+    if (url.pathname === '/api/v1/workspaces/collaboration/mine') {
       await route.fulfill(json({ records: [], total: 0 }))
       return
     }

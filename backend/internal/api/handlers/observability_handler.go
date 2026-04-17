@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -29,3 +29,4 @@ func newObservabilityAPIHandler(
 		logger:    logger,
 	}
 }
+

@@ -1,4 +1,4 @@
-﻿package user
+package user
 
 import (
 	"github.com/google/uuid"
@@ -31,6 +31,8 @@ type RoleDisabledAction = models.RoleDisabledAction
 type RoleDataPermission = models.RoleDataPermission
 type CollaborationWorkspaceBlockedMenu = models.CollaborationWorkspaceBlockedMenu
 type CollaborationWorkspaceBlockedAction = models.CollaborationWorkspaceBlockedAction
+type WorkspaceBlockedMenu = models.WorkspaceBlockedMenu
+type WorkspaceBlockedAction = models.WorkspaceBlockedAction
 type UserActionPermission = models.UserActionPermission
 type UserHiddenMenu = models.UserHiddenMenu
 type APIEndpoint = models.APIEndpoint
@@ -41,7 +43,10 @@ type CollaborationWorkspaceMember = models.CollaborationWorkspaceMember
 type Workspace = models.Workspace
 type WorkspaceMember = models.WorkspaceMember
 type WorkspaceRoleBinding = models.WorkspaceRoleBinding
+type RoleScope = models.RoleScope
 type WorkspaceFeaturePackage = models.WorkspaceFeaturePackage
+type WorkspaceAccessSnapshot = models.WorkspaceAccessSnapshot
+type WorkspaceRoleAccessSnapshot = models.WorkspaceRoleAccessSnapshot
 type MemberSearchParams = models.MemberSearchParams
 type APIKey = models.APIKey
 type MediaAsset = models.MediaAsset
@@ -53,4 +58,3 @@ type RoleKeyPermission struct {
 	RoleID uuid.UUID `json:"role_id"`
 	KeyID  uuid.UUID `json:"action_id"`
 }
-

@@ -1,4 +1,4 @@
-﻿// message.go — Phase 4: ogen handler implementations for the message domain.
+// message.go — Phase 4: ogen handler implementations for the message domain.
 // Covers 19 operations: inbox, templates, senders, recipient-groups, dispatch.
 package handlers
 
@@ -23,7 +23,7 @@ import (
 // cwIDFromContext reads the collaboration workspace UUID from the request
 // context (populated by the Gin auth middleware before the ogen bridge).
 func cwIDFromContext(ctx context.Context) *uuid.UUID {
-	raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationWorkspaceID))
+	raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationID))
 	if raw == "" {
 		return nil
 	}
@@ -44,6 +44,13 @@ func mapJSON[T any](input any) (T, error) {
 		return out, err
 	}
 	return out, nil
+}
+
+func nonNilSlice[T any](items []T) []T {
+	if items == nil {
+		return make([]T, 0)
+	}
+	return items
 }
 
 // ── Inbox ────────────────────────────────────────────────────────────────────
@@ -193,7 +200,7 @@ func (h *messageAPIHandler) DispatchMessage(ctx context.Context, req *gen.Messag
 		TemplateKey:                     optString(req.TemplateKey),
 		MessageType:                     optString(req.MessageType),
 		AudienceType:                    optString(req.AudienceType),
-		TargetCollaborationWorkspaceIDs: req.TargetCollaborationWorkspaceIds,
+		TargetCollaborationWorkspaceIDs: req.TargetWorkspaceIds,
 		TargetUserIDs:                   req.TargetUserIds,
 		TargetGroupIDs:                  req.TargetGroupIds,
 		Title:                           optString(req.Title),
@@ -254,6 +261,7 @@ func (h *messageAPIHandler) ListMessageTemplates(ctx context.Context) (*gen.Mess
 	if err != nil {
 		return nil, err
 	}
+	records = nonNilSlice(records)
 	return &gen.MessageTemplateListResponse{
 		Records: records,
 		Total:   int(result.Total),
@@ -297,6 +305,7 @@ func (h *messageAPIHandler) ListMessageSenders(ctx context.Context) (*gen.Messag
 	if err != nil {
 		return nil, err
 	}
+	records = nonNilSlice(records)
 	return &gen.MessageSenderListResponse{Records: records}, nil
 }
 
@@ -335,6 +344,7 @@ func (h *messageAPIHandler) ListMessageRecipientGroups(ctx context.Context) (*ge
 	if err != nil {
 		return nil, err
 	}
+	records = nonNilSlice(records)
 	return &gen.MessageRecipientGroupListResponse{Records: records}, nil
 }
 
@@ -385,7 +395,7 @@ func parseRecipientGroupRequest(req *gen.MessageRecipientGroupSaveRequest) (syst
 		targets = append(targets, systemmod.MessageRecipientGroupTargetSaveRequest{
 			TargetType:               t.TargetType,
 			UserID:                   optUUIDToString(t.UserID),
-			CollaborationWorkspaceID: optUUIDToString(t.CollaborationWorkspaceID),
+			CollaborationWorkspaceID: optUUIDToString(t.WorkspaceID),
 			RoleCode:                 optString(t.RoleCode),
 			PackageKey:               optString(t.PackageKey),
 			SortOrder:                optInt(t.SortOrder, 0),
@@ -474,6 +484,7 @@ func (h *messageAPIHandler) ListMessageDispatchRecords(ctx context.Context, para
 	if err != nil {
 		return nil, err
 	}
+	records = nonNilSlice(records)
 	summary, err := mapJSON[gen.DispatchRecordSummary](result.Summary)
 	if err != nil {
 		return nil, err
@@ -497,6 +508,8 @@ func (h *messageAPIHandler) GetMessageDispatchRecord(ctx context.Context, params
 		h.logger.Error("get message dispatch record failed", zap.Error(err))
 		return nil, err
 	}
+	detail.Deliveries = nonNilSlice(detail.Deliveries)
 	return mapJSON[*gen.MessageDispatchRecord](detail)
 }
+
 

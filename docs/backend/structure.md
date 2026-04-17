@@ -19,7 +19,7 @@
 | `auth` | 登录、JWT、中间件、当前用户信息 | `handler.go`、`middleware.go`、`service.go` |
 | `app` | App 管理、Host 绑定、当前 App 解析 | `handler.go`、`service.go` |
 | `workspace` | 个人空间与协作空间的统一主体 | `handler.go`、`service.go` |
-| `collaborationworkspace` | 协作空间成员、边界、授权快照 | `handler.go`、`service.go` |
+| `collaborationworkspace` | 当前协作上下文成员、边界、授权快照 | `handler.go`、`service.go` |
 | `space` | 菜单空间、空间模式、Host 绑定、初始化 | `handler.go`、`service.go`、`util.go` |
 | `menu` | 菜单树、菜单组、菜单权限、备份 | `handler.go`、`service.go`、`serializer.go` |
 | `page` | 页面定义、页面空间绑定、运行时缓存 | `handler.go`、`service.go`、`runtime_cache.go` |
@@ -40,7 +40,6 @@
 - `MenuDefinition`、`SpaceMenuPlacement`
 - `UIPage`、`PageSpaceBinding`
 - `Workspace`、`WorkspaceMember`、`WorkspaceRoleBinding`、`WorkspaceFeaturePackage`
-- `CollaborationWorkspace`、`CollaborationWorkspaceMember`
 - `PermissionKey`、`PermissionGroup`
 - `FeaturePackage`、`FeaturePackageBundle`、`FeaturePackageMenu`、`FeaturePackageKey`
 - `RoleFeaturePackage`、`RoleDataPermission`、`RoleDisabledAction`

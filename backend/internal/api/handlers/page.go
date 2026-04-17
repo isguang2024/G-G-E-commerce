@@ -1,4 +1,4 @@
-// page.go: ogen handler implementations for /pages/* and runtime/sync.
+﻿// page.go: ogen handler implementations for /pages/* and runtime/sync.
 package handlers
 
 import (
@@ -629,3 +629,4 @@ func pageSaveResultMenuSpaceKeys(meta map[string]interface{}) []string {
 		return nil
 	}
 }
+

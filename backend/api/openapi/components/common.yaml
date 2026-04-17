@@ -1,4 +1,4 @@
-# components/common.yaml — All shared schemas.
+﻿# components/common.yaml — All shared schemas.
 # Source of truth for schema definitions. Domain-specific schemas can be
 # moved to domains/{domain}/schemas.yaml incrementally.
 components:
@@ -28,7 +28,7 @@ components:
           type: string
           format: uuid
           nullable: true
-        collaboration_workspace_id:
+        workspace_id:
           type: string
           format: uuid
           nullable: true
@@ -288,11 +288,11 @@ components:
         current_auth_workspace_type:
           type: string
           nullable: true
-        collaboration_workspace_id:
+        workspace_id:
           type: string
           format: uuid
           nullable: true
-        current_collaboration_workspace_id:
+        current_workspace_id:
           type: string
           format: uuid
           nullable: true
@@ -344,7 +344,7 @@ components:
           enum:
           - personal
           - collaboration
-        collaboration_workspace_id:
+        workspace_id:
           type: string
           format: uuid
           nullable: true
@@ -604,7 +604,7 @@ components:
       - requested_package_count
       - impacted_package_count
       - role_count
-      - collaboration_workspace_count
+      - workspace_count
       - user_count
       - elapsed_milliseconds
       - finished_at
@@ -618,7 +618,7 @@ components:
         role_count:
           type: integer
           format: int64
-        collaboration_workspace_count:
+        workspace_count:
           type: integer
           format: int64
         user_count:
@@ -1045,7 +1045,7 @@ components:
         user_id:
           type: string
           format: uuid
-        collaboration_workspace_id:
+        workspace_id:
           type: string
           format: uuid
     MenuTreeResponse:
@@ -1439,7 +1439,7 @@ components:
         menu_count:
           type: integer
           format: int64
-        collaboration_workspace_count:
+        workspace_count:
           type: integer
           format: int64
     FeaturePackageList:
@@ -1552,7 +1552,7 @@ components:
       required:
       - package_id
       - role_count
-      - collaboration_workspace_count
+      - workspace_count
       - user_count
       - menu_count
       - action_count
@@ -1563,7 +1563,7 @@ components:
         role_count:
           type: integer
           format: int64
-        collaboration_workspace_count:
+        workspace_count:
           type: integer
           format: int64
         user_count:
@@ -1742,3 +1742,4 @@ components:
           additionalProperties: true
           nullable: true
           description: '可选上下文，如参数校验失败时携带 {field: reason}'
+

@@ -601,7 +601,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/mine": {
+    "/workspaces/collaboration/mine": {
         parameters: {
             query?: never;
             header?: never;
@@ -609,7 +609,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取我的协作空间列表 */
-        get: operations["listMyCollaborationWorkspaces"];
+        get: operations["listMyCollaborations"];
         put?: never;
         post?: never;
         delete?: never;
@@ -618,7 +618,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current": {
+    "/collaboration/current": {
         parameters: {
             query?: never;
             header?: never;
@@ -626,7 +626,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间详情 */
-        get: operations["getCurrentCollaborationWorkspace"];
+        get: operations["getCurrentCollaboration"];
         put?: never;
         post?: never;
         delete?: never;
@@ -635,7 +635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/options": {
+    "/workspaces/collaboration/options": {
         parameters: {
             query?: never;
             header?: never;
@@ -643,7 +643,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间候选 */
-        get: operations["listCollaborationWorkspaceOptions"];
+        get: operations["listCollaborationOptions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -652,7 +652,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/members": {
+    "/collaboration/current/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -660,17 +660,17 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间成员列表 */
-        get: operations["listCurrentCollaborationWorkspaceMembers"];
+        get: operations["listCurrentCollaborationMembers"];
         put?: never;
         /** 添加当前协作空间成员 */
-        post: operations["addCurrentCollaborationWorkspaceMember"];
+        post: operations["addCurrentCollaborationMember"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/members/{userId}": {
+    "/collaboration/current/members/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -681,13 +681,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** 移除当前协作空间成员 */
-        delete: operations["removeCurrentCollaborationWorkspaceMember"];
+        delete: operations["removeCurrentCollaborationMember"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/members/{userId}/role": {
+    "/collaboration/current/members/{userId}/role": {
         parameters: {
             query?: never;
             header?: never;
@@ -696,7 +696,7 @@ export interface paths {
         };
         get?: never;
         /** 更新当前协作空间成员身份 */
-        put: operations["updateCurrentCollaborationWorkspaceMemberRole"];
+        put: operations["updateCurrentCollaborationMemberRole"];
         post?: never;
         delete?: never;
         options?: never;
@@ -704,7 +704,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/members/{userId}/roles": {
+    "/collaboration/current/members/{userId}/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -712,9 +712,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间成员角色 */
-        get: operations["getCurrentCollaborationWorkspaceMemberRoles"];
+        get: operations["getCurrentCollaborationMemberRoles"];
         /** 配置当前协作空间成员角色 */
-        put: operations["setCurrentCollaborationWorkspaceMemberRoles"];
+        put: operations["setCurrentCollaborationMemberRoles"];
         post?: never;
         delete?: never;
         options?: never;
@@ -722,7 +722,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/roles": {
+    "/collaboration/current/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -730,17 +730,17 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间可分配角色 */
-        get: operations["listCurrentCollaborationWorkspaceRoles"];
+        get: operations["listCurrentCollaborationRoles"];
         put?: never;
         /** 创建当前协作空间角色 */
-        post: operations["createCurrentCollaborationWorkspaceRole"];
+        post: operations["createCurrentCollaborationRole"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/roles": {
+    "/collaboration/current/boundary/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -748,17 +748,17 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间边界可见角色 */
-        get: operations["listCurrentCollaborationWorkspaceBoundaryRoles"];
+        get: operations["listCurrentCollaborationBoundaryRoles"];
         put?: never;
         /** 创建当前协作空间角色(边界管理) */
-        post: operations["createCurrentCollaborationWorkspaceBoundaryRole"];
+        post: operations["createCurrentCollaborationBoundaryRole"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/roles/{roleId}": {
+    "/collaboration/current/boundary/roles/{roleId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -767,16 +767,16 @@ export interface paths {
         };
         get?: never;
         /** 更新当前协作空间角色(边界管理) */
-        put: operations["updateCurrentCollaborationWorkspaceBoundaryRole"];
+        put: operations["updateCurrentCollaborationBoundaryRole"];
         post?: never;
         /** 删除当前协作空间角色(边界管理) */
-        delete: operations["deleteCurrentCollaborationWorkspaceBoundaryRole"];
+        delete: operations["deleteCurrentCollaborationBoundaryRole"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/roles/{roleId}/packages": {
+    "/collaboration/current/boundary/roles/{roleId}/packages": {
         parameters: {
             query?: never;
             header?: never;
@@ -784,9 +784,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间角色功能包(边界管理) */
-        get: operations["getCurrentCollaborationWorkspaceBoundaryRolePackages"];
+        get: operations["getCurrentCollaborationBoundaryRolePackages"];
         /** 配置当前协作空间角色功能包(边界管理) */
-        put: operations["setCurrentCollaborationWorkspaceBoundaryRolePackages"];
+        put: operations["setCurrentCollaborationBoundaryRolePackages"];
         post?: never;
         delete?: never;
         options?: never;
@@ -794,7 +794,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/roles/{roleId}/menus": {
+    "/collaboration/current/boundary/roles/{roleId}/menus": {
         parameters: {
             query?: never;
             header?: never;
@@ -802,9 +802,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间角色菜单权限(边界管理) */
-        get: operations["getCurrentCollaborationWorkspaceBoundaryRoleMenus"];
+        get: operations["getCurrentCollaborationBoundaryRoleMenus"];
         /** 配置当前协作空间角色菜单权限(边界管理) */
-        put: operations["setCurrentCollaborationWorkspaceBoundaryRoleMenus"];
+        put: operations["setCurrentCollaborationBoundaryRoleMenus"];
         post?: never;
         delete?: never;
         options?: never;
@@ -812,7 +812,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/roles/{roleId}/actions": {
+    "/collaboration/current/boundary/roles/{roleId}/actions": {
         parameters: {
             query?: never;
             header?: never;
@@ -820,9 +820,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间角色功能权限(边界管理) */
-        get: operations["getCurrentCollaborationWorkspaceBoundaryRoleActions"];
+        get: operations["getCurrentCollaborationBoundaryRoleActions"];
         /** 配置当前协作空间角色功能权限(边界管理) */
-        put: operations["setCurrentCollaborationWorkspaceBoundaryRoleActions"];
+        put: operations["setCurrentCollaborationBoundaryRoleActions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -830,7 +830,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/boundary/packages": {
+    "/collaboration/current/boundary/packages": {
         parameters: {
             query?: never;
             header?: never;
@@ -838,7 +838,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间已开通功能包(边界管理) */
-        get: operations["getCurrentCollaborationWorkspaceBoundaryPackages"];
+        get: operations["getCurrentCollaborationBoundaryPackages"];
         put?: never;
         post?: never;
         delete?: never;
@@ -847,7 +847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/menus": {
+    "/collaboration/current/menus": {
         parameters: {
             query?: never;
             header?: never;
@@ -855,7 +855,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间菜单边界 */
-        get: operations["getCurrentCollaborationWorkspaceMenus"];
+        get: operations["getCurrentCollaborationMenus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -864,7 +864,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/menu-origins": {
+    "/collaboration/current/menu-origins": {
         parameters: {
             query?: never;
             header?: never;
@@ -872,7 +872,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间菜单来源 */
-        get: operations["getCurrentCollaborationWorkspaceMenuOrigins"];
+        get: operations["getCurrentCollaborationMenuOrigins"];
         put?: never;
         post?: never;
         delete?: never;
@@ -881,7 +881,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/actions": {
+    "/collaboration/current/actions": {
         parameters: {
             query?: never;
             header?: never;
@@ -889,7 +889,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间功能权限边界 */
-        get: operations["getCurrentCollaborationWorkspaceActions"];
+        get: operations["getCurrentCollaborationActions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -898,7 +898,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/current/action-origins": {
+    "/collaboration/current/action-origins": {
         parameters: {
             query?: never;
             header?: never;
@@ -906,7 +906,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取当前协作空间功能权限来源 */
-        get: operations["getCurrentCollaborationWorkspaceActionOrigins"];
+        get: operations["getCurrentCollaborationActionOrigins"];
         put?: never;
         post?: never;
         delete?: never;
@@ -915,7 +915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces": {
+    "/workspaces/collaboration": {
         parameters: {
             query?: never;
             header?: never;
@@ -923,17 +923,17 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间列表 */
-        get: operations["listCollaborationWorkspaces"];
+        get: operations["listCollaborations"];
         put?: never;
         /** 创建协作空间 */
-        post: operations["createCollaborationWorkspace"];
+        post: operations["createCollaboration"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}": {
+    "/workspaces/collaboration/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -941,18 +941,18 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间详情 */
-        get: operations["getCollaborationWorkspace"];
+        get: operations["getCollaboration"];
         /** 更新协作空间 */
-        put: operations["updateCollaborationWorkspace"];
+        put: operations["updateCollaboration"];
         post?: never;
         /** 删除协作空间 */
-        delete: operations["deleteCollaborationWorkspace"];
+        delete: operations["deleteCollaboration"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/roles": {
+    "/workspaces/collaboration/{id}/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -960,7 +960,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间可分配角色 */
-        get: operations["listCollaborationWorkspaceRoles"];
+        get: operations["listCollaborationRoles"];
         put?: never;
         post?: never;
         delete?: never;
@@ -969,7 +969,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/menus": {
+    "/workspaces/collaboration/{id}/menus": {
         parameters: {
             query?: never;
             header?: never;
@@ -977,9 +977,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间菜单边界 */
-        get: operations["getCollaborationWorkspaceMenus"];
+        get: operations["getCollaborationMenus"];
         /** 配置协作空间菜单边界 */
-        put: operations["setCollaborationWorkspaceMenus"];
+        put: operations["setCollaborationMenus"];
         post?: never;
         delete?: never;
         options?: never;
@@ -987,7 +987,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/menu-origins": {
+    "/workspaces/collaboration/{id}/menu-origins": {
         parameters: {
             query?: never;
             header?: never;
@@ -995,7 +995,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间菜单来源 */
-        get: operations["getCollaborationWorkspaceMenuOrigins"];
+        get: operations["getCollaborationMenuOrigins"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1004,7 +1004,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/actions": {
+    "/workspaces/collaboration/{id}/actions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1012,9 +1012,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间功能权限边界 */
-        get: operations["getCollaborationWorkspaceActions"];
+        get: operations["getCollaborationActions"];
         /** 配置协作空间功能权限边界 */
-        put: operations["setCollaborationWorkspaceActions"];
+        put: operations["setCollaborationActions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1022,7 +1022,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/action-origins": {
+    "/workspaces/collaboration/{id}/action-origins": {
         parameters: {
             query?: never;
             header?: never;
@@ -1030,7 +1030,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间功能权限来源 */
-        get: operations["getCollaborationWorkspaceActionOrigins"];
+        get: operations["getCollaborationActionOrigins"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1039,7 +1039,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/members": {
+    "/workspaces/collaboration/{id}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -1047,17 +1047,17 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间成员列表 */
-        get: operations["listCollaborationWorkspaceMembers"];
+        get: operations["listCollaborationMembers"];
         put?: never;
         /** 添加协作空间成员 */
-        post: operations["addCollaborationWorkspaceMember"];
+        post: operations["addCollaborationMember"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/members/{userId}": {
+    "/workspaces/collaboration/{id}/members/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1068,13 +1068,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** 移除协作空间成员 */
-        delete: operations["removeCollaborationWorkspaceMember"];
+        delete: operations["removeCollaborationMember"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/collaboration-workspaces/{id}/members/{userId}/role": {
+    "/workspaces/collaboration/{id}/members/{userId}/role": {
         parameters: {
             query?: never;
             header?: never;
@@ -1083,7 +1083,7 @@ export interface paths {
         };
         get?: never;
         /** 更新协作空间成员身份 */
-        put: operations["updateCollaborationWorkspaceMemberRole"];
+        put: operations["updateCollaborationMemberRole"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1145,7 +1145,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/{id}/collaboration-workspaces": {
+    "/users/{id}/collaborations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1153,7 +1153,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取用户所在协作空间列表 */
-        get: operations["getUserCollaborationWorkspaces"];
+        get: operations["getUserCollaborations"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1931,7 +1931,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}": {
+    "/feature-packages/workspaces/collaboration/{workspaceId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1939,9 +1939,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取协作空间功能包 */
-        get: operations["getCollaborationWorkspacePackages"];
+        get: operations["getCollaborationPackages"];
         /** 配置协作空间功能包 */
-        put: operations["setCollaborationWorkspacePackages"];
+        put: operations["setCollaborationPackages"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2090,7 +2090,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/feature-packages/{id}/collaboration-workspaces": {
+    "/feature-packages/{id}/workspaces/collaboration": {
         parameters: {
             query?: never;
             header?: never;
@@ -2098,9 +2098,9 @@ export interface paths {
             cookie?: never;
         };
         /** 获取功能包协作空间 */
-        get: operations["getFeaturePackageCollaborationWorkspaces"];
+        get: operations["getFeaturePackageCollaborations"];
         /** 配置功能包协作空间 */
-        put: operations["setFeaturePackageCollaborationWorkspaces"];
+        put: operations["setFeaturePackageCollaborations"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3293,7 +3293,7 @@ export interface components {
             /** Format: uuid */
             owner_user_id?: string | null;
             /** Format: uuid */
-            collaboration_workspace_id?: string | null;
+            workspace_id?: string | null;
             status: string;
         };
         WorkspaceList: {
@@ -3394,9 +3394,9 @@ export interface components {
             current_auth_workspace_id?: string | null;
             current_auth_workspace_type?: string | null;
             /** Format: uuid */
-            collaboration_workspace_id?: string | null;
+            workspace_id?: string | null;
             /** Format: uuid */
-            current_collaboration_workspace_id?: string | null;
+            current_workspace_id?: string | null;
             actions: string[];
             roles: components["schemas"]["AuthMeRole"][];
         };
@@ -3417,7 +3417,7 @@ export interface components {
             /** @enum {string} */
             auth_workspace_type: "personal" | "collaboration";
             /** Format: uuid */
-            collaboration_workspace_id?: string | null;
+            workspace_id?: string | null;
             workspace: components["schemas"]["WorkspaceSummary"];
         };
         UserRoleRef: {
@@ -3703,7 +3703,7 @@ export interface components {
             /** Format: int64 */
             menu_count?: number;
             /** Format: int64 */
-            collaboration_workspace_count?: number;
+            workspace_count?: number;
         };
         FeaturePackageList: {
             records: components["schemas"]["FeaturePackageSummary"][];
@@ -3748,7 +3748,7 @@ export interface components {
             /** Format: int64 */
             role_count: number;
             /** Format: int64 */
-            collaboration_workspace_count: number;
+            workspace_count: number;
             /** Format: int64 */
             user_count: number;
             /** Format: int64 */
@@ -4685,7 +4685,7 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        CollaborationWorkspaceItem: {
+        CollaborationItem: {
             /** Format: uuid */
             id: string;
             name: string;
@@ -4701,15 +4701,15 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        CollaborationWorkspaceList: {
-            records: components["schemas"]["CollaborationWorkspaceItem"][];
+        CollaborationList: {
+            records: components["schemas"]["CollaborationItem"][];
             total: number;
         };
-        CollaborationWorkspaceMemberItem: {
+        CollaborationMemberItem: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            collaboration_workspace_id: string;
+            workspace_id: string;
             /** Format: uuid */
             user_id: string;
             role_code: string;
@@ -4725,27 +4725,28 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        CollaborationWorkspaceMemberList: {
-            records: components["schemas"]["CollaborationWorkspaceMemberItem"][];
+        CollaborationMemberList: {
+            records: components["schemas"]["CollaborationMemberItem"][];
             total: number;
         };
-        CollaborationWorkspaceMemberAddRequest: {
+        CollaborationMemberAddRequest: {
             /** Format: uuid */
             user_id: string;
             role_code?: string;
         };
-        CollaborationWorkspaceMemberRoleRequest: {
+        CollaborationMemberRoleRequest: {
             role_code: string;
         };
-        CollaborationWorkspaceMemberRolesResponse: {
+        CollaborationMemberRolesResponse: {
             role_ids: string[];
             roles: components["schemas"]["UserRoleRef"][];
         };
-        CollaborationWorkspaceRoleItem: {
+        CollaborationRoleItem: {
             /** Format: uuid */
             id: string;
+            scope_type: string;
             /** Format: uuid */
-            collaboration_workspace_id: string | null;
+            scope_id?: string | null;
             code: string;
             name: string;
             description: string;
@@ -4759,41 +4760,41 @@ export interface components {
             /** Format: date-time */
             updated_at?: string;
         };
-        CollaborationWorkspaceRoleList: {
-            records: components["schemas"]["CollaborationWorkspaceRoleItem"][];
+        CollaborationRoleList: {
+            records: components["schemas"]["CollaborationRoleItem"][];
             /** Format: int64 */
             total: number;
         };
-        CollaborationWorkspaceRoleSaveRequest: {
+        CollaborationRoleSaveRequest: {
             code: string;
             name: string;
             description?: string;
             sort_order?: number;
             status?: string;
         };
-        CollaborationWorkspaceBoundaryRolePackagesResponse: {
+        CollaborationBoundaryRolePackagesResponse: {
             package_ids: string[];
             packages: components["schemas"]["FeaturePackageRef"][];
             inherited: boolean;
         };
-        CollaborationWorkspaceMenusResponse: {
+        CollaborationMenusResponse: {
             menu_ids: string[];
         };
-        CollaborationWorkspaceMenuOriginsResponse: {
+        CollaborationMenuOriginsResponse: {
             derived_menu_ids: string[];
             derived_sources: components["schemas"]["MenuSourceEntry"][];
             blocked_menu_ids: string[];
         };
-        CollaborationWorkspaceActionsResponse: {
+        CollaborationActionsResponse: {
             action_ids: string[];
             actions: components["schemas"]["PermissionActionRef"][];
         };
-        CollaborationWorkspaceActionOriginsResponse: {
+        CollaborationActionOriginsResponse: {
             derived_action_ids: string[];
             derived_sources: components["schemas"]["ActionSourceEntry"][];
             blocked_action_ids: string[];
         };
-        CollaborationWorkspaceSaveRequest: {
+        CollaborationSaveRequest: {
             name: string;
             remark?: string;
             logo_url?: string;
@@ -4802,7 +4803,7 @@ export interface components {
             status?: string;
             admin_user_ids?: string[];
         };
-        UserCollaborationWorkspacesResponse: {
+        UserCollaborationsResponse: {
             records: {
                 /** Format: uuid */
                 id: string;
@@ -4848,8 +4849,8 @@ export interface components {
         UserPermissionDiagnosisContext: {
             type: string;
             binding_workspace_id: string;
-            current_collaboration_workspace_id: string;
-            current_collaboration_workspace_name: string;
+            current_workspace_id: string;
+            current_workspace_name: string;
         };
         UserPermissionSnapshotSummary: {
             refreshed_at?: string;
@@ -4882,7 +4883,7 @@ export interface components {
         };
         UserPermissionCollaborationMember: {
             id: string;
-            collaboration_workspace_id: string;
+            workspace_id: string;
             user_id: string;
             role_code: string;
             status: string;
@@ -4930,7 +4931,7 @@ export interface components {
             reasons: string[];
             matched_in_snapshot: boolean;
             bypassed_by_super_admin: boolean;
-            blocked_by_collaboration_workspace: boolean;
+            blocked_by_collaboration: boolean;
             denial_stage?: string;
             denial_reason?: string;
             member_status?: string;
@@ -4949,8 +4950,8 @@ export interface components {
             context: components["schemas"]["UserPermissionDiagnosisContext"];
             snapshot: components["schemas"]["UserPermissionSnapshotSummary"];
             roles: components["schemas"]["UserPermissionRoleResult"][];
-            collaboration_workspace_member?: components["schemas"]["UserPermissionCollaborationMember"];
-            collaboration_workspace_packages: components["schemas"]["FeaturePackageRef"][];
+            collaboration_member?: components["schemas"]["UserPermissionCollaborationMember"];
+            workspace_packages: components["schemas"]["FeaturePackageRef"][];
             diagnosis?: components["schemas"]["UserPermissionDiagnosisResult"];
             menus: components["schemas"]["UserPermissionMenuTreeItem"][];
         };
@@ -5050,7 +5051,7 @@ export interface components {
             feature_group_id?: string;
             template_name?: string;
             package_count?: number;
-            collaboration_workspace_count?: number;
+            workspace_count?: number;
         };
         RiskAuditItem: {
             /** Format: uuid */
@@ -5205,7 +5206,7 @@ export interface components {
             /** Format: int64 */
             role_count: number;
             /** Format: int64 */
-            collaboration_workspace_count: number;
+            workspace_count: number;
             /** Format: int64 */
             user_count: number;
         };
@@ -5339,7 +5340,7 @@ export interface components {
             /** Format: uuid */
             user_id?: string;
             /** Format: uuid */
-            collaboration_workspace_id?: string;
+            workspace_id?: string;
         };
         MenuTreeMeta: {
             title: string;
@@ -5503,7 +5504,7 @@ export interface components {
         };
         PageAccessTraceResponse: {
             user_id: string;
-            collaboration_workspace_id?: string;
+            workspace_id?: string;
             menu_space_key: string;
             authenticated: boolean;
             super_admin: boolean;
@@ -5586,7 +5587,7 @@ export interface components {
             /** Format: int64 */
             role_count: number;
             /** Format: int64 */
-            collaboration_workspace_count: number;
+            workspace_count: number;
             /** Format: int64 */
             user_count: number;
             /** Format: int64 */
@@ -5612,7 +5613,7 @@ export interface components {
             child_package_ids: string[];
             action_ids: string[];
             menu_ids: string[];
-            collaboration_workspace_ids: string[];
+            workspace_ids: string[];
             /** Format: date-time */
             snapshot_created_at: string;
         };
@@ -5656,12 +5657,12 @@ export interface components {
             sort_order: number;
             hidden: boolean;
         };
-        FeaturePackageCollaborationWorkspaceItem: {
+        FeaturePackageCollaborationItem: {
             /** Format: uuid */
             id: string;
         };
-        FeaturePackageCollaborationWorkspaceList: {
-            records: components["schemas"]["FeaturePackageCollaborationWorkspaceItem"][];
+        FeaturePackageCollaborationList: {
+            records: components["schemas"]["FeaturePackageCollaborationItem"][];
             /** Format: int64 */
             total: number;
         };
@@ -5884,7 +5885,7 @@ export interface components {
             published_at?: string;
             /** Format: date-time */
             failed_at?: string;
-            target_collaboration_workspace_ids?: string[];
+            target_workspace_ids?: string[];
         };
         InboxItem: {
             /** Format: uuid */
@@ -5901,7 +5902,10 @@ export interface components {
             /** Format: date-time */
             last_action_at?: string;
             /** Format: uuid */
-            recipient_collaboration_workspace_id?: string;
+            recipient_workspace_id?: string;
+            recipient_scope_type?: string;
+            /** Format: uuid */
+            recipient_scope_id?: string;
             title: string;
             summary?: string;
             content?: string;
@@ -5919,8 +5923,11 @@ export interface components {
             sender_service_key?: string;
             audience_type?: string;
             audience_scope?: string;
+            target_scope_type?: string;
             /** Format: uuid */
-            target_collaboration_workspace_id?: string;
+            target_scope_id?: string;
+            /** Format: uuid */
+            target_workspace_id?: string;
             /** Format: date-time */
             published_at?: string;
             /** Format: date-time */
@@ -5959,12 +5966,14 @@ export interface components {
             description: string;
             message_type: string;
             owner_scope: string;
+            /** Format: uuid */
+            owner_scope_id?: string;
             audience_type: string;
             title_template?: string;
             summary_template?: string;
             content_template?: string;
         };
-        DispatchCollaborationWorkspaceOption: {
+        DispatchCollaborationOption: {
             /** Format: uuid */
             id: string;
             name: string;
@@ -5976,8 +5985,8 @@ export interface components {
             display_name: string;
             description?: string;
             /** Format: uuid */
-            collaboration_workspace_id?: string;
-            collaboration_workspace_name?: string;
+            workspace_id?: string;
+            workspace_name?: string;
         };
         DispatchRecipientGroupOption: {
             /** Format: uuid */
@@ -6003,13 +6012,13 @@ export interface components {
         };
         MessageDispatchOptions: {
             sender_scope: string;
-            current_collaboration_workspace_id?: string;
-            current_collaboration_workspace_name?: string;
+            current_workspace_id?: string;
+            current_workspace_name?: string;
             sender_options: components["schemas"]["DispatchSenderOption"][];
             default_sender_id?: string;
             audience_options: components["schemas"]["DispatchAudienceOption"][];
             template_options: components["schemas"]["DispatchTemplateOption"][];
-            collaboration_workspaces: components["schemas"]["DispatchCollaborationWorkspaceOption"][];
+            collaborations: components["schemas"]["DispatchCollaborationOption"][];
             users: components["schemas"]["DispatchUserOption"][];
             recipient_groups: components["schemas"]["DispatchRecipientGroupOption"][];
             roles: components["schemas"]["DispatchRoleOption"][];
@@ -6025,7 +6034,7 @@ export interface components {
             template_key?: string;
             message_type?: string;
             audience_type?: string;
-            target_collaboration_workspace_ids?: string[];
+            target_workspace_ids?: string[];
             target_user_ids?: string[];
             target_group_ids?: string[];
             title?: string;
@@ -6063,8 +6072,10 @@ export interface components {
             message_type: string;
             owner_scope: string;
             /** Format: uuid */
-            owner_collaboration_workspace_id?: string;
-            owner_collaboration_workspace_name?: string;
+            owner_scope_id?: string;
+            /** Format: uuid */
+            owner_workspace_id?: string;
+            owner_workspace_name?: string;
             audience_type: string;
             title_template?: string;
             summary_template?: string;
@@ -6140,8 +6151,11 @@ export interface components {
             user_id?: string;
             user_name?: string;
             /** Format: uuid */
-            collaboration_workspace_id?: string;
-            collaboration_workspace_name?: string;
+            workspace_id?: string;
+            workspace_name?: string;
+            target_scope_type?: string;
+            /** Format: uuid */
+            target_scope_id?: string;
             role_code?: string;
             role_name?: string;
             package_key?: string;
@@ -6176,7 +6190,10 @@ export interface components {
             /** Format: uuid */
             user_id?: string;
             /** Format: uuid */
-            collaboration_workspace_id?: string;
+            workspace_id?: string;
+            target_scope_type?: string;
+            /** Format: uuid */
+            target_scope_id?: string;
             role_code?: string;
             package_key?: string;
             sort_order?: number;
@@ -6201,9 +6218,12 @@ export interface components {
             scope_type: string;
             /** Format: uuid */
             scope_id?: string;
+            target_scope_type?: string;
             /** Format: uuid */
-            target_collaboration_workspace_id?: string;
-            target_collaboration_workspace_name?: string;
+            target_scope_id?: string;
+            /** Format: uuid */
+            target_workspace_id?: string;
+            target_workspace_name?: string;
             sender_name?: string;
             template_name?: string;
             priority?: string;
@@ -6236,9 +6256,12 @@ export interface components {
             /** Format: uuid */
             recipient_user_id: string;
             recipient_name: string;
+            recipient_scope_type?: string;
             /** Format: uuid */
-            recipient_collaboration_workspace_id?: string;
-            recipient_collaboration_workspace_name?: string;
+            recipient_scope_id?: string;
+            /** Format: uuid */
+            recipient_workspace_id?: string;
+            recipient_workspace_name?: string;
             delivery_status: string;
             todo_status?: string;
             /** Format: date-time */
@@ -8068,7 +8091,7 @@ export interface operations {
             };
         };
     };
-    listMyCollaborationWorkspaces: {
+    listMyCollaborations: {
         parameters: {
             query?: never;
             header?: never;
@@ -8083,12 +8106,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
+                    "application/json": components["schemas"]["CollaborationList"];
                 };
             };
         };
     };
-    getCurrentCollaborationWorkspace: {
+    getCurrentCollaboration: {
         parameters: {
             query?: never;
             header?: never;
@@ -8103,12 +8126,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceItem"];
+                    "application/json": components["schemas"]["CollaborationItem"];
                 };
             };
         };
     };
-    listCollaborationWorkspaceOptions: {
+    listCollaborationOptions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8123,12 +8146,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
+                    "application/json": components["schemas"]["CollaborationList"];
                 };
             };
         };
     };
-    listCurrentCollaborationWorkspaceMembers: {
+    listCurrentCollaborationMembers: {
         parameters: {
             query?: never;
             header?: never;
@@ -8143,12 +8166,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMemberList"];
+                    "application/json": components["schemas"]["CollaborationMemberList"];
                 };
             };
         };
     };
-    addCurrentCollaborationWorkspaceMember: {
+    addCurrentCollaborationMember: {
         parameters: {
             query?: never;
             header?: never;
@@ -8157,7 +8180,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceMemberAddRequest"];
+                "application/json": components["schemas"]["CollaborationMemberAddRequest"];
             };
         };
         responses: {
@@ -8172,7 +8195,7 @@ export interface operations {
             };
         };
     };
-    removeCurrentCollaborationWorkspaceMember: {
+    removeCurrentCollaborationMember: {
         parameters: {
             query?: never;
             header?: never;
@@ -8194,7 +8217,7 @@ export interface operations {
             };
         };
     };
-    updateCurrentCollaborationWorkspaceMemberRole: {
+    updateCurrentCollaborationMemberRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -8205,7 +8228,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceMemberRoleRequest"];
+                "application/json": components["schemas"]["CollaborationMemberRoleRequest"];
             };
         };
         responses: {
@@ -8220,7 +8243,7 @@ export interface operations {
             };
         };
     };
-    getCurrentCollaborationWorkspaceMemberRoles: {
+    getCurrentCollaborationMemberRoles: {
         parameters: {
             query?: never;
             header?: never;
@@ -8237,12 +8260,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMemberRolesResponse"];
+                    "application/json": components["schemas"]["CollaborationMemberRolesResponse"];
                 };
             };
         };
     };
-    setCurrentCollaborationWorkspaceMemberRoles: {
+    setCurrentCollaborationMemberRoles: {
         parameters: {
             query?: never;
             header?: never;
@@ -8268,7 +8291,7 @@ export interface operations {
             };
         };
     };
-    listCurrentCollaborationWorkspaceRoles: {
+    listCurrentCollaborationRoles: {
         parameters: {
             query?: never;
             header?: never;
@@ -8283,12 +8306,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
+                    "application/json": components["schemas"]["CollaborationRoleList"];
                 };
             };
         };
     };
-    createCurrentCollaborationWorkspaceRole: {
+    createCurrentCollaborationRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -8297,7 +8320,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceRoleSaveRequest"];
+                "application/json": components["schemas"]["CollaborationRoleSaveRequest"];
             };
         };
         responses: {
@@ -8312,7 +8335,7 @@ export interface operations {
             };
         };
     };
-    listCurrentCollaborationWorkspaceBoundaryRoles: {
+    listCurrentCollaborationBoundaryRoles: {
         parameters: {
             query?: never;
             header?: never;
@@ -8327,12 +8350,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
+                    "application/json": components["schemas"]["CollaborationRoleList"];
                 };
             };
         };
     };
-    createCurrentCollaborationWorkspaceBoundaryRole: {
+    createCurrentCollaborationBoundaryRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -8341,7 +8364,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceRoleSaveRequest"];
+                "application/json": components["schemas"]["CollaborationRoleSaveRequest"];
             };
         };
         responses: {
@@ -8356,7 +8379,7 @@ export interface operations {
             };
         };
     };
-    updateCurrentCollaborationWorkspaceBoundaryRole: {
+    updateCurrentCollaborationBoundaryRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -8367,7 +8390,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceRoleSaveRequest"];
+                "application/json": components["schemas"]["CollaborationRoleSaveRequest"];
             };
         };
         responses: {
@@ -8382,29 +8405,7 @@ export interface operations {
             };
         };
     };
-    deleteCurrentCollaborationWorkspaceBoundaryRole: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                roleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MutationResult"];
-                };
-            };
-        };
-    };
-    getCurrentCollaborationWorkspaceBoundaryRolePackages: {
+    deleteCurrentCollaborationBoundaryRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -8421,12 +8422,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceBoundaryRolePackagesResponse"];
+                    "application/json": components["schemas"]["MutationResult"];
                 };
             };
         };
     };
-    setCurrentCollaborationWorkspaceBoundaryRolePackages: {
+    getCurrentCollaborationBoundaryRolePackages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollaborationBoundaryRolePackagesResponse"];
+                };
+            };
+        };
+    };
+    setCurrentCollaborationBoundaryRolePackages: {
         parameters: {
             query?: never;
             header?: never;
@@ -8452,7 +8475,7 @@ export interface operations {
             };
         };
     };
-    getCurrentCollaborationWorkspaceBoundaryRoleMenus: {
+    getCurrentCollaborationBoundaryRoleMenus: {
         parameters: {
             query?: never;
             header?: never;
@@ -8474,7 +8497,7 @@ export interface operations {
             };
         };
     };
-    setCurrentCollaborationWorkspaceBoundaryRoleMenus: {
+    setCurrentCollaborationBoundaryRoleMenus: {
         parameters: {
             query?: never;
             header?: never;
@@ -8500,7 +8523,7 @@ export interface operations {
             };
         };
     };
-    getCurrentCollaborationWorkspaceBoundaryRoleActions: {
+    getCurrentCollaborationBoundaryRoleActions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8522,7 +8545,7 @@ export interface operations {
             };
         };
     };
-    setCurrentCollaborationWorkspaceBoundaryRoleActions: {
+    setCurrentCollaborationBoundaryRoleActions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8548,7 +8571,7 @@ export interface operations {
             };
         };
     };
-    getCurrentCollaborationWorkspaceBoundaryPackages: {
+    getCurrentCollaborationBoundaryPackages: {
         parameters: {
             query?: never;
             header?: never;
@@ -8568,7 +8591,7 @@ export interface operations {
             };
         };
     };
-    getCurrentCollaborationWorkspaceMenus: {
+    getCurrentCollaborationMenus: {
         parameters: {
             query?: never;
             header?: never;
@@ -8583,12 +8606,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMenusResponse"];
+                    "application/json": components["schemas"]["CollaborationMenusResponse"];
                 };
             };
         };
     };
-    getCurrentCollaborationWorkspaceMenuOrigins: {
+    getCurrentCollaborationMenuOrigins: {
         parameters: {
             query?: never;
             header?: never;
@@ -8603,12 +8626,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMenuOriginsResponse"];
+                    "application/json": components["schemas"]["CollaborationMenuOriginsResponse"];
                 };
             };
         };
     };
-    getCurrentCollaborationWorkspaceActions: {
+    getCurrentCollaborationActions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8623,12 +8646,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceActionsResponse"];
+                    "application/json": components["schemas"]["CollaborationActionsResponse"];
                 };
             };
         };
     };
-    getCurrentCollaborationWorkspaceActionOrigins: {
+    getCurrentCollaborationActionOrigins: {
         parameters: {
             query?: never;
             header?: never;
@@ -8643,12 +8666,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceActionOriginsResponse"];
+                    "application/json": components["schemas"]["CollaborationActionOriginsResponse"];
                 };
             };
         };
     };
-    listCollaborationWorkspaces: {
+    listCollaborations: {
         parameters: {
             query?: {
                 current?: number;
@@ -8667,12 +8690,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
+                    "application/json": components["schemas"]["CollaborationList"];
                 };
             };
         };
     };
-    createCollaborationWorkspace: {
+    createCollaboration: {
         parameters: {
             query?: never;
             header?: never;
@@ -8681,7 +8704,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceSaveRequest"];
+                "application/json": components["schemas"]["CollaborationSaveRequest"];
             };
         };
         responses: {
@@ -8696,7 +8719,7 @@ export interface operations {
             };
         };
     };
-    getCollaborationWorkspace: {
+    getCollaboration: {
         parameters: {
             query?: never;
             header?: never;
@@ -8713,12 +8736,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceItem"];
+                    "application/json": components["schemas"]["CollaborationItem"];
                 };
             };
         };
     };
-    updateCollaborationWorkspace: {
+    updateCollaboration: {
         parameters: {
             query?: never;
             header?: never;
@@ -8729,7 +8752,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceSaveRequest"];
+                "application/json": components["schemas"]["CollaborationSaveRequest"];
             };
         };
         responses: {
@@ -8744,7 +8767,7 @@ export interface operations {
             };
         };
     };
-    deleteCollaborationWorkspace: {
+    deleteCollaboration: {
         parameters: {
             query?: never;
             header?: never;
@@ -8766,7 +8789,7 @@ export interface operations {
             };
         };
     };
-    listCollaborationWorkspaceRoles: {
+    listCollaborationRoles: {
         parameters: {
             query?: never;
             header?: never;
@@ -8783,12 +8806,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
+                    "application/json": components["schemas"]["CollaborationRoleList"];
                 };
             };
         };
     };
-    getCollaborationWorkspaceMenus: {
+    getCollaborationMenus: {
         parameters: {
             query?: never;
             header?: never;
@@ -8805,82 +8828,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMenusResponse"];
+                    "application/json": components["schemas"]["CollaborationMenusResponse"];
                 };
             };
         };
     };
-    setCollaborationWorkspaceMenus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UUIDListRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MutationResult"];
-                };
-            };
-        };
-    };
-    getCollaborationWorkspaceMenuOrigins: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMenuOriginsResponse"];
-                };
-            };
-        };
-    };
-    getCollaborationWorkspaceActions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceActionsResponse"];
-                };
-            };
-        };
-    };
-    setCollaborationWorkspaceActions: {
+    setCollaborationMenus: {
         parameters: {
             query?: never;
             header?: never;
@@ -8906,7 +8859,7 @@ export interface operations {
             };
         };
     };
-    getCollaborationWorkspaceActionOrigins: {
+    getCollaborationMenuOrigins: {
         parameters: {
             query?: never;
             header?: never;
@@ -8923,12 +8876,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceActionOriginsResponse"];
+                    "application/json": components["schemas"]["CollaborationMenuOriginsResponse"];
                 };
             };
         };
     };
-    listCollaborationWorkspaceMembers: {
+    getCollaborationActions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8945,12 +8898,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollaborationWorkspaceMemberList"];
+                    "application/json": components["schemas"]["CollaborationActionsResponse"];
                 };
             };
         };
     };
-    addCollaborationWorkspaceMember: {
+    setCollaborationActions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8961,7 +8914,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceMemberAddRequest"];
+                "application/json": components["schemas"]["UUIDListRequest"];
             };
         };
         responses: {
@@ -8976,7 +8929,77 @@ export interface operations {
             };
         };
     };
-    removeCollaborationWorkspaceMember: {
+    getCollaborationActionOrigins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollaborationActionOriginsResponse"];
+                };
+            };
+        };
+    };
+    listCollaborationMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollaborationMemberList"];
+                };
+            };
+        };
+    };
+    addCollaborationMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollaborationMemberAddRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+        };
+    };
+    removeCollaborationMember: {
         parameters: {
             query?: never;
             header?: never;
@@ -8999,7 +9022,7 @@ export interface operations {
             };
         };
     };
-    updateCollaborationWorkspaceMemberRole: {
+    updateCollaborationMemberRole: {
         parameters: {
             query?: never;
             header?: never;
@@ -9011,7 +9034,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollaborationWorkspaceMemberRoleRequest"];
+                "application/json": components["schemas"]["CollaborationMemberRoleRequest"];
             };
         };
         responses: {
@@ -9348,7 +9371,7 @@ export interface operations {
             };
         };
     };
-    getUserCollaborationWorkspaces: {
+    getUserCollaborations: {
         parameters: {
             query?: never;
             header?: never;
@@ -9365,7 +9388,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserCollaborationWorkspacesResponse"];
+                    "application/json": components["schemas"]["UserCollaborationsResponse"];
                 };
             };
         };
@@ -9499,7 +9522,7 @@ export interface operations {
             query?: {
                 app_key?: string;
                 permission_key?: string;
-                collaboration_workspace_id?: string;
+                workspace_id?: string;
             };
             header?: never;
             path: {
@@ -10629,7 +10652,7 @@ export interface operations {
                 /** @description 被测用户 ID (UUID) */
                 user_id: string;
                 /** @description 协作空间 ID；为空表示个人空间链路 */
-                collaboration_workspace_id?: string;
+                workspace_id?: string;
                 /** @description 菜单空间 key；为空自动解析默认空间 */
                 menu_space_key?: string;
                 /** @description 单个页面 key，留空则返回运行时可见全部页面 */
@@ -10949,14 +10972,14 @@ export interface operations {
             };
         };
     };
-    getCollaborationWorkspacePackages: {
+    getCollaborationPackages: {
         parameters: {
             query?: {
                 app_key?: string;
             };
             header?: never;
             path: {
-                collaborationWorkspaceId: string;
+                workspaceId: string;
             };
             cookie?: never;
         };
@@ -10973,14 +10996,14 @@ export interface operations {
             };
         };
     };
-    setCollaborationWorkspacePackages: {
+    setCollaborationPackages: {
         parameters: {
             query?: {
                 app_key?: string;
             };
             header?: never;
             path: {
-                collaborationWorkspaceId: string;
+                workspaceId: string;
             };
             cookie?: never;
         };
@@ -11325,7 +11348,7 @@ export interface operations {
             };
         };
     };
-    getFeaturePackageCollaborationWorkspaces: {
+    getFeaturePackageCollaborations: {
         parameters: {
             query?: {
                 app_key?: string;
@@ -11344,12 +11367,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeaturePackageCollaborationWorkspaceList"];
+                    "application/json": components["schemas"]["FeaturePackageCollaborationList"];
                 };
             };
         };
     };
-    setFeaturePackageCollaborationWorkspaces: {
+    setFeaturePackageCollaborations: {
         parameters: {
             query?: {
                 app_key?: string;

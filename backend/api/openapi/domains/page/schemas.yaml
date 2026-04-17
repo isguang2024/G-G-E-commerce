@@ -1,4 +1,4 @@
-# domains/page/schemas.yaml
+﻿# domains/page/schemas.yaml
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
@@ -387,7 +387,7 @@ components:
       properties:
         user_id:
           type: string
-        collaboration_workspace_id:
+        workspace_id:
           type: string
         menu_space_key:
           type: string
@@ -413,3 +413,4 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PageAccessTracePageItem'
+

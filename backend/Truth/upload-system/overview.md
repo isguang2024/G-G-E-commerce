@@ -244,7 +244,7 @@ await submit(file, { key: 'media.default', mode: 'direct' })
 
 ### 请求上下文
 
-SDK 自动附带：`Authorization`、`X-Auth-Workspace-Id`、`X-Collaboration-Workspace-Id`。
+SDK 自动附带：`Authorization`、`X-Auth-Workspace-Id`；协作态由当前 `workspace` 上下文解析，不再依赖额外的协作请求头。
 
 ### Key 语法
 

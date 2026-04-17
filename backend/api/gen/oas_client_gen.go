@@ -28,18 +28,18 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// AddCollaborationWorkspaceMember invokes addCollaborationWorkspaceMember operation.
+	// AddCollaborationMember invokes addCollaborationMember operation.
 	//
 	// 添加协作空间成员.
 	//
-	// POST /collaboration-workspaces/{id}/members
-	AddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
-	// AddCurrentCollaborationWorkspaceMember invokes addCurrentCollaborationWorkspaceMember operation.
+	// POST /workspaces/collaboration/{id}/members
+	AddCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest, params AddCollaborationMemberParams) (*MutationResult, error)
+	// AddCurrentCollaborationMember invokes addCurrentCollaborationMember operation.
 	//
 	// 添加当前协作空间成员.
 	//
-	// POST /collaboration-workspaces/current/members
-	AddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (*MutationResult, error)
+	// POST /collaboration/current/members
+	AddCurrentCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest) (*MutationResult, error)
 	// AddPermissionActionEndpoint invokes addPermissionActionEndpoint operation.
 	//
 	// 新增功能权限关联接口.
@@ -82,24 +82,24 @@ type Invoker interface {
 	//
 	// POST /api-endpoints/categories
 	CreateApiEndpointCategory(ctx context.Context, request *ApiEndpointCategorySaveRequest) (CreateApiEndpointCategoryRes, error)
-	// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
+	// CreateCollaboration invokes createCollaboration operation.
 	//
 	// 创建协作空间.
 	//
-	// POST /collaboration-workspaces
-	CreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (*IDResult, error)
-	// CreateCurrentCollaborationWorkspaceBoundaryRole invokes createCurrentCollaborationWorkspaceBoundaryRole operation.
+	// POST /workspaces/collaboration
+	CreateCollaboration(ctx context.Context, request *CollaborationSaveRequest) (*IDResult, error)
+	// CreateCurrentCollaborationBoundaryRole invokes createCurrentCollaborationBoundaryRole operation.
 	//
 	// 创建当前协作空间角色(边界管理).
 	//
-	// POST /collaboration-workspaces/current/boundary/roles
-	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
-	// CreateCurrentCollaborationWorkspaceRole invokes createCurrentCollaborationWorkspaceRole operation.
+	// POST /collaboration/current/boundary/roles
+	CreateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest) (*MutationResult, error)
+	// CreateCurrentCollaborationRole invokes createCurrentCollaborationRole operation.
 	//
 	// 创建当前协作空间角色.
 	//
-	// POST /collaboration-workspaces/current/roles
-	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error)
+	// POST /collaboration/current/roles
+	CreateCurrentCollaborationRole(ctx context.Context, request *CollaborationRoleSaveRequest) (*MutationResult, error)
 	// CreateDictItem invokes createDictItem operation.
 	//
 	// 创建单个字典项.
@@ -220,18 +220,18 @@ type Invoker interface {
 	//
 	// DELETE /system/app-host-bindings/{id}
 	DeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (*MutationResult, error)
-	// DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
+	// DeleteCollaboration invokes deleteCollaboration operation.
 	//
 	// 删除协作空间.
 	//
-	// DELETE /collaboration-workspaces/{id}
-	DeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (*MutationResult, error)
-	// DeleteCurrentCollaborationWorkspaceBoundaryRole invokes deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+	// DELETE /workspaces/collaboration/{id}
+	DeleteCollaboration(ctx context.Context, params DeleteCollaborationParams) (*MutationResult, error)
+	// DeleteCurrentCollaborationBoundaryRole invokes deleteCurrentCollaborationBoundaryRole operation.
 	//
 	// 删除当前协作空间角色(边界管理).
 	//
-	// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
-	DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	// DELETE /collaboration/current/boundary/roles/{roleId}
+	DeleteCurrentCollaborationBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationBoundaryRoleParams) (*MutationResult, error)
 	// DeleteDictItem invokes deleteDictItem operation.
 	//
 	// 删除单个字典项.
@@ -411,108 +411,108 @@ type Invoker interface {
 	//
 	// GET /auth/me
 	GetAuthMe(ctx context.Context) (GetAuthMeRes, error)
-	// GetCollaborationWorkspace invokes getCollaborationWorkspace operation.
+	// GetCollaboration invokes getCollaboration operation.
 	//
 	// 获取协作空间详情.
 	//
-	// GET /collaboration-workspaces/{id}
-	GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (*CollaborationWorkspaceItem, error)
-	// GetCollaborationWorkspaceActionOrigins invokes getCollaborationWorkspaceActionOrigins operation.
+	// GET /workspaces/collaboration/{id}
+	GetCollaboration(ctx context.Context, params GetCollaborationParams) (*CollaborationItem, error)
+	// GetCollaborationActionOrigins invokes getCollaborationActionOrigins operation.
 	//
 	// 获取协作空间功能权限来源.
 	//
-	// GET /collaboration-workspaces/{id}/action-origins
-	GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*CollaborationWorkspaceActionOriginsResponse, error)
-	// GetCollaborationWorkspaceActions invokes getCollaborationWorkspaceActions operation.
+	// GET /workspaces/collaboration/{id}/action-origins
+	GetCollaborationActionOrigins(ctx context.Context, params GetCollaborationActionOriginsParams) (*CollaborationActionOriginsResponse, error)
+	// GetCollaborationActions invokes getCollaborationActions operation.
 	//
 	// 获取协作空间功能权限边界.
 	//
-	// GET /collaboration-workspaces/{id}/actions
-	GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (*CollaborationWorkspaceActionsResponse, error)
-	// GetCollaborationWorkspaceMenuOrigins invokes getCollaborationWorkspaceMenuOrigins operation.
+	// GET /workspaces/collaboration/{id}/actions
+	GetCollaborationActions(ctx context.Context, params GetCollaborationActionsParams) (*CollaborationActionsResponse, error)
+	// GetCollaborationMenuOrigins invokes getCollaborationMenuOrigins operation.
 	//
 	// 获取协作空间菜单来源.
 	//
-	// GET /collaboration-workspaces/{id}/menu-origins
-	GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*CollaborationWorkspaceMenuOriginsResponse, error)
-	// GetCollaborationWorkspaceMenus invokes getCollaborationWorkspaceMenus operation.
+	// GET /workspaces/collaboration/{id}/menu-origins
+	GetCollaborationMenuOrigins(ctx context.Context, params GetCollaborationMenuOriginsParams) (*CollaborationMenuOriginsResponse, error)
+	// GetCollaborationMenus invokes getCollaborationMenus operation.
 	//
 	// 获取协作空间菜单边界.
 	//
-	// GET /collaboration-workspaces/{id}/menus
-	GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (*CollaborationWorkspaceMenusResponse, error)
-	// GetCollaborationWorkspacePackages invokes getCollaborationWorkspacePackages operation.
+	// GET /workspaces/collaboration/{id}/menus
+	GetCollaborationMenus(ctx context.Context, params GetCollaborationMenusParams) (*CollaborationMenusResponse, error)
+	// GetCollaborationPackages invokes getCollaborationPackages operation.
 	//
 	// 获取协作空间功能包.
 	//
-	// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-	GetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (*FeaturePackageAssignmentResponse, error)
+	// GET /feature-packages/workspaces/collaboration/{workspaceId}
+	GetCollaborationPackages(ctx context.Context, params GetCollaborationPackagesParams) (*FeaturePackageAssignmentResponse, error)
 	// GetCurrentApp invokes getCurrentApp operation.
 	//
 	// 获取当前应用.
 	//
 	// GET /system/apps/current
 	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (*SystemCurrentAppResponse, error)
-	// GetCurrentCollaborationWorkspace invokes getCurrentCollaborationWorkspace operation.
+	// GetCurrentCollaboration invokes getCurrentCollaboration operation.
 	//
 	// 获取当前协作空间详情.
 	//
-	// GET /collaboration-workspaces/current
-	GetCurrentCollaborationWorkspace(ctx context.Context) (*CollaborationWorkspaceItem, error)
-	// GetCurrentCollaborationWorkspaceActionOrigins invokes getCurrentCollaborationWorkspaceActionOrigins operation.
+	// GET /collaboration/current
+	GetCurrentCollaboration(ctx context.Context) (*CollaborationItem, error)
+	// GetCurrentCollaborationActionOrigins invokes getCurrentCollaborationActionOrigins operation.
 	//
 	// 获取当前协作空间功能权限来源.
 	//
-	// GET /collaboration-workspaces/current/action-origins
-	GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*CollaborationWorkspaceActionOriginsResponse, error)
-	// GetCurrentCollaborationWorkspaceActions invokes getCurrentCollaborationWorkspaceActions operation.
+	// GET /collaboration/current/action-origins
+	GetCurrentCollaborationActionOrigins(ctx context.Context) (*CollaborationActionOriginsResponse, error)
+	// GetCurrentCollaborationActions invokes getCurrentCollaborationActions operation.
 	//
 	// 获取当前协作空间功能权限边界.
 	//
-	// GET /collaboration-workspaces/current/actions
-	GetCurrentCollaborationWorkspaceActions(ctx context.Context) (*CollaborationWorkspaceActionsResponse, error)
-	// GetCurrentCollaborationWorkspaceBoundaryPackages invokes getCurrentCollaborationWorkspaceBoundaryPackages operation.
+	// GET /collaboration/current/actions
+	GetCurrentCollaborationActions(ctx context.Context) (*CollaborationActionsResponse, error)
+	// GetCurrentCollaborationBoundaryPackages invokes getCurrentCollaborationBoundaryPackages operation.
 	//
 	// 获取当前协作空间已开通功能包(边界管理).
 	//
-	// GET /collaboration-workspaces/current/boundary/packages
-	GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*FeaturePackageAssignmentResponse, error)
-	// GetCurrentCollaborationWorkspaceBoundaryRoleActions invokes getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+	// GET /collaboration/current/boundary/packages
+	GetCurrentCollaborationBoundaryPackages(ctx context.Context) (*FeaturePackageAssignmentResponse, error)
+	// GetCurrentCollaborationBoundaryRoleActions invokes getCurrentCollaborationBoundaryRoleActions operation.
 	//
 	// 获取当前协作空间角色功能权限(边界管理).
 	//
-	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-	GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*RoleActionsResponse, error)
-	// GetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+	// GET /collaboration/current/boundary/roles/{roleId}/actions
+	GetCurrentCollaborationBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationBoundaryRoleActionsParams) (*RoleActionsResponse, error)
+	// GetCurrentCollaborationBoundaryRoleMenus invokes getCurrentCollaborationBoundaryRoleMenus operation.
 	//
 	// 获取当前协作空间角色菜单权限(边界管理).
 	//
-	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-	GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*RoleMenusResponse, error)
-	// GetCurrentCollaborationWorkspaceBoundaryRolePackages invokes getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+	// GET /collaboration/current/boundary/roles/{roleId}/menus
+	GetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationBoundaryRoleMenusParams) (*RoleMenusResponse, error)
+	// GetCurrentCollaborationBoundaryRolePackages invokes getCurrentCollaborationBoundaryRolePackages operation.
 	//
 	// 获取当前协作空间角色功能包(边界管理).
 	//
-	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-	GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*CollaborationWorkspaceBoundaryRolePackagesResponse, error)
-	// GetCurrentCollaborationWorkspaceMemberRoles invokes getCurrentCollaborationWorkspaceMemberRoles operation.
+	// GET /collaboration/current/boundary/roles/{roleId}/packages
+	GetCurrentCollaborationBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationBoundaryRolePackagesParams) (*CollaborationBoundaryRolePackagesResponse, error)
+	// GetCurrentCollaborationMemberRoles invokes getCurrentCollaborationMemberRoles operation.
 	//
 	// 获取当前协作空间成员角色.
 	//
-	// GET /collaboration-workspaces/current/members/{userId}/roles
-	GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (*CollaborationWorkspaceMemberRolesResponse, error)
-	// GetCurrentCollaborationWorkspaceMenuOrigins invokes getCurrentCollaborationWorkspaceMenuOrigins operation.
+	// GET /collaboration/current/members/{userId}/roles
+	GetCurrentCollaborationMemberRoles(ctx context.Context, params GetCurrentCollaborationMemberRolesParams) (*CollaborationMemberRolesResponse, error)
+	// GetCurrentCollaborationMenuOrigins invokes getCurrentCollaborationMenuOrigins operation.
 	//
 	// 获取当前协作空间菜单来源.
 	//
-	// GET /collaboration-workspaces/current/menu-origins
-	GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*CollaborationWorkspaceMenuOriginsResponse, error)
-	// GetCurrentCollaborationWorkspaceMenus invokes getCurrentCollaborationWorkspaceMenus operation.
+	// GET /collaboration/current/menu-origins
+	GetCurrentCollaborationMenuOrigins(ctx context.Context) (*CollaborationMenuOriginsResponse, error)
+	// GetCurrentCollaborationMenus invokes getCurrentCollaborationMenus operation.
 	//
 	// 获取当前协作空间菜单边界.
 	//
-	// GET /collaboration-workspaces/current/menus
-	GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (*CollaborationWorkspaceMenusResponse, error)
+	// GET /collaboration/current/menus
+	GetCurrentCollaborationMenus(ctx context.Context) (*CollaborationMenusResponse, error)
 	// GetCurrentMenuSpace invokes getCurrentMenuSpace operation.
 	//
 	// 获取当前菜单空间.
@@ -561,12 +561,12 @@ type Invoker interface {
 	//
 	// GET /feature-packages/{id}/children
 	GetFeaturePackageChildren(ctx context.Context, params GetFeaturePackageChildrenParams) (*FeaturePackageAssignmentResponse, error)
-	// GetFeaturePackageCollaborationWorkspaces invokes getFeaturePackageCollaborationWorkspaces operation.
+	// GetFeaturePackageCollaborations invokes getFeaturePackageCollaborations operation.
 	//
 	// 获取功能包协作空间.
 	//
-	// GET /feature-packages/{id}/collaboration-workspaces
-	GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageCollaborationWorkspaceList, error)
+	// GET /feature-packages/{id}/workspaces/collaboration
+	GetFeaturePackageCollaborations(ctx context.Context, params GetFeaturePackageCollaborationsParams) (*FeaturePackageCollaborationList, error)
 	// GetFeaturePackageImpactPreview invokes getFeaturePackageImpactPreview operation.
 	//
 	// 获取功能包影响预览.
@@ -778,12 +778,12 @@ type Invoker interface {
 	//
 	// GET /users/{id}
 	GetUser(ctx context.Context, params GetUserParams) (GetUserRes, error)
-	// GetUserCollaborationWorkspaces invokes getUserCollaborationWorkspaces operation.
+	// GetUserCollaborations invokes getUserCollaborations operation.
 	//
 	// 获取用户所在协作空间列表.
 	//
-	// GET /users/{id}/collaboration-workspaces
-	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (*UserCollaborationWorkspacesResponse, error)
+	// GET /users/{id}/collaborations
+	GetUserCollaborations(ctx context.Context, params GetUserCollaborationsParams) (*UserCollaborationsResponse, error)
 	// GetUserMenus invokes getUserMenus operation.
 	//
 	// 获取用户菜单裁剪.
@@ -867,48 +867,48 @@ type Invoker interface {
 	//
 	// GET /observability/audit-logs
 	ListAuditLogs(ctx context.Context, params ListAuditLogsParams) (ListAuditLogsRes, error)
-	// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
+	// ListCollaborationMembers invokes listCollaborationMembers operation.
 	//
 	// 获取协作空间成员列表.
 	//
-	// GET /collaboration-workspaces/{id}/members
-	ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*CollaborationWorkspaceMemberList, error)
-	// ListCollaborationWorkspaceOptions invokes listCollaborationWorkspaceOptions operation.
+	// GET /workspaces/collaboration/{id}/members
+	ListCollaborationMembers(ctx context.Context, params ListCollaborationMembersParams) (*CollaborationMemberList, error)
+	// ListCollaborationOptions invokes listCollaborationOptions operation.
 	//
 	// 获取协作空间候选.
 	//
-	// GET /collaboration-workspaces/options
-	ListCollaborationWorkspaceOptions(ctx context.Context) (*CollaborationWorkspaceList, error)
-	// ListCollaborationWorkspaceRoles invokes listCollaborationWorkspaceRoles operation.
+	// GET /workspaces/collaboration/options
+	ListCollaborationOptions(ctx context.Context) (*CollaborationList, error)
+	// ListCollaborationRoles invokes listCollaborationRoles operation.
 	//
 	// 获取协作空间可分配角色.
 	//
-	// GET /collaboration-workspaces/{id}/roles
-	ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*CollaborationWorkspaceRoleList, error)
-	// ListCollaborationWorkspaces invokes listCollaborationWorkspaces operation.
+	// GET /workspaces/collaboration/{id}/roles
+	ListCollaborationRoles(ctx context.Context, params ListCollaborationRolesParams) (*CollaborationRoleList, error)
+	// ListCollaborations invokes listCollaborations operation.
 	//
 	// 获取协作空间列表.
 	//
-	// GET /collaboration-workspaces
-	ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*CollaborationWorkspaceList, error)
-	// ListCurrentCollaborationWorkspaceBoundaryRoles invokes listCurrentCollaborationWorkspaceBoundaryRoles operation.
+	// GET /workspaces/collaboration
+	ListCollaborations(ctx context.Context, params ListCollaborationsParams) (*CollaborationList, error)
+	// ListCurrentCollaborationBoundaryRoles invokes listCurrentCollaborationBoundaryRoles operation.
 	//
 	// 获取当前协作空间边界可见角色.
 	//
-	// GET /collaboration-workspaces/current/boundary/roles
-	ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error)
-	// ListCurrentCollaborationWorkspaceMembers invokes listCurrentCollaborationWorkspaceMembers operation.
+	// GET /collaboration/current/boundary/roles
+	ListCurrentCollaborationBoundaryRoles(ctx context.Context) (*CollaborationRoleList, error)
+	// ListCurrentCollaborationMembers invokes listCurrentCollaborationMembers operation.
 	//
 	// 获取当前协作空间成员列表.
 	//
-	// GET /collaboration-workspaces/current/members
-	ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*CollaborationWorkspaceMemberList, error)
-	// ListCurrentCollaborationWorkspaceRoles invokes listCurrentCollaborationWorkspaceRoles operation.
+	// GET /collaboration/current/members
+	ListCurrentCollaborationMembers(ctx context.Context) (*CollaborationMemberList, error)
+	// ListCurrentCollaborationRoles invokes listCurrentCollaborationRoles operation.
 	//
 	// 获取当前协作空间可分配角色.
 	//
-	// GET /collaboration-workspaces/current/roles
-	ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error)
+	// GET /collaboration/current/roles
+	ListCurrentCollaborationRoles(ctx context.Context) (*CollaborationRoleList, error)
 	// ListDictItems invokes listDictItems operation.
 	//
 	// 获取字典项列表.
@@ -1011,12 +1011,12 @@ type Invoker interface {
 	//
 	// GET /messages/templates
 	ListMessageTemplates(ctx context.Context) (*MessageTemplateListResponse, error)
-	// ListMyCollaborationWorkspaces invokes listMyCollaborationWorkspaces operation.
+	// ListMyCollaborations invokes listMyCollaborations operation.
 	//
 	// 获取我的协作空间列表.
 	//
-	// GET /collaboration-workspaces/mine
-	ListMyCollaborationWorkspaces(ctx context.Context) (*CollaborationWorkspaceList, error)
+	// GET /workspaces/collaboration/mine
+	ListMyCollaborations(ctx context.Context) (*CollaborationList, error)
 	// ListMyWorkspaces invokes listMyWorkspaces operation.
 	//
 	// 获取我的工作空间列表.
@@ -1252,18 +1252,18 @@ type Invoker interface {
 	//
 	// POST /auth/register
 	Register(ctx context.Context, request *RegisterRequest) (RegisterRes, error)
-	// RemoveCollaborationWorkspaceMember invokes removeCollaborationWorkspaceMember operation.
+	// RemoveCollaborationMember invokes removeCollaborationMember operation.
 	//
 	// 移除协作空间成员.
 	//
-	// DELETE /collaboration-workspaces/{id}/members/{userId}
-	RemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (*MutationResult, error)
-	// RemoveCurrentCollaborationWorkspaceMember invokes removeCurrentCollaborationWorkspaceMember operation.
+	// DELETE /workspaces/collaboration/{id}/members/{userId}
+	RemoveCollaborationMember(ctx context.Context, params RemoveCollaborationMemberParams) (*MutationResult, error)
+	// RemoveCurrentCollaborationMember invokes removeCurrentCollaborationMember operation.
 	//
 	// 移除当前协作空间成员.
 	//
-	// DELETE /collaboration-workspaces/current/members/{userId}
-	RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	// DELETE /collaboration/current/members/{userId}
+	RemoveCurrentCollaborationMember(ctx context.Context, params RemoveCurrentCollaborationMemberParams) (*MutationResult, error)
 	// RemovePermissionActionEndpoint invokes removePermissionActionEndpoint operation.
 	//
 	// 删除功能权限关联接口.
@@ -1330,48 +1330,48 @@ type Invoker interface {
 	//
 	// POST /permission-actions/templates
 	SavePermissionActionBatchTemplate(ctx context.Context, request *PermissionActionBatchTemplateSaveRequest) (*PermissionActionBatchTemplateItem, error)
-	// SetCollaborationWorkspaceActions invokes setCollaborationWorkspaceActions operation.
+	// SetCollaborationActions invokes setCollaborationActions operation.
 	//
 	// 配置协作空间功能权限边界.
 	//
-	// PUT /collaboration-workspaces/{id}/actions
-	SetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (*MutationResult, error)
-	// SetCollaborationWorkspaceMenus invokes setCollaborationWorkspaceMenus operation.
+	// PUT /workspaces/collaboration/{id}/actions
+	SetCollaborationActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationActionsParams) (*MutationResult, error)
+	// SetCollaborationMenus invokes setCollaborationMenus operation.
 	//
 	// 配置协作空间菜单边界.
 	//
-	// PUT /collaboration-workspaces/{id}/menus
-	SetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (*MutationResult, error)
-	// SetCollaborationWorkspacePackages invokes setCollaborationWorkspacePackages operation.
+	// PUT /workspaces/collaboration/{id}/menus
+	SetCollaborationMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationMenusParams) (*MutationResult, error)
+	// SetCollaborationPackages invokes setCollaborationPackages operation.
 	//
 	// 配置协作空间功能包.
 	//
-	// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-	SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*FeaturePackageMutationResult, error)
-	// SetCurrentCollaborationWorkspaceBoundaryRoleActions invokes setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+	// PUT /feature-packages/workspaces/collaboration/{workspaceId}
+	SetCollaborationPackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationPackagesParams) (*FeaturePackageMutationResult, error)
+	// SetCurrentCollaborationBoundaryRoleActions invokes setCurrentCollaborationBoundaryRoleActions operation.
 	//
 	// 配置当前协作空间角色功能权限(边界管理).
 	//
-	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-	SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*MutationResult, error)
-	// SetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+	// PUT /collaboration/current/boundary/roles/{roleId}/actions
+	SetCurrentCollaborationBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleActionsParams) (*MutationResult, error)
+	// SetCurrentCollaborationBoundaryRoleMenus invokes setCurrentCollaborationBoundaryRoleMenus operation.
 	//
 	// 配置当前协作空间角色菜单权限(边界管理).
 	//
-	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-	SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*MutationResult, error)
-	// SetCurrentCollaborationWorkspaceBoundaryRolePackages invokes setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+	// PUT /collaboration/current/boundary/roles/{roleId}/menus
+	SetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleMenusParams) (*MutationResult, error)
+	// SetCurrentCollaborationBoundaryRolePackages invokes setCurrentCollaborationBoundaryRolePackages operation.
 	//
 	// 配置当前协作空间角色功能包(边界管理).
 	//
-	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-	SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*MutationResult, error)
-	// SetCurrentCollaborationWorkspaceMemberRoles invokes setCurrentCollaborationWorkspaceMemberRoles operation.
+	// PUT /collaboration/current/boundary/roles/{roleId}/packages
+	SetCurrentCollaborationBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRolePackagesParams) (*MutationResult, error)
+	// SetCurrentCollaborationMemberRoles invokes setCurrentCollaborationMemberRoles operation.
 	//
 	// 配置当前协作空间成员角色.
 	//
-	// PUT /collaboration-workspaces/current/members/{userId}/roles
-	SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (*MutationResult, error)
+	// PUT /collaboration/current/members/{userId}/roles
+	SetCurrentCollaborationMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationMemberRolesParams) (*MutationResult, error)
 	// SetFeaturePackageActions invokes setFeaturePackageActions operation.
 	//
 	// 配置功能包权限.
@@ -1384,12 +1384,12 @@ type Invoker interface {
 	//
 	// PUT /feature-packages/{id}/children
 	SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*FeaturePackageMutationResult, error)
-	// SetFeaturePackageCollaborationWorkspaces invokes setFeaturePackageCollaborationWorkspaces operation.
+	// SetFeaturePackageCollaborations invokes setFeaturePackageCollaborations operation.
 	//
 	// 配置功能包协作空间.
 	//
-	// PUT /feature-packages/{id}/collaboration-workspaces
-	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageMutationResult, error)
+	// PUT /feature-packages/{id}/workspaces/collaboration
+	SetFeaturePackageCollaborations(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationsParams) (*FeaturePackageMutationResult, error)
 	// SetFeaturePackageMenus invokes setFeaturePackageMenus operation.
 	//
 	// 配置功能包菜单.
@@ -1480,30 +1480,30 @@ type Invoker interface {
 	//
 	// PUT /api-endpoints/{id}/context-scope
 	UpdateApiEndpointContextScope(ctx context.Context, request *ApiEndpointSaveRequest, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
-	// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
+	// UpdateCollaboration invokes updateCollaboration operation.
 	//
 	// 更新协作空间.
 	//
-	// PUT /collaboration-workspaces/{id}
-	UpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
-	// UpdateCollaborationWorkspaceMemberRole invokes updateCollaborationWorkspaceMemberRole operation.
+	// PUT /workspaces/collaboration/{id}
+	UpdateCollaboration(ctx context.Context, request *CollaborationSaveRequest, params UpdateCollaborationParams) (*MutationResult, error)
+	// UpdateCollaborationMemberRole invokes updateCollaborationMemberRole operation.
 	//
 	// 更新协作空间成员身份.
 	//
-	// PUT /collaboration-workspaces/{id}/members/{userId}/role
-	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
-	// UpdateCurrentCollaborationWorkspaceBoundaryRole invokes updateCurrentCollaborationWorkspaceBoundaryRole operation.
+	// PUT /workspaces/collaboration/{id}/members/{userId}/role
+	UpdateCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCollaborationMemberRoleParams) (*MutationResult, error)
+	// UpdateCurrentCollaborationBoundaryRole invokes updateCurrentCollaborationBoundaryRole operation.
 	//
 	// 更新当前协作空间角色(边界管理).
 	//
-	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
-	// UpdateCurrentCollaborationWorkspaceMemberRole invokes updateCurrentCollaborationWorkspaceMemberRole operation.
+	// PUT /collaboration/current/boundary/roles/{roleId}
+	UpdateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest, params UpdateCurrentCollaborationBoundaryRoleParams) (*MutationResult, error)
+	// UpdateCurrentCollaborationMemberRole invokes updateCurrentCollaborationMemberRole operation.
 	//
 	// 更新当前协作空间成员身份.
 	//
-	// PUT /collaboration-workspaces/current/members/{userId}/role
-	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	// PUT /collaboration/current/members/{userId}/role
+	UpdateCurrentCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCurrentCollaborationMemberRoleParams) (*MutationResult, error)
 	// UpdateDictItem invokes updateDictItem operation.
 	//
 	// 更新单个字典项.
@@ -1703,21 +1703,21 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 	return u
 }
 
-// AddCollaborationWorkspaceMember invokes addCollaborationWorkspaceMember operation.
+// AddCollaborationMember invokes addCollaborationMember operation.
 //
 // 添加协作空间成员.
 //
-// POST /collaboration-workspaces/{id}/members
-func (c *Client) AddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error) {
-	res, err := c.sendAddCollaborationWorkspaceMember(ctx, request, params)
+// POST /workspaces/collaboration/{id}/members
+func (c *Client) AddCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest, params AddCollaborationMemberParams) (*MutationResult, error) {
+	res, err := c.sendAddCollaborationMember(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest, params AddCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+func (c *Client) sendAddCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest, params AddCollaborationMemberParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("addCollaborationWorkspaceMember"),
+		otelogen.OperationID("addCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/members"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -1733,7 +1733,7 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, AddCollaborationWorkspaceMemberOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, AddCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1751,7 +1751,7 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -1778,7 +1778,7 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeAddCollaborationWorkspaceMemberRequest(request, r); err != nil {
+	if err := encodeAddCollaborationMemberRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -1787,7 +1787,7 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, AddCollaborationWorkspaceMemberOperation, r); {
+			switch err := c.securityBearerAuth(ctx, AddCollaborationMemberOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1824,7 +1824,7 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeAddCollaborationWorkspaceMemberResponse(resp)
+	result, err := decodeAddCollaborationMemberResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1832,21 +1832,21 @@ func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, reques
 	return result, nil
 }
 
-// AddCurrentCollaborationWorkspaceMember invokes addCurrentCollaborationWorkspaceMember operation.
+// AddCurrentCollaborationMember invokes addCurrentCollaborationMember operation.
 //
 // 添加当前协作空间成员.
 //
-// POST /collaboration-workspaces/current/members
-func (c *Client) AddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (*MutationResult, error) {
-	res, err := c.sendAddCurrentCollaborationWorkspaceMember(ctx, request)
+// POST /collaboration/current/members
+func (c *Client) AddCurrentCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest) (*MutationResult, error) {
+	res, err := c.sendAddCurrentCollaborationMember(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context, request *CollaborationWorkspaceMemberAddRequest) (res *MutationResult, err error) {
+func (c *Client) sendAddCurrentCollaborationMember(ctx context.Context, request *CollaborationMemberAddRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("addCurrentCollaborationWorkspaceMember"),
+		otelogen.OperationID("addCurrentCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members"),
+		semconv.URLTemplateKey.String("/collaboration/current/members"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -1862,7 +1862,7 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, AddCurrentCollaborationWorkspaceMemberOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, AddCurrentCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1880,7 +1880,7 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/members"
+	pathParts[0] = "/collaboration/current/members"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -1888,7 +1888,7 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeAddCurrentCollaborationWorkspaceMemberRequest(request, r); err != nil {
+	if err := encodeAddCurrentCollaborationMemberRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -1897,7 +1897,7 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, AddCurrentCollaborationWorkspaceMemberOperation, r); {
+			switch err := c.securityBearerAuth(ctx, AddCurrentCollaborationMemberOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1934,7 +1934,7 @@ func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context,
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeAddCurrentCollaborationWorkspaceMemberResponse(resp)
+	result, err := decodeAddCurrentCollaborationMemberResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -2747,21 +2747,21 @@ func (c *Client) sendCreateApiEndpointCategory(ctx context.Context, request *Api
 	return result, nil
 }
 
-// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
+// CreateCollaboration invokes createCollaboration operation.
 //
 // 创建协作空间.
 //
-// POST /collaboration-workspaces
-func (c *Client) CreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (*IDResult, error) {
-	res, err := c.sendCreateCollaborationWorkspace(ctx, request)
+// POST /workspaces/collaboration
+func (c *Client) CreateCollaboration(ctx context.Context, request *CollaborationSaveRequest) (*IDResult, error) {
+	res, err := c.sendCreateCollaboration(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest) (res *IDResult, err error) {
+func (c *Client) sendCreateCollaboration(ctx context.Context, request *CollaborationSaveRequest) (res *IDResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCollaborationWorkspace"),
+		otelogen.OperationID("createCollaboration"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -2777,7 +2777,7 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateCollaborationWorkspaceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -2795,7 +2795,7 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces"
+	pathParts[0] = "/workspaces/collaboration"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -2803,7 +2803,7 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeCreateCollaborationWorkspaceRequest(request, r); err != nil {
+	if err := encodeCreateCollaborationRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -2812,7 +2812,7 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, CreateCollaborationWorkspaceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, CreateCollaborationOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -2849,7 +2849,7 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeCreateCollaborationWorkspaceResponse(resp)
+	result, err := decodeCreateCollaborationResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -2857,21 +2857,21 @@ func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request *
 	return result, nil
 }
 
-// CreateCurrentCollaborationWorkspaceBoundaryRole invokes createCurrentCollaborationWorkspaceBoundaryRole operation.
+// CreateCurrentCollaborationBoundaryRole invokes createCurrentCollaborationBoundaryRole operation.
 //
 // 创建当前协作空间角色(边界管理).
 //
-// POST /collaboration-workspaces/current/boundary/roles
-func (c *Client) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error) {
-	res, err := c.sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx, request)
+// POST /collaboration/current/boundary/roles
+func (c *Client) CreateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest) (*MutationResult, error) {
+	res, err := c.sendCreateCurrentCollaborationBoundaryRole(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (res *MutationResult, err error) {
+func (c *Client) sendCreateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("createCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -2887,7 +2887,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -2905,7 +2905,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles"
+	pathParts[0] = "/collaboration/current/boundary/roles"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -2913,7 +2913,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(request, r); err != nil {
+	if err := encodeCreateCurrentCollaborationBoundaryRoleRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -2922,7 +2922,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, CreateCurrentCollaborationWorkspaceBoundaryRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, CreateCurrentCollaborationBoundaryRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -2959,7 +2959,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	result, err := decodeCreateCurrentCollaborationBoundaryRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -2967,21 +2967,21 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	return result, nil
 }
 
-// CreateCurrentCollaborationWorkspaceRole invokes createCurrentCollaborationWorkspaceRole operation.
+// CreateCurrentCollaborationRole invokes createCurrentCollaborationRole operation.
 //
 // 创建当前协作空间角色.
 //
-// POST /collaboration-workspaces/current/roles
-func (c *Client) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (*MutationResult, error) {
-	res, err := c.sendCreateCurrentCollaborationWorkspaceRole(ctx, request)
+// POST /collaboration/current/roles
+func (c *Client) CreateCurrentCollaborationRole(ctx context.Context, request *CollaborationRoleSaveRequest) (*MutationResult, error) {
+	res, err := c.sendCreateCurrentCollaborationRole(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest) (res *MutationResult, err error) {
+func (c *Client) sendCreateCurrentCollaborationRole(ctx context.Context, request *CollaborationRoleSaveRequest) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCurrentCollaborationWorkspaceRole"),
+		otelogen.OperationID("createCurrentCollaborationRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -2997,7 +2997,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationWorkspaceRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -3015,7 +3015,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/roles"
+	pathParts[0] = "/collaboration/current/roles"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -3023,7 +3023,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeCreateCurrentCollaborationWorkspaceRoleRequest(request, r); err != nil {
+	if err := encodeCreateCurrentCollaborationRoleRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -3032,7 +3032,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, CreateCurrentCollaborationWorkspaceRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, CreateCurrentCollaborationRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -3069,7 +3069,7 @@ func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeCreateCurrentCollaborationWorkspaceRoleResponse(resp)
+	result, err := decodeCreateCurrentCollaborationRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -5369,21 +5369,21 @@ func (c *Client) sendDeleteAppHostBinding(ctx context.Context, params DeleteAppH
 	return result, nil
 }
 
-// DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
+// DeleteCollaboration invokes deleteCollaboration operation.
 //
 // 删除协作空间.
 //
-// DELETE /collaboration-workspaces/{id}
-func (c *Client) DeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (*MutationResult, error) {
-	res, err := c.sendDeleteCollaborationWorkspace(ctx, params)
+// DELETE /workspaces/collaboration/{id}
+func (c *Client) DeleteCollaboration(ctx context.Context, params DeleteCollaborationParams) (*MutationResult, error) {
+	res, err := c.sendDeleteCollaboration(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (res *MutationResult, err error) {
+func (c *Client) sendDeleteCollaboration(ctx context.Context, params DeleteCollaborationParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteCollaborationWorkspace"),
+		otelogen.OperationID("deleteCollaboration"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -5399,7 +5399,7 @@ func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params De
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCollaborationWorkspaceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -5417,7 +5417,7 @@ func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params De
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -5449,7 +5449,7 @@ func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params De
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, DeleteCollaborationWorkspaceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, DeleteCollaborationOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -5486,7 +5486,7 @@ func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params De
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeDeleteCollaborationWorkspaceResponse(resp)
+	result, err := decodeDeleteCollaborationResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -5494,21 +5494,21 @@ func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params De
 	return result, nil
 }
 
-// DeleteCurrentCollaborationWorkspaceBoundaryRole invokes deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+// DeleteCurrentCollaborationBoundaryRole invokes deleteCurrentCollaborationBoundaryRole operation.
 //
 // 删除当前协作空间角色(边界管理).
 //
-// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
-func (c *Client) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
-	res, err := c.sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx, params)
+// DELETE /collaboration/current/boundary/roles/{roleId}
+func (c *Client) DeleteCurrentCollaborationBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationBoundaryRoleParams) (*MutationResult, error) {
+	res, err := c.sendDeleteCurrentCollaborationBoundaryRole(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendDeleteCurrentCollaborationBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationBoundaryRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("deleteCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -5524,7 +5524,7 @@ func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -5542,7 +5542,7 @@ func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -5574,7 +5574,7 @@ func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, DeleteCurrentCollaborationBoundaryRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -5611,7 +5611,7 @@ func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	result, err := decodeDeleteCurrentCollaborationBoundaryRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9232,21 +9232,21 @@ func (c *Client) sendGetAuthMe(ctx context.Context) (res GetAuthMeRes, err error
 	return result, nil
 }
 
-// GetCollaborationWorkspace invokes getCollaborationWorkspace operation.
+// GetCollaboration invokes getCollaboration operation.
 //
 // 获取协作空间详情.
 //
-// GET /collaboration-workspaces/{id}
-func (c *Client) GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (*CollaborationWorkspaceItem, error) {
-	res, err := c.sendGetCollaborationWorkspace(ctx, params)
+// GET /workspaces/collaboration/{id}
+func (c *Client) GetCollaboration(ctx context.Context, params GetCollaborationParams) (*CollaborationItem, error) {
+	res, err := c.sendGetCollaboration(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (res *CollaborationWorkspaceItem, err error) {
+func (c *Client) sendGetCollaboration(ctx context.Context, params GetCollaborationParams) (res *CollaborationItem, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspace"),
+		otelogen.OperationID("getCollaboration"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9262,7 +9262,7 @@ func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCo
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9280,7 +9280,7 @@ func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCo
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -9312,7 +9312,7 @@ func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCo
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspaceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9349,7 +9349,7 @@ func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCo
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspaceResponse(resp)
+	result, err := decodeGetCollaborationResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9357,21 +9357,21 @@ func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCo
 	return result, nil
 }
 
-// GetCollaborationWorkspaceActionOrigins invokes getCollaborationWorkspaceActionOrigins operation.
+// GetCollaborationActionOrigins invokes getCollaborationActionOrigins operation.
 //
 // 获取协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/{id}/action-origins
-func (c *Client) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*CollaborationWorkspaceActionOriginsResponse, error) {
-	res, err := c.sendGetCollaborationWorkspaceActionOrigins(ctx, params)
+// GET /workspaces/collaboration/{id}/action-origins
+func (c *Client) GetCollaborationActionOrigins(ctx context.Context, params GetCollaborationActionOriginsParams) (*CollaborationActionOriginsResponse, error) {
+	res, err := c.sendGetCollaborationActionOrigins(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (res *CollaborationWorkspaceActionOriginsResponse, err error) {
+func (c *Client) sendGetCollaborationActionOrigins(ctx context.Context, params GetCollaborationActionOriginsParams) (res *CollaborationActionOriginsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceActionOrigins"),
+		otelogen.OperationID("getCollaborationActionOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/action-origins"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/action-origins"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9387,7 +9387,7 @@ func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context,
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceActionOriginsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationActionOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9405,7 +9405,7 @@ func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context,
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -9438,7 +9438,7 @@ func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context,
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspaceActionOriginsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationActionOriginsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9475,7 +9475,7 @@ func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context,
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspaceActionOriginsResponse(resp)
+	result, err := decodeGetCollaborationActionOriginsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9483,21 +9483,21 @@ func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context,
 	return result, nil
 }
 
-// GetCollaborationWorkspaceActions invokes getCollaborationWorkspaceActions operation.
+// GetCollaborationActions invokes getCollaborationActions operation.
 //
 // 获取协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/{id}/actions
-func (c *Client) GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (*CollaborationWorkspaceActionsResponse, error) {
-	res, err := c.sendGetCollaborationWorkspaceActions(ctx, params)
+// GET /workspaces/collaboration/{id}/actions
+func (c *Client) GetCollaborationActions(ctx context.Context, params GetCollaborationActionsParams) (*CollaborationActionsResponse, error) {
+	res, err := c.sendGetCollaborationActions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (res *CollaborationWorkspaceActionsResponse, err error) {
+func (c *Client) sendGetCollaborationActions(ctx context.Context, params GetCollaborationActionsParams) (res *CollaborationActionsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceActions"),
+		otelogen.OperationID("getCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/actions"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/actions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9513,7 +9513,7 @@ func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, param
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceActionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9531,7 +9531,7 @@ func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, param
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -9564,7 +9564,7 @@ func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, param
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspaceActionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationActionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9601,7 +9601,7 @@ func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, param
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspaceActionsResponse(resp)
+	result, err := decodeGetCollaborationActionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9609,21 +9609,21 @@ func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, param
 	return result, nil
 }
 
-// GetCollaborationWorkspaceMenuOrigins invokes getCollaborationWorkspaceMenuOrigins operation.
+// GetCollaborationMenuOrigins invokes getCollaborationMenuOrigins operation.
 //
 // 获取协作空间菜单来源.
 //
-// GET /collaboration-workspaces/{id}/menu-origins
-func (c *Client) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*CollaborationWorkspaceMenuOriginsResponse, error) {
-	res, err := c.sendGetCollaborationWorkspaceMenuOrigins(ctx, params)
+// GET /workspaces/collaboration/{id}/menu-origins
+func (c *Client) GetCollaborationMenuOrigins(ctx context.Context, params GetCollaborationMenuOriginsParams) (*CollaborationMenuOriginsResponse, error) {
+	res, err := c.sendGetCollaborationMenuOrigins(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (res *CollaborationWorkspaceMenuOriginsResponse, err error) {
+func (c *Client) sendGetCollaborationMenuOrigins(ctx context.Context, params GetCollaborationMenuOriginsParams) (res *CollaborationMenuOriginsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceMenuOrigins"),
+		otelogen.OperationID("getCollaborationMenuOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menu-origins"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/menu-origins"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9639,7 +9639,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, p
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceMenuOriginsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationMenuOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9657,7 +9657,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, p
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -9690,7 +9690,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, p
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspaceMenuOriginsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationMenuOriginsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9727,7 +9727,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, p
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspaceMenuOriginsResponse(resp)
+	result, err := decodeGetCollaborationMenuOriginsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9735,21 +9735,21 @@ func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, p
 	return result, nil
 }
 
-// GetCollaborationWorkspaceMenus invokes getCollaborationWorkspaceMenus operation.
+// GetCollaborationMenus invokes getCollaborationMenus operation.
 //
 // 获取协作空间菜单边界.
 //
-// GET /collaboration-workspaces/{id}/menus
-func (c *Client) GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (*CollaborationWorkspaceMenusResponse, error) {
-	res, err := c.sendGetCollaborationWorkspaceMenus(ctx, params)
+// GET /workspaces/collaboration/{id}/menus
+func (c *Client) GetCollaborationMenus(ctx context.Context, params GetCollaborationMenusParams) (*CollaborationMenusResponse, error) {
+	res, err := c.sendGetCollaborationMenus(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (res *CollaborationWorkspaceMenusResponse, err error) {
+func (c *Client) sendGetCollaborationMenus(ctx context.Context, params GetCollaborationMenusParams) (res *CollaborationMenusResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceMenus"),
+		otelogen.OperationID("getCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menus"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/menus"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9765,7 +9765,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceMenusOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9783,7 +9783,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -9816,7 +9816,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params 
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspaceMenusOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationMenusOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9853,7 +9853,7 @@ func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params 
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspaceMenusResponse(resp)
+	result, err := decodeGetCollaborationMenusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9861,21 +9861,21 @@ func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params 
 	return result, nil
 }
 
-// GetCollaborationWorkspacePackages invokes getCollaborationWorkspacePackages operation.
+// GetCollaborationPackages invokes getCollaborationPackages operation.
 //
 // 获取协作空间功能包.
 //
-// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (c *Client) GetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (*FeaturePackageAssignmentResponse, error) {
-	res, err := c.sendGetCollaborationWorkspacePackages(ctx, params)
+// GET /feature-packages/workspaces/collaboration/{workspaceId}
+func (c *Client) GetCollaborationPackages(ctx context.Context, params GetCollaborationPackagesParams) (*FeaturePackageAssignmentResponse, error) {
+	res, err := c.sendGetCollaborationPackages(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (res *FeaturePackageAssignmentResponse, err error) {
+func (c *Client) sendGetCollaborationPackages(ctx context.Context, params GetCollaborationPackagesParams) (res *FeaturePackageAssignmentResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspacePackages"),
+		otelogen.OperationID("getCollaborationPackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+		semconv.URLTemplateKey.String("/feature-packages/workspaces/collaboration/{workspaceId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -9891,7 +9891,7 @@ func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, para
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspacePackagesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -9909,16 +9909,16 @@ func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, para
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/feature-packages/collaboration-workspaces/"
+	pathParts[0] = "/feature-packages/workspaces/collaboration/"
 	{
-		// Encode "collaborationWorkspaceId" parameter.
+		// Encode "workspaceId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "collaborationWorkspaceId",
+			Param:   "workspaceId",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.CollaborationWorkspaceId))
+			return e.EncodeValue(conv.UUIDToString(params.WorkspaceId))
 		}(); err != nil {
 			return res, errors.Wrap(err, "encode path")
 		}
@@ -9962,7 +9962,7 @@ func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, para
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCollaborationWorkspacePackagesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCollaborationPackagesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -9999,7 +9999,7 @@ func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, para
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCollaborationWorkspacePackagesResponse(resp)
+	result, err := decodeGetCollaborationPackagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10135,21 +10135,21 @@ func (c *Client) sendGetCurrentApp(ctx context.Context, params GetCurrentAppPara
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspace invokes getCurrentCollaborationWorkspace operation.
+// GetCurrentCollaboration invokes getCurrentCollaboration operation.
 //
 // 获取当前协作空间详情.
 //
-// GET /collaboration-workspaces/current
-func (c *Client) GetCurrentCollaborationWorkspace(ctx context.Context) (*CollaborationWorkspaceItem, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspace(ctx)
+// GET /collaboration/current
+func (c *Client) GetCurrentCollaboration(ctx context.Context) (*CollaborationItem, error) {
+	res, err := c.sendGetCurrentCollaboration(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res *CollaborationWorkspaceItem, err error) {
+func (c *Client) sendGetCurrentCollaboration(ctx context.Context) (res *CollaborationItem, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspace"),
+		otelogen.OperationID("getCurrentCollaboration"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current"),
+		semconv.URLTemplateKey.String("/collaboration/current"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10165,7 +10165,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10183,7 +10183,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current"
+	pathParts[0] = "/collaboration/current"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -10197,7 +10197,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res 
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10234,7 +10234,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res 
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceResponse(resp)
+	result, err := decodeGetCurrentCollaborationResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10242,21 +10242,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res 
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceActionOrigins invokes getCurrentCollaborationWorkspaceActionOrigins operation.
+// GetCurrentCollaborationActionOrigins invokes getCurrentCollaborationActionOrigins operation.
 //
 // 获取当前协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/current/action-origins
-func (c *Client) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*CollaborationWorkspaceActionOriginsResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceActionOrigins(ctx)
+// GET /collaboration/current/action-origins
+func (c *Client) GetCurrentCollaborationActionOrigins(ctx context.Context) (*CollaborationActionOriginsResponse, error) {
+	res, err := c.sendGetCurrentCollaborationActionOrigins(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (res *CollaborationWorkspaceActionOriginsResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationActionOrigins(ctx context.Context) (res *CollaborationActionOriginsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceActionOrigins"),
+		otelogen.OperationID("getCurrentCollaborationActionOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/action-origins"),
+		semconv.URLTemplateKey.String("/collaboration/current/action-origins"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10272,7 +10272,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.C
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceActionOriginsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationActionOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10290,7 +10290,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.C
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/action-origins"
+	pathParts[0] = "/collaboration/current/action-origins"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -10304,7 +10304,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.C
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceActionOriginsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationActionOriginsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10341,7 +10341,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.C
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceActionOriginsResponse(resp)
+	result, err := decodeGetCurrentCollaborationActionOriginsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10349,21 +10349,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.C
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceActions invokes getCurrentCollaborationWorkspaceActions operation.
+// GetCurrentCollaborationActions invokes getCurrentCollaborationActions operation.
 //
 // 获取当前协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/current/actions
-func (c *Client) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (*CollaborationWorkspaceActionsResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceActions(ctx)
+// GET /collaboration/current/actions
+func (c *Client) GetCurrentCollaborationActions(ctx context.Context) (*CollaborationActionsResponse, error) {
+	res, err := c.sendGetCurrentCollaborationActions(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context) (res *CollaborationWorkspaceActionsResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationActions(ctx context.Context) (res *CollaborationActionsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceActions"),
+		otelogen.OperationID("getCurrentCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/actions"),
+		semconv.URLTemplateKey.String("/collaboration/current/actions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10379,7 +10379,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceActionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10397,7 +10397,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/actions"
+	pathParts[0] = "/collaboration/current/actions"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -10411,7 +10411,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceActionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationActionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10448,7 +10448,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceActionsResponse(resp)
+	result, err := decodeGetCurrentCollaborationActionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10456,21 +10456,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryPackages invokes getCurrentCollaborationWorkspaceBoundaryPackages operation.
+// GetCurrentCollaborationBoundaryPackages invokes getCurrentCollaborationBoundaryPackages operation.
 //
 // 获取当前协作空间已开通功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/packages
-func (c *Client) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*FeaturePackageAssignmentResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx)
+// GET /collaboration/current/boundary/packages
+func (c *Client) GetCurrentCollaborationBoundaryPackages(ctx context.Context) (*FeaturePackageAssignmentResponse, error) {
+	res, err := c.sendGetCurrentCollaborationBoundaryPackages(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (res *FeaturePackageAssignmentResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationBoundaryPackages(ctx context.Context) (res *FeaturePackageAssignmentResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryPackages"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryPackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/packages"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/packages"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10486,7 +10486,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx contex
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryPackagesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationBoundaryPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10504,7 +10504,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx contex
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/packages"
+	pathParts[0] = "/collaboration/current/boundary/packages"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -10518,7 +10518,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx contex
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryPackagesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryPackagesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10555,7 +10555,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx contex
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(resp)
+	result, err := decodeGetCurrentCollaborationBoundaryPackagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10563,21 +10563,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx contex
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleActions invokes getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// GetCurrentCollaborationBoundaryRoleActions invokes getCurrentCollaborationBoundaryRoleActions operation.
 //
 // 获取当前协作空间角色功能权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*RoleActionsResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, params)
+// GET /collaboration/current/boundary/roles/{roleId}/actions
+func (c *Client) GetCurrentCollaborationBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationBoundaryRoleActionsParams) (*RoleActionsResponse, error) {
+	res, err := c.sendGetCurrentCollaborationBoundaryRoleActions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (res *RoleActionsResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationBoundaryRoleActionsParams) (res *RoleActionsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRoleActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/actions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10593,7 +10593,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationBoundaryRoleActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10611,7 +10611,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -10644,7 +10644,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRoleActionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10681,7 +10681,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp)
+	result, err := decodeGetCurrentCollaborationBoundaryRoleActionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10689,21 +10689,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// GetCurrentCollaborationBoundaryRoleMenus invokes getCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 获取当前协作空间角色菜单权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*RoleMenusResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, params)
+// GET /collaboration/current/boundary/roles/{roleId}/menus
+func (c *Client) GetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationBoundaryRoleMenusParams) (*RoleMenusResponse, error) {
+	res, err := c.sendGetCurrentCollaborationBoundaryRoleMenus(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (res *RoleMenusResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationBoundaryRoleMenusParams) (res *RoleMenusResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRoleMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/menus"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10719,7 +10719,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationBoundaryRoleMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10737,7 +10737,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -10770,7 +10770,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRoleMenusOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10807,7 +10807,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp)
+	result, err := decodeGetCurrentCollaborationBoundaryRoleMenusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10815,21 +10815,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceBoundaryRolePackages invokes getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// GetCurrentCollaborationBoundaryRolePackages invokes getCurrentCollaborationBoundaryRolePackages operation.
 //
 // 获取当前协作空间角色功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*CollaborationWorkspaceBoundaryRolePackagesResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, params)
+// GET /collaboration/current/boundary/roles/{roleId}/packages
+func (c *Client) GetCurrentCollaborationBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationBoundaryRolePackagesParams) (*CollaborationBoundaryRolePackagesResponse, error) {
+	res, err := c.sendGetCurrentCollaborationBoundaryRolePackages(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (res *CollaborationWorkspaceBoundaryRolePackagesResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationBoundaryRolePackagesParams) (res *CollaborationBoundaryRolePackagesResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRolePackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/packages"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10845,7 +10845,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationBoundaryRolePackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10863,7 +10863,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -10896,7 +10896,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRolePackagesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -10933,7 +10933,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp)
+	result, err := decodeGetCurrentCollaborationBoundaryRolePackagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -10941,21 +10941,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceMemberRoles invokes getCurrentCollaborationWorkspaceMemberRoles operation.
+// GetCurrentCollaborationMemberRoles invokes getCurrentCollaborationMemberRoles operation.
 //
 // 获取当前协作空间成员角色.
 //
-// GET /collaboration-workspaces/current/members/{userId}/roles
-func (c *Client) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (*CollaborationWorkspaceMemberRolesResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceMemberRoles(ctx, params)
+// GET /collaboration/current/members/{userId}/roles
+func (c *Client) GetCurrentCollaborationMemberRoles(ctx context.Context, params GetCurrentCollaborationMemberRolesParams) (*CollaborationMemberRolesResponse, error) {
+	res, err := c.sendGetCurrentCollaborationMemberRoles(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (res *CollaborationWorkspaceMemberRolesResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationMemberRoles(ctx context.Context, params GetCurrentCollaborationMemberRolesParams) (res *CollaborationMemberRolesResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMemberRoles"),
+		otelogen.OperationID("getCurrentCollaborationMemberRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/members/{userId}/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -10971,7 +10971,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMemberRolesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationMemberRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -10989,7 +10989,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/members/"
+	pathParts[0] = "/collaboration/current/members/"
 	{
 		// Encode "userId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -11022,7 +11022,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMemberRolesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationMemberRolesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -11059,7 +11059,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceMemberRolesResponse(resp)
+	result, err := decodeGetCurrentCollaborationMemberRolesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -11067,21 +11067,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceMenuOrigins invokes getCurrentCollaborationWorkspaceMenuOrigins operation.
+// GetCurrentCollaborationMenuOrigins invokes getCurrentCollaborationMenuOrigins operation.
 //
 // 获取当前协作空间菜单来源.
 //
-// GET /collaboration-workspaces/current/menu-origins
-func (c *Client) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*CollaborationWorkspaceMenuOriginsResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx)
+// GET /collaboration/current/menu-origins
+func (c *Client) GetCurrentCollaborationMenuOrigins(ctx context.Context) (*CollaborationMenuOriginsResponse, error) {
+	res, err := c.sendGetCurrentCollaborationMenuOrigins(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (res *CollaborationWorkspaceMenuOriginsResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationMenuOrigins(ctx context.Context) (res *CollaborationMenuOriginsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMenuOrigins"),
+		otelogen.OperationID("getCurrentCollaborationMenuOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/menu-origins"),
+		semconv.URLTemplateKey.String("/collaboration/current/menu-origins"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -11097,7 +11097,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Con
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMenuOriginsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationMenuOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -11115,7 +11115,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Con
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/menu-origins"
+	pathParts[0] = "/collaboration/current/menu-origins"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -11129,7 +11129,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Con
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMenuOriginsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationMenuOriginsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -11166,7 +11166,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Con
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(resp)
+	result, err := decodeGetCurrentCollaborationMenuOriginsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -11174,21 +11174,21 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Con
 	return result, nil
 }
 
-// GetCurrentCollaborationWorkspaceMenus invokes getCurrentCollaborationWorkspaceMenus operation.
+// GetCurrentCollaborationMenus invokes getCurrentCollaborationMenus operation.
 //
 // 获取当前协作空间菜单边界.
 //
-// GET /collaboration-workspaces/current/menus
-func (c *Client) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (*CollaborationWorkspaceMenusResponse, error) {
-	res, err := c.sendGetCurrentCollaborationWorkspaceMenus(ctx)
+// GET /collaboration/current/menus
+func (c *Client) GetCurrentCollaborationMenus(ctx context.Context) (*CollaborationMenusResponse, error) {
+	res, err := c.sendGetCurrentCollaborationMenus(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) (res *CollaborationWorkspaceMenusResponse, err error) {
+func (c *Client) sendGetCurrentCollaborationMenus(ctx context.Context) (res *CollaborationMenusResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMenus"),
+		otelogen.OperationID("getCurrentCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/menus"),
+		semconv.URLTemplateKey.String("/collaboration/current/menus"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -11204,7 +11204,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMenusOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -11222,7 +11222,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/menus"
+	pathParts[0] = "/collaboration/current/menus"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -11236,7 +11236,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) 
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMenusOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetCurrentCollaborationMenusOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -11273,7 +11273,7 @@ func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) 
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetCurrentCollaborationWorkspaceMenusResponse(resp)
+	result, err := decodeGetCurrentCollaborationMenusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -12309,21 +12309,21 @@ func (c *Client) sendGetFeaturePackageChildren(ctx context.Context, params GetFe
 	return result, nil
 }
 
-// GetFeaturePackageCollaborationWorkspaces invokes getFeaturePackageCollaborationWorkspaces operation.
+// GetFeaturePackageCollaborations invokes getFeaturePackageCollaborations operation.
 //
 // 获取功能包协作空间.
 //
-// GET /feature-packages/{id}/collaboration-workspaces
-func (c *Client) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageCollaborationWorkspaceList, error) {
-	res, err := c.sendGetFeaturePackageCollaborationWorkspaces(ctx, params)
+// GET /feature-packages/{id}/workspaces/collaboration
+func (c *Client) GetFeaturePackageCollaborations(ctx context.Context, params GetFeaturePackageCollaborationsParams) (*FeaturePackageCollaborationList, error) {
+	res, err := c.sendGetFeaturePackageCollaborations(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (res *FeaturePackageCollaborationWorkspaceList, err error) {
+func (c *Client) sendGetFeaturePackageCollaborations(ctx context.Context, params GetFeaturePackageCollaborationsParams) (res *FeaturePackageCollaborationList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getFeaturePackageCollaborationWorkspaces"),
+		otelogen.OperationID("getFeaturePackageCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/feature-packages/{id}/collaboration-workspaces"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/workspaces/collaboration"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -12339,7 +12339,7 @@ func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageCollaborationWorkspacesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -12376,7 +12376,7 @@ func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/collaboration-workspaces"
+	pathParts[2] = "/workspaces/collaboration"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeQueryParams"
@@ -12411,7 +12411,7 @@ func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetFeaturePackageCollaborationWorkspacesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetFeaturePackageCollaborationsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -12448,7 +12448,7 @@ func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetFeaturePackageCollaborationWorkspacesResponse(resp)
+	result, err := decodeGetFeaturePackageCollaborationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -14645,15 +14645,15 @@ func (c *Client) sendGetPageAccessTrace(ctx context.Context, params GetPageAcces
 		}
 	}
 	{
-		// Encode "collaboration_workspace_id" parameter.
+		// Encode "workspace_id" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "collaboration_workspace_id",
+			Name:    "workspace_id",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.CollaborationWorkspaceID.Get(); ok {
+			if val, ok := params.WorkspaceID.Get(); ok {
 				return e.EncodeValue(conv.UUIDToString(val))
 			}
 			return nil
@@ -16712,21 +16712,21 @@ func (c *Client) sendGetUser(ctx context.Context, params GetUserParams) (res Get
 	return result, nil
 }
 
-// GetUserCollaborationWorkspaces invokes getUserCollaborationWorkspaces operation.
+// GetUserCollaborations invokes getUserCollaborations operation.
 //
 // 获取用户所在协作空间列表.
 //
-// GET /users/{id}/collaboration-workspaces
-func (c *Client) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (*UserCollaborationWorkspacesResponse, error) {
-	res, err := c.sendGetUserCollaborationWorkspaces(ctx, params)
+// GET /users/{id}/collaborations
+func (c *Client) GetUserCollaborations(ctx context.Context, params GetUserCollaborationsParams) (*UserCollaborationsResponse, error) {
+	res, err := c.sendGetUserCollaborations(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (res *UserCollaborationWorkspacesResponse, err error) {
+func (c *Client) sendGetUserCollaborations(ctx context.Context, params GetUserCollaborationsParams) (res *UserCollaborationsResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getUserCollaborationWorkspaces"),
+		otelogen.OperationID("getUserCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/users/{id}/collaboration-workspaces"),
+		semconv.URLTemplateKey.String("/users/{id}/collaborations"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -16742,7 +16742,7 @@ func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetUserCollaborationWorkspacesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -16779,7 +16779,7 @@ func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params 
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/collaboration-workspaces"
+	pathParts[2] = "/collaborations"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -16793,7 +16793,7 @@ func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params 
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, GetUserCollaborationWorkspacesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, GetUserCollaborationsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -16830,7 +16830,7 @@ func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params 
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeGetUserCollaborationWorkspacesResponse(resp)
+	result, err := decodeGetUserCollaborationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -17239,15 +17239,15 @@ func (c *Client) sendGetUserPermissionDiagnosis(ctx context.Context, params GetU
 		}
 	}
 	{
-		// Encode "collaboration_workspace_id" parameter.
+		// Encode "workspace_id" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "collaboration_workspace_id",
+			Name:    "workspace_id",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.CollaborationWorkspaceID.Get(); ok {
+			if val, ok := params.WorkspaceID.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -18843,21 +18843,21 @@ func (c *Client) sendListAuditLogs(ctx context.Context, params ListAuditLogsPara
 	return result, nil
 }
 
-// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
+// ListCollaborationMembers invokes listCollaborationMembers operation.
 //
 // 获取协作空间成员列表.
 //
-// GET /collaboration-workspaces/{id}/members
-func (c *Client) ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*CollaborationWorkspaceMemberList, error) {
-	res, err := c.sendListCollaborationWorkspaceMembers(ctx, params)
+// GET /workspaces/collaboration/{id}/members
+func (c *Client) ListCollaborationMembers(ctx context.Context, params ListCollaborationMembersParams) (*CollaborationMemberList, error) {
+	res, err := c.sendListCollaborationMembers(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (res *CollaborationWorkspaceMemberList, err error) {
+func (c *Client) sendListCollaborationMembers(ctx context.Context, params ListCollaborationMembersParams) (res *CollaborationMemberList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceMembers"),
+		otelogen.OperationID("listCollaborationMembers"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/members"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -18873,7 +18873,7 @@ func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, para
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceMembersOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationMembersOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -18891,7 +18891,7 @@ func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, para
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -18924,7 +18924,7 @@ func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, para
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCollaborationWorkspaceMembersOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCollaborationMembersOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -18961,7 +18961,7 @@ func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, para
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCollaborationWorkspaceMembersResponse(resp)
+	result, err := decodeListCollaborationMembersResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -18969,21 +18969,21 @@ func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, para
 	return result, nil
 }
 
-// ListCollaborationWorkspaceOptions invokes listCollaborationWorkspaceOptions operation.
+// ListCollaborationOptions invokes listCollaborationOptions operation.
 //
 // 获取协作空间候选.
 //
-// GET /collaboration-workspaces/options
-func (c *Client) ListCollaborationWorkspaceOptions(ctx context.Context) (*CollaborationWorkspaceList, error) {
-	res, err := c.sendListCollaborationWorkspaceOptions(ctx)
+// GET /workspaces/collaboration/options
+func (c *Client) ListCollaborationOptions(ctx context.Context) (*CollaborationList, error) {
+	res, err := c.sendListCollaborationOptions(ctx)
 	return res, err
 }
 
-func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res *CollaborationWorkspaceList, err error) {
+func (c *Client) sendListCollaborationOptions(ctx context.Context) (res *CollaborationList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceOptions"),
+		otelogen.OperationID("listCollaborationOptions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/options"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/options"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -18999,7 +18999,7 @@ func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceOptionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationOptionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19017,7 +19017,7 @@ func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/options"
+	pathParts[0] = "/workspaces/collaboration/options"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -19031,7 +19031,7 @@ func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCollaborationWorkspaceOptionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCollaborationOptionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19068,7 +19068,7 @@ func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCollaborationWorkspaceOptionsResponse(resp)
+	result, err := decodeListCollaborationOptionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19076,21 +19076,21 @@ func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res
 	return result, nil
 }
 
-// ListCollaborationWorkspaceRoles invokes listCollaborationWorkspaceRoles operation.
+// ListCollaborationRoles invokes listCollaborationRoles operation.
 //
 // 获取协作空间可分配角色.
 //
-// GET /collaboration-workspaces/{id}/roles
-func (c *Client) ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*CollaborationWorkspaceRoleList, error) {
-	res, err := c.sendListCollaborationWorkspaceRoles(ctx, params)
+// GET /workspaces/collaboration/{id}/roles
+func (c *Client) ListCollaborationRoles(ctx context.Context, params ListCollaborationRolesParams) (*CollaborationRoleList, error) {
+	res, err := c.sendListCollaborationRoles(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (res *CollaborationWorkspaceRoleList, err error) {
+func (c *Client) sendListCollaborationRoles(ctx context.Context, params ListCollaborationRolesParams) (res *CollaborationRoleList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceRoles"),
+		otelogen.OperationID("listCollaborationRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/roles"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -19106,7 +19106,7 @@ func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceRolesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19124,7 +19124,7 @@ func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -19157,7 +19157,7 @@ func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCollaborationWorkspaceRolesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCollaborationRolesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19194,7 +19194,7 @@ func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCollaborationWorkspaceRolesResponse(resp)
+	result, err := decodeListCollaborationRolesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19202,21 +19202,21 @@ func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params
 	return result, nil
 }
 
-// ListCollaborationWorkspaces invokes listCollaborationWorkspaces operation.
+// ListCollaborations invokes listCollaborations operation.
 //
 // 获取协作空间列表.
 //
-// GET /collaboration-workspaces
-func (c *Client) ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*CollaborationWorkspaceList, error) {
-	res, err := c.sendListCollaborationWorkspaces(ctx, params)
+// GET /workspaces/collaboration
+func (c *Client) ListCollaborations(ctx context.Context, params ListCollaborationsParams) (*CollaborationList, error) {
+	res, err := c.sendListCollaborations(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (res *CollaborationWorkspaceList, err error) {
+func (c *Client) sendListCollaborations(ctx context.Context, params ListCollaborationsParams) (res *CollaborationList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaces"),
+		otelogen.OperationID("listCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -19232,7 +19232,7 @@ func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params Lis
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspacesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19250,7 +19250,7 @@ func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params Lis
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces"
+	pathParts[0] = "/workspaces/collaboration"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeQueryParams"
@@ -19319,7 +19319,7 @@ func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params Lis
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCollaborationWorkspacesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCollaborationsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19356,7 +19356,7 @@ func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params Lis
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCollaborationWorkspacesResponse(resp)
+	result, err := decodeListCollaborationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19364,21 +19364,21 @@ func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params Lis
 	return result, nil
 }
 
-// ListCurrentCollaborationWorkspaceBoundaryRoles invokes listCurrentCollaborationWorkspaceBoundaryRoles operation.
+// ListCurrentCollaborationBoundaryRoles invokes listCurrentCollaborationBoundaryRoles operation.
 //
 // 获取当前协作空间边界可见角色.
 //
-// GET /collaboration-workspaces/current/boundary/roles
-func (c *Client) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error) {
-	res, err := c.sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx)
+// GET /collaboration/current/boundary/roles
+func (c *Client) ListCurrentCollaborationBoundaryRoles(ctx context.Context) (*CollaborationRoleList, error) {
+	res, err := c.sendListCurrentCollaborationBoundaryRoles(ctx)
 	return res, err
 }
 
-func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (res *CollaborationWorkspaceRoleList, err error) {
+func (c *Client) sendListCurrentCollaborationBoundaryRoles(ctx context.Context) (res *CollaborationRoleList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceBoundaryRoles"),
+		otelogen.OperationID("listCurrentCollaborationBoundaryRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -19394,7 +19394,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceBoundaryRolesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationBoundaryRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19412,7 +19412,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles"
+	pathParts[0] = "/collaboration/current/boundary/roles"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -19426,7 +19426,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceBoundaryRolesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationBoundaryRolesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19463,7 +19463,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(resp)
+	result, err := decodeListCurrentCollaborationBoundaryRolesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19471,21 +19471,21 @@ func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.
 	return result, nil
 }
 
-// ListCurrentCollaborationWorkspaceMembers invokes listCurrentCollaborationWorkspaceMembers operation.
+// ListCurrentCollaborationMembers invokes listCurrentCollaborationMembers operation.
 //
 // 获取当前协作空间成员列表.
 //
-// GET /collaboration-workspaces/current/members
-func (c *Client) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*CollaborationWorkspaceMemberList, error) {
-	res, err := c.sendListCurrentCollaborationWorkspaceMembers(ctx)
+// GET /collaboration/current/members
+func (c *Client) ListCurrentCollaborationMembers(ctx context.Context) (*CollaborationMemberList, error) {
+	res, err := c.sendListCurrentCollaborationMembers(ctx)
 	return res, err
 }
 
-func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Context) (res *CollaborationWorkspaceMemberList, err error) {
+func (c *Client) sendListCurrentCollaborationMembers(ctx context.Context) (res *CollaborationMemberList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceMembers"),
+		otelogen.OperationID("listCurrentCollaborationMembers"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members"),
+		semconv.URLTemplateKey.String("/collaboration/current/members"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -19501,7 +19501,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceMembersOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationMembersOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19519,7 +19519,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/members"
+	pathParts[0] = "/collaboration/current/members"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -19533,7 +19533,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceMembersOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationMembersOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19570,7 +19570,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCurrentCollaborationWorkspaceMembersResponse(resp)
+	result, err := decodeListCurrentCollaborationMembersResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19578,21 +19578,21 @@ func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Contex
 	return result, nil
 }
 
-// ListCurrentCollaborationWorkspaceRoles invokes listCurrentCollaborationWorkspaceRoles operation.
+// ListCurrentCollaborationRoles invokes listCurrentCollaborationRoles operation.
 //
 // 获取当前协作空间可分配角色.
 //
-// GET /collaboration-workspaces/current/roles
-func (c *Client) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error) {
-	res, err := c.sendListCurrentCollaborationWorkspaceRoles(ctx)
+// GET /collaboration/current/roles
+func (c *Client) ListCurrentCollaborationRoles(ctx context.Context) (*CollaborationRoleList, error) {
+	res, err := c.sendListCurrentCollaborationRoles(ctx)
 	return res, err
 }
 
-func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context) (res *CollaborationWorkspaceRoleList, err error) {
+func (c *Client) sendListCurrentCollaborationRoles(ctx context.Context) (res *CollaborationRoleList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceRoles"),
+		otelogen.OperationID("listCurrentCollaborationRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -19608,7 +19608,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceRolesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -19626,7 +19626,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/current/roles"
+	pathParts[0] = "/collaboration/current/roles"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -19640,7 +19640,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceRolesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListCurrentCollaborationRolesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -19677,7 +19677,7 @@ func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context)
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListCurrentCollaborationWorkspaceRolesResponse(resp)
+	result, err := decodeListCurrentCollaborationRolesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -22026,21 +22026,21 @@ func (c *Client) sendListMessageTemplates(ctx context.Context) (res *MessageTemp
 	return result, nil
 }
 
-// ListMyCollaborationWorkspaces invokes listMyCollaborationWorkspaces operation.
+// ListMyCollaborations invokes listMyCollaborations operation.
 //
 // 获取我的协作空间列表.
 //
-// GET /collaboration-workspaces/mine
-func (c *Client) ListMyCollaborationWorkspaces(ctx context.Context) (*CollaborationWorkspaceList, error) {
-	res, err := c.sendListMyCollaborationWorkspaces(ctx)
+// GET /workspaces/collaboration/mine
+func (c *Client) ListMyCollaborations(ctx context.Context) (*CollaborationList, error) {
+	res, err := c.sendListMyCollaborations(ctx)
 	return res, err
 }
 
-func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *CollaborationWorkspaceList, err error) {
+func (c *Client) sendListMyCollaborations(ctx context.Context) (res *CollaborationList, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listMyCollaborationWorkspaces"),
+		otelogen.OperationID("listMyCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/mine"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/mine"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -22056,7 +22056,7 @@ func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *Co
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListMyCollaborationWorkspacesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMyCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -22074,7 +22074,7 @@ func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *Co
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/collaboration-workspaces/mine"
+	pathParts[0] = "/workspaces/collaboration/mine"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -22088,7 +22088,7 @@ func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *Co
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListMyCollaborationWorkspacesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, ListMyCollaborationsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -22125,7 +22125,7 @@ func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *Co
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeListMyCollaborationWorkspacesResponse(resp)
+	result, err := decodeListMyCollaborationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -27579,21 +27579,21 @@ func (c *Client) sendRegister(ctx context.Context, request *RegisterRequest) (re
 	return result, nil
 }
 
-// RemoveCollaborationWorkspaceMember invokes removeCollaborationWorkspaceMember operation.
+// RemoveCollaborationMember invokes removeCollaborationMember operation.
 //
 // 移除协作空间成员.
 //
-// DELETE /collaboration-workspaces/{id}/members/{userId}
-func (c *Client) RemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (*MutationResult, error) {
-	res, err := c.sendRemoveCollaborationWorkspaceMember(ctx, params)
+// DELETE /workspaces/collaboration/{id}/members/{userId}
+func (c *Client) RemoveCollaborationMember(ctx context.Context, params RemoveCollaborationMemberParams) (*MutationResult, error) {
+	res, err := c.sendRemoveCollaborationMember(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+func (c *Client) sendRemoveCollaborationMember(ctx context.Context, params RemoveCollaborationMemberParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("removeCollaborationWorkspaceMember"),
+		otelogen.OperationID("removeCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members/{userId}"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/members/{userId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -27609,7 +27609,7 @@ func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, par
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCollaborationWorkspaceMemberOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -27627,7 +27627,7 @@ func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, par
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [4]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -27678,7 +27678,7 @@ func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, par
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, RemoveCollaborationWorkspaceMemberOperation, r); {
+			switch err := c.securityBearerAuth(ctx, RemoveCollaborationMemberOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -27715,7 +27715,7 @@ func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, par
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeRemoveCollaborationWorkspaceMemberResponse(resp)
+	result, err := decodeRemoveCollaborationMemberResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -27723,21 +27723,21 @@ func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, par
 	return result, nil
 }
 
-// RemoveCurrentCollaborationWorkspaceMember invokes removeCurrentCollaborationWorkspaceMember operation.
+// RemoveCurrentCollaborationMember invokes removeCurrentCollaborationMember operation.
 //
 // 移除当前协作空间成员.
 //
-// DELETE /collaboration-workspaces/current/members/{userId}
-func (c *Client) RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (*MutationResult, error) {
-	res, err := c.sendRemoveCurrentCollaborationWorkspaceMember(ctx, params)
+// DELETE /collaboration/current/members/{userId}
+func (c *Client) RemoveCurrentCollaborationMember(ctx context.Context, params RemoveCurrentCollaborationMemberParams) (*MutationResult, error) {
+	res, err := c.sendRemoveCurrentCollaborationMember(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+func (c *Client) sendRemoveCurrentCollaborationMember(ctx context.Context, params RemoveCurrentCollaborationMemberParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("removeCurrentCollaborationWorkspaceMember"),
+		otelogen.OperationID("removeCurrentCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}"),
+		semconv.URLTemplateKey.String("/collaboration/current/members/{userId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -27753,7 +27753,7 @@ func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Conte
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCurrentCollaborationWorkspaceMemberOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCurrentCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -27771,7 +27771,7 @@ func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Conte
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/current/members/"
+	pathParts[0] = "/collaboration/current/members/"
 	{
 		// Encode "userId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -27803,7 +27803,7 @@ func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Conte
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, RemoveCurrentCollaborationWorkspaceMemberOperation, r); {
+			switch err := c.securityBearerAuth(ctx, RemoveCurrentCollaborationMemberOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -27840,7 +27840,7 @@ func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Conte
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeRemoveCurrentCollaborationWorkspaceMemberResponse(resp)
+	result, err := decodeRemoveCurrentCollaborationMemberResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29199,21 +29199,21 @@ func (c *Client) sendSavePermissionActionBatchTemplate(ctx context.Context, requ
 	return result, nil
 }
 
-// SetCollaborationWorkspaceActions invokes setCollaborationWorkspaceActions operation.
+// SetCollaborationActions invokes setCollaborationActions operation.
 //
 // 配置协作空间功能权限边界.
 //
-// PUT /collaboration-workspaces/{id}/actions
-func (c *Client) SetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (*MutationResult, error) {
-	res, err := c.sendSetCollaborationWorkspaceActions(ctx, request, params)
+// PUT /workspaces/collaboration/{id}/actions
+func (c *Client) SetCollaborationActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetCollaborationActions(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCollaborationActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationActionsParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspaceActions"),
+		otelogen.OperationID("setCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/actions"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/actions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29229,7 +29229,7 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspaceActionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29247,7 +29247,7 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -29274,7 +29274,7 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCollaborationWorkspaceActionsRequest(request, r); err != nil {
+	if err := encodeSetCollaborationActionsRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29283,7 +29283,7 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCollaborationWorkspaceActionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCollaborationActionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29320,7 +29320,7 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCollaborationWorkspaceActionsResponse(resp)
+	result, err := decodeSetCollaborationActionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29328,21 +29328,21 @@ func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, reque
 	return result, nil
 }
 
-// SetCollaborationWorkspaceMenus invokes setCollaborationWorkspaceMenus operation.
+// SetCollaborationMenus invokes setCollaborationMenus operation.
 //
 // 配置协作空间菜单边界.
 //
-// PUT /collaboration-workspaces/{id}/menus
-func (c *Client) SetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (*MutationResult, error) {
-	res, err := c.sendSetCollaborationWorkspaceMenus(ctx, request, params)
+// PUT /workspaces/collaboration/{id}/menus
+func (c *Client) SetCollaborationMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetCollaborationMenus(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCollaborationMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationMenusParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspaceMenus"),
+		otelogen.OperationID("setCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menus"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/menus"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29358,7 +29358,7 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspaceMenusOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29376,7 +29376,7 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -29403,7 +29403,7 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCollaborationWorkspaceMenusRequest(request, r); err != nil {
+	if err := encodeSetCollaborationMenusRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29412,7 +29412,7 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCollaborationWorkspaceMenusOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCollaborationMenusOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29449,7 +29449,7 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCollaborationWorkspaceMenusResponse(resp)
+	result, err := decodeSetCollaborationMenusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29457,21 +29457,21 @@ func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request
 	return result, nil
 }
 
-// SetCollaborationWorkspacePackages invokes setCollaborationWorkspacePackages operation.
+// SetCollaborationPackages invokes setCollaborationPackages operation.
 //
 // 配置协作空间功能包.
 //
-// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (c *Client) SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*FeaturePackageMutationResult, error) {
-	res, err := c.sendSetCollaborationWorkspacePackages(ctx, request, params)
+// PUT /feature-packages/workspaces/collaboration/{workspaceId}
+func (c *Client) SetCollaborationPackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationPackagesParams) (*FeaturePackageMutationResult, error) {
+	res, err := c.sendSetCollaborationPackages(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (res *FeaturePackageMutationResult, err error) {
+func (c *Client) sendSetCollaborationPackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationPackagesParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspacePackages"),
+		otelogen.OperationID("setCollaborationPackages"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+		semconv.URLTemplateKey.String("/feature-packages/workspaces/collaboration/{workspaceId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29487,7 +29487,7 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspacePackagesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29505,16 +29505,16 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/feature-packages/collaboration-workspaces/"
+	pathParts[0] = "/feature-packages/workspaces/collaboration/"
 	{
-		// Encode "collaborationWorkspaceId" parameter.
+		// Encode "workspaceId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "collaborationWorkspaceId",
+			Param:   "workspaceId",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.CollaborationWorkspaceId))
+			return e.EncodeValue(conv.UUIDToString(params.WorkspaceId))
 		}(); err != nil {
 			return res, errors.Wrap(err, "encode path")
 		}
@@ -29552,7 +29552,7 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCollaborationWorkspacePackagesRequest(request, r); err != nil {
+	if err := encodeSetCollaborationPackagesRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29561,7 +29561,7 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCollaborationWorkspacePackagesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCollaborationPackagesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29598,7 +29598,7 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCollaborationWorkspacePackagesResponse(resp)
+	result, err := decodeSetCollaborationPackagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29606,21 +29606,21 @@ func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, requ
 	return result, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleActions invokes setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// SetCurrentCollaborationBoundaryRoleActions invokes setCurrentCollaborationBoundaryRoleActions operation.
 //
 // 配置当前协作空间角色功能权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*MutationResult, error) {
-	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, request, params)
+// PUT /collaboration/current/boundary/roles/{roleId}/actions
+func (c *Client) SetCurrentCollaborationBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationBoundaryRoleActions(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCurrentCollaborationBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleActionsParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRoleActions"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/actions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29636,7 +29636,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationBoundaryRoleActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29654,7 +29654,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -29681,7 +29681,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(request, r); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRoleActionsRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29690,7 +29690,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRoleActionsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29727,7 +29727,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp)
+	result, err := decodeSetCurrentCollaborationBoundaryRoleActionsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29735,21 +29735,21 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx con
 	return result, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// SetCurrentCollaborationBoundaryRoleMenus invokes setCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 配置当前协作空间角色菜单权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*MutationResult, error) {
-	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, request, params)
+// PUT /collaboration/current/boundary/roles/{roleId}/menus
+func (c *Client) SetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationBoundaryRoleMenus(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCurrentCollaborationBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRoleMenusParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRoleMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/menus"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29765,7 +29765,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationBoundaryRoleMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29783,7 +29783,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -29810,7 +29810,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(request, r); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRoleMenusRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29819,7 +29819,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRoleMenusOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29856,7 +29856,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp)
+	result, err := decodeSetCurrentCollaborationBoundaryRoleMenusResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29864,21 +29864,21 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx conte
 	return result, nil
 }
 
-// SetCurrentCollaborationWorkspaceBoundaryRolePackages invokes setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// SetCurrentCollaborationBoundaryRolePackages invokes setCurrentCollaborationBoundaryRolePackages operation.
 //
 // 配置当前协作空间角色功能包(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*MutationResult, error) {
-	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, request, params)
+// PUT /collaboration/current/boundary/roles/{roleId}/packages
+func (c *Client) SetCurrentCollaborationBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRolePackagesParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationBoundaryRolePackages(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCurrentCollaborationBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationBoundaryRolePackagesParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRolePackages"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}/packages"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -29894,7 +29894,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationBoundaryRolePackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -29912,7 +29912,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -29939,7 +29939,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(request, r); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRolePackagesRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -29948,7 +29948,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRolePackagesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -29985,7 +29985,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp)
+	result, err := decodeSetCurrentCollaborationBoundaryRolePackagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -29993,21 +29993,21 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx co
 	return result, nil
 }
 
-// SetCurrentCollaborationWorkspaceMemberRoles invokes setCurrentCollaborationWorkspaceMemberRoles operation.
+// SetCurrentCollaborationMemberRoles invokes setCurrentCollaborationMemberRoles operation.
 //
 // 配置当前协作空间成员角色.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/roles
-func (c *Client) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (*MutationResult, error) {
-	res, err := c.sendSetCurrentCollaborationWorkspaceMemberRoles(ctx, request, params)
+// PUT /collaboration/current/members/{userId}/roles
+func (c *Client) SetCurrentCollaborationMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationMemberRolesParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationMemberRoles(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (res *MutationResult, err error) {
+func (c *Client) sendSetCurrentCollaborationMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationMemberRolesParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceMemberRoles"),
+		otelogen.OperationID("setCurrentCollaborationMemberRoles"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+		semconv.URLTemplateKey.String("/collaboration/current/members/{userId}/roles"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -30023,7 +30023,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceMemberRolesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationMemberRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -30041,7 +30041,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/members/"
+	pathParts[0] = "/collaboration/current/members/"
 	{
 		// Encode "userId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -30068,7 +30068,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetCurrentCollaborationWorkspaceMemberRolesRequest(request, r); err != nil {
+	if err := encodeSetCurrentCollaborationMemberRolesRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -30077,7 +30077,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceMemberRolesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetCurrentCollaborationMemberRolesOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -30114,7 +30114,7 @@ func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetCurrentCollaborationWorkspaceMemberRolesResponse(resp)
+	result, err := decodeSetCurrentCollaborationMemberRolesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -30422,21 +30422,21 @@ func (c *Client) sendSetFeaturePackageChildren(ctx context.Context, request *UUI
 	return result, nil
 }
 
-// SetFeaturePackageCollaborationWorkspaces invokes setFeaturePackageCollaborationWorkspaces operation.
+// SetFeaturePackageCollaborations invokes setFeaturePackageCollaborations operation.
 //
 // 配置功能包协作空间.
 //
-// PUT /feature-packages/{id}/collaboration-workspaces
-func (c *Client) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageMutationResult, error) {
-	res, err := c.sendSetFeaturePackageCollaborationWorkspaces(ctx, request, params)
+// PUT /feature-packages/{id}/workspaces/collaboration
+func (c *Client) SetFeaturePackageCollaborations(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationsParams) (*FeaturePackageMutationResult, error) {
+	res, err := c.sendSetFeaturePackageCollaborations(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (res *FeaturePackageMutationResult, err error) {
+func (c *Client) sendSetFeaturePackageCollaborations(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationsParams) (res *FeaturePackageMutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setFeaturePackageCollaborationWorkspaces"),
+		otelogen.OperationID("setFeaturePackageCollaborations"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/feature-packages/{id}/collaboration-workspaces"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/workspaces/collaboration"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -30452,7 +30452,7 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageCollaborationWorkspacesOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -30489,7 +30489,7 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/collaboration-workspaces"
+	pathParts[2] = "/workspaces/collaboration"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeQueryParams"
@@ -30518,7 +30518,7 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeSetFeaturePackageCollaborationWorkspacesRequest(request, r); err != nil {
+	if err := encodeSetFeaturePackageCollaborationsRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -30527,7 +30527,7 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, SetFeaturePackageCollaborationWorkspacesOperation, r); {
+			switch err := c.securityBearerAuth(ctx, SetFeaturePackageCollaborationsOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -30564,7 +30564,7 @@ func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Contex
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeSetFeaturePackageCollaborationWorkspacesResponse(resp)
+	result, err := decodeSetFeaturePackageCollaborationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -32513,21 +32513,21 @@ func (c *Client) sendUpdateApiEndpointContextScope(ctx context.Context, request 
 	return result, nil
 }
 
-// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
+// UpdateCollaboration invokes updateCollaboration operation.
 //
 // 更新协作空间.
 //
-// PUT /collaboration-workspaces/{id}
-func (c *Client) UpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (*MutationResult, error) {
-	res, err := c.sendUpdateCollaborationWorkspace(ctx, request, params)
+// PUT /workspaces/collaboration/{id}
+func (c *Client) UpdateCollaboration(ctx context.Context, request *CollaborationSaveRequest, params UpdateCollaborationParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCollaboration(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *CollaborationWorkspaceSaveRequest, params UpdateCollaborationWorkspaceParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCollaboration(ctx context.Context, request *CollaborationSaveRequest, params UpdateCollaborationParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCollaborationWorkspace"),
+		otelogen.OperationID("updateCollaboration"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -32543,7 +32543,7 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationWorkspaceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -32561,7 +32561,7 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -32587,7 +32587,7 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeUpdateCollaborationWorkspaceRequest(request, r); err != nil {
+	if err := encodeUpdateCollaborationRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -32596,7 +32596,7 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateCollaborationWorkspaceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, UpdateCollaborationOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -32633,7 +32633,7 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeUpdateCollaborationWorkspaceResponse(resp)
+	result, err := decodeUpdateCollaborationResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -32641,21 +32641,21 @@ func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request *
 	return result, nil
 }
 
-// UpdateCollaborationWorkspaceMemberRole invokes updateCollaborationWorkspaceMemberRole operation.
+// UpdateCollaborationMemberRole invokes updateCollaborationMemberRole operation.
 //
 // 更新协作空间成员身份.
 //
-// PUT /collaboration-workspaces/{id}/members/{userId}/role
-func (c *Client) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
-	res, err := c.sendUpdateCollaborationWorkspaceMemberRole(ctx, request, params)
+// PUT /workspaces/collaboration/{id}/members/{userId}/role
+func (c *Client) UpdateCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCollaborationMemberRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCollaborationMemberRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCollaborationMemberRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCollaborationWorkspaceMemberRole"),
+		otelogen.OperationID("updateCollaborationMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members/{userId}/role"),
+		semconv.URLTemplateKey.String("/workspaces/collaboration/{id}/members/{userId}/role"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -32671,7 +32671,7 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationWorkspaceMemberRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationMemberRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -32689,7 +32689,7 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [5]string
-	pathParts[0] = "/collaboration-workspaces/"
+	pathParts[0] = "/workspaces/collaboration/"
 	{
 		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -32735,7 +32735,7 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeUpdateCollaborationWorkspaceMemberRoleRequest(request, r); err != nil {
+	if err := encodeUpdateCollaborationMemberRoleRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -32744,7 +32744,7 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateCollaborationWorkspaceMemberRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, UpdateCollaborationMemberRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -32781,7 +32781,7 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeUpdateCollaborationWorkspaceMemberRoleResponse(resp)
+	result, err := decodeUpdateCollaborationMemberRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -32789,21 +32789,21 @@ func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context,
 	return result, nil
 }
 
-// UpdateCurrentCollaborationWorkspaceBoundaryRole invokes updateCurrentCollaborationWorkspaceBoundaryRole operation.
+// UpdateCurrentCollaborationBoundaryRole invokes updateCurrentCollaborationBoundaryRole operation.
 //
 // 更新当前协作空间角色(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-func (c *Client) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
-	res, err := c.sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx, request, params)
+// PUT /collaboration/current/boundary/roles/{roleId}
+func (c *Client) UpdateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest, params UpdateCurrentCollaborationBoundaryRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCurrentCollaborationBoundaryRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request *CollaborationWorkspaceRoleSaveRequest, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCurrentCollaborationBoundaryRole(ctx context.Context, request *CollaborationRoleSaveRequest, params UpdateCurrentCollaborationBoundaryRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("updateCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+		semconv.URLTemplateKey.String("/collaboration/current/boundary/roles/{roleId}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -32819,7 +32819,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -32837,7 +32837,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	pathParts[0] = "/collaboration/current/boundary/roles/"
 	{
 		// Encode "roleId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -32863,7 +32863,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(request, r); err != nil {
+	if err := encodeUpdateCurrentCollaborationBoundaryRoleRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -32872,7 +32872,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, UpdateCurrentCollaborationBoundaryRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -32909,7 +32909,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	result, err := decodeUpdateCurrentCollaborationBoundaryRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -32917,21 +32917,21 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context
 	return result, nil
 }
 
-// UpdateCurrentCollaborationWorkspaceMemberRole invokes updateCurrentCollaborationWorkspaceMemberRole operation.
+// UpdateCurrentCollaborationMemberRole invokes updateCurrentCollaborationMemberRole operation.
 //
 // 更新当前协作空间成员身份.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/role
-func (c *Client) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
-	res, err := c.sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx, request, params)
+// PUT /collaboration/current/members/{userId}/role
+func (c *Client) UpdateCurrentCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCurrentCollaborationMemberRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCurrentCollaborationMemberRole(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request *CollaborationWorkspaceMemberRoleRequest, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+func (c *Client) sendUpdateCurrentCollaborationMemberRole(ctx context.Context, request *CollaborationMemberRoleRequest, params UpdateCurrentCollaborationMemberRoleParams) (res *MutationResult, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCurrentCollaborationWorkspaceMemberRole"),
+		otelogen.OperationID("updateCurrentCollaborationMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/role"),
+		semconv.URLTemplateKey.String("/collaboration/current/members/{userId}/role"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -32947,7 +32947,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationWorkspaceMemberRoleOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationMemberRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -32965,7 +32965,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/collaboration-workspaces/current/members/"
+	pathParts[0] = "/collaboration/current/members/"
 	{
 		// Encode "userId" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
@@ -32992,7 +32992,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(request, r); err != nil {
+	if err := encodeUpdateCurrentCollaborationMemberRoleRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -33001,7 +33001,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateCurrentCollaborationWorkspaceMemberRoleOperation, r); {
+			switch err := c.securityBearerAuth(ctx, UpdateCurrentCollaborationMemberRoleOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -33038,7 +33038,7 @@ func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.C
 	defer body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(resp)
+	result, err := decodeUpdateCurrentCollaborationMemberRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

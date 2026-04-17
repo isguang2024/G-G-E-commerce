@@ -14,7 +14,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeAddCollaborationWorkspaceMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeAddCollaborationMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -55,7 +55,7 @@ func decodeAddCollaborationWorkspaceMemberResponse(resp *http.Response) (res *Mu
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeAddCurrentCollaborationWorkspaceMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeAddCurrentCollaborationMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -751,7 +751,7 @@ func decodeCreateApiEndpointCategoryResponse(resp *http.Response) (res CreateApi
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateCollaborationWorkspaceResponse(resp *http.Response) (res *IDResult, _ error) {
+func decodeCreateCollaborationResponse(resp *http.Response) (res *IDResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -792,7 +792,7 @@ func decodeCreateCollaborationWorkspaceResponse(resp *http.Response) (res *IDRes
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreateCurrentCollaborationBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -833,7 +833,7 @@ func decodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Re
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeCreateCurrentCollaborationWorkspaceRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeCreateCurrentCollaborationRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2352,7 +2352,7 @@ func decodeDeleteAppHostBindingResponse(resp *http.Response) (res *MutationResul
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeDeleteCollaborationWorkspaceResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeDeleteCollaborationResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2393,7 +2393,7 @@ func decodeDeleteCollaborationWorkspaceResponse(resp *http.Response) (res *Mutat
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeDeleteCurrentCollaborationBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4812,7 +4812,7 @@ func decodeGetAuthMeResponse(resp *http.Response) (res GetAuthMeRes, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCollaborationWorkspaceResponse(resp *http.Response) (res *CollaborationWorkspaceItem, _ error) {
+func decodeGetCollaborationResponse(resp *http.Response) (res *CollaborationItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4828,7 +4828,7 @@ func decodeGetCollaborationWorkspaceResponse(resp *http.Response) (res *Collabor
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceItem
+			var response CollaborationItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4853,7 +4853,7 @@ func decodeGetCollaborationWorkspaceResponse(resp *http.Response) (res *Collabor
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCollaborationWorkspaceActionOriginsResponse(resp *http.Response) (res *CollaborationWorkspaceActionOriginsResponse, _ error) {
+func decodeGetCollaborationActionOriginsResponse(resp *http.Response) (res *CollaborationActionOriginsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4869,57 +4869,7 @@ func decodeGetCollaborationWorkspaceActionOriginsResponse(resp *http.Response) (
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceActionOriginsResponse
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeGetCollaborationWorkspaceActionsResponse(resp *http.Response) (res *CollaborationWorkspaceActionsResponse, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response CollaborationWorkspaceActionsResponse
+			var response CollaborationActionOriginsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4953,7 +4903,7 @@ func decodeGetCollaborationWorkspaceActionsResponse(resp *http.Response) (res *C
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCollaborationWorkspaceMenuOriginsResponse(resp *http.Response) (res *CollaborationWorkspaceMenuOriginsResponse, _ error) {
+func decodeGetCollaborationActionsResponse(resp *http.Response) (res *CollaborationActionsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4969,7 +4919,7 @@ func decodeGetCollaborationWorkspaceMenuOriginsResponse(resp *http.Response) (re
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMenuOriginsResponse
+			var response CollaborationActionsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5003,7 +4953,7 @@ func decodeGetCollaborationWorkspaceMenuOriginsResponse(resp *http.Response) (re
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *CollaborationWorkspaceMenusResponse, _ error) {
+func decodeGetCollaborationMenuOriginsResponse(resp *http.Response) (res *CollaborationMenuOriginsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5019,7 +4969,7 @@ func decodeGetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *Col
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMenusResponse
+			var response CollaborationMenuOriginsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5053,7 +5003,57 @@ func decodeGetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *Col
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *FeaturePackageAssignmentResponse, _ error) {
+func decodeGetCollaborationMenusResponse(resp *http.Response) (res *CollaborationMenusResponse, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response CollaborationMenusResponse
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeGetCollaborationPackagesResponse(resp *http.Response) (res *FeaturePackageAssignmentResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5144,7 +5144,7 @@ func decodeGetCurrentAppResponse(resp *http.Response) (res *SystemCurrentAppResp
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceResponse(resp *http.Response) (res *CollaborationWorkspaceItem, _ error) {
+func decodeGetCurrentCollaborationResponse(resp *http.Response) (res *CollaborationItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5160,7 +5160,7 @@ func decodeGetCurrentCollaborationWorkspaceResponse(resp *http.Response) (res *C
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceItem
+			var response CollaborationItem
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5185,7 +5185,7 @@ func decodeGetCurrentCollaborationWorkspaceResponse(resp *http.Response) (res *C
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceActionOriginsResponse(resp *http.Response) (res *CollaborationWorkspaceActionOriginsResponse, _ error) {
+func decodeGetCurrentCollaborationActionOriginsResponse(resp *http.Response) (res *CollaborationActionOriginsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5201,57 +5201,7 @@ func decodeGetCurrentCollaborationWorkspaceActionOriginsResponse(resp *http.Resp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceActionOriginsResponse
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
-}
-
-func decodeGetCurrentCollaborationWorkspaceActionsResponse(resp *http.Response) (res *CollaborationWorkspaceActionsResponse, _ error) {
-	switch resp.StatusCode {
-	case 200:
-		// Code 200.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response CollaborationWorkspaceActionsResponse
+			var response CollaborationActionOriginsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5285,7 +5235,57 @@ func decodeGetCurrentCollaborationWorkspaceActionsResponse(resp *http.Response) 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(resp *http.Response) (res *FeaturePackageAssignmentResponse, _ error) {
+func decodeGetCurrentCollaborationActionsResponse(resp *http.Response) (res *CollaborationActionsResponse, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response CollaborationActionsResponse
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+}
+
+func decodeGetCurrentCollaborationBoundaryPackagesResponse(resp *http.Response) (res *FeaturePackageAssignmentResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5335,7 +5335,7 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(resp *http.R
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp *http.Response) (res *RoleActionsResponse, _ error) {
+func decodeGetCurrentCollaborationBoundaryRoleActionsResponse(resp *http.Response) (res *RoleActionsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5385,7 +5385,7 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp *htt
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp *http.Response) (res *RoleMenusResponse, _ error) {
+func decodeGetCurrentCollaborationBoundaryRoleMenusResponse(resp *http.Response) (res *RoleMenusResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5435,7 +5435,7 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp *http.
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp *http.Response) (res *CollaborationWorkspaceBoundaryRolePackagesResponse, _ error) {
+func decodeGetCurrentCollaborationBoundaryRolePackagesResponse(resp *http.Response) (res *CollaborationBoundaryRolePackagesResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5451,7 +5451,7 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp *ht
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceBoundaryRolePackagesResponse
+			var response CollaborationBoundaryRolePackagesResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5485,7 +5485,7 @@ func decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp *ht
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceMemberRolesResponse(resp *http.Response) (res *CollaborationWorkspaceMemberRolesResponse, _ error) {
+func decodeGetCurrentCollaborationMemberRolesResponse(resp *http.Response) (res *CollaborationMemberRolesResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5501,7 +5501,7 @@ func decodeGetCurrentCollaborationWorkspaceMemberRolesResponse(resp *http.Respon
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMemberRolesResponse
+			var response CollaborationMemberRolesResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5535,7 +5535,7 @@ func decodeGetCurrentCollaborationWorkspaceMemberRolesResponse(resp *http.Respon
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(resp *http.Response) (res *CollaborationWorkspaceMenuOriginsResponse, _ error) {
+func decodeGetCurrentCollaborationMenuOriginsResponse(resp *http.Response) (res *CollaborationMenuOriginsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5551,7 +5551,7 @@ func decodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(resp *http.Respon
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMenuOriginsResponse
+			var response CollaborationMenuOriginsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -5585,7 +5585,7 @@ func decodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(resp *http.Respon
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetCurrentCollaborationWorkspaceMenusResponse(resp *http.Response) (res *CollaborationWorkspaceMenusResponse, _ error) {
+func decodeGetCurrentCollaborationMenusResponse(resp *http.Response) (res *CollaborationMenusResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -5601,7 +5601,7 @@ func decodeGetCurrentCollaborationWorkspaceMenusResponse(resp *http.Response) (r
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMenusResponse
+			var response CollaborationMenusResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -6131,7 +6131,7 @@ func decodeGetFeaturePackageChildrenResponse(resp *http.Response) (res *FeatureP
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response) (res *FeaturePackageCollaborationWorkspaceList, _ error) {
+func decodeGetFeaturePackageCollaborationsResponse(resp *http.Response) (res *FeaturePackageCollaborationList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -6147,7 +6147,7 @@ func decodeGetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response)
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response FeaturePackageCollaborationWorkspaceList
+			var response FeaturePackageCollaborationList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8278,7 +8278,7 @@ func decodeGetUserResponse(resp *http.Response) (res GetUserRes, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res *UserCollaborationWorkspacesResponse, _ error) {
+func decodeGetUserCollaborationsResponse(resp *http.Response) (res *UserCollaborationsResponse, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8294,7 +8294,7 @@ func decodeGetUserCollaborationWorkspacesResponse(resp *http.Response) (res *Use
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response UserCollaborationWorkspacesResponse
+			var response UserCollaborationsResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9310,7 +9310,7 @@ func decodeListAuditLogsResponse(resp *http.Response) (res ListAuditLogsRes, _ e
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCollaborationWorkspaceMembersResponse(resp *http.Response) (res *CollaborationWorkspaceMemberList, _ error) {
+func decodeListCollaborationMembersResponse(resp *http.Response) (res *CollaborationMemberList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9326,7 +9326,7 @@ func decodeListCollaborationWorkspaceMembersResponse(resp *http.Response) (res *
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMemberList
+			var response CollaborationMemberList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9360,7 +9360,7 @@ func decodeListCollaborationWorkspaceMembersResponse(resp *http.Response) (res *
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCollaborationWorkspaceOptionsResponse(resp *http.Response) (res *CollaborationWorkspaceList, _ error) {
+func decodeListCollaborationOptionsResponse(resp *http.Response) (res *CollaborationList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9376,7 +9376,7 @@ func decodeListCollaborationWorkspaceOptionsResponse(resp *http.Response) (res *
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceList
+			var response CollaborationList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9410,7 +9410,7 @@ func decodeListCollaborationWorkspaceOptionsResponse(resp *http.Response) (res *
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCollaborationWorkspaceRolesResponse(resp *http.Response) (res *CollaborationWorkspaceRoleList, _ error) {
+func decodeListCollaborationRolesResponse(resp *http.Response) (res *CollaborationRoleList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9426,7 +9426,7 @@ func decodeListCollaborationWorkspaceRolesResponse(resp *http.Response) (res *Co
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceRoleList
+			var response CollaborationRoleList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9460,7 +9460,7 @@ func decodeListCollaborationWorkspaceRolesResponse(resp *http.Response) (res *Co
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCollaborationWorkspacesResponse(resp *http.Response) (res *CollaborationWorkspaceList, _ error) {
+func decodeListCollaborationsResponse(resp *http.Response) (res *CollaborationList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9476,7 +9476,7 @@ func decodeListCollaborationWorkspacesResponse(resp *http.Response) (res *Collab
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceList
+			var response CollaborationList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9510,7 +9510,7 @@ func decodeListCollaborationWorkspacesResponse(resp *http.Response) (res *Collab
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(resp *http.Response) (res *CollaborationWorkspaceRoleList, _ error) {
+func decodeListCurrentCollaborationBoundaryRolesResponse(resp *http.Response) (res *CollaborationRoleList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9526,7 +9526,7 @@ func decodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(resp *http.Res
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceRoleList
+			var response CollaborationRoleList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9560,7 +9560,7 @@ func decodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(resp *http.Res
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCurrentCollaborationWorkspaceMembersResponse(resp *http.Response) (res *CollaborationWorkspaceMemberList, _ error) {
+func decodeListCurrentCollaborationMembersResponse(resp *http.Response) (res *CollaborationMemberList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9576,7 +9576,7 @@ func decodeListCurrentCollaborationWorkspaceMembersResponse(resp *http.Response)
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceMemberList
+			var response CollaborationMemberList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -9610,7 +9610,7 @@ func decodeListCurrentCollaborationWorkspaceMembersResponse(resp *http.Response)
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListCurrentCollaborationWorkspaceRolesResponse(resp *http.Response) (res *CollaborationWorkspaceRoleList, _ error) {
+func decodeListCurrentCollaborationRolesResponse(resp *http.Response) (res *CollaborationRoleList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -9626,7 +9626,7 @@ func decodeListCurrentCollaborationWorkspaceRolesResponse(resp *http.Response) (
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceRoleList
+			var response CollaborationRoleList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -10720,7 +10720,7 @@ func decodeListMessageTemplatesResponse(resp *http.Response) (res *MessageTempla
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeListMyCollaborationWorkspacesResponse(resp *http.Response) (res *CollaborationWorkspaceList, _ error) {
+func decodeListMyCollaborationsResponse(resp *http.Response) (res *CollaborationList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -10736,7 +10736,7 @@ func decodeListMyCollaborationWorkspacesResponse(resp *http.Response) (res *Coll
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response CollaborationWorkspaceList
+			var response CollaborationList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -13760,7 +13760,7 @@ func decodeRegisterResponse(resp *http.Response) (res RegisterRes, _ error) {
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeRemoveCollaborationWorkspaceMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeRemoveCollaborationMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -13801,7 +13801,7 @@ func decodeRemoveCollaborationWorkspaceMemberResponse(resp *http.Response) (res 
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeRemoveCurrentCollaborationWorkspaceMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeRemoveCurrentCollaborationMemberResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14425,7 +14425,7 @@ func decodeSavePermissionActionBatchTemplateResponse(resp *http.Response) (res *
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCollaborationWorkspaceActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCollaborationActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14466,7 +14466,7 @@ func decodeSetCollaborationWorkspaceActionsResponse(resp *http.Response) (res *M
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCollaborationMenusResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14507,7 +14507,7 @@ func decodeSetCollaborationWorkspaceMenusResponse(resp *http.Response) (res *Mut
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
+func decodeSetCollaborationPackagesResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14548,7 +14548,7 @@ func decodeSetCollaborationWorkspacePackagesResponse(resp *http.Response) (res *
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCurrentCollaborationBoundaryRoleActionsResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14589,7 +14589,7 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp *htt
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCurrentCollaborationBoundaryRoleMenusResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14630,7 +14630,7 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp *http.
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCurrentCollaborationBoundaryRolePackagesResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14671,7 +14671,7 @@ func decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp *ht
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetCurrentCollaborationWorkspaceMemberRolesResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeSetCurrentCollaborationMemberRolesResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14794,7 +14794,7 @@ func decodeSetFeaturePackageChildrenResponse(resp *http.Response) (res *FeatureP
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeSetFeaturePackageCollaborationWorkspacesResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
+func decodeSetFeaturePackageCollaborationsResponse(resp *http.Response) (res *FeaturePackageMutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -15915,7 +15915,7 @@ func decodeUpdateApiEndpointContextScopeResponse(resp *http.Response) (res Updat
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateCollaborationWorkspaceResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateCollaborationResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -15956,7 +15956,7 @@ func decodeUpdateCollaborationWorkspaceResponse(resp *http.Response) (res *Mutat
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateCollaborationWorkspaceMemberRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateCollaborationMemberRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -15997,7 +15997,7 @@ func decodeUpdateCollaborationWorkspaceMemberRoleResponse(resp *http.Response) (
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateCurrentCollaborationBoundaryRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -16038,7 +16038,7 @@ func decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp *http.Re
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
+func decodeUpdateCurrentCollaborationMemberRoleResponse(resp *http.Response) (res *MutationResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.

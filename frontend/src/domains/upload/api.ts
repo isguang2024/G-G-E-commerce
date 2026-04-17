@@ -2,8 +2,6 @@ import { v5Client, unwrap } from '@/domains/governance/api/_shared'
 import type { components } from '@/api/v5/schema'
 import {
   getCurrentAuthWorkspaceId,
-  getCurrentCollaborationWorkspaceId,
-  getCurrentContextMode,
   getCurrentRuntimeBackendEntryURL,
   getHttpAccessToken
 } from '@/utils/http/request-context'
@@ -89,13 +87,6 @@ function buildUploadHeaders(): Headers {
   const authWorkspaceID = getCurrentAuthWorkspaceId()
   if (authWorkspaceID) {
     headers.set('X-Auth-Workspace-Id', authWorkspaceID)
-  }
-
-  if (getCurrentContextMode() === 'collaboration') {
-    const collaborationWorkspaceID = getCurrentCollaborationWorkspaceId()
-    if (collaborationWorkspaceID) {
-      headers.set('X-Collaboration-Workspace-Id', collaborationWorkspaceID)
-    }
   }
 
   return headers

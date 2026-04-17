@@ -108,27 +108,27 @@
   import { useRouter } from 'vue-router'
   import { ElButton, ElProgress } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useCollaborationStore } from '@/store/modules/collaboration'
   import { useUserStore } from '@/domains/auth/store'
   import { fetchAuditLogStats } from '@/domains/governance/api/observability'
 
   defineOptions({ name: 'Console' })
 
   const router = useRouter()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const userStore = useUserStore()
   const {
     currentContextMode,
-    currentCollaborationWorkspace,
+    currentCollaboration,
     currentAuthWorkspace,
-    collaborationWorkspaceList
-  } = storeToRefs(collaborationWorkspaceStore)
+    collaborationList
+  } = storeToRefs(collaborationStore)
 
   const heroMetrics = computed(() => [
-    { label: '协作空间数量', value: collaborationWorkspaceList.value.length || 0 },
+    { label: '协作空间数量', value: collaborationList.value.length || 0 },
     {
       label: '当前协作空间视图',
-      value: currentCollaborationWorkspace.value?.name || '未启用协作空间视图'
+      value: currentCollaboration.value?.name || '未启用协作空间视图'
     },
     {
       label: '授权工作空间',
@@ -142,7 +142,7 @@
   const currentScopeName = computed(() =>
     currentContextMode.value === 'personal'
       ? currentAuthWorkspace.value?.name || '个人空间'
-      : currentCollaborationWorkspace.value?.name ||
+      : currentCollaboration.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未选择协作空间'
   )
@@ -175,17 +175,17 @@
           {
             title: '协作空间成员',
             text: '先确认当前协作空间成员、角色和菜单边界是否生效。',
-            path: '/collaboration-workspace/members'
+            path: '/collaboration/members'
           },
           {
             title: '协作空间角色边界',
             text: '统一查看协作空间角色、功能包、菜单和功能权限。',
-            path: '/collaboration-workspace/roles'
+            path: '/collaboration/roles'
           },
           {
             title: '协作空间总览',
             text: '检查协作空间资料、功能包和成员入口是否可用。',
-            path: '/collaboration-workspace/workspaces'
+            path: '/collaboration/workspaces'
           }
         ]
   )

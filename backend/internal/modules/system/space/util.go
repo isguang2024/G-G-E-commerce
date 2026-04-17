@@ -21,7 +21,7 @@ const (
 	requestRealHostHeader        = "X-Real-Host"
 	spaceAccessModeAll           = "all"
 	spaceAccessModePersonal      = "personal_workspace_admin"
-	spaceAccessModeCollaboration = "collaboration_workspace_admin"
+	spaceAccessModeCollaboration = "collaboration_admin"
 	spaceAccessModeRoleCodes     = "role_codes"
 	spaceModeSingle              = "single"
 	spaceModeMulti               = "multi"
@@ -126,7 +126,7 @@ func ResolveMenuSpaceKey(db *gorm.DB, c *gin.Context) string {
 	}
 	appKey := currentContextAppKey(c)
 	userID := currentContextUserID(c)
-	collaborationWorkspaceID := currentContextCollaborationWorkspaceID(c)
+	collaborationWorkspaceID := ResolveContextCollaborationWorkspaceID(db, c)
 	key, _, err := ResolveCurrentMenuSpaceKey(db, appKey, RequestHost(c), RequestMenuSpaceKey(c), userID, collaborationWorkspaceID)
 	if err == nil && strings.TrimSpace(key) != "" {
 		return key
@@ -263,6 +263,61 @@ func currentContextCollaborationWorkspaceID(c *gin.Context) *uuid.UUID {
 	return &id
 }
 
+func currentContextAuthWorkspaceID(c *gin.Context) *uuid.UUID {
+	if c == nil {
+		return nil
+	}
+	raw, ok := c.Get("auth_workspace_id")
+	if !ok {
+		return nil
+	}
+	value, ok := raw.(string)
+	if !ok || strings.TrimSpace(value) == "" {
+		return nil
+	}
+	id, err := uuid.Parse(strings.TrimSpace(value))
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
+func currentContextAuthWorkspaceType(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	raw, ok := c.Get("auth_workspace_type")
+	if !ok {
+		return ""
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(value)
+}
+
+// ResolveContextCollaborationWorkspaceID 优先根据 canonical auth workspace 解析当前协作空间，
+// 仅在旧链路尚未完全下线时回退到 collaboration_workspace_id。
+func ResolveContextCollaborationWorkspaceID(db *gorm.DB, c *gin.Context) *uuid.UUID {
+	if c == nil {
+		return nil
+	}
+	if db != nil && currentContextAuthWorkspaceType(c) == models.WorkspaceTypeCollaboration {
+		if workspaceID := currentContextAuthWorkspaceID(c); workspaceID != nil {
+			var workspace models.Workspace
+			if err := db.Select("collaboration_workspace_id").
+				Where("id = ? AND workspace_type = ? AND deleted_at IS NULL", *workspaceID, models.WorkspaceTypeCollaboration).
+				First(&workspace).Error; err == nil {
+				if workspace.CollaborationWorkspaceID != nil && *workspace.CollaborationWorkspaceID != uuid.Nil {
+					return workspace.CollaborationWorkspaceID
+				}
+			}
+		}
+	}
+	return currentContextCollaborationWorkspaceID(c)
+}
+
 func ExtractSpaceAccessProfile(meta models.MetaJSON) SpaceAccessProfile {
 	mode := strings.TrimSpace(toMetaString(meta, "access_mode", "accessMode"))
 	switch mode {
@@ -337,7 +392,7 @@ func hasCollaborationWorkspaceAdminRole(db *gorm.DB, userID uuid.UUID, collabora
 	}
 	return workspacerolebinding.HasCollaborationWorkspaceRoleCodesByUser(
 		db, *collaborationWorkspaceID, userID,
-		[]string{"collaboration_workspace_admin"}, true,
+		[]string{"collaboration_admin"}, true,
 	)
 }
 

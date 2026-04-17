@@ -60,7 +60,7 @@ function inferRuntimeAppKeyByPath(path: string, runtimeAppKey?: string): string 
     normalizedPath.startsWith('/dashboard/') ||
     normalizedPath.startsWith('/system/') ||
     normalizedPath.startsWith('/workspace/') ||
-    normalizedPath.startsWith('/collaboration-workspace/')
+    normalizedPath.startsWith('/collaboration/')
   ) {
     return 'platform-admin'
   }

@@ -26,7 +26,9 @@ function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxIte
     read_at: item?.read_at || '',
     done_at: item?.done_at || '',
     last_action_at: item?.last_action_at || '',
-    recipient_collaboration_workspace_id: item?.recipient_collaboration_workspace_id || '',
+    recipient_collaboration_workspace_id: item?.recipient_workspace_id || '',
+    recipient_scope_type: item?.recipient_scope_type || '',
+    recipient_scope_id: item?.recipient_scope_id || '',
     title: item?.title || '',
     summary: item?.summary || '',
     content: item?.content || '',
@@ -43,7 +45,9 @@ function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxIte
     sender_service_key: item?.sender_service_key || '',
     audience_type: item?.audience_type || '',
     audience_scope: item?.audience_scope || '',
-    target_collaboration_workspace_id: item?.target_collaboration_workspace_id || '',
+    target_scope_type: item?.target_scope_type || '',
+    target_scope_id: item?.target_scope_id || '',
+    target_collaboration_workspace_id: item?.target_workspace_id || '',
     published_at: item?.published_at || '',
     expired_at: item?.expired_at || '',
     created_at: item?.created_at || '',
@@ -64,20 +68,20 @@ function normalizeDispatchOptions(
   item: V5DispatchOptions | undefined
 ): Api.Message.DispatchOptions {
   return {
-    sender_scope: item?.sender_scope || 'personal',
-    current_collaboration_workspace_id: item?.current_collaboration_workspace_id || '',
-    current_collaboration_workspace_name: item?.current_collaboration_workspace_name || '',
+    sender_scope: item?.sender_scope || 'global',
+    current_collaboration_workspace_id: item?.current_workspace_id || '',
+    current_collaboration_workspace_name: item?.current_workspace_name || '',
     sender_options: Array.isArray(item?.sender_options) ? item.sender_options : [],
     default_sender_id: item?.default_sender_id || '',
     audience_options: Array.isArray(item?.audience_options) ? item.audience_options : [],
     template_options: (Array.isArray(item?.template_options)
       ? item.template_options
       : []) as Api.Message.DispatchTemplateOption[],
-    collaboration_workspaces: Array.isArray(item?.collaboration_workspaces)
-      ? item.collaboration_workspaces
+    collaboration_workspaces: Array.isArray(item?.collaborations)
+      ? item.collaborations
       : [],
-    collaborationWorkspaces: Array.isArray(item?.collaboration_workspaces)
-      ? item.collaboration_workspaces
+    collaborationWorkspaces: Array.isArray(item?.collaborations)
+      ? item.collaborations
       : [],
     users: Array.isArray(item?.users) ? item.users : [],
     recipient_groups: Array.isArray(item?.recipient_groups) ? item.recipient_groups : [],
@@ -107,9 +111,10 @@ function normalizeMessageTemplateItem(
     name: item?.name || '',
     description: item?.description || '',
     message_type: (item?.message_type || 'notice') as Api.Message.BoxType,
-    owner_scope: item?.owner_scope || 'personal',
-    owner_collaboration_workspace_id: item?.owner_collaboration_workspace_id || '',
-    owner_collaboration_workspace_name: item?.owner_collaboration_workspace_name || '',
+    owner_scope: item?.owner_scope || 'global',
+    owner_scope_id: item?.owner_scope_id || '',
+    owner_collaboration_workspace_id: item?.owner_workspace_id || '',
+    owner_collaboration_workspace_name: item?.owner_workspace_name || '',
     audience_type: item?.audience_type || 'all_users',
     title_template: item?.title_template || '',
     summary_template: item?.summary_template || '',
@@ -127,7 +132,7 @@ function normalizeMessageSenderItem(
 ): Api.Message.MessageSenderItem {
   return {
     id: item?.id || '',
-    scope_type: item?.scope_type || 'personal',
+    scope_type: item?.scope_type || 'global',
     scope_id: item?.scope_id || '',
     name: item?.name || '',
     description: item?.description || '',
@@ -146,7 +151,7 @@ function normalizeMessageRecipientGroupItem(
 ): Api.Message.MessageRecipientGroupItem {
   return {
     id: item?.id || '',
-    scope_type: item?.scope_type || 'personal',
+    scope_type: item?.scope_type || 'global',
     scope_id: item?.scope_id || '',
     name: item?.name || '',
     description: item?.description || '',
@@ -171,10 +176,12 @@ function normalizeDispatchRecordItem(
     content: item?.content || '',
     message_type: (item?.message_type || 'notice') as Api.Message.BoxType,
     audience_type: item?.audience_type || 'all_users',
-    scope_type: item?.scope_type || 'personal',
+    scope_type: item?.scope_type || 'global',
     scope_id: item?.scope_id || '',
-    target_collaboration_workspace_id: item?.target_collaboration_workspace_id || '',
-    target_collaboration_workspace_name: item?.target_collaboration_workspace_name || '',
+    target_scope_type: item?.target_scope_type || '',
+    target_scope_id: item?.target_scope_id || '',
+    target_collaboration_workspace_id: item?.target_workspace_id || '',
+    target_collaboration_workspace_name: item?.target_workspace_name || '',
     sender_name: item?.sender_name || '',
     template_name: item?.template_name || '',
     priority: item?.priority || '',
@@ -262,7 +269,7 @@ export async function fetchDispatchMessage(
     template_key: params.template_key,
     message_type: params.message_type,
     audience_type: params.audience_type,
-    target_collaboration_workspace_ids: params.target_collaboration_workspace_ids,
+    target_workspace_ids: params.target_collaboration_workspace_ids,
     target_user_ids: params.target_user_ids,
     target_group_ids: params.target_group_ids,
     title: params.title,
@@ -432,7 +439,7 @@ export async function fetchCreateMessageRecipientGroup(
     targets: (params.targets || []).map((item) => ({
       target_type: item.target_type,
       user_id: item.user_id,
-      collaboration_workspace_id: item.collaboration_workspace_id,
+      workspace_id: (item as any).workspace_id || item.collaboration_workspace_id,
       role_code: item.role_code,
       package_key: item.package_key,
       sort_order: item.sort_order,
@@ -457,7 +464,7 @@ export async function fetchUpdateMessageRecipientGroup(
     targets: (params.targets || []).map((item) => ({
       target_type: item.target_type,
       user_id: item.user_id,
-      collaboration_workspace_id: item.collaboration_workspace_id,
+      workspace_id: (item as any).workspace_id || item.collaboration_workspace_id,
       role_code: item.role_code,
       package_key: item.package_key,
       sort_order: item.sort_order,

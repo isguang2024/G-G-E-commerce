@@ -1,7 +1,7 @@
 # domains/workspace/schemas.yaml
 components:
   schemas:
-    CollaborationWorkspaceItem:
+    CollaborationItem:
       type: object
       required:
         - id
@@ -25,19 +25,19 @@ components:
         status: {type: string}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
-    CollaborationWorkspaceList:
+    CollaborationList:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/CollaborationWorkspaceItem'}
+          items: {$ref: '#/components/schemas/CollaborationItem'}
         total: {type: integer}
-    CollaborationWorkspaceMemberItem:
+    CollaborationMemberItem:
       type: object
       required:
         - id
-        - collaboration_workspace_id
+        - workspace_id
         - user_id
         - role_code
         - status
@@ -46,7 +46,7 @@ components:
         - updated_at
       properties:
         id: {type: string, format: uuid}
-        collaboration_workspace_id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
         user_id: {type: string, format: uuid}
         role_code: {type: string}
         role_id: {type: string, format: uuid, nullable: true}
@@ -55,15 +55,15 @@ components:
         invited_by: {type: string, format: uuid, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
-    CollaborationWorkspaceMemberList:
+    CollaborationMemberList:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/CollaborationWorkspaceMemberItem'}
+          items: {$ref: '#/components/schemas/CollaborationMemberItem'}
         total: {type: integer}
-    CollaborationWorkspaceMemberRolesResponse:
+    CollaborationMemberRolesResponse:
       type: object
       required: [role_ids, roles]
       properties:
@@ -74,7 +74,7 @@ components:
           type: array
           items:
             $ref: '../../components/common.yaml#/components/schemas/UserRoleRef'
-    CollaborationWorkspaceRoleItem:
+    CollaborationRoleItem:
       type: object
       required:
         - id
@@ -83,12 +83,13 @@ components:
         - description
         - status
         - is_system
-        - collaboration_workspace_id
+        - scope_type
         - is_global
         - created_at
       properties:
         id: {type: string, format: uuid}
-        collaboration_workspace_id: {type: string, format: uuid, nullable: true}
+        scope_type: {type: string}
+        scope_id: {type: string, format: uuid, nullable: true}
         code: {type: string}
         name: {type: string}
         description: {type: string}
@@ -98,15 +99,15 @@ components:
         sort_order: {type: integer, format: int64}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
-    CollaborationWorkspaceRoleList:
+    CollaborationRoleList:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/CollaborationWorkspaceRoleItem'}
+          items: {$ref: '#/components/schemas/CollaborationRoleItem'}
         total: {type: integer, format: int64}
-    CollaborationWorkspaceBoundaryRolePackagesResponse:
+    CollaborationBoundaryRolePackagesResponse:
       type: object
       required: [package_ids, packages, inherited]
       properties:
@@ -118,14 +119,14 @@ components:
           items:
             $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
         inherited: {type: boolean}
-    CollaborationWorkspaceMenusResponse:
+    CollaborationMenusResponse:
       type: object
       required: [menu_ids]
       properties:
         menu_ids:
           type: array
           items: {type: string, format: uuid}
-    CollaborationWorkspaceMenuOriginsResponse:
+    CollaborationMenuOriginsResponse:
       type: object
       required: [derived_menu_ids, derived_sources, blocked_menu_ids]
       properties:
@@ -139,7 +140,7 @@ components:
         blocked_menu_ids:
           type: array
           items: {type: string, format: uuid}
-    CollaborationWorkspaceActionsResponse:
+    CollaborationActionsResponse:
       type: object
       required: [action_ids, actions]
       properties:
@@ -150,7 +151,7 @@ components:
           type: array
           items:
             $ref: '../../components/common.yaml#/components/schemas/PermissionActionRef'
-    CollaborationWorkspaceActionOriginsResponse:
+    CollaborationActionOriginsResponse:
       type: object
       required: [derived_action_ids, derived_sources, blocked_action_ids]
       properties:
@@ -164,7 +165,7 @@ components:
         blocked_action_ids:
           type: array
           items: {type: string, format: uuid}
-    CollaborationWorkspaceSaveRequest:
+    CollaborationSaveRequest:
       type: object
       required:
       - name
@@ -186,7 +187,7 @@ components:
           items:
             type: string
             format: uuid
-    CollaborationWorkspaceMemberAddRequest:
+    CollaborationMemberAddRequest:
       type: object
       required:
       - user_id
@@ -196,14 +197,14 @@ components:
           format: uuid
         role_code:
           type: string
-    CollaborationWorkspaceMemberRoleRequest:
+    CollaborationMemberRoleRequest:
       type: object
       required:
       - role_code
       properties:
         role_code:
           type: string
-    CollaborationWorkspaceRoleSaveRequest:
+    CollaborationRoleSaveRequest:
       type: object
       required:
       - code

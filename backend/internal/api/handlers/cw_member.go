@@ -12,12 +12,12 @@ import (
 	"github.com/maben/backend/internal/modules/system/user"
 )
 
-// ─── GetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
+// ─── GetCurrentCollaborationMemberRoles ──────────────────────────────
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.CollaborationWorkspaceMemberRolesResponse, error) {
+func (h *cwAPIHandler) GetCurrentCollaborationMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationMemberRolesParams) (*gen.CollaborationMemberRolesResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceMemberRolesResponse{
+		return &gen.CollaborationMemberRolesResponse{
 			RoleIds: []uuid.UUID{},
 			Roles:   []gen.UserRoleRef{},
 		}, nil
@@ -39,15 +39,15 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.C
 		return nil, err
 	}
 	_ = targetMember // used for binding meta if needed
-	return &gen.CollaborationWorkspaceMemberRolesResponse{
+	return &gen.CollaborationMemberRolesResponse{
 		RoleIds: roleIDs,
 		Roles:   roleRefsFromModels(roles),
 	}, nil
 }
 
-// ─── SetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
+// ─── SetCurrentCollaborationMemberRoles ──────────────────────────────
 
-func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) SetCurrentCollaborationMemberRoles(ctx context.Context, req *gen.UUIDListRequest, params gen.SetCurrentCollaborationMemberRolesParams) (*gen.MutationResult, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
 		return nil, err
@@ -101,4 +101,5 @@ func (h *cwAPIHandler) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.C
 	}
 	return ok(), nil
 }
+
 

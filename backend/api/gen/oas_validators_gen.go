@@ -323,7 +323,7 @@ func (s *CleanupStaleRequest) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceActionOriginsResponse) Validate() error {
+func (s *CollaborationActionOriginsResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -385,7 +385,7 @@ func (s *CollaborationWorkspaceActionOriginsResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceActionsResponse) Validate() error {
+func (s *CollaborationActionsResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -419,7 +419,7 @@ func (s *CollaborationWorkspaceActionsResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Validate() error {
+func (s *CollaborationBoundaryRolePackagesResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -453,7 +453,7 @@ func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceList) Validate() error {
+func (s *CollaborationList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -476,7 +476,7 @@ func (s *CollaborationWorkspaceList) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceMemberList) Validate() error {
+func (s *CollaborationMemberList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -499,7 +499,7 @@ func (s *CollaborationWorkspaceMemberList) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceMemberRolesResponse) Validate() error {
+func (s *CollaborationMemberRolesResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -533,7 +533,7 @@ func (s *CollaborationWorkspaceMemberRolesResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceMenuOriginsResponse) Validate() error {
+func (s *CollaborationMenuOriginsResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -595,7 +595,7 @@ func (s *CollaborationWorkspaceMenuOriginsResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceMenusResponse) Validate() error {
+func (s *CollaborationMenusResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -618,7 +618,7 @@ func (s *CollaborationWorkspaceMenusResponse) Validate() error {
 	return nil
 }
 
-func (s *CollaborationWorkspaceRoleList) Validate() error {
+func (s *CollaborationRoleList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -1127,7 +1127,7 @@ func (s *FeaturePackageAssignmentResponse) Validate() error {
 	return nil
 }
 
-func (s *FeaturePackageCollaborationWorkspaceList) Validate() error {
+func (s *FeaturePackageCollaborationList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -1366,13 +1366,13 @@ func (s *FeaturePackageSnapshot) Validate() error {
 		})
 	}
 	if err := func() error {
-		if s.CollaborationWorkspaceIds == nil {
+		if s.WorkspaceIds == nil {
 			return errors.New("nil is invalid value")
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "collaboration_workspace_ids",
+			Name:  "workspace_ids",
 			Error: err,
 		})
 	}
@@ -2452,13 +2452,13 @@ func (s *MessageDispatchOptions) Validate() error {
 		})
 	}
 	if err := func() error {
-		if s.CollaborationWorkspaces == nil {
+		if s.Collaborations == nil {
 			return errors.New("nil is invalid value")
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "collaboration_workspaces",
+			Name:  "collaborations",
 			Error: err,
 		})
 	}
@@ -7141,7 +7141,7 @@ func (s *UserAssignRolesRequest) Validate() error {
 	return nil
 }
 
-func (s *UserCollaborationWorkspacesResponse) Validate() error {
+func (s *UserCollaborationsResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
@@ -7534,13 +7534,13 @@ func (s *UserPermissionDiagnosisResponse) Validate() error {
 		})
 	}
 	if err := func() error {
-		if s.CollaborationWorkspacePackages == nil {
+		if s.WorkspacePackages == nil {
 			return errors.New("nil is invalid value")
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "collaboration_workspace_packages",
+			Name:  "workspace_packages",
 			Error: err,
 		})
 	}

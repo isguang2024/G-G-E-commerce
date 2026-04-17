@@ -1,4 +1,4 @@
-﻿// auth.go: ogen Handler implementations for the /auth/* OpenAPI surface.
+// auth.go: ogen Handler implementations for the /auth/* OpenAPI surface.
 // First slice of the auth domain migration: login (public) + me (token).
 // The legacy gin handlers in internal/modules/system/auth/handler.go remain
 // behind /api/v1 until every operation here is mounted via the ogen bridge.
@@ -526,7 +526,7 @@ func (h *authAPIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error
 		}
 	}
 	var collaborationWorkspaceID uuid.UUID
-	if raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationWorkspaceID)); raw != "" {
+	if raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationID)); raw != "" {
 		if parsed, err := uuid.Parse(raw); err == nil {
 			collaborationWorkspaceID = parsed
 		}
@@ -597,8 +597,8 @@ func (h *authAPIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error
 		out.CurrentAuthWorkspaceType = gen.NewOptNilString(authWorkspaceType)
 	}
 	if collaborationWorkspaceID != uuid.Nil {
-		out.CollaborationWorkspaceID = gen.NewOptNilUUID(collaborationWorkspaceID)
-		out.CurrentCollaborationWorkspaceID = gen.NewOptNilUUID(collaborationWorkspaceID)
+		out.WorkspaceID = gen.NewOptNilUUID(collaborationWorkspaceID)
+		out.CurrentWorkspaceID = gen.NewOptNilUUID(collaborationWorkspaceID)
 	}
 	return out, nil
 }
@@ -617,7 +617,7 @@ func requestPathFromCtx(ctx context.Context) string {
 }
 
 func collaborationWorkspaceIDFromContext(ctx context.Context) (*uuid.UUID, bool) {
-	raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationWorkspaceID))
+	raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationID))
 	if raw == "" {
 		return nil, false
 	}
@@ -747,4 +747,5 @@ func errorCodeOf(err error) string {
 func strconvItoa(n int) string {
 	return strconv.Itoa(n)
 }
+
 

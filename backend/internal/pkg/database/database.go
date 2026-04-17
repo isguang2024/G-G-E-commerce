@@ -139,12 +139,16 @@ func AutoMigrate() error {
 		&models.RoleDataPermission{},
 		&models.CollaborationWorkspaceBlockedMenu{},
 		&models.CollaborationWorkspaceBlockedAction{},
+		&models.WorkspaceBlockedMenu{},
+		&models.WorkspaceBlockedAction{},
 		&models.UserActionPermission{},
 		&models.UserHiddenMenu{},
 		&models.PersonalWorkspaceAccessSnapshot{},
 		&models.PersonalWorkspaceRoleAccessSnapshot{},
 		&models.CollaborationWorkspaceAccessSnapshot{},
 		&models.CollaborationWorkspaceRoleAccessSnapshot{},
+		&models.WorkspaceAccessSnapshot{},
+		&models.WorkspaceRoleAccessSnapshot{},
 		&models.APIEndpointCategory{},
 		&models.APIEndpoint{},
 		&models.APIEndpointPermissionBinding{},
@@ -161,6 +165,7 @@ func AutoMigrate() error {
 		&models.Workspace{},
 		&models.WorkspaceMember{},
 		&models.WorkspaceRoleBinding{},
+		&models.RoleScope{},
 		&models.WorkspaceFeaturePackage{},
 		&models.APIKey{},
 		&models.MediaAsset{},
@@ -280,6 +285,22 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceRoleBindingIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceRoleBindingIndexName + " ON workspace_role_bindings (workspace_id, user_id, role_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	roleScopeRoleIndexName := "idx_role_scopes_role_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleScopeRoleIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleScopeRoleIndexName + " ON role_scopes (role_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	roleScopeLookupIndexName := "idx_role_scopes_scope_lookup"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleScopeLookupIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + roleScopeLookupIndexName + " ON role_scopes (scope_type, scope_id) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -590,6 +611,28 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceBlockedActionIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceBlockedActionIndexName + " ON collaboration_workspace_blocked_actions (app_key, collaboration_workspace_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceBlockedMenuIndexName := "idx_workspace_blocked_menus_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS " + workspaceBlockedMenuIndexName).Error; err != nil {
+		return err
+	}
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceBlockedMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceBlockedMenuIndexName + " ON workspace_blocked_menus (app_key, workspace_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceBlockedActionIndexName := "idx_workspace_blocked_actions_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS " + workspaceBlockedActionIndexName).Error; err != nil {
+		return err
+	}
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceBlockedActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceBlockedActionIndexName + " ON workspace_blocked_actions (app_key, workspace_id, action_id)").Error; err != nil {
 			return err
 		}
 	}

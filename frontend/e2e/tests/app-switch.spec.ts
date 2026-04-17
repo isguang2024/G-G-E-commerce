@@ -204,8 +204,8 @@ test('已登录后切换 App 会刷新菜单并更新上下文', async ({ page }
             roles: ['admin'],
             current_auth_workspace_id: 'ws-personal',
             current_auth_workspace_type: 'personal',
-            current_collaboration_workspace_id: '',
-            collaboration_workspace_id: ''
+            current_workspace_id: '',
+            workspace_id: ''
           }
         })
       )
@@ -224,8 +224,8 @@ test('已登录后切换 App 会刷新菜单并更新上下文', async ({ page }
           roles: [{ code: 'admin' }],
           current_auth_workspace_id: 'ws-personal',
           current_auth_workspace_type: 'personal',
-          current_collaboration_workspace_id: '',
-          collaboration_workspace_id: ''
+          current_workspace_id: '',
+          workspace_id: ''
         })
       )
       return
@@ -302,7 +302,7 @@ test('已登录后切换 App 会刷新菜单并更新上下文', async ({ page }
       return
     }
 
-    if (url.pathname === '/api/v1/collaboration-workspaces/mine') {
+    if (url.pathname === '/api/v1/workspaces/collaboration/mine') {
       await route.fulfill(json({ records: [], total: 0 }))
       return
     }

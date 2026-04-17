@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"strings"
@@ -33,8 +33,8 @@ func permissionKeySegments(permissionKey string) (string, string) {
 	return strings.Join(filtered[:len(filtered)-1], "_"), filtered[len(filtered)-1]
 }
 
-func collaborationWorkspaceItemFromModel(cw user.CollaborationWorkspace) gen.CollaborationWorkspaceItem {
-	return gen.CollaborationWorkspaceItem{
+func collaborationWorkspaceItemFromModel(cw user.CollaborationWorkspace) gen.CollaborationItem {
+	return gen.CollaborationItem{
 		ID:         cw.ID,
 		Name:       cw.Name,
 		Remark:     cw.Remark,
@@ -48,24 +48,24 @@ func collaborationWorkspaceItemFromModel(cw user.CollaborationWorkspace) gen.Col
 	}
 }
 
-func collaborationWorkspaceItemsFromModels(items []user.CollaborationWorkspace) []gen.CollaborationWorkspaceItem {
-	out := make([]gen.CollaborationWorkspaceItem, 0, len(items))
+func collaborationWorkspaceItemsFromModels(items []user.CollaborationWorkspace) []gen.CollaborationItem {
+	out := make([]gen.CollaborationItem, 0, len(items))
 	for i := range items {
 		out = append(out, collaborationWorkspaceItemFromModel(items[i]))
 	}
 	return out
 }
 
-func collaborationWorkspaceMemberItemFromModel(member user.CollaborationWorkspaceMember) gen.CollaborationWorkspaceMemberItem {
-	item := gen.CollaborationWorkspaceMemberItem{
-		ID:                       member.ID,
-		CollaborationWorkspaceID: member.CollaborationWorkspaceID,
-		UserID:                   member.UserID,
-		RoleCode:                 member.RoleCode,
-		Status:                   member.Status,
-		JoinedAt:                 member.JoinedAt,
-		CreatedAt:                member.CreatedAt,
-		UpdatedAt:                member.UpdatedAt,
+func collaborationWorkspaceMemberItemFromModel(member user.CollaborationWorkspaceMember) gen.CollaborationMemberItem {
+	item := gen.CollaborationMemberItem{
+		ID:          member.ID,
+		WorkspaceID: member.CollaborationWorkspaceID,
+		UserID:      member.UserID,
+		RoleCode:    member.RoleCode,
+		Status:      member.Status,
+		JoinedAt:    member.JoinedAt,
+		CreatedAt:   member.CreatedAt,
+		UpdatedAt:   member.UpdatedAt,
 	}
 	if member.RoleID != nil {
 		item.RoleID = gen.NewOptNilUUID(*member.RoleID)
@@ -76,8 +76,8 @@ func collaborationWorkspaceMemberItemFromModel(member user.CollaborationWorkspac
 	return item
 }
 
-func collaborationWorkspaceMemberItemsFromModels(items []user.CollaborationWorkspaceMember) []gen.CollaborationWorkspaceMemberItem {
-	out := make([]gen.CollaborationWorkspaceMemberItem, 0, len(items))
+func collaborationWorkspaceMemberItemsFromModels(items []user.CollaborationWorkspaceMember) []gen.CollaborationMemberItem {
+	out := make([]gen.CollaborationMemberItem, 0, len(items))
 	for i := range items {
 		out = append(out, collaborationWorkspaceMemberItemFromModel(items[i]))
 	}
@@ -324,8 +324,8 @@ func riskAuditSummaryFromMap(summary models.MetaJSON) gen.RiskAuditSummary {
 	if value := metaInt(summary, "package_count"); value > 0 {
 		out.PackageCount = gen.NewOptInt(value)
 	}
-	if value := metaInt(summary, "collaboration_workspace_count"); value > 0 {
-		out.CollaborationWorkspaceCount = gen.NewOptInt(value)
+	if value := metaInt(summary, "workspace_count", "collaboration_workspace_count"); value > 0 {
+		out.WorkspaceCount = gen.NewOptInt(value)
 	}
 	return out
 }
@@ -338,27 +338,28 @@ func riskAuditItemsFromModels(items []user.RiskOperationAudit) []gen.RiskAuditIt
 	return out
 }
 
-func collaborationWorkspaceRoleItemFromModel(item user.Role) gen.CollaborationWorkspaceRoleItem {
-	out := gen.CollaborationWorkspaceRoleItem{
+func collaborationWorkspaceRoleItemFromModel(item user.Role) gen.CollaborationRoleItem {
+	out := gen.CollaborationRoleItem{
 		ID:          item.ID,
+		ScopeType:   item.ScopeType,
 		Code:        item.Code,
 		Name:        item.Name,
 		Description: item.Description,
 		Status:      item.Status,
 		IsSystem:    item.IsSystem,
-		IsGlobal:    item.CollaborationWorkspaceID == nil,
+		IsGlobal:    item.ScopeType == models.ScopeTypeGlobal,
 		SortOrder:   gen.NewOptInt64(int64(item.SortOrder)),
 		CreatedAt:   item.CreatedAt,
 		UpdatedAt:   gen.NewOptDateTime(item.UpdatedAt),
 	}
-	if item.CollaborationWorkspaceID != nil {
-		out.CollaborationWorkspaceID = gen.NewNilUUID(*item.CollaborationWorkspaceID)
+	if item.ScopeID != nil {
+		out.ScopeID = gen.NewOptNilUUID(*item.ScopeID)
 	}
 	return out
 }
 
-func collaborationWorkspaceRoleItemsFromModels(items []user.Role) []gen.CollaborationWorkspaceRoleItem {
-	out := make([]gen.CollaborationWorkspaceRoleItem, 0, len(items))
+func collaborationWorkspaceRoleItemsFromModels(items []user.Role) []gen.CollaborationRoleItem {
+	out := make([]gen.CollaborationRoleItem, 0, len(items))
 	for i := range items {
 		out = append(out, collaborationWorkspaceRoleItemFromModel(items[i]))
 	}
@@ -436,7 +437,7 @@ func permissionActionImpactPreviewFromModel(preview *permissionpkg.PermissionImp
 		PageCount:                   preview.PageCount,
 		PackageCount:                preview.PackageCount,
 		RoleCount:                   preview.RoleCount,
-		CollaborationWorkspaceCount: preview.CollaborationWorkspaceCount,
+		WorkspaceCount:              preview.CollaborationWorkspaceCount,
 		UserCount:                   preview.UserCount,
 	}
 }
@@ -456,7 +457,7 @@ func featurePackageSnapshotFromModel(snapshot models.MetaJSON) gen.FeaturePackag
 		ChildPackageIds:           metaUUIDSlice(snapshot, "child_package_ids"),
 		ActionIds:                 metaUUIDSlice(snapshot, "action_ids"),
 		MenuIds:                   metaUUIDSlice(snapshot, "menu_ids"),
-		CollaborationWorkspaceIds: metaUUIDSlice(snapshot, "collaboration_workspace_ids"),
+		WorkspaceIds:               metaUUIDSlice(snapshot, "workspace_ids", "collaboration_workspace_ids"),
 		SnapshotCreatedAt:         metaDateTime(snapshot, "snapshot_created_at", "snapshot_createdAt"),
 	}
 }
@@ -602,3 +603,4 @@ func featurePackageMenuItemsFromModels(items []user.Menu) []gen.FeaturePackageMe
 	}
 	return out
 }
+

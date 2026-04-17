@@ -10,7 +10,7 @@ import { resetRouterState, resetRouterStateNow } from '@/domains/navigation/runt
 import { RoutesAlias } from '@/router/routesAlias'
 import { refreshUserMenus as refreshRuntimeUserMenus } from '@/domains/navigation/runtime/navigation'
 import { ACTIVE_APP_SCOPE_STORAGE_KEY } from '@/domains/app-runtime/app-scope'
-import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+import { useCollaborationStore } from '@/store/modules/collaboration'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 import { logger } from '@/utils/logger'
 
@@ -27,7 +27,7 @@ const RUNTIME_STORE_IDS = [
   'appContextStore',
   'menuSpaceStore',
   'workspaceStore',
-  'collaborationWorkspaceStore',
+  'collaborationStore',
   'menuStore',
   'worktabStore'
 ]
@@ -73,7 +73,7 @@ function resetInMemoryRuntimeState(): void {
   useMenuStore().setHomePath('')
   useWorktabStore().clearAll()
   useWorkspaceStore().clearWorkspaceContext()
-  useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
+  useCollaborationStore().clearCollaborationContext()
   useMenuSpaceStore().clearActiveSpaceKey()
   useAppContextStore().clearAppContext()
 }

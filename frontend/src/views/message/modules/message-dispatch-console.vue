@@ -86,8 +86,8 @@
                 <div class="field-hint">
                   {{
                     isCollaborationScope
-                      ? '仅展示当前协作空间创建的模板，协作空间页不会混入个人空间模板。'
-                      : '仅展示当前个人空间模板。'
+                      ? '仅展示当前协作空间创建的模板，协作空间页不会混入全局模板。'
+                      : '仅展示当前全局模板。'
                   }}
                 </div>
               </ElFormItem>
@@ -207,7 +207,7 @@
                 <div v-else class="message-manage-fixed-target">
                   <strong>{{
                     options.current_collaboration_workspace_name ||
-                    currentCollaborationWorkspaceName
+                    currentCollaborationName
                   }}</strong>
                   <span>协作空间上下文只允许向当前协作空间发送。</span>
                 </div>
@@ -215,7 +215,7 @@
                   {{
                     isCollaborationScope
                       ? '发送对象会自动绑定到当前协作空间，无需再额外选择。'
-                      : '个人空间可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
+                      : '全局消息可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
                   }}
                 </div>
               </ElFormItem>
@@ -248,7 +248,7 @@
                   {{
                     isCollaborationScope
                       ? '协作空间侧只会列出当前协作空间成员。'
-                      : '个人空间侧可以直接按用户维度精确发送。'
+                      : '全局消息侧可以直接按用户维度精确发送。'
                   }}
                 </div>
               </ElFormItem>
@@ -290,7 +290,7 @@
                 <div class="field-hint">
                   {{
                     form.audience_type === 'role'
-                      ? '只会展开接收组里的角色规则，适合按个人空间角色或协作空间角色精准发送。'
+                      ? '只会展开接收组里的角色规则，适合按全局角色或协作空间角色精准发送。'
                       : form.audience_type === 'feature_package'
                         ? '只会展开接收组里的功能包规则，适合按有效功能包命中成员。'
                         : '接收组可混合配置指定用户、协作空间成员、协作空间管理员、角色和功能包规则。'
@@ -316,7 +316,7 @@
                 v-model="form.title"
                 maxlength="120"
                 show-word-limit
-                placeholder="例如：个人空间维护通知 / 协作空间待处理提醒"
+                placeholder="例如：全局维护通知 / 协作空间待处理提醒"
                 data-testid="send-field-title"
               />
             </ElFormItem>
@@ -522,7 +522,7 @@
   defineOptions({ name: 'MessageDispatchConsole' })
 
   const props = defineProps<{
-    scope: 'personal' | 'collaboration'
+    scope: 'global' | 'collaboration'
   }>()
 
   const router = useRouter()
@@ -601,11 +601,11 @@
     return applied
   }
   const {
-    collaborationWorkspaceStore,
+    collaborationStore,
     isCollaborationScope,
     skipCollaborationWorkspaceHeader,
-    currentCollaborationWorkspaceId,
-    currentCollaborationWorkspaceName,
+    currentCollaborationId,
+    currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
     ensureCollaborationWorkspaceContext,
@@ -613,7 +613,7 @@
   } = useMessageWorkspace(props.scope)
 
   const options = reactive<Api.Message.DispatchOptions>({
-    sender_scope: 'personal',
+    sender_scope: 'global',
     current_collaboration_workspace_id: '',
     current_collaboration_workspace_name: '',
     sender_options: [],
@@ -632,7 +632,7 @@
   })
 
   const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
-    sender_scope: isCollaborationScope.value ? 'collaboration' : 'personal',
+    sender_scope: isCollaborationScope.value ? 'collaboration' : 'global',
     current_collaboration_workspace_id: '',
     current_collaboration_workspace_name: '',
     sender_options: [],
@@ -646,7 +646,7 @@
     feature_packages: [],
     default_message_type: 'notice',
     default_audience_type: isCollaborationScope.value
-      ? 'collaboration_workspace_users'
+      ? 'collaboration_users'
       : 'all_users',
     default_priority: 'normal',
     supports_external_link: true
@@ -713,7 +713,7 @@
   })
 
   const effectiveCollaborationWorkspaceName = computed(
-    () => options.current_collaboration_workspace_name || currentCollaborationWorkspaceName.value
+    () => options.current_collaboration_workspace_name || currentCollaborationName.value
   )
 
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息发送' : '消息发送'))
@@ -747,7 +747,7 @@
     (options.template_options || []).filter((item) =>
       isCollaborationScope.value
         ? item.owner_scope === 'collaboration'
-        : item.owner_scope === 'personal'
+        : item.owner_scope === 'global'
     )
   )
 
@@ -763,7 +763,7 @@
     if (activeSender.value?.description) return activeSender.value.description
     return isCollaborationScope.value
       ? '协作空间默认发送人为“协作空间”，也可以改成更具体的协作空间身份。'
-      : '个人空间默认发送人为“个人空间”，也可以改成更具体的个人身份。'
+      : '全局默认发送人为“全局消息中心”，也可以改成更具体的全局身份。'
   })
 
   const activeAudienceDescription = computed(
@@ -792,11 +792,11 @@
     if (isCollaborationScope.value) {
       return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveCollaborationWorkspaceName.value}。`
     }
-    return '当前以个人空间身份发送，可按所有用户、协作空间管理员或指定协作空间成员分发。'
+    return '当前以全局身份发送，可按所有用户、协作空间管理员或指定协作空间成员分发。'
   })
 
   const senderScopeBadge = computed(() =>
-    isCollaborationScope.value ? '协作空间发信' : '个人空间发信'
+    isCollaborationScope.value ? '协作空间发信' : '全局发信'
   )
 
   const showTargetCollaborationWorkspaces = computed(() => form.audience_type !== 'all_users')
@@ -979,7 +979,7 @@
   }
   const templateOptionLabel = (template: Api.Message.DispatchTemplateOption) => {
     if (isCollaborationScope.value) return `${template.name} · 协作空间模板`
-    return `${template.name} · 个人空间模板`
+    return `${template.name} · 全局模板`
   }
 
   const previewSummaryHtml = computed(() =>
@@ -997,7 +997,7 @@
     form.message_type = options.default_message_type || 'notice'
     form.audience_type =
       options.default_audience_type ||
-      (isCollaborationScope.value ? 'collaboration_workspace_users' : 'all_users')
+      (isCollaborationScope.value ? 'collaboration_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
     form.targetCollaborationWorkspaceIds =
       isCollaborationScope.value && options.current_collaboration_workspace_id
@@ -1032,8 +1032,8 @@
     try {
       ensureCollaborationWorkspaceContext()
       if (isCollaborationScope.value) {
-        await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-          preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
+        await collaborationStore.loadMyCollaborations({
+          preferredCollaborationId: currentCollaborationId.value || undefined
         })
       }
       Object.assign(options, createDefaultDispatchOptions())
@@ -1096,9 +1096,9 @@
   }
 
   const submitDispatch = async () => {
-    if (isCollaborationScope.value && !currentCollaborationWorkspaceId.value) {
-      await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-        preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
+    if (isCollaborationScope.value && !currentCollaborationId.value) {
+      await collaborationStore.loadMyCollaborations({
+        preferredCollaborationId: currentCollaborationId.value || undefined
       })
     }
 
@@ -1617,3 +1617,4 @@
     color: #b45309;
   }
 </style>
+

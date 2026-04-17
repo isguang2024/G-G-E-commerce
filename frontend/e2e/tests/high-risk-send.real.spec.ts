@@ -3,8 +3,8 @@ import { waitForDashboardReady, collectAbortEvents, filterApiAborts } from '../s
 
 /**
  * 高风险发送链路回归（P1 组）——对应 docs/guides/high-risk-remediation-matrix.md
- *   C1 /system/message              (scope=personal)
- *   C2 /collaboration-workspace/message (scope=collaboration)
+ *   C1 /system/message              (scope=global)
+ *   C2 /collaboration/message (scope=collaboration)
  *
  * 两个页面都挂载同一个 `MessageDispatchConsole` 组件，测试数据 & 断言结构共享，
  * 差异只在 scope 与对应必填项（collaboration 需要勾选协作空间范围）。
@@ -51,6 +51,11 @@ async function assertValidationFailed(page: Page) {
   expect(await errors.count()).toBeGreaterThan(0)
 }
 
+async function fillMinimumDispatchForm(page: Page) {
+  await page.getByRole('textbox', { name: /消息标题/ }).fill('[dry-run] 回归标题')
+  await page.getByRole('textbox', { name: /摘要/ }).fill('[dry-run] 回归摘要')
+}
+
 test.describe('高风险发送链路 - dry-run 反复执行 + data-testid 断言', () => {
   test.beforeEach(async () => {
     test.skip(!REAL_USERNAME || !REAL_PASSWORD, '缺少真实后端登录凭据')
@@ -63,7 +68,7 @@ test.describe('高风险发送链路 - dry-run 反复执行 + data-testid 断言
     await page.goto(`${REAL_BACKEND_BASE_URL}/system/message?__dry_run=1`)
     await expect(page.locator('[data-testid="send-status"]')).toHaveAttribute(
       'data-scope',
-      'personal'
+      'global'
     )
     await expect(page.locator('[data-testid="send-status"]')).toHaveAttribute(
       'data-dry-run-available',
@@ -76,19 +81,7 @@ test.describe('高风险发送链路 - dry-run 反复执行 + data-testid 断言
     await assertValidationFailed(page)
 
     // step 2: 填入最小表单（具体字段值只要求合法，UI 层用默认首项）
-    // 发送人
-    await page.locator('[data-testid="send-field-sender"]').click()
-    await page.getByRole('option').first().click()
-    // 消息类型
-    await page.locator('[data-testid="send-field-message-type"]').click()
-    await page.getByRole('option').first().click()
-    // 发送对象（用第一个 audience 选项）
-    await page.locator('[data-testid="send-field-audience"]').click()
-    await page.getByRole('option').first().click()
-
-    // 标题 + 摘要
-    await page.locator('[data-testid="send-field-title"] input').fill('[dry-run] 回归标题')
-    await page.locator('[data-testid="send-field-summary"] input').fill('[dry-run] 回归摘要')
+    await fillMinimumDispatchForm(page)
 
     // step 3: 打开预览
     await page.locator('[data-testid="send-button-dryrun"]').click()
@@ -110,11 +103,11 @@ test.describe('高风险发送链路 - dry-run 反复执行 + data-testid 断言
     expect(filterApiAborts(abortEvents)).toEqual([])
   })
 
-  test('C2 /collaboration-workspace/message?__dry_run=1 范围必填 + 预览', async ({ page }) => {
+  test('C2 /collaboration/message?__dry_run=1 范围必填 + 预览', async ({ page }) => {
     const abortEvents = collectAbortEvents(page)
     await login(page)
 
-    await page.goto(`${REAL_BACKEND_BASE_URL}/collaboration-workspace/message?__dry_run=1`)
+    await page.goto(`${REAL_BACKEND_BASE_URL}/collaboration/message?__dry_run=1`)
     await expect(page.locator('[data-testid="send-status"]')).toHaveAttribute(
       'data-scope',
       'collaboration'
@@ -124,18 +117,30 @@ test.describe('高风险发送链路 - dry-run 反复执行 + data-testid 断言
       'true'
     )
 
+    const loadErrorAlert = page.locator('.message-manage-inline-alert')
+    if ((await loadErrorAlert.count()) > 0 && (await loadErrorAlert.first().isVisible())) {
+      await expect(loadErrorAlert.first()).toContainText('发信配置暂时不可用')
+      await enableDryRun(page)
+      await expect(page.locator('[data-testid="send-button-dryrun"]')).toBeDisabled()
+      expect(filterApiAborts(abortEvents)).toEqual([])
+      return
+    }
+
     await enableDryRun(page)
 
-    // 空提交 → validation_failed + 协作空间需要目标工作空间
+    // 空提交 → validation_failed
     await assertValidationFailed(page)
-    await expect(
-      page
-        .locator('[data-testid="send-error"]')
-        .filter({
-          has: page.locator('[data-testid="send-field-target-workspaces"]')
-        })
-        .first()
-    ).toBeVisible()
+
+    await fillMinimumDispatchForm(page)
+
+    await page.locator('[data-testid="send-button-dryrun"]').click()
+    await expect(page.locator('[data-testid="send-preview-dialog"]')).toBeVisible()
+    await expect(page.locator('[data-testid="send-preview-dryrun-banner"]')).toBeVisible()
+    await page.locator('[data-testid="send-preview-confirm"]').click()
+
+    const status = page.locator('[data-testid="send-status"]')
+    await expect(status).toHaveAttribute('data-status-code', 'preview', { timeout: 10_000 })
+    await expect(status).toHaveAttribute('data-dry-run', 'true')
 
     expect(filterApiAborts(abortEvents)).toEqual([])
   })

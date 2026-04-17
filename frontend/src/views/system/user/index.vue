@@ -300,7 +300,7 @@
                 key: 'packages',
                 label: '功能包',
                 icon: 'ri:apps-2-line',
-                auth: 'feature_package.assign_collaboration_workspace'
+                auth: 'feature_package.assign_workspace'
               },
               {
                 key: 'menuBoundary',

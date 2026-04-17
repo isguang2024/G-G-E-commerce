@@ -20,7 +20,7 @@ components:
         - child_package_ids
         - action_ids
         - menu_ids
-        - collaboration_workspace_ids
+        - workspace_ids
         - snapshot_created_at
       properties:
         package_id: {type: string, format: uuid}
@@ -44,22 +44,22 @@ components:
         menu_ids:
           type: array
           items: {type: string, format: uuid}
-        collaboration_workspace_ids:
+        workspace_ids:
           type: array
           items: {type: string, format: uuid}
         snapshot_created_at: {type: string, format: date-time}
-    FeaturePackageCollaborationWorkspaceItem:
+    FeaturePackageCollaborationItem:
       type: object
       required: [id]
       properties:
         id: {type: string, format: uuid}
-    FeaturePackageCollaborationWorkspaceList:
+    FeaturePackageCollaborationList:
       type: object
       required: [records, total]
       properties:
         records:
           type: array
-          items: {$ref: '#/components/schemas/FeaturePackageCollaborationWorkspaceItem'}
+          items: {$ref: '#/components/schemas/FeaturePackageCollaborationItem'}
         total: {type: integer, format: int64}
     FeaturePackageVersionItem:
       type: object

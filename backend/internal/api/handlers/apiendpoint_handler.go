@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -15,3 +15,4 @@ type apiEndpointAPIHandler struct {
 func newAPIEndpointAPIHandler(apiEndpointSvc apiendpoint.Service, logger *zap.Logger) *apiEndpointAPIHandler {
 	return &apiEndpointAPIHandler{apiEndpointSvc: apiEndpointSvc, logger: logger}
 }
+

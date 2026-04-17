@@ -1,9 +1,9 @@
-# domains/user/schemas.yaml
+﻿# domains/user/schemas.yaml
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
   schemas:
-    UserCollaborationWorkspacesResponse:
+    UserCollaborationsResponse:
       type: object
       required:
       - records
@@ -92,7 +92,7 @@ components:
       - context
       - snapshot
       - roles
-      - collaboration_workspace_packages
+      - workspace_packages
       - menus
       properties:
         user:
@@ -105,9 +105,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserPermissionRoleResult'
-        collaboration_workspace_member:
+        collaboration_member:
           $ref: '#/components/schemas/UserPermissionCollaborationMember'
-        collaboration_workspace_packages:
+        workspace_packages:
           type: array
           items:
             $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
@@ -143,16 +143,16 @@ components:
       required:
       - type
       - binding_workspace_id
-      - current_collaboration_workspace_id
-      - current_collaboration_workspace_name
+      - current_workspace_id
+      - current_workspace_name
       properties:
         type:
           type: string
         binding_workspace_id:
           type: string
-        current_collaboration_workspace_id:
+        current_workspace_id:
           type: string
-        current_collaboration_workspace_name:
+        current_workspace_name:
           type: string
     UserPermissionSnapshotSummary:
       type: object
@@ -241,7 +241,7 @@ components:
       additionalProperties: false
       required:
       - id
-      - collaboration_workspace_id
+      - workspace_id
       - user_id
       - role_code
       - status
@@ -249,7 +249,7 @@ components:
       properties:
         id:
           type: string
-        collaboration_workspace_id:
+        workspace_id:
           type: string
         user_id:
           type: string
@@ -268,7 +268,7 @@ components:
       - reasons
       - matched_in_snapshot
       - bypassed_by_super_admin
-      - blocked_by_collaboration_workspace
+      - blocked_by_collaboration
       - member_matched
       - boundary_configured
       - role_chain_matched
@@ -291,7 +291,7 @@ components:
           type: boolean
         bypassed_by_super_admin:
           type: boolean
-        blocked_by_collaboration_workspace:
+        blocked_by_collaboration:
           type: boolean
         denial_stage:
           type: string
@@ -364,3 +364,4 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserPermissionRoleResult'
+

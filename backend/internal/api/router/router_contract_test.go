@@ -98,7 +98,7 @@ func TestOpenAPIPathToGinPlaceholders(t *testing.T) {
 		{"/users", "/users"},
 		{"/users/{id}", "/users/:id"},
 		{"/users/{id}/packages/{packageId}", "/users/:id/packages/:packageId"},
-		{"/collaboration-workspaces/current/members/{userId}/roles", "/collaboration-workspaces/current/members/:userId/roles"},
+		{"/collaboration/current/members/{userId}/roles", "/collaboration/current/members/:userId/roles"},
 		// Malformed input (unbalanced brace) should pass through verbatim,
 		// not silently drop characters.
 		{"/broken/{id", "/broken/{id"},

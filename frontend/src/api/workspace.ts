@@ -10,16 +10,20 @@ function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
     code: item?.code || '',
     ownerUserId: item?.owner_user_id || item?.ownerUserId || '',
     collaborationWorkspaceId:
+      item?.workspace_id ||
       item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    currentCollaborationWorkspaceId:
+    currentCollaborationId:
+      item?.current_workspace_id ||
+      item?.workspace_id ||
       item?.current_collaboration_workspace_id ||
-      item?.currentCollaborationWorkspaceId ||
+      item?.currentCollaborationId ||
       item?.collaboration_workspace_id ||
       item?.collaborationWorkspaceId ||
       '',
-    currentCollaborationWorkspaceName:
+    currentCollaborationName:
+      item?.current_workspace_name ||
       item?.current_collaboration_workspace_name ||
-      item?.currentCollaborationWorkspaceName ||
+      item?.currentCollaborationName ||
       item?.collaboration_workspace_name ||
       item?.collaborationWorkspaceName ||
       '',
@@ -63,8 +67,8 @@ export async function fetchSwitchWorkspace(workspaceId: string) {
   return {
     auth_workspace_id: data.auth_workspace_id,
     auth_workspace_type: data.auth_workspace_type,
-    collaboration_workspace_id: data.collaboration_workspace_id ?? '',
-    current_collaboration_workspace_id: data.collaboration_workspace_id ?? '',
+    collaboration_workspace_id: data.workspace_id ?? '',
+    current_collaboration_workspace_id: data.workspace_id ?? '',
     workspace: normalizeWorkspace(data.workspace)
   }
 }

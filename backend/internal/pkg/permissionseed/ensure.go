@@ -1,4 +1,4 @@
-﻿package permissionseed
+package permissionseed
 
 import (
 	"errors"
@@ -94,12 +94,20 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 	for _, actionSeed := range DefaultPermissionKeys() {
 		moduleGroupID := groupIDs["module:"+actionSeed.ModuleGroupCode]
 		featureGroupID := groupIDs["feature:"+actionSeed.FeatureGroupCode]
+		var moduleGroupIDPtr *uuid.UUID
+		if moduleGroupID != uuid.Nil {
+			moduleGroupIDPtr = &moduleGroupID
+		}
+		var featureGroupIDPtr *uuid.UUID
+		if featureGroupID != uuid.Nil {
+			featureGroupIDPtr = &featureGroupID
+		}
 		actionData := usermodel.PermissionKey{
 			ID:             actionSeed.ID,
 			Code:           StableID("permission-action-code", actionSeed.Key).String(),
 			PermissionKey:  actionSeed.Key,
-			ModuleGroupID:  &moduleGroupID,
-			FeatureGroupID: &featureGroupID,
+			ModuleGroupID:  moduleGroupIDPtr,
+			FeatureGroupID: featureGroupIDPtr,
 			Name:           actionSeed.Name,
 			Description:    actionSeed.Description,
 			Status:         actionSeed.Status,
@@ -138,18 +146,18 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 	for _, seed := range DefaultFeaturePackages() {
 		item := usermodel.FeaturePackage{
-			ID:            seed.ID,
-			AppKey:        systemmodels.DefaultAppKey,
-			AppKeys:       seed.AppKeys,
-			PackageKey:    seed.PackageKey,
-			PackageType:   seed.PackageType,
-			Name:          seed.Name,
-			Description:   seed.Description,
+			ID:             seed.ID,
+			AppKey:         systemmodels.DefaultAppKey,
+			AppKeys:        seed.AppKeys,
+			PackageKey:     seed.PackageKey,
+			PackageType:    seed.PackageType,
+			Name:           seed.Name,
+			Description:    seed.Description,
 			WorkspaceScope: seed.WorkspaceScope,
-			ContextType:   seed.ContextType,
-			IsBuiltin:     seed.IsBuiltin,
-			Status:        seed.Status,
-			SortOrder:     seed.SortOrder,
+			ContextType:    seed.ContextType,
+			IsBuiltin:      seed.IsBuiltin,
+			Status:         seed.Status,
+			SortOrder:      seed.SortOrder,
 		}
 
 		var existing usermodel.FeaturePackage
@@ -266,7 +274,10 @@ func EnsureDefaultRoleFeaturePackages(db *gorm.DB) error {
 	packageKeys = uniqueStrings(packageKeys)
 
 	var roles []usermodel.Role
-	if err := db.Where("collaboration_workspace_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+	if err := db.Model(&usermodel.Role{}).
+		Where("code IN ?", roleCodes).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", systemmodels.ScopeTypeGlobal).
+		Find(&roles).Error; err != nil {
 		return err
 	}
 	roleByCode := make(map[string]usermodel.Role, len(roles))
@@ -366,4 +377,3 @@ func uniqueStrings(values []string) []string {
 	}
 	return result
 }
-

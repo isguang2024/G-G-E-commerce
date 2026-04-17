@@ -540,7 +540,7 @@ func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, erro
 		) + (
 			SELECT COUNT(*) FROM role_hidden_menus WHERE menu_id IN ?
 		) + (
-			SELECT COUNT(*) FROM collaboration_workspace_blocked_menus WHERE menu_id IN ?
+			SELECT COUNT(*) FROM workspace_blocked_menus WHERE menu_id IN ?
 		) + (
 			SELECT COUNT(*) FROM user_hidden_menus WHERE menu_id IN ?
 		) AS total`,
@@ -572,7 +572,7 @@ func (s *menuService) cleanupMenuRelationsByIDs(tx *gorm.DB, menuIDs []uuid.UUID
 	statements := []string{
 		"DELETE FROM feature_package_menus WHERE menu_id IN ?",
 		"DELETE FROM role_hidden_menus WHERE menu_id IN ?",
-		"DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id IN ?",
+		"DELETE FROM workspace_blocked_menus WHERE menu_id IN ?",
 		"DELETE FROM user_hidden_menus WHERE menu_id IN ?",
 	}
 	for _, statement := range statements {

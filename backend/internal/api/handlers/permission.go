@@ -196,3 +196,4 @@ func (h *permissionAPIHandler) ListPermissionActionBatchTemplates(ctx context.Co
 	return &gen.PermissionActionBatchTemplateList{Records: permissionBatchTemplateItemsFromModels(list), Total: int64(len(list))}, nil
 }
 
+

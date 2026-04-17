@@ -1,4 +1,4 @@
-﻿package role
+package role
 
 import (
 	"errors"
@@ -340,7 +340,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	if role.CollaborationWorkspaceID != nil {
 		return ErrCollaborationWorkspaceRoleManaged
 	}
-	if role.Code == "admin" || role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
+	if role.Code == "admin" || role.Code == "collaboration_admin" || role.Code == "collaboration_member" {
 		return ErrSystemRoleCannotDelete
 	}
 	var affectedUserIDs []uuid.UUID
@@ -519,7 +519,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
 		return err
 	}
-	if role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
+	if role.Code == "collaboration_admin" || role.Code == "collaboration_member" {
 		return ErrCollaborationWorkspaceRoleKeyReadonly
 	}
 	keyIDs := make([]uuid.UUID, 0, len(keys))
@@ -795,4 +795,3 @@ func filterUUIDSourceMap(sourceMap map[uuid.UUID][]uuid.UUID, allowed []uuid.UUI
 	}
 	return result
 }
-

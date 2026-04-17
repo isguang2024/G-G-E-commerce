@@ -1,4 +1,4 @@
-﻿package workspacerolebinding
+package workspacerolebinding
 
 import (
 	"errors"
@@ -34,7 +34,8 @@ func HasPersonalRoleCodesByUserID(db *gorm.DB, userID uuid.UUID, roleCodes []str
 		Where("workspace_role_bindings.user_id = ?", userID).
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.owner_user_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal, userID).
-		Where("roles.code IN ? AND roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL", normalized)
+		Where("roles.code IN ? AND roles.deleted_at IS NULL", normalized).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal)
 	if onlyActive {
 		query = query.Where("roles.status = ?", "normal")
 	}
@@ -154,7 +155,8 @@ func ListPersonalRoleIDsByUserID(db *gorm.DB, userID uuid.UUID, onlyActive bool)
 		Where("workspace_role_bindings.user_id = ?", userID).
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.owner_user_id = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal, userID).
-		Where("roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL")
+		Where("roles.deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal)
 	if onlyActive {
 		query = query.Where("roles.status = ?", "normal")
 	}
@@ -251,7 +253,16 @@ func LoadPersonalRoleRows(db *gorm.DB, userIDs []uuid.UUID, onlyActive bool) ([]
 		Joins("JOIN roles ON roles.id = workspace_role_bindings.role_id").
 		Where("workspaces.workspace_type = ? AND workspaces.owner_user_id IN ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal, userIDs).
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
-		Where("roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL")
+		Where("roles.deleted_at IS NULL").
+		Where(`
+			NOT EXISTS (
+				SELECT 1
+				FROM role_scopes
+				WHERE role_scopes.role_id = roles.id
+					AND role_scopes.deleted_at IS NULL
+					AND role_scopes.scope_type <> ?
+			)
+		`, models.ScopeTypeGlobal)
 	if onlyActive {
 		query = query.Where("roles.status = ?", "normal")
 	}
@@ -292,7 +303,8 @@ func ListPlatformUserIDsByRoleIDs(db *gorm.DB, roleIDs []uuid.UUID) ([]uuid.UUID
 		Where("workspace_role_bindings.role_id IN ?", roleIDs).
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal).
-		Where("roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL").
+		Where("roles.deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 		Distinct("workspaces.owner_user_id").
 		Pluck("workspaces.owner_user_id", &userIDs).Error
 	if err != nil {
@@ -315,7 +327,8 @@ func ListPlatformUserIDsByRoleCodes(db *gorm.DB, roleCodes []string, onlyActive 
 		Joins("JOIN roles ON roles.id = workspace_role_bindings.role_id").
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal).
-		Where("roles.code IN ? AND roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL", normalized)
+		Where("roles.code IN ? AND roles.deleted_at IS NULL", normalized).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal)
 	if onlyActive {
 		query = query.Where("roles.status = ?", "normal")
 	}
@@ -533,4 +546,3 @@ func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
-

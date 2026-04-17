@@ -22,7 +22,7 @@ security:
 tags:
 - name: auth
 - name: workspace
-- name: collaboration_workspace
+- name: collaboration
 - name: user
 - name: role
 - name: menu
@@ -103,70 +103,70 @@ paths:
     $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1switch
   /workspaces/{id}:
     $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1{id}
-  /collaboration-workspaces/mine:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1mine
-  /collaboration-workspaces/current:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current
-  /collaboration-workspaces/options:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1options
-  /collaboration-workspaces/current/members:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members
-  /collaboration-workspaces/current/members/{userId}:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}
-  /collaboration-workspaces/current/members/{userId}/role:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}~1role
-  /collaboration-workspaces/current/members/{userId}/roles:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}~1roles
-  /collaboration-workspaces/current/roles:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1roles
-  /collaboration-workspaces/current/boundary/roles:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles
-  /collaboration-workspaces/current/boundary/roles/{roleId}:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}
-  /collaboration-workspaces/current/boundary/roles/{roleId}/packages:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1packages
-  /collaboration-workspaces/current/boundary/roles/{roleId}/menus:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1menus
-  /collaboration-workspaces/current/boundary/roles/{roleId}/actions:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1actions
-  /collaboration-workspaces/current/boundary/packages:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1packages
-  /collaboration-workspaces/current/menus:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1menus
-  /collaboration-workspaces/current/menu-origins:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1menu-origins
-  /collaboration-workspaces/current/actions:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1actions
-  /collaboration-workspaces/current/action-origins:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1action-origins
-  /collaboration-workspaces:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces
-  /collaboration-workspaces/{id}:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}
-  /collaboration-workspaces/{id}/roles:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1roles
-  /collaboration-workspaces/{id}/menus:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1menus
-  /collaboration-workspaces/{id}/menu-origins:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1menu-origins
-  /collaboration-workspaces/{id}/actions:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1actions
-  /collaboration-workspaces/{id}/action-origins:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1action-origins
-  /collaboration-workspaces/{id}/members:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members
-  /collaboration-workspaces/{id}/members/{userId}:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members~1{userId}
-  /collaboration-workspaces/{id}/members/{userId}/role:
-    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members~1{userId}~1role
+  /workspaces/collaboration/mine:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1mine
+  /collaboration/current:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current
+  /workspaces/collaboration/options:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1options
+  /collaboration/current/members:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1members
+  /collaboration/current/members/{userId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1members~1{userId}
+  /collaboration/current/members/{userId}/role:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1members~1{userId}~1role
+  /collaboration/current/members/{userId}/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1members~1{userId}~1roles
+  /collaboration/current/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1roles
+  /collaboration/current/boundary/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1roles
+  /collaboration/current/boundary/roles/{roleId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1roles~1{roleId}
+  /collaboration/current/boundary/roles/{roleId}/packages:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1roles~1{roleId}~1packages
+  /collaboration/current/boundary/roles/{roleId}/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1roles~1{roleId}~1menus
+  /collaboration/current/boundary/roles/{roleId}/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1roles~1{roleId}~1actions
+  /collaboration/current/boundary/packages:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1boundary~1packages
+  /collaboration/current/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1menus
+  /collaboration/current/menu-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1menu-origins
+  /collaboration/current/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1actions
+  /collaboration/current/action-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration~1current~1action-origins
+  /workspaces/collaboration:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration
+  /workspaces/collaboration/{id}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}
+  /workspaces/collaboration/{id}/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1roles
+  /workspaces/collaboration/{id}/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1menus
+  /workspaces/collaboration/{id}/menu-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1menu-origins
+  /workspaces/collaboration/{id}/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1actions
+  /workspaces/collaboration/{id}/action-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1action-origins
+  /workspaces/collaboration/{id}/members:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1members
+  /workspaces/collaboration/{id}/members/{userId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1members~1{userId}
+  /workspaces/collaboration/{id}/members/{userId}/role:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1collaboration~1{id}~1members~1{userId}~1role
   /users:
     $ref: ./domains/user/paths.yaml#/paths/~1users
   /users/{id}:
     $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}
   /users/{id}/roles:
     $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1roles
-  /users/{id}/collaboration-workspaces:
-    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1collaboration-workspaces
+  /users/{id}/collaborations:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1collaborations
   /users/{id}/packages:
     $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1packages
   /users/{id}/menus:
@@ -255,8 +255,8 @@ paths:
     $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1options
   /feature-packages/relationship-tree:
     $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1relationship-tree
-  /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}:
-    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1collaboration-workspaces~1{collaborationWorkspaceId}
+  /feature-packages/workspaces/collaboration/{workspaceId}:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1workspaces~1collaboration~1{workspaceId}
   /feature-packages/{id}:
     $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}
   /feature-packages/{id}/impact-preview:
@@ -273,8 +273,8 @@ paths:
     $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1actions
   /feature-packages/{id}/menus:
     $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1menus
-  /feature-packages/{id}/collaboration-workspaces:
-    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1collaboration-workspaces
+  /feature-packages/{id}/workspaces/collaboration:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1workspaces~1collaboration
   /system/view-pages:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1view-pages
   /system/fast-enter:

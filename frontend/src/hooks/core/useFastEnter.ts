@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useFastEnter - 快速入口管理
  *
  * 管理顶部栏的快速入口功能，提供应用列表和快速链接的配置和过滤。
@@ -28,11 +28,11 @@ const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
   'MessageRecordManage',
   'MessageSenderManage',
   'MessageRecipientGroupManage',
-  'CollaborationWorkspaceMessageManage',
-  'CollaborationWorkspaceMessageTemplateManage',
-  'CollaborationWorkspaceMessageRecordManage',
-  'CollaborationWorkspaceMessageSenderManage',
-  'CollaborationWorkspaceMessageRecipientGroupManage'
+  'CollaborationMessageManage',
+  'CollaborationMessageTemplateManage',
+  'CollaborationMessageRecordManage',
+  'CollaborationMessageSenderManage',
+  'CollaborationMessageRecipientGroupManage'
 ])
 
 export function useFastEnter() {

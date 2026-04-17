@@ -1,4 +1,4 @@
-﻿package auth
+package auth
 
 import (
 	"strings"
@@ -14,7 +14,6 @@ import (
 )
 
 const authWorkspaceHeader = "X-Auth-Workspace-Id"
-const collaborationWorkspaceHeader = "X-Collaboration-Workspace-Id"
 
 func JWTAuth(secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -62,8 +61,8 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 	workspaceService := workspacepkg.NewService(db, nil)
 	var authWorkspace *models.Workspace
 
-	// 关键安全校验：客户端传入的 X-Auth-Workspace-Id / X-Collaboration-Workspace-Id
-	// 必须先确认当前 user 是该 workspace 的成员，否则任意登录者改 header 即可越权。
+	// 关键安全校验：客户端传入的 X-Auth-Workspace-Id 必须先确认当前 user
+	// 是该 workspace 的成员，否则任意登录者改 header 即可越权。
 	resolveIfMember := func(ws *models.Workspace) *models.Workspace {
 		if ws == nil {
 			return nil
@@ -81,19 +80,10 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 		}
 	}
 
-	if authWorkspace == nil {
-		collaborationWorkspaceID := strings.TrimSpace(c.GetHeader(collaborationWorkspaceHeader))
-		if collaborationWorkspaceID == "" {
-			collaborationWorkspaceID = strings.TrimSpace(claims.CollaborationWorkspaceID)
-		}
-		if collaborationWorkspaceID == "" {
-			collaborationWorkspaceID = strings.TrimSpace(c.Query("collaboration_workspace_id"))
-		}
-		if collaborationWorkspaceID != "" {
-			if parsedCollaborationWorkspaceID, parseErr := uuid.Parse(collaborationWorkspaceID); parseErr == nil {
-				ws, _ := workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(parsedCollaborationWorkspaceID)
-				authWorkspace = resolveIfMember(ws)
-			}
+	if authWorkspace == nil && strings.TrimSpace(claims.AuthWorkspaceID) != "" {
+		if parsedWorkspaceID, parseErr := uuid.Parse(strings.TrimSpace(claims.AuthWorkspaceID)); parseErr == nil {
+			ws, _ := workspaceService.GetByID(parsedWorkspaceID)
+			authWorkspace = resolveIfMember(ws)
 		}
 	}
 
@@ -108,9 +98,8 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 	c.Set("auth_workspace_id", authWorkspace.ID.String())
 	c.Set("auth_workspace_type", authWorkspace.WorkspaceType)
 	if authWorkspace.CollaborationWorkspaceID != nil && *authWorkspace.CollaborationWorkspaceID != uuid.Nil {
-		c.Set("collaboration_workspace_id", authWorkspace.CollaborationWorkspaceID.String())
+		c.Set("collaboration_id", authWorkspace.CollaborationWorkspaceID.String())
 		return
 	}
-	c.Set("collaboration_workspace_id", "")
+	c.Set("collaboration_id", "")
 }
-

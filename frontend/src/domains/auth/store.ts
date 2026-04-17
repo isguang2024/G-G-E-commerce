@@ -52,7 +52,7 @@ import { logger } from '@/utils/logger'
 import { setPageTitle } from '@/utils/router'
 import { StorageConfig } from '@/utils/storage/storage-config'
 import { RoutesAlias } from '@/router/routesAlias'
-import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+import { useCollaborationStore } from '@/store/modules/collaboration'
 import { useSettingStore } from '@/store/modules/setting'
 
 const SESSION_SYNC_EVENT_KEY = 'gge:session-sync'
@@ -199,7 +199,7 @@ export const useUserStore = defineStore(
       logger.setUser('')
       sessionStorage.removeItem('iframeRoutes')
       useMenuStore().setHomePath('')
-      useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
+      useCollaborationStore().clearCollaborationContext()
       useAppContextStore().clearAppContext()
       if (options.resetRouterDelay !== null) {
         resetRouterState(options.resetRouterDelay ?? 500)

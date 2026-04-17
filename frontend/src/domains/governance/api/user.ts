@@ -167,7 +167,7 @@ export async function fetchSetUserMenus(userId: string, menuIds: string[], appKe
 
 export async function fetchGetUserCollaborationWorkspaces(userId: string) {
   const res = await unwrap(
-    v5Client.GET('/users/{id}/collaboration-workspaces', {
+    v5Client.GET('/users/{id}/collaborations', {
       params: { path: { id: userId } }
     })
   )
@@ -180,7 +180,7 @@ export async function fetchGetUserPermissionDiagnosis(
   params?: Api.SystemManage.UserPermissionDiagnosisParams
 ) {
   const query: V5Query<'/users/{id}/permission-diagnosis', 'get'> = {
-    collaboration_workspace_id: params?.collaborationWorkspaceId,
+    workspace_id: params?.collaborationWorkspaceId,
     permission_key: params?.permissionKey
   }
   const res = await unwrap(

@@ -192,7 +192,7 @@
   import { fetchGetInboxList, fetchGetInboxDetail } from '@/api/message'
   import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
   import { useMessageStore } from '@/store/modules/message'
-  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useCollaborationStore } from '@/store/modules/collaboration'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import { handleRichTextLinkNavigation } from '@/domains/navigation/utils/rich-text'
 
@@ -204,7 +204,7 @@
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
   const messageStore = useMessageStore()
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
 
   const loading = ref(false)
@@ -315,7 +315,7 @@
           item.scope_id
     if (!collaborationWorkspaceId) return ''
     return (
-      collaborationWorkspaceStore.collaborationWorkspaceList.find(
+      collaborationStore.collaborationList.find(
         (workspace) => workspace.id === collaborationWorkspaceId
       )?.name || ''
     )

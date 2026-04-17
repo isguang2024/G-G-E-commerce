@@ -1,4 +1,4 @@
-// storage_admin.go — ogen handlers for the upload configuration center
+﻿// storage_admin.go — ogen handlers for the upload configuration center
 // (storage providers / buckets / upload keys / upload key rules).
 //
 // All operations live under the single permission key `system.upload.config.manage`
@@ -947,3 +947,4 @@ func filterByStatus[T statusGetter](items []T, status string) []T {
 	}
 	return filtered
 }
+

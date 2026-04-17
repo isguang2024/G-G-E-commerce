@@ -1,4 +1,4 @@
-﻿package platformaccess
+package platformaccess
 
 import (
 	"strings"
@@ -209,25 +209,7 @@ func (s *service) saveSnapshot(userID uuid.UUID, appKey string, snapshot *Snapsh
 }
 
 func (s *service) getGlobalRoleIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
-	roleIDs, err := workspacerolebinding.ListPersonalRoleIDsByUserID(s.db, userID, true)
-	if err != nil {
-		return nil, err
-	}
-	if len(roleIDs) > 0 {
-		return roleIDs, nil
-	}
-
-	var legacyRoleIDs []uuid.UUID
-	err = s.db.Model(&models.UserRole{}).
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.collaboration_workspace_id IS NULL").
-		Where("roles.collaboration_workspace_id IS NULL").
-		Where("roles.status = ?", "normal").
-		Where("roles.deleted_at IS NULL").
-		Distinct("user_roles.role_id").
-		Pluck("user_roles.role_id", &legacyRoleIDs).Error
-	return legacyRoleIDs, err
+	return workspacerolebinding.ListPersonalRoleIDsByUserID(s.db, userID, true)
 }
 
 func (s *service) getPackageIDsByRoleIDs(roleIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
@@ -848,4 +830,3 @@ func resolveAppKey(appKey ...string) string {
 	}
 	return appctx.NormalizeAppKey(appKey[0])
 }
-

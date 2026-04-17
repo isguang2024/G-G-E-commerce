@@ -310,14 +310,14 @@ func TestIntegrationFeaturePackagesList(t *testing.T) {
 	}
 }
 
-// TestIntegrationCollaborationWorkspacesList verifies GET /collaboration-workspaces returns 200.
+// TestIntegrationCollaborationWorkspacesList verifies GET /workspaces/collaboration returns 200.
 func TestIntegrationCollaborationWorkspacesList(t *testing.T) {
 	if integToken == "" {
 		t.Skip("integToken not set — TestIntegrationLogin must run first")
 	}
-	w := integDo(http.MethodGet, "/api/v1/collaboration-workspaces", nil, integBearerHeader(integToken))
+	w := integDo(http.MethodGet, "/api/v1/workspaces/collaboration", nil, integBearerHeader(integToken))
 	if w.Code != http.StatusOK {
-		t.Fatalf("collaboration-workspaces: expected 200, got %d — body: %s", w.Code, w.Body.String())
+		t.Fatalf("workspaces/collaboration: expected 200, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
 
@@ -412,7 +412,7 @@ func TestIntegrationCWBoundaryRoleMenus(t *testing.T) {
 		t.Skipf("no role available: %v", err)
 	}
 	// Read current menus first; if endpoint not reachable (no current CW), skip.
-	getPath := "/api/v1/collaboration-workspaces/current/boundary/roles/" + role.ID.String() + "/menus"
+	getPath := "/api/v1/collaboration/current/boundary/roles/" + role.ID.String() + "/menus"
 	w := integDo(http.MethodGet, getPath, nil, integBearerHeader(integToken))
 	if w.Code != http.StatusOK {
 		// Most likely "no current collaboration workspace" — accepted as a skip
@@ -1253,4 +1253,5 @@ func TestIntegrationUploadKeysList(t *testing.T) {
 		t.Fatalf("upload/keys: expected 200, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
+
 

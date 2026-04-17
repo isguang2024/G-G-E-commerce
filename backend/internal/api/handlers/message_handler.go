@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -17,3 +17,4 @@ type messageAPIHandler struct {
 func newMessageAPIHandler(systemFacade *systemmod.Facade, auditRecorder audit.Recorder, logger *zap.Logger) *messageAPIHandler {
 	return &messageAPIHandler{systemFacade: systemFacade, audit: auditRecorder, logger: logger}
 }
+

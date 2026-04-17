@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -58,3 +58,4 @@ func newAuthAPIHandler(
 		logger:             logger,
 	}
 }
+

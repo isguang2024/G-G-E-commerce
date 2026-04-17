@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/maben/backend/internal/config"
+	systemmodels "github.com/maben/backend/internal/modules/system/models"
 	"github.com/maben/backend/internal/modules/system/user"
 	"github.com/maben/backend/internal/pkg/database"
 	"github.com/maben/backend/internal/pkg/logger"
@@ -70,10 +71,13 @@ func main() {
 	} else {
 		diagLogger.Info("角色表检查完成", zap.Int64("role_count", roleCount))
 
-		defaultRoles := []string{"admin", "collaboration_workspace_admin", "collaboration_workspace_member"}
+		defaultRoles := []string{"admin", "collaboration_admin", "collaboration_member"}
 		for _, roleCode := range defaultRoles {
 			var role user.Role
-			if err := db.Where("code = ?", roleCode).First(&role).Error; err != nil {
+			if err := db.Model(&user.Role{}).
+				Where("code = ?", roleCode).
+				Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", systemmodels.ScopeTypeGlobal).
+				First(&role).Error; err != nil {
 				diagLogger.Warn("默认角色不存在", zap.String("role_code", roleCode))
 			} else {
 				diagLogger.Info("默认角色存在",
@@ -141,4 +145,3 @@ func main() {
 		zap.String("next_step_3", "启动服务器: go run cmd/server/main.go"),
 	)
 }
-

@@ -1,19 +1,19 @@
-﻿import { computed } from 'vue'
-import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+import { computed } from 'vue'
+import { useCollaborationStore } from '@/store/modules/collaboration'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
-export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+export function useMessageWorkspace(scope: 'global' | 'collaboration') {
+  const collaborationStore = useCollaborationStore()
   const workspaceStore = useWorkspaceStore()
 
   const isCollaborationScope = computed(() => scope === 'collaboration')
   const skipCollaborationWorkspaceHeader = computed(() => !isCollaborationScope.value)
-  const currentCollaborationWorkspaceId = computed(
-    () => collaborationWorkspaceStore.currentCollaborationWorkspaceId || ''
+  const currentCollaborationId = computed(
+    () => collaborationStore.currentCollaborationId || ''
   )
-  const currentCollaborationWorkspaceName = computed(
+  const currentCollaborationName = computed(
     () =>
-      collaborationWorkspaceStore.currentCollaborationWorkspace?.name ||
+      collaborationStore.currentCollaboration?.name ||
       workspaceStore.currentAuthWorkspace?.name ||
       '当前协作空间'
   )
@@ -26,11 +26,11 @@ export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
 
   const ensureCollaborationWorkspaceContext = () => {
     if (!isCollaborationScope.value) return
-    if (collaborationWorkspaceStore.currentCollaborationWorkspaceId) return
+    if (collaborationStore.currentCollaborationId) return
     const fallbackCollaborationWorkspaceId =
-      collaborationWorkspaceStore.collaborationWorkspaceList[0]?.id || ''
+      collaborationStore.collaborationList[0]?.id || ''
     if (fallbackCollaborationWorkspaceId) {
-      collaborationWorkspaceStore.enterCollaborationContext(fallbackCollaborationWorkspaceId)
+      collaborationStore.enterCollaborationContext(fallbackCollaborationWorkspaceId)
     }
   }
 
@@ -62,12 +62,12 @@ export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
   }
 
   return {
-    collaborationWorkspaceStore,
+    collaborationStore,
     workspaceStore,
     isCollaborationScope,
     skipCollaborationWorkspaceHeader,
-    currentCollaborationWorkspaceId,
-    currentCollaborationWorkspaceName,
+    currentCollaborationId,
+    currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
     ensureCollaborationWorkspaceContext,
@@ -75,3 +75,4 @@ export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
     plainTextFromHtml
   }
 }
+

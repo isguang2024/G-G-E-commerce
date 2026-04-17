@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-template-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-template-hero__actions">
@@ -131,7 +131,7 @@
               <ElInput
                 v-model="drawerModel.name"
                 :disabled="drawerReadOnly"
-                placeholder="例如：个人空间公告模板"
+                placeholder="例如：全局公告模板"
               />
             </ElFormItem>
 
@@ -142,7 +142,7 @@
                 placeholder="例如：announcement-default"
               />
               <div class="field-hint"
-                >保存时会按作用域自动补个人空间或协作空间前缀，不需要手动写完整前缀。</div
+                >保存时会按作用域自动补全局或协作空间前缀，不需要手动写完整前缀。</div
               >
             </ElFormItem>
 
@@ -195,7 +195,7 @@
                 :disabled="drawerReadOnly"
                 maxlength="120"
                 show-word-limit
-                placeholder="例如：个人空间维护通知"
+                placeholder="例如：全局维护通知"
               />
             </ElFormItem>
 
@@ -263,7 +263,7 @@
   defineOptions({ name: 'MessageTemplateConsole' })
 
   const props = defineProps<{
-    scope: 'personal' | 'collaboration'
+    scope: 'global' | 'collaboration'
   }>()
 
   const loading = ref(false)
@@ -299,7 +299,7 @@
   const {
     isCollaborationScope,
     skipCollaborationWorkspaceHeader,
-    currentCollaborationWorkspaceName,
+    currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
     ensureCollaborationWorkspaceContext,
@@ -310,20 +310,20 @@
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息模板' : '消息模板'))
   const pageDescription = computed(() =>
     isCollaborationScope.value
-      ? '查看个人空间模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
-      : '统一维护个人空间消息模板，供个人空间发信页复用；标题、摘要和正文都在模板层准备好。'
+      ? '查看全局模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
+      : '统一维护全局消息模板，供全局发信页复用；标题、摘要和正文都在模板层准备好。'
   )
   const toolbarDescription = computed(() =>
     isCollaborationScope.value
-      ? `个人空间模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value} 可维护自己的协作空间模板。`
-      : '个人空间模板会直接出现在个人空间消息发送页中，建议用少量稳定模板覆盖高频场景。'
+      ? `全局模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentCollaborationName.value} 可维护自己的协作空间模板。`
+      : '全局模板会直接出现在全局消息发送页中，建议用少量稳定模板覆盖高频场景。'
   )
   const heroMetrics = computed(() => [
     { label: '模板总数', value: pagination.total },
     {
-      label: isCollaborationScope.value ? '协作空间模板' : '个人空间模板',
+      label: isCollaborationScope.value ? '协作空间模板' : '全局模板',
       value: list.value.filter(
-        (item) => item.owner_scope === (isCollaborationScope.value ? 'collaboration' : 'personal')
+        (item) => item.owner_scope === (isCollaborationScope.value ? 'collaboration' : 'global')
       ).length
     },
     { label: '可编辑', value: list.value.filter((item) => item.editable).length }
@@ -331,15 +331,15 @@
 
   const drawerTitle = computed(
     () =>
-      `${drawerEditingId.value ? '编辑' : '新建'}${isCollaborationScope.value ? '协作空间' : '个人空间'}模板`
+      `${drawerEditingId.value ? '编辑' : '新建'}${isCollaborationScope.value ? '协作空间' : '全局'}模板`
   )
   const drawerScopeText = computed(() =>
     isCollaborationScope.value
-      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value}，不会影响个人空间模板。`
-      : '保存后该模板会作为个人空间模板在当前个人空间内复用。'
+      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentCollaborationName.value}，不会影响全局模板。`
+      : '保存后该模板会作为全局模板在当前上下文内复用。'
   )
   const drawerCollaborationWorkspaceBadge = computed(() =>
-    isCollaborationScope.value ? '协作空间模板' : '个人空间模板'
+    isCollaborationScope.value ? '协作空间模板' : '全局模板'
   )
 
   const messageTypeOptions = [
@@ -353,18 +353,18 @@
       ? [
           {
             label: '当前协作空间成员',
-            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+            value: 'collaboration_users' as Api.Message.AudienceType
           }
         ]
       : [
           { label: '所有用户', value: 'all_users' as Api.Message.AudienceType },
           {
             label: '协作空间管理员',
-            value: 'collaboration_workspace_admins' as Api.Message.AudienceType
+            value: 'collaboration_admins' as Api.Message.AudienceType
           },
           {
             label: '指定协作空间成员',
-            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+            value: 'collaboration_users' as Api.Message.AudienceType
           }
         ]
   )
@@ -374,7 +374,7 @@
     name: '',
     description: '',
     message_type: 'notice',
-    audience_type: isCollaborationScope.value ? 'collaboration_workspace_users' : 'all_users',
+    audience_type: isCollaborationScope.value ? 'collaboration_users' : 'all_users',
     title_template: '',
     summary_template: '',
     content_template: '',
@@ -388,7 +388,7 @@
         ? `协作空间 · ${collaborationWorkspaceName}`
         : '协作空间模板'
     }
-    return '个人空间模板'
+    return '全局模板'
   }
 
   const resolveMessageTypeLabel = (value: Api.Message.BoxType) =>
@@ -396,7 +396,7 @@
 
   const resolveAudienceLabel = (value: Api.Message.AudienceType) => {
     if (value === 'all_users') return '所有用户'
-    if (value === 'collaboration_workspace_admins') return '协作空间管理员'
+    if (value === 'collaboration_admins') return '协作空间管理员'
     return '协作空间成员'
   }
 
@@ -739,3 +739,4 @@
     }
   }
 </style>
+

@@ -1,4 +1,4 @@
-﻿package workspacefeaturebinding
+package workspacefeaturebinding
 
 import (
 	"errors"
@@ -46,6 +46,20 @@ func ReplacePersonalPackageBindings(tx *gorm.DB, userID uuid.UUID, appKey string
 	}
 	workspace, err := workspacerolebinding.EnsurePersonalWorkspace(tx, userID)
 	if err != nil {
+		return err
+	}
+	return replacePackageBindingsByWorkspaceID(tx, workspace.ID, appKey, packageIDs)
+}
+
+func ReplaceCollaborationWorkspacePackageBindings(tx *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string, packageIDs []uuid.UUID) error {
+	if tx == nil || collaborationWorkspaceID == uuid.Nil {
+		return nil
+	}
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return replacePackageBindingsByWorkspaceID(tx, workspace.ID, appKey, packageIDs)
@@ -198,4 +212,3 @@ func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
-

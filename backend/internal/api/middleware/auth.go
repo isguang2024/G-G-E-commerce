@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"crypto/sha256"
@@ -42,7 +42,11 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
-		c.Set("collaboration_workspace_id", claims.CollaborationWorkspaceID)
+		c.Set("auth_workspace_id", claims.AuthWorkspaceID)
+		c.Set("auth_workspace_type", claims.AuthWorkspaceType)
+		if strings.TrimSpace(claims.CollaborationID) != "" {
+			c.Set("collaboration_id", claims.CollaborationID)
+		}
 		c.Set("email", claims.Email)
 		c.Set("auth_time", claims.AuthTime)
 		c.Next()
@@ -78,17 +82,21 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 			legacyresp.Unauthorized(c, "API Key 已过期")
 			return
 		}
-		var collaborationWorkspace models.CollaborationWorkspace
-		if err := db.Select("id", "status").Where("id = ?", record.CollaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
+		var workspace models.Workspace
+		if err := db.
+			Select("id", "workspace_type", "status", "collaboration_workspace_id").
+			Where("workspace_type = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration).
+			Where("(id = ? OR collaboration_workspace_id = ?)", record.CollaborationWorkspaceID, record.CollaborationWorkspaceID).
+			First(&workspace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				legacyresp.Unauthorized(c, "API Key 所属协作空间不存在")
+				legacyresp.Unauthorized(c, "API Key 所属工作空间不存在")
 				return
 			}
-			legacyresp.Internal(c, "API Key 协作空间校验失败")
+			legacyresp.Internal(c, "API Key 工作空间校验失败")
 			return
 		}
-		if strings.TrimSpace(collaborationWorkspace.Status) != "" && collaborationWorkspace.Status != "active" {
-			legacyresp.Unauthorized(c, "API Key 所属协作空间不可用")
+		if strings.TrimSpace(workspace.Status) != "" && workspace.Status != "active" {
+			legacyresp.Unauthorized(c, "API Key 所属工作空间不可用")
 			return
 		}
 
@@ -97,7 +105,11 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 
 		c.Set("api_key", apiKey)
 		c.Set("api_key_id", record.ID.String())
-		c.Set("collaboration_workspace_id", record.CollaborationWorkspaceID.String())
+		c.Set("auth_workspace_id", workspace.ID.String())
+		c.Set("auth_workspace_type", workspace.WorkspaceType)
+		if workspace.CollaborationWorkspaceID != nil {
+			c.Set("collaboration_id", workspace.CollaborationWorkspaceID.String())
+		}
 		c.Next()
 	}
 }
@@ -106,4 +118,3 @@ func hashAPIKey(apiKey string) string {
 	sum := sha256.Sum256([]byte(strings.TrimSpace(apiKey)))
 	return hex.EncodeToString(sum[:])
 }
-

@@ -1,4 +1,4 @@
-﻿package workspace
+package workspace
 
 import (
 	"fmt"
@@ -362,7 +362,7 @@ func mapCollaborationWorkspaceRoleToWorkspaceMemberType(roleCode string) string 
 	switch strings.ToLower(strings.TrimSpace(roleCode)) {
 	case "owner":
 		return models.WorkspaceMemberOwner
-	case "collaboration_workspace_admin", "admin":
+	case "collaboration_admin", "admin":
 		return models.WorkspaceMemberAdmin
 	case "viewer":
 		return models.WorkspaceMemberViewer
@@ -387,4 +387,3 @@ func uuidPtr(value uuid.UUID) *uuid.UUID {
 	target := value
 	return &target
 }
-

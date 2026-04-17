@@ -1,4 +1,4 @@
-﻿package permission
+package permission
 
 import (
 	"errors"
@@ -295,14 +295,14 @@ func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsume
 		}
 
 		type roleRow struct {
-			ID                       uuid.UUID
-			Code                     string
-			Name                     string
-			CollaborationWorkspaceID *uuid.UUID
+			ID        uuid.UUID
+			Code      string
+			Name      string
+			ScopeType string
 		}
 		var roleRows []roleRow
 		if err := s.db.Model(&user.RoleFeaturePackage{}).
-			Select("roles.id", "roles.code", "roles.name", "roles.collaboration_workspace_id").
+			Select("roles.id", "roles.code", "roles.name", "roles.scope_type").
 			Joins("JOIN roles ON roles.id = role_feature_packages.role_id").
 			Where("role_feature_packages.package_id IN ? AND role_feature_packages.enabled = ?", packageIDs, true).
 			Where("roles.deleted_at IS NULL").
@@ -312,7 +312,7 @@ func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsume
 		}
 		for _, role := range roleRows {
 			contextType := "personal"
-			if role.CollaborationWorkspaceID != nil {
+			if strings.TrimSpace(role.ScopeType) == models.ScopeTypeCollaboration {
 				contextType = "collaboration"
 			}
 			details.Roles = append(details.Roles, PermissionConsumerRoleItem{
@@ -359,11 +359,7 @@ func (s *permissionService) GetImpactPreview(id uuid.UUID) (*PermissionImpactPre
 		if err != nil {
 			return nil, err
 		}
-		var legacyCollaborationWorkspaceIDs []uuid.UUID
-		if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
-			return nil, err
-		}
-		result.CollaborationWorkspaceCount = int64(len(mergeUUIDs(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+		result.CollaborationWorkspaceCount = int64(len(workspaceCollaborationWorkspaceIDs))
 		workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, packageIDs, "")
 		if err != nil {
 			return nil, err
@@ -1358,10 +1354,13 @@ func deriveContextType(permissionKey, moduleCode string) string {
 	switch {
 	case strings.HasPrefix(targetKey, "system."),
 		strings.HasPrefix(targetKey, "personal."),
+		strings.HasPrefix(targetKey, "workspace."),
 		strings.HasPrefix(targetKey, "feature_package."),
+		targetKey == "workspace.manage",
 		targetKey == "collaboration_workspace.manage":
 		return "personal"
-	case strings.HasPrefix(targetKey, "collaboration_workspace."):
+	case strings.HasPrefix(targetKey, "collaboration."),
+		strings.HasPrefix(targetKey, "collaboration_workspace."):
 		return "collaboration"
 	case targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
 		return "personal"
@@ -1414,7 +1413,7 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 		}
 	case "collaboration":
 		if !hasCollaborationWorkspacePermissionNamespace(targetKey) && deriveModuleWorkspaceBoundary(targetModule) == "" {
-			return fmt.Errorf("%w: 协作空间自定义权限键请使用 collaboration_workspace. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 协作空间自定义权限键请使用 collaboration. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
 		}
 	case "common":
 		if deriveReservedContextType(targetKey) != "" || deriveModuleWorkspaceBoundary(targetModule) != "" {
@@ -1454,12 +1453,14 @@ func hasPersonalWorkspacePermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
 	return strings.HasPrefix(targetKey, "system.") ||
 		strings.HasPrefix(targetKey, "personal.") ||
+		strings.HasPrefix(targetKey, "workspace.") ||
 		strings.HasPrefix(targetKey, "feature_package.")
 }
 
 func hasCollaborationWorkspacePermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
-	return strings.HasPrefix(targetKey, "collaboration_workspace.")
+	return strings.HasPrefix(targetKey, "collaboration.") ||
+		strings.HasPrefix(targetKey, "collaboration_workspace.")
 }
 
 func deriveModuleWorkspaceBoundary(moduleCode string) string {
@@ -1499,14 +1500,12 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		return err
 	}
 	affectedCollaborationWorkspaces := make(map[uuid.UUID]struct{})
-	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, collaborationWorkspaceErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
-		if collaborationWorkspaceErr != nil {
-			return collaborationWorkspaceErr
-		}
-		for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
-			affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
-		}
+	workspaceCollaborationWorkspaceIDs, err := workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, packageIDs, "")
+	if err != nil {
+		return err
+	}
+	for _, collaborationWorkspaceID := range workspaceCollaborationWorkspaceIDs {
+		affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
 	}
 	// 多表级联删除包裹在事务中，防止中途失败产生孤儿数据。
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -1516,7 +1515,7 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		if err := tx.Where("action_id = ?", id).Delete(&user.RoleDisabledAction{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("action_id = ?", id).Delete(&user.CollaborationWorkspaceBlockedAction{}).Error; err != nil {
+		if err := tx.Where("action_id = ?", id).Delete(&models.WorkspaceBlockedAction{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("action_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
@@ -1560,14 +1559,12 @@ func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
 		return s.refresher.RefreshByPackages(packageIDs)
 	}
 	affectedCollaborationWorkspaces := make(map[uuid.UUID]struct{})
-	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, collaborationWorkspaceErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
-		if collaborationWorkspaceErr != nil {
-			return collaborationWorkspaceErr
-		}
-		for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
-			affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
-		}
+	workspaceCollaborationWorkspaceIDs, err := workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, packageIDs, "")
+	if err != nil {
+		return err
+	}
+	for _, collaborationWorkspaceID := range workspaceCollaborationWorkspaceIDs {
+		affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
 	}
 	for collaborationWorkspaceID := range affectedCollaborationWorkspaces {
 		if _, refreshErr := s.boundaryService.RefreshSnapshot(collaborationWorkspaceID); refreshErr != nil {
@@ -1617,4 +1614,3 @@ func mergeUUIDs(groups ...[]uuid.UUID) []uuid.UUID {
 	}
 	return result
 }
-

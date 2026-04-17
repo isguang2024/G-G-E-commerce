@@ -1,4 +1,4 @@
-# domains/featurepackage/paths.yaml — AUTO-SPLIT by split_spec.py
+﻿# domains/featurepackage/paths.yaml — AUTO-SPLIT by split_spec.py
 paths:
   /feature-packages:
     get:
@@ -106,16 +106,16 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRelationTree'
-  /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}:
+  /feature-packages/workspaces/collaboration/{workspaceId}:
     get:
-      operationId: getCollaborationWorkspacePackages
+      operationId: getCollaborationPackages
       summary: 获取协作空间功能包
       tags:
       - featurepackage
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
-      - name: collaborationWorkspaceId
+      - name: workspaceId
         in: path
         required: true
         schema:
@@ -133,14 +133,14 @@ paths:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/FeaturePackageAssignmentResponse'
     put:
-      operationId: setCollaborationWorkspacePackages
+      operationId: setCollaborationPackages
       summary: 配置协作空间功能包
       tags:
       - featurepackage
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
-      - name: collaborationWorkspaceId
+      - name: workspaceId
         in: path
         required: true
         schema:
@@ -518,13 +518,13 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
-  /feature-packages/{id}/collaboration-workspaces:
+  /feature-packages/{id}/workspaces/collaboration:
     get:
-      operationId: getFeaturePackageCollaborationWorkspaces
+      operationId: getFeaturePackageCollaborations
       summary: 获取功能包协作空间
       tags:
       - featurepackage
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id
@@ -543,13 +543,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../domains/featurepackage/schemas.yaml#/components/schemas/FeaturePackageCollaborationWorkspaceList'
+                $ref: '../../domains/featurepackage/schemas.yaml#/components/schemas/FeaturePackageCollaborationList'
     put:
-      operationId: setFeaturePackageCollaborationWorkspaces
+      operationId: setFeaturePackageCollaborations
       summary: 配置功能包协作空间
       tags:
       - featurepackage
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id
@@ -575,3 +575,4 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/FeaturePackageMutationResult'
+

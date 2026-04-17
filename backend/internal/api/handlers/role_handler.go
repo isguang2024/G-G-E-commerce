@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -15,3 +15,4 @@ type roleAPIHandler struct {
 func newRoleAPIHandler(roleSvc role.RoleService, logger *zap.Logger) *roleAPIHandler {
 	return &roleAPIHandler{roleSvc: roleSvc, logger: logger}
 }
+

@@ -18,8 +18,8 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
-	req *CollaborationWorkspaceMemberAddRequest,
+func (s *Server) decodeAddCollaborationMemberRequest(r *http.Request) (
+	req *CollaborationMemberAddRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -66,7 +66,7 @@ func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceMemberAddRequest
+		var request CollaborationMemberAddRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -89,8 +89,8 @@ func (s *Server) decodeAddCollaborationWorkspaceMemberRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeAddCurrentCollaborationWorkspaceMemberRequest(r *http.Request) (
-	req *CollaborationWorkspaceMemberAddRequest,
+func (s *Server) decodeAddCurrentCollaborationMemberRequest(r *http.Request) (
+	req *CollaborationMemberAddRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -137,7 +137,7 @@ func (s *Server) decodeAddCurrentCollaborationWorkspaceMemberRequest(r *http.Req
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceMemberAddRequest
+		var request CollaborationMemberAddRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -610,8 +610,8 @@ func (s *Server) decodeCreateApiEndpointCategoryRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
-	req *CollaborationWorkspaceSaveRequest,
+func (s *Server) decodeCreateCollaborationRequest(r *http.Request) (
+	req *CollaborationSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -658,7 +658,7 @@ func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceSaveRequest
+		var request CollaborationSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -681,8 +681,8 @@ func (s *Server) decodeCreateCollaborationWorkspaceRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r *http.Request) (
-	req *CollaborationWorkspaceRoleSaveRequest,
+func (s *Server) decodeCreateCurrentCollaborationBoundaryRoleRequest(r *http.Request) (
+	req *CollaborationRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -729,7 +729,7 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceRoleSaveRequest
+		var request CollaborationRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -752,8 +752,8 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 	}
 }
 
-func (s *Server) decodeCreateCurrentCollaborationWorkspaceRoleRequest(r *http.Request) (
-	req *CollaborationWorkspaceRoleSaveRequest,
+func (s *Server) decodeCreateCurrentCollaborationRoleRequest(r *http.Request) (
+	req *CollaborationRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -800,7 +800,7 @@ func (s *Server) decodeCreateCurrentCollaborationWorkspaceRoleRequest(r *http.Re
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceRoleSaveRequest
+		var request CollaborationRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3641,7 +3641,7 @@ func (s *Server) decodeSavePermissionActionBatchTemplateRequest(r *http.Request)
 	}
 }
 
-func (s *Server) decodeSetCollaborationWorkspaceActionsRequest(r *http.Request) (
+func (s *Server) decodeSetCollaborationActionsRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -3720,7 +3720,7 @@ func (s *Server) decodeSetCollaborationWorkspaceActionsRequest(r *http.Request) 
 	}
 }
 
-func (s *Server) decodeSetCollaborationWorkspaceMenusRequest(r *http.Request) (
+func (s *Server) decodeSetCollaborationMenusRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -3799,7 +3799,7 @@ func (s *Server) decodeSetCollaborationWorkspaceMenusRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeSetCollaborationWorkspacePackagesRequest(r *http.Request) (
+func (s *Server) decodeSetCollaborationPackagesRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -3878,7 +3878,7 @@ func (s *Server) decodeSetCollaborationWorkspacePackagesRequest(r *http.Request)
 	}
 }
 
-func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(r *http.Request) (
+func (s *Server) decodeSetCurrentCollaborationBoundaryRoleActionsRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -3957,7 +3957,7 @@ func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	}
 }
 
-func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(r *http.Request) (
+func (s *Server) decodeSetCurrentCollaborationBoundaryRoleMenusRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -4036,7 +4036,7 @@ func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	}
 }
 
-func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(r *http.Request) (
+func (s *Server) decodeSetCurrentCollaborationBoundaryRolePackagesRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -4115,7 +4115,7 @@ func (s *Server) decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 	}
 }
 
-func (s *Server) decodeSetCurrentCollaborationWorkspaceMemberRolesRequest(r *http.Request) (
+func (s *Server) decodeSetCurrentCollaborationMemberRolesRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -4352,7 +4352,7 @@ func (s *Server) decodeSetFeaturePackageChildrenRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeSetFeaturePackageCollaborationWorkspacesRequest(r *http.Request) (
+func (s *Server) decodeSetFeaturePackageCollaborationsRequest(r *http.Request) (
 	req *UUIDListRequest,
 	rawBody []byte,
 	close func() error,
@@ -5355,8 +5355,8 @@ func (s *Server) decodeUpdateApiEndpointContextScopeRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
-	req *CollaborationWorkspaceSaveRequest,
+func (s *Server) decodeUpdateCollaborationRequest(r *http.Request) (
+	req *CollaborationSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -5403,7 +5403,7 @@ func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceSaveRequest
+		var request CollaborationSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -5426,8 +5426,8 @@ func (s *Server) decodeUpdateCollaborationWorkspaceRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Request) (
-	req *CollaborationWorkspaceMemberRoleRequest,
+func (s *Server) decodeUpdateCollaborationMemberRoleRequest(r *http.Request) (
+	req *CollaborationMemberRoleRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -5474,7 +5474,7 @@ func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Req
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceMemberRoleRequest
+		var request CollaborationMemberRoleRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -5497,8 +5497,8 @@ func (s *Server) decodeUpdateCollaborationWorkspaceMemberRoleRequest(r *http.Req
 	}
 }
 
-func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r *http.Request) (
-	req *CollaborationWorkspaceRoleSaveRequest,
+func (s *Server) decodeUpdateCurrentCollaborationBoundaryRoleRequest(r *http.Request) (
+	req *CollaborationRoleSaveRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -5545,7 +5545,7 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceRoleSaveRequest
+		var request CollaborationRoleSaveRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -5568,8 +5568,8 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r 
 	}
 }
 
-func (s *Server) decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r *http.Request) (
-	req *CollaborationWorkspaceMemberRoleRequest,
+func (s *Server) decodeUpdateCurrentCollaborationMemberRoleRequest(r *http.Request) (
+	req *CollaborationMemberRoleRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -5616,7 +5616,7 @@ func (s *Server) decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r *h
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request CollaborationWorkspaceMemberRoleRequest
+		var request CollaborationMemberRoleRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err

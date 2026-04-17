@@ -26,3 +26,4 @@ func (SecurityHandler) HandleBearerAuth(ctx context.Context, _ gen.OperationName
 	return ctx, nil
 }
 
+

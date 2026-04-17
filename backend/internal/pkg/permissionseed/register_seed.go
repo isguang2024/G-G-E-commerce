@@ -465,7 +465,10 @@ func ensureSelfServiceRole(db *gorm.DB) (uuid.UUID, error) {
 		SortOrder:   100,
 	}
 	var existing systemmodels.Role
-	err := db.Where("code = ? AND collaboration_workspace_id IS NULL", SelfServiceRoleCode).First(&existing).Error
+	err := db.Model(&systemmodels.Role{}).
+		Where("code = ?", SelfServiceRoleCode).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", systemmodels.ScopeTypeGlobal).
+		First(&existing).Error
 	switch {
 	case err == nil:
 		if updateErr := db.Model(&existing).Updates(map[string]interface{}{

@@ -1452,22 +1452,22 @@ func (s *AuthCallbackPayloadMode) UnmarshalText(data []byte) error {
 
 // Ref: #/components/schemas/AuthMe
 type AuthMe struct {
-	ID                              uuid.UUID    `json:"id"`
-	Username                        string       `json:"username"`
-	Nickname                        OptNilString `json:"nickname"`
-	Email                           OptNilString `json:"email"`
-	Avatar                          OptNilString `json:"avatar"`
-	AvatarURL                       OptNilString `json:"avatar_url"`
-	Phone                           OptNilString `json:"phone"`
-	Status                          OptNilString `json:"status"`
-	IsSuperAdmin                    bool         `json:"is_super_admin"`
-	CreatedAt                       OptNilString `json:"created_at"`
-	CurrentAuthWorkspaceID          OptNilUUID   `json:"current_auth_workspace_id"`
-	CurrentAuthWorkspaceType        OptNilString `json:"current_auth_workspace_type"`
-	CollaborationWorkspaceID        OptNilUUID   `json:"collaboration_workspace_id"`
-	CurrentCollaborationWorkspaceID OptNilUUID   `json:"current_collaboration_workspace_id"`
-	Actions                         []string     `json:"actions"`
-	Roles                           []AuthMeRole `json:"roles"`
+	ID                       uuid.UUID    `json:"id"`
+	Username                 string       `json:"username"`
+	Nickname                 OptNilString `json:"nickname"`
+	Email                    OptNilString `json:"email"`
+	Avatar                   OptNilString `json:"avatar"`
+	AvatarURL                OptNilString `json:"avatar_url"`
+	Phone                    OptNilString `json:"phone"`
+	Status                   OptNilString `json:"status"`
+	IsSuperAdmin             bool         `json:"is_super_admin"`
+	CreatedAt                OptNilString `json:"created_at"`
+	CurrentAuthWorkspaceID   OptNilUUID   `json:"current_auth_workspace_id"`
+	CurrentAuthWorkspaceType OptNilString `json:"current_auth_workspace_type"`
+	WorkspaceID              OptNilUUID   `json:"workspace_id"`
+	CurrentWorkspaceID       OptNilUUID   `json:"current_workspace_id"`
+	Actions                  []string     `json:"actions"`
+	Roles                    []AuthMeRole `json:"roles"`
 }
 
 // GetID returns the value of ID.
@@ -1530,14 +1530,14 @@ func (s *AuthMe) GetCurrentAuthWorkspaceType() OptNilString {
 	return s.CurrentAuthWorkspaceType
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *AuthMe) GetCollaborationWorkspaceID() OptNilUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *AuthMe) GetWorkspaceID() OptNilUUID {
+	return s.WorkspaceID
 }
 
-// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
-func (s *AuthMe) GetCurrentCollaborationWorkspaceID() OptNilUUID {
-	return s.CurrentCollaborationWorkspaceID
+// GetCurrentWorkspaceID returns the value of CurrentWorkspaceID.
+func (s *AuthMe) GetCurrentWorkspaceID() OptNilUUID {
+	return s.CurrentWorkspaceID
 }
 
 // GetActions returns the value of Actions.
@@ -1610,14 +1610,14 @@ func (s *AuthMe) SetCurrentAuthWorkspaceType(val OptNilString) {
 	s.CurrentAuthWorkspaceType = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *AuthMe) SetCollaborationWorkspaceID(val OptNilUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *AuthMe) SetWorkspaceID(val OptNilUUID) {
+	s.WorkspaceID = val
 }
 
-// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
-func (s *AuthMe) SetCurrentCollaborationWorkspaceID(val OptNilUUID) {
-	s.CurrentCollaborationWorkspaceID = val
+// SetCurrentWorkspaceID sets the value of CurrentWorkspaceID.
+func (s *AuthMe) SetCurrentWorkspaceID(val OptNilUUID) {
+	s.CurrentWorkspaceID = val
 }
 
 // SetActions sets the value of Actions.
@@ -1745,108 +1745,108 @@ func (s *CleanupStaleResult) SetDeletedCount(val int64) {
 
 func (*CleanupStaleResult) cleanupStaleApiEndpointsRes() {}
 
-// Ref: #/components/schemas/CollaborationWorkspaceActionOriginsResponse
-type CollaborationWorkspaceActionOriginsResponse struct {
+// Ref: #/components/schemas/CollaborationActionOriginsResponse
+type CollaborationActionOriginsResponse struct {
 	DerivedActionIds []uuid.UUID         `json:"derived_action_ids"`
 	DerivedSources   []ActionSourceEntry `json:"derived_sources"`
 	BlockedActionIds []uuid.UUID         `json:"blocked_action_ids"`
 }
 
 // GetDerivedActionIds returns the value of DerivedActionIds.
-func (s *CollaborationWorkspaceActionOriginsResponse) GetDerivedActionIds() []uuid.UUID {
+func (s *CollaborationActionOriginsResponse) GetDerivedActionIds() []uuid.UUID {
 	return s.DerivedActionIds
 }
 
 // GetDerivedSources returns the value of DerivedSources.
-func (s *CollaborationWorkspaceActionOriginsResponse) GetDerivedSources() []ActionSourceEntry {
+func (s *CollaborationActionOriginsResponse) GetDerivedSources() []ActionSourceEntry {
 	return s.DerivedSources
 }
 
 // GetBlockedActionIds returns the value of BlockedActionIds.
-func (s *CollaborationWorkspaceActionOriginsResponse) GetBlockedActionIds() []uuid.UUID {
+func (s *CollaborationActionOriginsResponse) GetBlockedActionIds() []uuid.UUID {
 	return s.BlockedActionIds
 }
 
 // SetDerivedActionIds sets the value of DerivedActionIds.
-func (s *CollaborationWorkspaceActionOriginsResponse) SetDerivedActionIds(val []uuid.UUID) {
+func (s *CollaborationActionOriginsResponse) SetDerivedActionIds(val []uuid.UUID) {
 	s.DerivedActionIds = val
 }
 
 // SetDerivedSources sets the value of DerivedSources.
-func (s *CollaborationWorkspaceActionOriginsResponse) SetDerivedSources(val []ActionSourceEntry) {
+func (s *CollaborationActionOriginsResponse) SetDerivedSources(val []ActionSourceEntry) {
 	s.DerivedSources = val
 }
 
 // SetBlockedActionIds sets the value of BlockedActionIds.
-func (s *CollaborationWorkspaceActionOriginsResponse) SetBlockedActionIds(val []uuid.UUID) {
+func (s *CollaborationActionOriginsResponse) SetBlockedActionIds(val []uuid.UUID) {
 	s.BlockedActionIds = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceActionsResponse
-type CollaborationWorkspaceActionsResponse struct {
+// Ref: #/components/schemas/CollaborationActionsResponse
+type CollaborationActionsResponse struct {
 	ActionIds []uuid.UUID           `json:"action_ids"`
 	Actions   []PermissionActionRef `json:"actions"`
 }
 
 // GetActionIds returns the value of ActionIds.
-func (s *CollaborationWorkspaceActionsResponse) GetActionIds() []uuid.UUID {
+func (s *CollaborationActionsResponse) GetActionIds() []uuid.UUID {
 	return s.ActionIds
 }
 
 // GetActions returns the value of Actions.
-func (s *CollaborationWorkspaceActionsResponse) GetActions() []PermissionActionRef {
+func (s *CollaborationActionsResponse) GetActions() []PermissionActionRef {
 	return s.Actions
 }
 
 // SetActionIds sets the value of ActionIds.
-func (s *CollaborationWorkspaceActionsResponse) SetActionIds(val []uuid.UUID) {
+func (s *CollaborationActionsResponse) SetActionIds(val []uuid.UUID) {
 	s.ActionIds = val
 }
 
 // SetActions sets the value of Actions.
-func (s *CollaborationWorkspaceActionsResponse) SetActions(val []PermissionActionRef) {
+func (s *CollaborationActionsResponse) SetActions(val []PermissionActionRef) {
 	s.Actions = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceBoundaryRolePackagesResponse
-type CollaborationWorkspaceBoundaryRolePackagesResponse struct {
+// Ref: #/components/schemas/CollaborationBoundaryRolePackagesResponse
+type CollaborationBoundaryRolePackagesResponse struct {
 	PackageIds []uuid.UUID         `json:"package_ids"`
 	Packages   []FeaturePackageRef `json:"packages"`
 	Inherited  bool                `json:"inherited"`
 }
 
 // GetPackageIds returns the value of PackageIds.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetPackageIds() []uuid.UUID {
+func (s *CollaborationBoundaryRolePackagesResponse) GetPackageIds() []uuid.UUID {
 	return s.PackageIds
 }
 
 // GetPackages returns the value of Packages.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetPackages() []FeaturePackageRef {
+func (s *CollaborationBoundaryRolePackagesResponse) GetPackages() []FeaturePackageRef {
 	return s.Packages
 }
 
 // GetInherited returns the value of Inherited.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetInherited() bool {
+func (s *CollaborationBoundaryRolePackagesResponse) GetInherited() bool {
 	return s.Inherited
 }
 
 // SetPackageIds sets the value of PackageIds.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetPackageIds(val []uuid.UUID) {
+func (s *CollaborationBoundaryRolePackagesResponse) SetPackageIds(val []uuid.UUID) {
 	s.PackageIds = val
 }
 
 // SetPackages sets the value of Packages.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetPackages(val []FeaturePackageRef) {
+func (s *CollaborationBoundaryRolePackagesResponse) SetPackages(val []FeaturePackageRef) {
 	s.Packages = val
 }
 
 // SetInherited sets the value of Inherited.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetInherited(val bool) {
+func (s *CollaborationBoundaryRolePackagesResponse) SetInherited(val bool) {
 	s.Inherited = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceItem
-type CollaborationWorkspaceItem struct {
+// Ref: #/components/schemas/CollaborationItem
+type CollaborationItem struct {
 	ID         uuid.UUID `json:"id"`
 	Name       string    `json:"name"`
 	Remark     string    `json:"remark"`
@@ -1860,543 +1860,554 @@ type CollaborationWorkspaceItem struct {
 }
 
 // GetID returns the value of ID.
-func (s *CollaborationWorkspaceItem) GetID() uuid.UUID {
+func (s *CollaborationItem) GetID() uuid.UUID {
 	return s.ID
 }
 
 // GetName returns the value of Name.
-func (s *CollaborationWorkspaceItem) GetName() string {
+func (s *CollaborationItem) GetName() string {
 	return s.Name
 }
 
 // GetRemark returns the value of Remark.
-func (s *CollaborationWorkspaceItem) GetRemark() string {
+func (s *CollaborationItem) GetRemark() string {
 	return s.Remark
 }
 
 // GetLogoURL returns the value of LogoURL.
-func (s *CollaborationWorkspaceItem) GetLogoURL() string {
+func (s *CollaborationItem) GetLogoURL() string {
 	return s.LogoURL
 }
 
 // GetPlan returns the value of Plan.
-func (s *CollaborationWorkspaceItem) GetPlan() string {
+func (s *CollaborationItem) GetPlan() string {
 	return s.Plan
 }
 
 // GetOwnerID returns the value of OwnerID.
-func (s *CollaborationWorkspaceItem) GetOwnerID() uuid.UUID {
+func (s *CollaborationItem) GetOwnerID() uuid.UUID {
 	return s.OwnerID
 }
 
 // GetMaxMembers returns the value of MaxMembers.
-func (s *CollaborationWorkspaceItem) GetMaxMembers() int {
+func (s *CollaborationItem) GetMaxMembers() int {
 	return s.MaxMembers
 }
 
 // GetStatus returns the value of Status.
-func (s *CollaborationWorkspaceItem) GetStatus() string {
+func (s *CollaborationItem) GetStatus() string {
 	return s.Status
 }
 
 // GetCreatedAt returns the value of CreatedAt.
-func (s *CollaborationWorkspaceItem) GetCreatedAt() time.Time {
+func (s *CollaborationItem) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *CollaborationWorkspaceItem) GetUpdatedAt() time.Time {
+func (s *CollaborationItem) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
 // SetID sets the value of ID.
-func (s *CollaborationWorkspaceItem) SetID(val uuid.UUID) {
+func (s *CollaborationItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
-func (s *CollaborationWorkspaceItem) SetName(val string) {
+func (s *CollaborationItem) SetName(val string) {
 	s.Name = val
 }
 
 // SetRemark sets the value of Remark.
-func (s *CollaborationWorkspaceItem) SetRemark(val string) {
+func (s *CollaborationItem) SetRemark(val string) {
 	s.Remark = val
 }
 
 // SetLogoURL sets the value of LogoURL.
-func (s *CollaborationWorkspaceItem) SetLogoURL(val string) {
+func (s *CollaborationItem) SetLogoURL(val string) {
 	s.LogoURL = val
 }
 
 // SetPlan sets the value of Plan.
-func (s *CollaborationWorkspaceItem) SetPlan(val string) {
+func (s *CollaborationItem) SetPlan(val string) {
 	s.Plan = val
 }
 
 // SetOwnerID sets the value of OwnerID.
-func (s *CollaborationWorkspaceItem) SetOwnerID(val uuid.UUID) {
+func (s *CollaborationItem) SetOwnerID(val uuid.UUID) {
 	s.OwnerID = val
 }
 
 // SetMaxMembers sets the value of MaxMembers.
-func (s *CollaborationWorkspaceItem) SetMaxMembers(val int) {
+func (s *CollaborationItem) SetMaxMembers(val int) {
 	s.MaxMembers = val
 }
 
 // SetStatus sets the value of Status.
-func (s *CollaborationWorkspaceItem) SetStatus(val string) {
+func (s *CollaborationItem) SetStatus(val string) {
 	s.Status = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *CollaborationWorkspaceItem) SetCreatedAt(val time.Time) {
+func (s *CollaborationItem) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *CollaborationWorkspaceItem) SetUpdatedAt(val time.Time) {
+func (s *CollaborationItem) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceList
-type CollaborationWorkspaceList struct {
-	Records []CollaborationWorkspaceItem `json:"records"`
-	Total   int                          `json:"total"`
+// Ref: #/components/schemas/CollaborationList
+type CollaborationList struct {
+	Records []CollaborationItem `json:"records"`
+	Total   int                 `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *CollaborationWorkspaceList) GetRecords() []CollaborationWorkspaceItem {
+func (s *CollaborationList) GetRecords() []CollaborationItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *CollaborationWorkspaceList) GetTotal() int {
+func (s *CollaborationList) GetTotal() int {
 	return s.Total
 }
 
 // SetRecords sets the value of Records.
-func (s *CollaborationWorkspaceList) SetRecords(val []CollaborationWorkspaceItem) {
+func (s *CollaborationList) SetRecords(val []CollaborationItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *CollaborationWorkspaceList) SetTotal(val int) {
+func (s *CollaborationList) SetTotal(val int) {
 	s.Total = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMemberAddRequest
-type CollaborationWorkspaceMemberAddRequest struct {
+// Ref: #/components/schemas/CollaborationMemberAddRequest
+type CollaborationMemberAddRequest struct {
 	UserID   uuid.UUID `json:"user_id"`
 	RoleCode OptString `json:"role_code"`
 }
 
 // GetUserID returns the value of UserID.
-func (s *CollaborationWorkspaceMemberAddRequest) GetUserID() uuid.UUID {
+func (s *CollaborationMemberAddRequest) GetUserID() uuid.UUID {
 	return s.UserID
 }
 
 // GetRoleCode returns the value of RoleCode.
-func (s *CollaborationWorkspaceMemberAddRequest) GetRoleCode() OptString {
+func (s *CollaborationMemberAddRequest) GetRoleCode() OptString {
 	return s.RoleCode
 }
 
 // SetUserID sets the value of UserID.
-func (s *CollaborationWorkspaceMemberAddRequest) SetUserID(val uuid.UUID) {
+func (s *CollaborationMemberAddRequest) SetUserID(val uuid.UUID) {
 	s.UserID = val
 }
 
 // SetRoleCode sets the value of RoleCode.
-func (s *CollaborationWorkspaceMemberAddRequest) SetRoleCode(val OptString) {
+func (s *CollaborationMemberAddRequest) SetRoleCode(val OptString) {
 	s.RoleCode = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMemberItem
-type CollaborationWorkspaceMemberItem struct {
-	ID                       uuid.UUID  `json:"id"`
-	CollaborationWorkspaceID uuid.UUID  `json:"collaboration_workspace_id"`
-	UserID                   uuid.UUID  `json:"user_id"`
-	RoleCode                 string     `json:"role_code"`
-	RoleID                   OptNilUUID `json:"role_id"`
-	Status                   string     `json:"status"`
-	JoinedAt                 time.Time  `json:"joined_at"`
-	InvitedBy                OptNilUUID `json:"invited_by"`
-	CreatedAt                time.Time  `json:"created_at"`
-	UpdatedAt                time.Time  `json:"updated_at"`
+// Ref: #/components/schemas/CollaborationMemberItem
+type CollaborationMemberItem struct {
+	ID          uuid.UUID  `json:"id"`
+	WorkspaceID uuid.UUID  `json:"workspace_id"`
+	UserID      uuid.UUID  `json:"user_id"`
+	RoleCode    string     `json:"role_code"`
+	RoleID      OptNilUUID `json:"role_id"`
+	Status      string     `json:"status"`
+	JoinedAt    time.Time  `json:"joined_at"`
+	InvitedBy   OptNilUUID `json:"invited_by"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
-func (s *CollaborationWorkspaceMemberItem) GetID() uuid.UUID {
+func (s *CollaborationMemberItem) GetID() uuid.UUID {
 	return s.ID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *CollaborationWorkspaceMemberItem) GetCollaborationWorkspaceID() uuid.UUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *CollaborationMemberItem) GetWorkspaceID() uuid.UUID {
+	return s.WorkspaceID
 }
 
 // GetUserID returns the value of UserID.
-func (s *CollaborationWorkspaceMemberItem) GetUserID() uuid.UUID {
+func (s *CollaborationMemberItem) GetUserID() uuid.UUID {
 	return s.UserID
 }
 
 // GetRoleCode returns the value of RoleCode.
-func (s *CollaborationWorkspaceMemberItem) GetRoleCode() string {
+func (s *CollaborationMemberItem) GetRoleCode() string {
 	return s.RoleCode
 }
 
 // GetRoleID returns the value of RoleID.
-func (s *CollaborationWorkspaceMemberItem) GetRoleID() OptNilUUID {
+func (s *CollaborationMemberItem) GetRoleID() OptNilUUID {
 	return s.RoleID
 }
 
 // GetStatus returns the value of Status.
-func (s *CollaborationWorkspaceMemberItem) GetStatus() string {
+func (s *CollaborationMemberItem) GetStatus() string {
 	return s.Status
 }
 
 // GetJoinedAt returns the value of JoinedAt.
-func (s *CollaborationWorkspaceMemberItem) GetJoinedAt() time.Time {
+func (s *CollaborationMemberItem) GetJoinedAt() time.Time {
 	return s.JoinedAt
 }
 
 // GetInvitedBy returns the value of InvitedBy.
-func (s *CollaborationWorkspaceMemberItem) GetInvitedBy() OptNilUUID {
+func (s *CollaborationMemberItem) GetInvitedBy() OptNilUUID {
 	return s.InvitedBy
 }
 
 // GetCreatedAt returns the value of CreatedAt.
-func (s *CollaborationWorkspaceMemberItem) GetCreatedAt() time.Time {
+func (s *CollaborationMemberItem) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *CollaborationWorkspaceMemberItem) GetUpdatedAt() time.Time {
+func (s *CollaborationMemberItem) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
 // SetID sets the value of ID.
-func (s *CollaborationWorkspaceMemberItem) SetID(val uuid.UUID) {
+func (s *CollaborationMemberItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *CollaborationWorkspaceMemberItem) SetCollaborationWorkspaceID(val uuid.UUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *CollaborationMemberItem) SetWorkspaceID(val uuid.UUID) {
+	s.WorkspaceID = val
 }
 
 // SetUserID sets the value of UserID.
-func (s *CollaborationWorkspaceMemberItem) SetUserID(val uuid.UUID) {
+func (s *CollaborationMemberItem) SetUserID(val uuid.UUID) {
 	s.UserID = val
 }
 
 // SetRoleCode sets the value of RoleCode.
-func (s *CollaborationWorkspaceMemberItem) SetRoleCode(val string) {
+func (s *CollaborationMemberItem) SetRoleCode(val string) {
 	s.RoleCode = val
 }
 
 // SetRoleID sets the value of RoleID.
-func (s *CollaborationWorkspaceMemberItem) SetRoleID(val OptNilUUID) {
+func (s *CollaborationMemberItem) SetRoleID(val OptNilUUID) {
 	s.RoleID = val
 }
 
 // SetStatus sets the value of Status.
-func (s *CollaborationWorkspaceMemberItem) SetStatus(val string) {
+func (s *CollaborationMemberItem) SetStatus(val string) {
 	s.Status = val
 }
 
 // SetJoinedAt sets the value of JoinedAt.
-func (s *CollaborationWorkspaceMemberItem) SetJoinedAt(val time.Time) {
+func (s *CollaborationMemberItem) SetJoinedAt(val time.Time) {
 	s.JoinedAt = val
 }
 
 // SetInvitedBy sets the value of InvitedBy.
-func (s *CollaborationWorkspaceMemberItem) SetInvitedBy(val OptNilUUID) {
+func (s *CollaborationMemberItem) SetInvitedBy(val OptNilUUID) {
 	s.InvitedBy = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *CollaborationWorkspaceMemberItem) SetCreatedAt(val time.Time) {
+func (s *CollaborationMemberItem) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *CollaborationWorkspaceMemberItem) SetUpdatedAt(val time.Time) {
+func (s *CollaborationMemberItem) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMemberList
-type CollaborationWorkspaceMemberList struct {
-	Records []CollaborationWorkspaceMemberItem `json:"records"`
-	Total   int                                `json:"total"`
+// Ref: #/components/schemas/CollaborationMemberList
+type CollaborationMemberList struct {
+	Records []CollaborationMemberItem `json:"records"`
+	Total   int                       `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *CollaborationWorkspaceMemberList) GetRecords() []CollaborationWorkspaceMemberItem {
+func (s *CollaborationMemberList) GetRecords() []CollaborationMemberItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *CollaborationWorkspaceMemberList) GetTotal() int {
+func (s *CollaborationMemberList) GetTotal() int {
 	return s.Total
 }
 
 // SetRecords sets the value of Records.
-func (s *CollaborationWorkspaceMemberList) SetRecords(val []CollaborationWorkspaceMemberItem) {
+func (s *CollaborationMemberList) SetRecords(val []CollaborationMemberItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *CollaborationWorkspaceMemberList) SetTotal(val int) {
+func (s *CollaborationMemberList) SetTotal(val int) {
 	s.Total = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMemberRoleRequest
-type CollaborationWorkspaceMemberRoleRequest struct {
+// Ref: #/components/schemas/CollaborationMemberRoleRequest
+type CollaborationMemberRoleRequest struct {
 	RoleCode string `json:"role_code"`
 }
 
 // GetRoleCode returns the value of RoleCode.
-func (s *CollaborationWorkspaceMemberRoleRequest) GetRoleCode() string {
+func (s *CollaborationMemberRoleRequest) GetRoleCode() string {
 	return s.RoleCode
 }
 
 // SetRoleCode sets the value of RoleCode.
-func (s *CollaborationWorkspaceMemberRoleRequest) SetRoleCode(val string) {
+func (s *CollaborationMemberRoleRequest) SetRoleCode(val string) {
 	s.RoleCode = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMemberRolesResponse
-type CollaborationWorkspaceMemberRolesResponse struct {
+// Ref: #/components/schemas/CollaborationMemberRolesResponse
+type CollaborationMemberRolesResponse struct {
 	RoleIds []uuid.UUID   `json:"role_ids"`
 	Roles   []UserRoleRef `json:"roles"`
 }
 
 // GetRoleIds returns the value of RoleIds.
-func (s *CollaborationWorkspaceMemberRolesResponse) GetRoleIds() []uuid.UUID {
+func (s *CollaborationMemberRolesResponse) GetRoleIds() []uuid.UUID {
 	return s.RoleIds
 }
 
 // GetRoles returns the value of Roles.
-func (s *CollaborationWorkspaceMemberRolesResponse) GetRoles() []UserRoleRef {
+func (s *CollaborationMemberRolesResponse) GetRoles() []UserRoleRef {
 	return s.Roles
 }
 
 // SetRoleIds sets the value of RoleIds.
-func (s *CollaborationWorkspaceMemberRolesResponse) SetRoleIds(val []uuid.UUID) {
+func (s *CollaborationMemberRolesResponse) SetRoleIds(val []uuid.UUID) {
 	s.RoleIds = val
 }
 
 // SetRoles sets the value of Roles.
-func (s *CollaborationWorkspaceMemberRolesResponse) SetRoles(val []UserRoleRef) {
+func (s *CollaborationMemberRolesResponse) SetRoles(val []UserRoleRef) {
 	s.Roles = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMenuOriginsResponse
-type CollaborationWorkspaceMenuOriginsResponse struct {
+// Ref: #/components/schemas/CollaborationMenuOriginsResponse
+type CollaborationMenuOriginsResponse struct {
 	DerivedMenuIds []uuid.UUID       `json:"derived_menu_ids"`
 	DerivedSources []MenuSourceEntry `json:"derived_sources"`
 	BlockedMenuIds []uuid.UUID       `json:"blocked_menu_ids"`
 }
 
 // GetDerivedMenuIds returns the value of DerivedMenuIds.
-func (s *CollaborationWorkspaceMenuOriginsResponse) GetDerivedMenuIds() []uuid.UUID {
+func (s *CollaborationMenuOriginsResponse) GetDerivedMenuIds() []uuid.UUID {
 	return s.DerivedMenuIds
 }
 
 // GetDerivedSources returns the value of DerivedSources.
-func (s *CollaborationWorkspaceMenuOriginsResponse) GetDerivedSources() []MenuSourceEntry {
+func (s *CollaborationMenuOriginsResponse) GetDerivedSources() []MenuSourceEntry {
 	return s.DerivedSources
 }
 
 // GetBlockedMenuIds returns the value of BlockedMenuIds.
-func (s *CollaborationWorkspaceMenuOriginsResponse) GetBlockedMenuIds() []uuid.UUID {
+func (s *CollaborationMenuOriginsResponse) GetBlockedMenuIds() []uuid.UUID {
 	return s.BlockedMenuIds
 }
 
 // SetDerivedMenuIds sets the value of DerivedMenuIds.
-func (s *CollaborationWorkspaceMenuOriginsResponse) SetDerivedMenuIds(val []uuid.UUID) {
+func (s *CollaborationMenuOriginsResponse) SetDerivedMenuIds(val []uuid.UUID) {
 	s.DerivedMenuIds = val
 }
 
 // SetDerivedSources sets the value of DerivedSources.
-func (s *CollaborationWorkspaceMenuOriginsResponse) SetDerivedSources(val []MenuSourceEntry) {
+func (s *CollaborationMenuOriginsResponse) SetDerivedSources(val []MenuSourceEntry) {
 	s.DerivedSources = val
 }
 
 // SetBlockedMenuIds sets the value of BlockedMenuIds.
-func (s *CollaborationWorkspaceMenuOriginsResponse) SetBlockedMenuIds(val []uuid.UUID) {
+func (s *CollaborationMenuOriginsResponse) SetBlockedMenuIds(val []uuid.UUID) {
 	s.BlockedMenuIds = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceMenusResponse
-type CollaborationWorkspaceMenusResponse struct {
+// Ref: #/components/schemas/CollaborationMenusResponse
+type CollaborationMenusResponse struct {
 	MenuIds []uuid.UUID `json:"menu_ids"`
 }
 
 // GetMenuIds returns the value of MenuIds.
-func (s *CollaborationWorkspaceMenusResponse) GetMenuIds() []uuid.UUID {
+func (s *CollaborationMenusResponse) GetMenuIds() []uuid.UUID {
 	return s.MenuIds
 }
 
 // SetMenuIds sets the value of MenuIds.
-func (s *CollaborationWorkspaceMenusResponse) SetMenuIds(val []uuid.UUID) {
+func (s *CollaborationMenusResponse) SetMenuIds(val []uuid.UUID) {
 	s.MenuIds = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceRoleItem
-type CollaborationWorkspaceRoleItem struct {
-	ID                       uuid.UUID   `json:"id"`
-	CollaborationWorkspaceID NilUUID     `json:"collaboration_workspace_id"`
-	Code                     string      `json:"code"`
-	Name                     string      `json:"name"`
-	Description              string      `json:"description"`
-	Status                   string      `json:"status"`
-	IsSystem                 bool        `json:"is_system"`
-	IsGlobal                 bool        `json:"is_global"`
-	SortOrder                OptInt64    `json:"sort_order"`
-	CreatedAt                time.Time   `json:"created_at"`
-	UpdatedAt                OptDateTime `json:"updated_at"`
+// Ref: #/components/schemas/CollaborationRoleItem
+type CollaborationRoleItem struct {
+	ID          uuid.UUID   `json:"id"`
+	ScopeType   string      `json:"scope_type"`
+	ScopeID     OptNilUUID  `json:"scope_id"`
+	Code        string      `json:"code"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Status      string      `json:"status"`
+	IsSystem    bool        `json:"is_system"`
+	IsGlobal    bool        `json:"is_global"`
+	SortOrder   OptInt64    `json:"sort_order"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   OptDateTime `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
-func (s *CollaborationWorkspaceRoleItem) GetID() uuid.UUID {
+func (s *CollaborationRoleItem) GetID() uuid.UUID {
 	return s.ID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *CollaborationWorkspaceRoleItem) GetCollaborationWorkspaceID() NilUUID {
-	return s.CollaborationWorkspaceID
+// GetScopeType returns the value of ScopeType.
+func (s *CollaborationRoleItem) GetScopeType() string {
+	return s.ScopeType
+}
+
+// GetScopeID returns the value of ScopeID.
+func (s *CollaborationRoleItem) GetScopeID() OptNilUUID {
+	return s.ScopeID
 }
 
 // GetCode returns the value of Code.
-func (s *CollaborationWorkspaceRoleItem) GetCode() string {
+func (s *CollaborationRoleItem) GetCode() string {
 	return s.Code
 }
 
 // GetName returns the value of Name.
-func (s *CollaborationWorkspaceRoleItem) GetName() string {
+func (s *CollaborationRoleItem) GetName() string {
 	return s.Name
 }
 
 // GetDescription returns the value of Description.
-func (s *CollaborationWorkspaceRoleItem) GetDescription() string {
+func (s *CollaborationRoleItem) GetDescription() string {
 	return s.Description
 }
 
 // GetStatus returns the value of Status.
-func (s *CollaborationWorkspaceRoleItem) GetStatus() string {
+func (s *CollaborationRoleItem) GetStatus() string {
 	return s.Status
 }
 
 // GetIsSystem returns the value of IsSystem.
-func (s *CollaborationWorkspaceRoleItem) GetIsSystem() bool {
+func (s *CollaborationRoleItem) GetIsSystem() bool {
 	return s.IsSystem
 }
 
 // GetIsGlobal returns the value of IsGlobal.
-func (s *CollaborationWorkspaceRoleItem) GetIsGlobal() bool {
+func (s *CollaborationRoleItem) GetIsGlobal() bool {
 	return s.IsGlobal
 }
 
 // GetSortOrder returns the value of SortOrder.
-func (s *CollaborationWorkspaceRoleItem) GetSortOrder() OptInt64 {
+func (s *CollaborationRoleItem) GetSortOrder() OptInt64 {
 	return s.SortOrder
 }
 
 // GetCreatedAt returns the value of CreatedAt.
-func (s *CollaborationWorkspaceRoleItem) GetCreatedAt() time.Time {
+func (s *CollaborationRoleItem) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *CollaborationWorkspaceRoleItem) GetUpdatedAt() OptDateTime {
+func (s *CollaborationRoleItem) GetUpdatedAt() OptDateTime {
 	return s.UpdatedAt
 }
 
 // SetID sets the value of ID.
-func (s *CollaborationWorkspaceRoleItem) SetID(val uuid.UUID) {
+func (s *CollaborationRoleItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *CollaborationWorkspaceRoleItem) SetCollaborationWorkspaceID(val NilUUID) {
-	s.CollaborationWorkspaceID = val
+// SetScopeType sets the value of ScopeType.
+func (s *CollaborationRoleItem) SetScopeType(val string) {
+	s.ScopeType = val
+}
+
+// SetScopeID sets the value of ScopeID.
+func (s *CollaborationRoleItem) SetScopeID(val OptNilUUID) {
+	s.ScopeID = val
 }
 
 // SetCode sets the value of Code.
-func (s *CollaborationWorkspaceRoleItem) SetCode(val string) {
+func (s *CollaborationRoleItem) SetCode(val string) {
 	s.Code = val
 }
 
 // SetName sets the value of Name.
-func (s *CollaborationWorkspaceRoleItem) SetName(val string) {
+func (s *CollaborationRoleItem) SetName(val string) {
 	s.Name = val
 }
 
 // SetDescription sets the value of Description.
-func (s *CollaborationWorkspaceRoleItem) SetDescription(val string) {
+func (s *CollaborationRoleItem) SetDescription(val string) {
 	s.Description = val
 }
 
 // SetStatus sets the value of Status.
-func (s *CollaborationWorkspaceRoleItem) SetStatus(val string) {
+func (s *CollaborationRoleItem) SetStatus(val string) {
 	s.Status = val
 }
 
 // SetIsSystem sets the value of IsSystem.
-func (s *CollaborationWorkspaceRoleItem) SetIsSystem(val bool) {
+func (s *CollaborationRoleItem) SetIsSystem(val bool) {
 	s.IsSystem = val
 }
 
 // SetIsGlobal sets the value of IsGlobal.
-func (s *CollaborationWorkspaceRoleItem) SetIsGlobal(val bool) {
+func (s *CollaborationRoleItem) SetIsGlobal(val bool) {
 	s.IsGlobal = val
 }
 
 // SetSortOrder sets the value of SortOrder.
-func (s *CollaborationWorkspaceRoleItem) SetSortOrder(val OptInt64) {
+func (s *CollaborationRoleItem) SetSortOrder(val OptInt64) {
 	s.SortOrder = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *CollaborationWorkspaceRoleItem) SetCreatedAt(val time.Time) {
+func (s *CollaborationRoleItem) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *CollaborationWorkspaceRoleItem) SetUpdatedAt(val OptDateTime) {
+func (s *CollaborationRoleItem) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceRoleList
-type CollaborationWorkspaceRoleList struct {
-	Records []CollaborationWorkspaceRoleItem `json:"records"`
-	Total   int64                            `json:"total"`
+// Ref: #/components/schemas/CollaborationRoleList
+type CollaborationRoleList struct {
+	Records []CollaborationRoleItem `json:"records"`
+	Total   int64                   `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *CollaborationWorkspaceRoleList) GetRecords() []CollaborationWorkspaceRoleItem {
+func (s *CollaborationRoleList) GetRecords() []CollaborationRoleItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *CollaborationWorkspaceRoleList) GetTotal() int64 {
+func (s *CollaborationRoleList) GetTotal() int64 {
 	return s.Total
 }
 
 // SetRecords sets the value of Records.
-func (s *CollaborationWorkspaceRoleList) SetRecords(val []CollaborationWorkspaceRoleItem) {
+func (s *CollaborationRoleList) SetRecords(val []CollaborationRoleItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *CollaborationWorkspaceRoleList) SetTotal(val int64) {
+func (s *CollaborationRoleList) SetTotal(val int64) {
 	s.Total = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceRoleSaveRequest
-type CollaborationWorkspaceRoleSaveRequest struct {
+// Ref: #/components/schemas/CollaborationRoleSaveRequest
+type CollaborationRoleSaveRequest struct {
 	Code        string    `json:"code"`
 	Name        string    `json:"name"`
 	Description OptString `json:"description"`
@@ -2405,57 +2416,57 @@ type CollaborationWorkspaceRoleSaveRequest struct {
 }
 
 // GetCode returns the value of Code.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetCode() string {
+func (s *CollaborationRoleSaveRequest) GetCode() string {
 	return s.Code
 }
 
 // GetName returns the value of Name.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetName() string {
+func (s *CollaborationRoleSaveRequest) GetName() string {
 	return s.Name
 }
 
 // GetDescription returns the value of Description.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetDescription() OptString {
+func (s *CollaborationRoleSaveRequest) GetDescription() OptString {
 	return s.Description
 }
 
 // GetSortOrder returns the value of SortOrder.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetSortOrder() OptInt {
+func (s *CollaborationRoleSaveRequest) GetSortOrder() OptInt {
 	return s.SortOrder
 }
 
 // GetStatus returns the value of Status.
-func (s *CollaborationWorkspaceRoleSaveRequest) GetStatus() OptString {
+func (s *CollaborationRoleSaveRequest) GetStatus() OptString {
 	return s.Status
 }
 
 // SetCode sets the value of Code.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetCode(val string) {
+func (s *CollaborationRoleSaveRequest) SetCode(val string) {
 	s.Code = val
 }
 
 // SetName sets the value of Name.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetName(val string) {
+func (s *CollaborationRoleSaveRequest) SetName(val string) {
 	s.Name = val
 }
 
 // SetDescription sets the value of Description.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetDescription(val OptString) {
+func (s *CollaborationRoleSaveRequest) SetDescription(val OptString) {
 	s.Description = val
 }
 
 // SetSortOrder sets the value of SortOrder.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetSortOrder(val OptInt) {
+func (s *CollaborationRoleSaveRequest) SetSortOrder(val OptInt) {
 	s.SortOrder = val
 }
 
 // SetStatus sets the value of Status.
-func (s *CollaborationWorkspaceRoleSaveRequest) SetStatus(val OptString) {
+func (s *CollaborationRoleSaveRequest) SetStatus(val OptString) {
 	s.Status = val
 }
 
-// Ref: #/components/schemas/CollaborationWorkspaceSaveRequest
-type CollaborationWorkspaceSaveRequest struct {
+// Ref: #/components/schemas/CollaborationSaveRequest
+type CollaborationSaveRequest struct {
 	Name         string      `json:"name"`
 	Remark       OptString   `json:"remark"`
 	LogoURL      OptString   `json:"logo_url"`
@@ -2466,72 +2477,72 @@ type CollaborationWorkspaceSaveRequest struct {
 }
 
 // GetName returns the value of Name.
-func (s *CollaborationWorkspaceSaveRequest) GetName() string {
+func (s *CollaborationSaveRequest) GetName() string {
 	return s.Name
 }
 
 // GetRemark returns the value of Remark.
-func (s *CollaborationWorkspaceSaveRequest) GetRemark() OptString {
+func (s *CollaborationSaveRequest) GetRemark() OptString {
 	return s.Remark
 }
 
 // GetLogoURL returns the value of LogoURL.
-func (s *CollaborationWorkspaceSaveRequest) GetLogoURL() OptString {
+func (s *CollaborationSaveRequest) GetLogoURL() OptString {
 	return s.LogoURL
 }
 
 // GetPlan returns the value of Plan.
-func (s *CollaborationWorkspaceSaveRequest) GetPlan() OptString {
+func (s *CollaborationSaveRequest) GetPlan() OptString {
 	return s.Plan
 }
 
 // GetMaxMembers returns the value of MaxMembers.
-func (s *CollaborationWorkspaceSaveRequest) GetMaxMembers() OptInt {
+func (s *CollaborationSaveRequest) GetMaxMembers() OptInt {
 	return s.MaxMembers
 }
 
 // GetStatus returns the value of Status.
-func (s *CollaborationWorkspaceSaveRequest) GetStatus() OptString {
+func (s *CollaborationSaveRequest) GetStatus() OptString {
 	return s.Status
 }
 
 // GetAdminUserIds returns the value of AdminUserIds.
-func (s *CollaborationWorkspaceSaveRequest) GetAdminUserIds() []uuid.UUID {
+func (s *CollaborationSaveRequest) GetAdminUserIds() []uuid.UUID {
 	return s.AdminUserIds
 }
 
 // SetName sets the value of Name.
-func (s *CollaborationWorkspaceSaveRequest) SetName(val string) {
+func (s *CollaborationSaveRequest) SetName(val string) {
 	s.Name = val
 }
 
 // SetRemark sets the value of Remark.
-func (s *CollaborationWorkspaceSaveRequest) SetRemark(val OptString) {
+func (s *CollaborationSaveRequest) SetRemark(val OptString) {
 	s.Remark = val
 }
 
 // SetLogoURL sets the value of LogoURL.
-func (s *CollaborationWorkspaceSaveRequest) SetLogoURL(val OptString) {
+func (s *CollaborationSaveRequest) SetLogoURL(val OptString) {
 	s.LogoURL = val
 }
 
 // SetPlan sets the value of Plan.
-func (s *CollaborationWorkspaceSaveRequest) SetPlan(val OptString) {
+func (s *CollaborationSaveRequest) SetPlan(val OptString) {
 	s.Plan = val
 }
 
 // SetMaxMembers sets the value of MaxMembers.
-func (s *CollaborationWorkspaceSaveRequest) SetMaxMembers(val OptInt) {
+func (s *CollaborationSaveRequest) SetMaxMembers(val OptInt) {
 	s.MaxMembers = val
 }
 
 // SetStatus sets the value of Status.
-func (s *CollaborationWorkspaceSaveRequest) SetStatus(val OptString) {
+func (s *CollaborationSaveRequest) SetStatus(val OptString) {
 	s.Status = val
 }
 
 // SetAdminUserIds sets the value of AdminUserIds.
-func (s *CollaborationWorkspaceSaveRequest) SetAdminUserIds(val []uuid.UUID) {
+func (s *CollaborationSaveRequest) SetAdminUserIds(val []uuid.UUID) {
 	s.AdminUserIds = val
 }
 
@@ -3459,29 +3470,29 @@ func (s *DispatchAudienceOption) SetDescription(val string) {
 	s.Description = val
 }
 
-// Ref: #/components/schemas/DispatchCollaborationWorkspaceOption
-type DispatchCollaborationWorkspaceOption struct {
+// Ref: #/components/schemas/DispatchCollaborationOption
+type DispatchCollaborationOption struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
 
 // GetID returns the value of ID.
-func (s *DispatchCollaborationWorkspaceOption) GetID() uuid.UUID {
+func (s *DispatchCollaborationOption) GetID() uuid.UUID {
 	return s.ID
 }
 
 // GetName returns the value of Name.
-func (s *DispatchCollaborationWorkspaceOption) GetName() string {
+func (s *DispatchCollaborationOption) GetName() string {
 	return s.Name
 }
 
 // SetID sets the value of ID.
-func (s *DispatchCollaborationWorkspaceOption) SetID(val uuid.UUID) {
+func (s *DispatchCollaborationOption) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
-func (s *DispatchCollaborationWorkspaceOption) SetName(val string) {
+func (s *DispatchCollaborationOption) SetName(val string) {
 	s.Name = val
 }
 
@@ -3594,23 +3605,25 @@ func (s *DispatchRecipientGroupOption) SetEstimatedCount(val OptInt) {
 
 // Ref: #/components/schemas/DispatchRecordDeliveryItem
 type DispatchRecordDeliveryItem struct {
-	ID                                  uuid.UUID   `json:"id"`
-	RecipientUserID                     uuid.UUID   `json:"recipient_user_id"`
-	RecipientName                       string      `json:"recipient_name"`
-	RecipientCollaborationWorkspaceID   OptUUID     `json:"recipient_collaboration_workspace_id"`
-	RecipientCollaborationWorkspaceName OptString   `json:"recipient_collaboration_workspace_name"`
-	DeliveryStatus                      string      `json:"delivery_status"`
-	TodoStatus                          OptString   `json:"todo_status"`
-	ReadAt                              OptDateTime `json:"read_at"`
-	DoneAt                              OptDateTime `json:"done_at"`
-	LastActionAt                        OptDateTime `json:"last_action_at"`
-	SourceGroupID                       OptUUID     `json:"source_group_id"`
-	SourceGroupName                     OptString   `json:"source_group_name"`
-	SourceRuleType                      OptString   `json:"source_rule_type"`
-	SourceRuleLabel                     OptString   `json:"source_rule_label"`
-	SourceTargetID                      OptUUID     `json:"source_target_id"`
-	SourceTargetType                    OptString   `json:"source_target_type"`
-	SourceTargetValue                   OptString   `json:"source_target_value"`
+	ID                     uuid.UUID   `json:"id"`
+	RecipientUserID        uuid.UUID   `json:"recipient_user_id"`
+	RecipientName          string      `json:"recipient_name"`
+	RecipientScopeType     OptString   `json:"recipient_scope_type"`
+	RecipientScopeID       OptUUID     `json:"recipient_scope_id"`
+	RecipientWorkspaceID   OptUUID     `json:"recipient_workspace_id"`
+	RecipientWorkspaceName OptString   `json:"recipient_workspace_name"`
+	DeliveryStatus         string      `json:"delivery_status"`
+	TodoStatus             OptString   `json:"todo_status"`
+	ReadAt                 OptDateTime `json:"read_at"`
+	DoneAt                 OptDateTime `json:"done_at"`
+	LastActionAt           OptDateTime `json:"last_action_at"`
+	SourceGroupID          OptUUID     `json:"source_group_id"`
+	SourceGroupName        OptString   `json:"source_group_name"`
+	SourceRuleType         OptString   `json:"source_rule_type"`
+	SourceRuleLabel        OptString   `json:"source_rule_label"`
+	SourceTargetID         OptUUID     `json:"source_target_id"`
+	SourceTargetType       OptString   `json:"source_target_type"`
+	SourceTargetValue      OptString   `json:"source_target_value"`
 }
 
 // GetID returns the value of ID.
@@ -3628,14 +3641,24 @@ func (s *DispatchRecordDeliveryItem) GetRecipientName() string {
 	return s.RecipientName
 }
 
-// GetRecipientCollaborationWorkspaceID returns the value of RecipientCollaborationWorkspaceID.
-func (s *DispatchRecordDeliveryItem) GetRecipientCollaborationWorkspaceID() OptUUID {
-	return s.RecipientCollaborationWorkspaceID
+// GetRecipientScopeType returns the value of RecipientScopeType.
+func (s *DispatchRecordDeliveryItem) GetRecipientScopeType() OptString {
+	return s.RecipientScopeType
 }
 
-// GetRecipientCollaborationWorkspaceName returns the value of RecipientCollaborationWorkspaceName.
-func (s *DispatchRecordDeliveryItem) GetRecipientCollaborationWorkspaceName() OptString {
-	return s.RecipientCollaborationWorkspaceName
+// GetRecipientScopeID returns the value of RecipientScopeID.
+func (s *DispatchRecordDeliveryItem) GetRecipientScopeID() OptUUID {
+	return s.RecipientScopeID
+}
+
+// GetRecipientWorkspaceID returns the value of RecipientWorkspaceID.
+func (s *DispatchRecordDeliveryItem) GetRecipientWorkspaceID() OptUUID {
+	return s.RecipientWorkspaceID
+}
+
+// GetRecipientWorkspaceName returns the value of RecipientWorkspaceName.
+func (s *DispatchRecordDeliveryItem) GetRecipientWorkspaceName() OptString {
+	return s.RecipientWorkspaceName
 }
 
 // GetDeliveryStatus returns the value of DeliveryStatus.
@@ -3713,14 +3736,24 @@ func (s *DispatchRecordDeliveryItem) SetRecipientName(val string) {
 	s.RecipientName = val
 }
 
-// SetRecipientCollaborationWorkspaceID sets the value of RecipientCollaborationWorkspaceID.
-func (s *DispatchRecordDeliveryItem) SetRecipientCollaborationWorkspaceID(val OptUUID) {
-	s.RecipientCollaborationWorkspaceID = val
+// SetRecipientScopeType sets the value of RecipientScopeType.
+func (s *DispatchRecordDeliveryItem) SetRecipientScopeType(val OptString) {
+	s.RecipientScopeType = val
 }
 
-// SetRecipientCollaborationWorkspaceName sets the value of RecipientCollaborationWorkspaceName.
-func (s *DispatchRecordDeliveryItem) SetRecipientCollaborationWorkspaceName(val OptString) {
-	s.RecipientCollaborationWorkspaceName = val
+// SetRecipientScopeID sets the value of RecipientScopeID.
+func (s *DispatchRecordDeliveryItem) SetRecipientScopeID(val OptUUID) {
+	s.RecipientScopeID = val
+}
+
+// SetRecipientWorkspaceID sets the value of RecipientWorkspaceID.
+func (s *DispatchRecordDeliveryItem) SetRecipientWorkspaceID(val OptUUID) {
+	s.RecipientWorkspaceID = val
+}
+
+// SetRecipientWorkspaceName sets the value of RecipientWorkspaceName.
+func (s *DispatchRecordDeliveryItem) SetRecipientWorkspaceName(val OptString) {
+	s.RecipientWorkspaceName = val
 }
 
 // SetDeliveryStatus sets the value of DeliveryStatus.
@@ -3785,26 +3818,28 @@ func (s *DispatchRecordDeliveryItem) SetSourceTargetValue(val OptString) {
 
 // Ref: #/components/schemas/DispatchRecordItem
 type DispatchRecordItem struct {
-	ID                               uuid.UUID   `json:"id"`
-	Title                            string      `json:"title"`
-	Summary                          OptString   `json:"summary"`
-	Content                          OptString   `json:"content"`
-	MessageType                      string      `json:"message_type"`
-	AudienceType                     string      `json:"audience_type"`
-	ScopeType                        string      `json:"scope_type"`
-	ScopeID                          OptUUID     `json:"scope_id"`
-	TargetCollaborationWorkspaceID   OptUUID     `json:"target_collaboration_workspace_id"`
-	TargetCollaborationWorkspaceName OptString   `json:"target_collaboration_workspace_name"`
-	SenderName                       OptString   `json:"sender_name"`
-	TemplateName                     OptString   `json:"template_name"`
-	Priority                         OptString   `json:"priority"`
-	Status                           OptString   `json:"status"`
-	PublishedAt                      OptDateTime `json:"published_at"`
-	CreatedAt                        time.Time   `json:"created_at"`
-	DeliveryCount                    int         `json:"delivery_count"`
-	ReadCount                        int         `json:"read_count"`
-	UnreadCount                      int         `json:"unread_count"`
-	PendingTodoCount                 int         `json:"pending_todo_count"`
+	ID                  uuid.UUID   `json:"id"`
+	Title               string      `json:"title"`
+	Summary             OptString   `json:"summary"`
+	Content             OptString   `json:"content"`
+	MessageType         string      `json:"message_type"`
+	AudienceType        string      `json:"audience_type"`
+	ScopeType           string      `json:"scope_type"`
+	ScopeID             OptUUID     `json:"scope_id"`
+	TargetScopeType     OptString   `json:"target_scope_type"`
+	TargetScopeID       OptUUID     `json:"target_scope_id"`
+	TargetWorkspaceID   OptUUID     `json:"target_workspace_id"`
+	TargetWorkspaceName OptString   `json:"target_workspace_name"`
+	SenderName          OptString   `json:"sender_name"`
+	TemplateName        OptString   `json:"template_name"`
+	Priority            OptString   `json:"priority"`
+	Status              OptString   `json:"status"`
+	PublishedAt         OptDateTime `json:"published_at"`
+	CreatedAt           time.Time   `json:"created_at"`
+	DeliveryCount       int         `json:"delivery_count"`
+	ReadCount           int         `json:"read_count"`
+	UnreadCount         int         `json:"unread_count"`
+	PendingTodoCount    int         `json:"pending_todo_count"`
 }
 
 // GetID returns the value of ID.
@@ -3847,14 +3882,24 @@ func (s *DispatchRecordItem) GetScopeID() OptUUID {
 	return s.ScopeID
 }
 
-// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
-func (s *DispatchRecordItem) GetTargetCollaborationWorkspaceID() OptUUID {
-	return s.TargetCollaborationWorkspaceID
+// GetTargetScopeType returns the value of TargetScopeType.
+func (s *DispatchRecordItem) GetTargetScopeType() OptString {
+	return s.TargetScopeType
 }
 
-// GetTargetCollaborationWorkspaceName returns the value of TargetCollaborationWorkspaceName.
-func (s *DispatchRecordItem) GetTargetCollaborationWorkspaceName() OptString {
-	return s.TargetCollaborationWorkspaceName
+// GetTargetScopeID returns the value of TargetScopeID.
+func (s *DispatchRecordItem) GetTargetScopeID() OptUUID {
+	return s.TargetScopeID
+}
+
+// GetTargetWorkspaceID returns the value of TargetWorkspaceID.
+func (s *DispatchRecordItem) GetTargetWorkspaceID() OptUUID {
+	return s.TargetWorkspaceID
+}
+
+// GetTargetWorkspaceName returns the value of TargetWorkspaceName.
+func (s *DispatchRecordItem) GetTargetWorkspaceName() OptString {
+	return s.TargetWorkspaceName
 }
 
 // GetSenderName returns the value of SenderName.
@@ -3947,14 +3992,24 @@ func (s *DispatchRecordItem) SetScopeID(val OptUUID) {
 	s.ScopeID = val
 }
 
-// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
-func (s *DispatchRecordItem) SetTargetCollaborationWorkspaceID(val OptUUID) {
-	s.TargetCollaborationWorkspaceID = val
+// SetTargetScopeType sets the value of TargetScopeType.
+func (s *DispatchRecordItem) SetTargetScopeType(val OptString) {
+	s.TargetScopeType = val
 }
 
-// SetTargetCollaborationWorkspaceName sets the value of TargetCollaborationWorkspaceName.
-func (s *DispatchRecordItem) SetTargetCollaborationWorkspaceName(val OptString) {
-	s.TargetCollaborationWorkspaceName = val
+// SetTargetScopeID sets the value of TargetScopeID.
+func (s *DispatchRecordItem) SetTargetScopeID(val OptUUID) {
+	s.TargetScopeID = val
+}
+
+// SetTargetWorkspaceID sets the value of TargetWorkspaceID.
+func (s *DispatchRecordItem) SetTargetWorkspaceID(val OptUUID) {
+	s.TargetWorkspaceID = val
+}
+
+// SetTargetWorkspaceName sets the value of TargetWorkspaceName.
+func (s *DispatchRecordItem) SetTargetWorkspaceName(val OptString) {
+	s.TargetWorkspaceName = val
 }
 
 // SetSenderName sets the value of SenderName.
@@ -4170,6 +4225,7 @@ type DispatchTemplateOption struct {
 	Description     string    `json:"description"`
 	MessageType     string    `json:"message_type"`
 	OwnerScope      string    `json:"owner_scope"`
+	OwnerScopeID    OptUUID   `json:"owner_scope_id"`
 	AudienceType    string    `json:"audience_type"`
 	TitleTemplate   OptString `json:"title_template"`
 	SummaryTemplate OptString `json:"summary_template"`
@@ -4204,6 +4260,11 @@ func (s *DispatchTemplateOption) GetMessageType() string {
 // GetOwnerScope returns the value of OwnerScope.
 func (s *DispatchTemplateOption) GetOwnerScope() string {
 	return s.OwnerScope
+}
+
+// GetOwnerScopeID returns the value of OwnerScopeID.
+func (s *DispatchTemplateOption) GetOwnerScopeID() OptUUID {
+	return s.OwnerScopeID
 }
 
 // GetAudienceType returns the value of AudienceType.
@@ -4256,6 +4317,11 @@ func (s *DispatchTemplateOption) SetOwnerScope(val string) {
 	s.OwnerScope = val
 }
 
+// SetOwnerScopeID sets the value of OwnerScopeID.
+func (s *DispatchTemplateOption) SetOwnerScopeID(val OptUUID) {
+	s.OwnerScopeID = val
+}
+
 // SetAudienceType sets the value of AudienceType.
 func (s *DispatchTemplateOption) SetAudienceType(val string) {
 	s.AudienceType = val
@@ -4278,12 +4344,12 @@ func (s *DispatchTemplateOption) SetContentTemplate(val OptString) {
 
 // Ref: #/components/schemas/DispatchUserOption
 type DispatchUserOption struct {
-	ID                         uuid.UUID `json:"id"`
-	Name                       string    `json:"name"`
-	DisplayName                string    `json:"display_name"`
-	Description                OptString `json:"description"`
-	CollaborationWorkspaceID   OptUUID   `json:"collaboration_workspace_id"`
-	CollaborationWorkspaceName OptString `json:"collaboration_workspace_name"`
+	ID            uuid.UUID `json:"id"`
+	Name          string    `json:"name"`
+	DisplayName   string    `json:"display_name"`
+	Description   OptString `json:"description"`
+	WorkspaceID   OptUUID   `json:"workspace_id"`
+	WorkspaceName OptString `json:"workspace_name"`
 }
 
 // GetID returns the value of ID.
@@ -4306,14 +4372,14 @@ func (s *DispatchUserOption) GetDescription() OptString {
 	return s.Description
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *DispatchUserOption) GetCollaborationWorkspaceID() OptUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *DispatchUserOption) GetWorkspaceID() OptUUID {
+	return s.WorkspaceID
 }
 
-// GetCollaborationWorkspaceName returns the value of CollaborationWorkspaceName.
-func (s *DispatchUserOption) GetCollaborationWorkspaceName() OptString {
-	return s.CollaborationWorkspaceName
+// GetWorkspaceName returns the value of WorkspaceName.
+func (s *DispatchUserOption) GetWorkspaceName() OptString {
+	return s.WorkspaceName
 }
 
 // SetID sets the value of ID.
@@ -4336,14 +4402,14 @@ func (s *DispatchUserOption) SetDescription(val OptString) {
 	s.Description = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *DispatchUserOption) SetCollaborationWorkspaceID(val OptUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *DispatchUserOption) SetWorkspaceID(val OptUUID) {
+	s.WorkspaceID = val
 }
 
-// SetCollaborationWorkspaceName sets the value of CollaborationWorkspaceName.
-func (s *DispatchUserOption) SetCollaborationWorkspaceName(val OptString) {
-	s.CollaborationWorkspaceName = val
+// SetWorkspaceName sets the value of WorkspaceName.
+func (s *DispatchUserOption) SetWorkspaceName(val OptString) {
+	s.WorkspaceName = val
 }
 
 // Ref: #/components/schemas/Error
@@ -4563,55 +4629,55 @@ func (s *FeaturePackageAssignmentResponse) SetPackages(val []FeaturePackageRef) 
 	s.Packages = val
 }
 
-// Ref: #/components/schemas/FeaturePackageCollaborationWorkspaceItem
-type FeaturePackageCollaborationWorkspaceItem struct {
+// Ref: #/components/schemas/FeaturePackageCollaborationItem
+type FeaturePackageCollaborationItem struct {
 	ID uuid.UUID `json:"id"`
 }
 
 // GetID returns the value of ID.
-func (s *FeaturePackageCollaborationWorkspaceItem) GetID() uuid.UUID {
+func (s *FeaturePackageCollaborationItem) GetID() uuid.UUID {
 	return s.ID
 }
 
 // SetID sets the value of ID.
-func (s *FeaturePackageCollaborationWorkspaceItem) SetID(val uuid.UUID) {
+func (s *FeaturePackageCollaborationItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
-// Ref: #/components/schemas/FeaturePackageCollaborationWorkspaceList
-type FeaturePackageCollaborationWorkspaceList struct {
-	Records []FeaturePackageCollaborationWorkspaceItem `json:"records"`
-	Total   int64                                      `json:"total"`
+// Ref: #/components/schemas/FeaturePackageCollaborationList
+type FeaturePackageCollaborationList struct {
+	Records []FeaturePackageCollaborationItem `json:"records"`
+	Total   int64                             `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *FeaturePackageCollaborationWorkspaceList) GetRecords() []FeaturePackageCollaborationWorkspaceItem {
+func (s *FeaturePackageCollaborationList) GetRecords() []FeaturePackageCollaborationItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *FeaturePackageCollaborationWorkspaceList) GetTotal() int64 {
+func (s *FeaturePackageCollaborationList) GetTotal() int64 {
 	return s.Total
 }
 
 // SetRecords sets the value of Records.
-func (s *FeaturePackageCollaborationWorkspaceList) SetRecords(val []FeaturePackageCollaborationWorkspaceItem) {
+func (s *FeaturePackageCollaborationList) SetRecords(val []FeaturePackageCollaborationItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *FeaturePackageCollaborationWorkspaceList) SetTotal(val int64) {
+func (s *FeaturePackageCollaborationList) SetTotal(val int64) {
 	s.Total = val
 }
 
 // Ref: #/components/schemas/FeaturePackageImpactPreview
 type FeaturePackageImpactPreview struct {
-	PackageID                   uuid.UUID `json:"package_id"`
-	RoleCount                   int64     `json:"role_count"`
-	CollaborationWorkspaceCount int64     `json:"collaboration_workspace_count"`
-	UserCount                   int64     `json:"user_count"`
-	MenuCount                   int64     `json:"menu_count"`
-	ActionCount                 int64     `json:"action_count"`
+	PackageID      uuid.UUID `json:"package_id"`
+	RoleCount      int64     `json:"role_count"`
+	WorkspaceCount int64     `json:"workspace_count"`
+	UserCount      int64     `json:"user_count"`
+	MenuCount      int64     `json:"menu_count"`
+	ActionCount    int64     `json:"action_count"`
 }
 
 // GetPackageID returns the value of PackageID.
@@ -4624,9 +4690,9 @@ func (s *FeaturePackageImpactPreview) GetRoleCount() int64 {
 	return s.RoleCount
 }
 
-// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
-func (s *FeaturePackageImpactPreview) GetCollaborationWorkspaceCount() int64 {
-	return s.CollaborationWorkspaceCount
+// GetWorkspaceCount returns the value of WorkspaceCount.
+func (s *FeaturePackageImpactPreview) GetWorkspaceCount() int64 {
+	return s.WorkspaceCount
 }
 
 // GetUserCount returns the value of UserCount.
@@ -4654,9 +4720,9 @@ func (s *FeaturePackageImpactPreview) SetRoleCount(val int64) {
 	s.RoleCount = val
 }
 
-// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
-func (s *FeaturePackageImpactPreview) SetCollaborationWorkspaceCount(val int64) {
-	s.CollaborationWorkspaceCount = val
+// SetWorkspaceCount sets the value of WorkspaceCount.
+func (s *FeaturePackageImpactPreview) SetWorkspaceCount(val int64) {
+	s.WorkspaceCount = val
 }
 
 // SetUserCount sets the value of UserCount.
@@ -5277,21 +5343,21 @@ func (s *FeaturePackageSaveRequest) SetAppKeys(val []string) {
 
 // Ref: #/components/schemas/FeaturePackageSnapshot
 type FeaturePackageSnapshot struct {
-	PackageID                 uuid.UUID   `json:"package_id"`
-	PackageKey                string      `json:"package_key"`
-	PackageType               string      `json:"package_type"`
-	Name                      string      `json:"name"`
-	Description               string      `json:"description"`
-	WorkspaceScope            string      `json:"workspace_scope"`
-	ContextType               string      `json:"context_type"`
-	AppKeys                   []string    `json:"app_keys"`
-	Status                    string      `json:"status"`
-	SortOrder                 int         `json:"sort_order"`
-	ChildPackageIds           []uuid.UUID `json:"child_package_ids"`
-	ActionIds                 []uuid.UUID `json:"action_ids"`
-	MenuIds                   []uuid.UUID `json:"menu_ids"`
-	CollaborationWorkspaceIds []uuid.UUID `json:"collaboration_workspace_ids"`
-	SnapshotCreatedAt         time.Time   `json:"snapshot_created_at"`
+	PackageID         uuid.UUID   `json:"package_id"`
+	PackageKey        string      `json:"package_key"`
+	PackageType       string      `json:"package_type"`
+	Name              string      `json:"name"`
+	Description       string      `json:"description"`
+	WorkspaceScope    string      `json:"workspace_scope"`
+	ContextType       string      `json:"context_type"`
+	AppKeys           []string    `json:"app_keys"`
+	Status            string      `json:"status"`
+	SortOrder         int         `json:"sort_order"`
+	ChildPackageIds   []uuid.UUID `json:"child_package_ids"`
+	ActionIds         []uuid.UUID `json:"action_ids"`
+	MenuIds           []uuid.UUID `json:"menu_ids"`
+	WorkspaceIds      []uuid.UUID `json:"workspace_ids"`
+	SnapshotCreatedAt time.Time   `json:"snapshot_created_at"`
 }
 
 // GetPackageID returns the value of PackageID.
@@ -5359,9 +5425,9 @@ func (s *FeaturePackageSnapshot) GetMenuIds() []uuid.UUID {
 	return s.MenuIds
 }
 
-// GetCollaborationWorkspaceIds returns the value of CollaborationWorkspaceIds.
-func (s *FeaturePackageSnapshot) GetCollaborationWorkspaceIds() []uuid.UUID {
-	return s.CollaborationWorkspaceIds
+// GetWorkspaceIds returns the value of WorkspaceIds.
+func (s *FeaturePackageSnapshot) GetWorkspaceIds() []uuid.UUID {
+	return s.WorkspaceIds
 }
 
 // GetSnapshotCreatedAt returns the value of SnapshotCreatedAt.
@@ -5434,9 +5500,9 @@ func (s *FeaturePackageSnapshot) SetMenuIds(val []uuid.UUID) {
 	s.MenuIds = val
 }
 
-// SetCollaborationWorkspaceIds sets the value of CollaborationWorkspaceIds.
-func (s *FeaturePackageSnapshot) SetCollaborationWorkspaceIds(val []uuid.UUID) {
-	s.CollaborationWorkspaceIds = val
+// SetWorkspaceIds sets the value of WorkspaceIds.
+func (s *FeaturePackageSnapshot) SetWorkspaceIds(val []uuid.UUID) {
+	s.WorkspaceIds = val
 }
 
 // SetSnapshotCreatedAt sets the value of SnapshotCreatedAt.
@@ -5446,18 +5512,18 @@ func (s *FeaturePackageSnapshot) SetSnapshotCreatedAt(val time.Time) {
 
 // Ref: #/components/schemas/FeaturePackageSummary
 type FeaturePackageSummary struct {
-	ID                          uuid.UUID    `json:"id"`
-	PackageKey                  string       `json:"package_key"`
-	PackageType                 OptNilString `json:"package_type"`
-	Name                        string       `json:"name"`
-	Description                 OptNilString `json:"description"`
-	ContextType                 OptNilString `json:"context_type"`
-	Status                      string       `json:"status"`
-	IsBuiltin                   OptBool      `json:"is_builtin"`
-	SortOrder                   OptInt       `json:"sort_order"`
-	ActionCount                 OptInt64     `json:"action_count"`
-	MenuCount                   OptInt64     `json:"menu_count"`
-	CollaborationWorkspaceCount OptInt64     `json:"collaboration_workspace_count"`
+	ID             uuid.UUID    `json:"id"`
+	PackageKey     string       `json:"package_key"`
+	PackageType    OptNilString `json:"package_type"`
+	Name           string       `json:"name"`
+	Description    OptNilString `json:"description"`
+	ContextType    OptNilString `json:"context_type"`
+	Status         string       `json:"status"`
+	IsBuiltin      OptBool      `json:"is_builtin"`
+	SortOrder      OptInt       `json:"sort_order"`
+	ActionCount    OptInt64     `json:"action_count"`
+	MenuCount      OptInt64     `json:"menu_count"`
+	WorkspaceCount OptInt64     `json:"workspace_count"`
 }
 
 // GetID returns the value of ID.
@@ -5515,9 +5581,9 @@ func (s *FeaturePackageSummary) GetMenuCount() OptInt64 {
 	return s.MenuCount
 }
 
-// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
-func (s *FeaturePackageSummary) GetCollaborationWorkspaceCount() OptInt64 {
-	return s.CollaborationWorkspaceCount
+// GetWorkspaceCount returns the value of WorkspaceCount.
+func (s *FeaturePackageSummary) GetWorkspaceCount() OptInt64 {
+	return s.WorkspaceCount
 }
 
 // SetID sets the value of ID.
@@ -5575,9 +5641,9 @@ func (s *FeaturePackageSummary) SetMenuCount(val OptInt64) {
 	s.MenuCount = val
 }
 
-// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
-func (s *FeaturePackageSummary) SetCollaborationWorkspaceCount(val OptInt64) {
-	s.CollaborationWorkspaceCount = val
+// SetWorkspaceCount sets the value of WorkspaceCount.
+func (s *FeaturePackageSummary) SetWorkspaceCount(val OptInt64) {
+	s.WorkspaceCount = val
 }
 
 // Ref: #/components/schemas/FeaturePackageVersionItem
@@ -5915,36 +5981,40 @@ func (s *IDResult) SetID(val uuid.UUID) {
 
 // Ref: #/components/schemas/InboxItem
 type InboxItem struct {
-	ID                                uuid.UUID           `json:"id"`
-	MessageID                         uuid.UUID           `json:"message_id"`
-	BoxType                           string              `json:"box_type"`
-	DeliveryStatus                    string              `json:"delivery_status"`
-	TodoStatus                        OptString           `json:"todo_status"`
-	ReadAt                            OptDateTime         `json:"read_at"`
-	DoneAt                            OptDateTime         `json:"done_at"`
-	LastActionAt                      OptDateTime         `json:"last_action_at"`
-	RecipientCollaborationWorkspaceID OptUUID             `json:"recipient_collaboration_workspace_id"`
-	Title                             string              `json:"title"`
-	Summary                           OptString           `json:"summary"`
-	Content                           OptString           `json:"content"`
-	Priority                          OptString           `json:"priority"`
-	ActionType                        OptString           `json:"action_type"`
-	ActionTarget                      OptString           `json:"action_target"`
-	MessageType                       OptString           `json:"message_type"`
-	BizType                           OptString           `json:"biz_type"`
-	ScopeType                         OptString           `json:"scope_type"`
-	ScopeID                           OptUUID             `json:"scope_id"`
-	SenderType                        OptString           `json:"sender_type"`
-	SenderNameSnapshot                OptString           `json:"sender_name_snapshot"`
-	SenderAvatarSnapshot              OptString           `json:"sender_avatar_snapshot"`
-	SenderServiceKey                  OptString           `json:"sender_service_key"`
-	AudienceType                      OptString           `json:"audience_type"`
-	AudienceScope                     OptString           `json:"audience_scope"`
-	TargetCollaborationWorkspaceID    OptUUID             `json:"target_collaboration_workspace_id"`
-	PublishedAt                       OptDateTime         `json:"published_at"`
-	ExpiredAt                         OptDateTime         `json:"expired_at"`
-	CreatedAt                         time.Time           `json:"created_at"`
-	Meta                              OptMessageInboxMeta `json:"meta"`
+	ID                   uuid.UUID           `json:"id"`
+	MessageID            uuid.UUID           `json:"message_id"`
+	BoxType              string              `json:"box_type"`
+	DeliveryStatus       string              `json:"delivery_status"`
+	TodoStatus           OptString           `json:"todo_status"`
+	ReadAt               OptDateTime         `json:"read_at"`
+	DoneAt               OptDateTime         `json:"done_at"`
+	LastActionAt         OptDateTime         `json:"last_action_at"`
+	RecipientWorkspaceID OptUUID             `json:"recipient_workspace_id"`
+	RecipientScopeType   OptString           `json:"recipient_scope_type"`
+	RecipientScopeID     OptUUID             `json:"recipient_scope_id"`
+	Title                string              `json:"title"`
+	Summary              OptString           `json:"summary"`
+	Content              OptString           `json:"content"`
+	Priority             OptString           `json:"priority"`
+	ActionType           OptString           `json:"action_type"`
+	ActionTarget         OptString           `json:"action_target"`
+	MessageType          OptString           `json:"message_type"`
+	BizType              OptString           `json:"biz_type"`
+	ScopeType            OptString           `json:"scope_type"`
+	ScopeID              OptUUID             `json:"scope_id"`
+	SenderType           OptString           `json:"sender_type"`
+	SenderNameSnapshot   OptString           `json:"sender_name_snapshot"`
+	SenderAvatarSnapshot OptString           `json:"sender_avatar_snapshot"`
+	SenderServiceKey     OptString           `json:"sender_service_key"`
+	AudienceType         OptString           `json:"audience_type"`
+	AudienceScope        OptString           `json:"audience_scope"`
+	TargetScopeType      OptString           `json:"target_scope_type"`
+	TargetScopeID        OptUUID             `json:"target_scope_id"`
+	TargetWorkspaceID    OptUUID             `json:"target_workspace_id"`
+	PublishedAt          OptDateTime         `json:"published_at"`
+	ExpiredAt            OptDateTime         `json:"expired_at"`
+	CreatedAt            time.Time           `json:"created_at"`
+	Meta                 OptMessageInboxMeta `json:"meta"`
 }
 
 // GetID returns the value of ID.
@@ -5987,9 +6057,19 @@ func (s *InboxItem) GetLastActionAt() OptDateTime {
 	return s.LastActionAt
 }
 
-// GetRecipientCollaborationWorkspaceID returns the value of RecipientCollaborationWorkspaceID.
-func (s *InboxItem) GetRecipientCollaborationWorkspaceID() OptUUID {
-	return s.RecipientCollaborationWorkspaceID
+// GetRecipientWorkspaceID returns the value of RecipientWorkspaceID.
+func (s *InboxItem) GetRecipientWorkspaceID() OptUUID {
+	return s.RecipientWorkspaceID
+}
+
+// GetRecipientScopeType returns the value of RecipientScopeType.
+func (s *InboxItem) GetRecipientScopeType() OptString {
+	return s.RecipientScopeType
+}
+
+// GetRecipientScopeID returns the value of RecipientScopeID.
+func (s *InboxItem) GetRecipientScopeID() OptUUID {
+	return s.RecipientScopeID
 }
 
 // GetTitle returns the value of Title.
@@ -6072,9 +6152,19 @@ func (s *InboxItem) GetAudienceScope() OptString {
 	return s.AudienceScope
 }
 
-// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
-func (s *InboxItem) GetTargetCollaborationWorkspaceID() OptUUID {
-	return s.TargetCollaborationWorkspaceID
+// GetTargetScopeType returns the value of TargetScopeType.
+func (s *InboxItem) GetTargetScopeType() OptString {
+	return s.TargetScopeType
+}
+
+// GetTargetScopeID returns the value of TargetScopeID.
+func (s *InboxItem) GetTargetScopeID() OptUUID {
+	return s.TargetScopeID
+}
+
+// GetTargetWorkspaceID returns the value of TargetWorkspaceID.
+func (s *InboxItem) GetTargetWorkspaceID() OptUUID {
+	return s.TargetWorkspaceID
 }
 
 // GetPublishedAt returns the value of PublishedAt.
@@ -6137,9 +6227,19 @@ func (s *InboxItem) SetLastActionAt(val OptDateTime) {
 	s.LastActionAt = val
 }
 
-// SetRecipientCollaborationWorkspaceID sets the value of RecipientCollaborationWorkspaceID.
-func (s *InboxItem) SetRecipientCollaborationWorkspaceID(val OptUUID) {
-	s.RecipientCollaborationWorkspaceID = val
+// SetRecipientWorkspaceID sets the value of RecipientWorkspaceID.
+func (s *InboxItem) SetRecipientWorkspaceID(val OptUUID) {
+	s.RecipientWorkspaceID = val
+}
+
+// SetRecipientScopeType sets the value of RecipientScopeType.
+func (s *InboxItem) SetRecipientScopeType(val OptString) {
+	s.RecipientScopeType = val
+}
+
+// SetRecipientScopeID sets the value of RecipientScopeID.
+func (s *InboxItem) SetRecipientScopeID(val OptUUID) {
+	s.RecipientScopeID = val
 }
 
 // SetTitle sets the value of Title.
@@ -6222,9 +6322,19 @@ func (s *InboxItem) SetAudienceScope(val OptString) {
 	s.AudienceScope = val
 }
 
-// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
-func (s *InboxItem) SetTargetCollaborationWorkspaceID(val OptUUID) {
-	s.TargetCollaborationWorkspaceID = val
+// SetTargetScopeType sets the value of TargetScopeType.
+func (s *InboxItem) SetTargetScopeType(val OptString) {
+	s.TargetScopeType = val
+}
+
+// SetTargetScopeID sets the value of TargetScopeID.
+func (s *InboxItem) SetTargetScopeID(val OptUUID) {
+	s.TargetScopeID = val
+}
+
+// SetTargetWorkspaceID sets the value of TargetWorkspaceID.
+func (s *InboxItem) SetTargetWorkspaceID(val OptUUID) {
+	s.TargetWorkspaceID = val
 }
 
 // SetPublishedAt sets the value of PublishedAt.
@@ -10073,22 +10183,22 @@ func (s *MenuTreeResponse) SetRecords(val []MenuTreeItem) {
 
 // Ref: #/components/schemas/MessageDispatchOptions
 type MessageDispatchOptions struct {
-	SenderScope                       string                                 `json:"sender_scope"`
-	CurrentCollaborationWorkspaceID   OptString                              `json:"current_collaboration_workspace_id"`
-	CurrentCollaborationWorkspaceName OptString                              `json:"current_collaboration_workspace_name"`
-	SenderOptions                     []DispatchSenderOption                 `json:"sender_options"`
-	DefaultSenderID                   OptString                              `json:"default_sender_id"`
-	AudienceOptions                   []DispatchAudienceOption               `json:"audience_options"`
-	TemplateOptions                   []DispatchTemplateOption               `json:"template_options"`
-	CollaborationWorkspaces           []DispatchCollaborationWorkspaceOption `json:"collaboration_workspaces"`
-	Users                             []DispatchUserOption                   `json:"users"`
-	RecipientGroups                   []DispatchRecipientGroupOption         `json:"recipient_groups"`
-	Roles                             []DispatchRoleOption                   `json:"roles"`
-	FeaturePackages                   []DispatchFeaturePackageOption         `json:"feature_packages"`
-	DefaultMessageType                string                                 `json:"default_message_type"`
-	DefaultAudienceType               string                                 `json:"default_audience_type"`
-	DefaultPriority                   string                                 `json:"default_priority"`
-	SupportsExternalLink              bool                                   `json:"supports_external_link"`
+	SenderScope          string                         `json:"sender_scope"`
+	CurrentWorkspaceID   OptString                      `json:"current_workspace_id"`
+	CurrentWorkspaceName OptString                      `json:"current_workspace_name"`
+	SenderOptions        []DispatchSenderOption         `json:"sender_options"`
+	DefaultSenderID      OptString                      `json:"default_sender_id"`
+	AudienceOptions      []DispatchAudienceOption       `json:"audience_options"`
+	TemplateOptions      []DispatchTemplateOption       `json:"template_options"`
+	Collaborations       []DispatchCollaborationOption  `json:"collaborations"`
+	Users                []DispatchUserOption           `json:"users"`
+	RecipientGroups      []DispatchRecipientGroupOption `json:"recipient_groups"`
+	Roles                []DispatchRoleOption           `json:"roles"`
+	FeaturePackages      []DispatchFeaturePackageOption `json:"feature_packages"`
+	DefaultMessageType   string                         `json:"default_message_type"`
+	DefaultAudienceType  string                         `json:"default_audience_type"`
+	DefaultPriority      string                         `json:"default_priority"`
+	SupportsExternalLink bool                           `json:"supports_external_link"`
 }
 
 // GetSenderScope returns the value of SenderScope.
@@ -10096,14 +10206,14 @@ func (s *MessageDispatchOptions) GetSenderScope() string {
 	return s.SenderScope
 }
 
-// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
-func (s *MessageDispatchOptions) GetCurrentCollaborationWorkspaceID() OptString {
-	return s.CurrentCollaborationWorkspaceID
+// GetCurrentWorkspaceID returns the value of CurrentWorkspaceID.
+func (s *MessageDispatchOptions) GetCurrentWorkspaceID() OptString {
+	return s.CurrentWorkspaceID
 }
 
-// GetCurrentCollaborationWorkspaceName returns the value of CurrentCollaborationWorkspaceName.
-func (s *MessageDispatchOptions) GetCurrentCollaborationWorkspaceName() OptString {
-	return s.CurrentCollaborationWorkspaceName
+// GetCurrentWorkspaceName returns the value of CurrentWorkspaceName.
+func (s *MessageDispatchOptions) GetCurrentWorkspaceName() OptString {
+	return s.CurrentWorkspaceName
 }
 
 // GetSenderOptions returns the value of SenderOptions.
@@ -10126,9 +10236,9 @@ func (s *MessageDispatchOptions) GetTemplateOptions() []DispatchTemplateOption {
 	return s.TemplateOptions
 }
 
-// GetCollaborationWorkspaces returns the value of CollaborationWorkspaces.
-func (s *MessageDispatchOptions) GetCollaborationWorkspaces() []DispatchCollaborationWorkspaceOption {
-	return s.CollaborationWorkspaces
+// GetCollaborations returns the value of Collaborations.
+func (s *MessageDispatchOptions) GetCollaborations() []DispatchCollaborationOption {
+	return s.Collaborations
 }
 
 // GetUsers returns the value of Users.
@@ -10176,14 +10286,14 @@ func (s *MessageDispatchOptions) SetSenderScope(val string) {
 	s.SenderScope = val
 }
 
-// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
-func (s *MessageDispatchOptions) SetCurrentCollaborationWorkspaceID(val OptString) {
-	s.CurrentCollaborationWorkspaceID = val
+// SetCurrentWorkspaceID sets the value of CurrentWorkspaceID.
+func (s *MessageDispatchOptions) SetCurrentWorkspaceID(val OptString) {
+	s.CurrentWorkspaceID = val
 }
 
-// SetCurrentCollaborationWorkspaceName sets the value of CurrentCollaborationWorkspaceName.
-func (s *MessageDispatchOptions) SetCurrentCollaborationWorkspaceName(val OptString) {
-	s.CurrentCollaborationWorkspaceName = val
+// SetCurrentWorkspaceName sets the value of CurrentWorkspaceName.
+func (s *MessageDispatchOptions) SetCurrentWorkspaceName(val OptString) {
+	s.CurrentWorkspaceName = val
 }
 
 // SetSenderOptions sets the value of SenderOptions.
@@ -10206,9 +10316,9 @@ func (s *MessageDispatchOptions) SetTemplateOptions(val []DispatchTemplateOption
 	s.TemplateOptions = val
 }
 
-// SetCollaborationWorkspaces sets the value of CollaborationWorkspaces.
-func (s *MessageDispatchOptions) SetCollaborationWorkspaces(val []DispatchCollaborationWorkspaceOption) {
-	s.CollaborationWorkspaces = val
+// SetCollaborations sets the value of Collaborations.
+func (s *MessageDispatchOptions) SetCollaborations(val []DispatchCollaborationOption) {
+	s.Collaborations = val
 }
 
 // SetUsers sets the value of Users.
@@ -10254,27 +10364,29 @@ func (s *MessageDispatchOptions) SetSupportsExternalLink(val bool) {
 // Merged schema.
 // Ref: #/components/schemas/MessageDispatchRecord
 type MessageDispatchRecord struct {
-	ID                               uuid.UUID                    `json:"id"`
-	Title                            string                       `json:"title"`
-	Summary                          OptString                    `json:"summary"`
-	Content                          OptString                    `json:"content"`
-	MessageType                      string                       `json:"message_type"`
-	AudienceType                     string                       `json:"audience_type"`
-	ScopeType                        string                       `json:"scope_type"`
-	ScopeID                          OptUUID                      `json:"scope_id"`
-	TargetCollaborationWorkspaceID   OptUUID                      `json:"target_collaboration_workspace_id"`
-	TargetCollaborationWorkspaceName OptString                    `json:"target_collaboration_workspace_name"`
-	SenderName                       OptString                    `json:"sender_name"`
-	TemplateName                     OptString                    `json:"template_name"`
-	Priority                         OptString                    `json:"priority"`
-	Status                           OptString                    `json:"status"`
-	PublishedAt                      OptDateTime                  `json:"published_at"`
-	CreatedAt                        time.Time                    `json:"created_at"`
-	DeliveryCount                    int                          `json:"delivery_count"`
-	ReadCount                        int                          `json:"read_count"`
-	UnreadCount                      int                          `json:"unread_count"`
-	PendingTodoCount                 int                          `json:"pending_todo_count"`
-	Deliveries                       []DispatchRecordDeliveryItem `json:"deliveries"`
+	ID                  uuid.UUID                    `json:"id"`
+	Title               string                       `json:"title"`
+	Summary             OptString                    `json:"summary"`
+	Content             OptString                    `json:"content"`
+	MessageType         string                       `json:"message_type"`
+	AudienceType        string                       `json:"audience_type"`
+	ScopeType           string                       `json:"scope_type"`
+	ScopeID             OptUUID                      `json:"scope_id"`
+	TargetScopeType     OptString                    `json:"target_scope_type"`
+	TargetScopeID       OptUUID                      `json:"target_scope_id"`
+	TargetWorkspaceID   OptUUID                      `json:"target_workspace_id"`
+	TargetWorkspaceName OptString                    `json:"target_workspace_name"`
+	SenderName          OptString                    `json:"sender_name"`
+	TemplateName        OptString                    `json:"template_name"`
+	Priority            OptString                    `json:"priority"`
+	Status              OptString                    `json:"status"`
+	PublishedAt         OptDateTime                  `json:"published_at"`
+	CreatedAt           time.Time                    `json:"created_at"`
+	DeliveryCount       int                          `json:"delivery_count"`
+	ReadCount           int                          `json:"read_count"`
+	UnreadCount         int                          `json:"unread_count"`
+	PendingTodoCount    int                          `json:"pending_todo_count"`
+	Deliveries          []DispatchRecordDeliveryItem `json:"deliveries"`
 }
 
 // GetID returns the value of ID.
@@ -10317,14 +10429,24 @@ func (s *MessageDispatchRecord) GetScopeID() OptUUID {
 	return s.ScopeID
 }
 
-// GetTargetCollaborationWorkspaceID returns the value of TargetCollaborationWorkspaceID.
-func (s *MessageDispatchRecord) GetTargetCollaborationWorkspaceID() OptUUID {
-	return s.TargetCollaborationWorkspaceID
+// GetTargetScopeType returns the value of TargetScopeType.
+func (s *MessageDispatchRecord) GetTargetScopeType() OptString {
+	return s.TargetScopeType
 }
 
-// GetTargetCollaborationWorkspaceName returns the value of TargetCollaborationWorkspaceName.
-func (s *MessageDispatchRecord) GetTargetCollaborationWorkspaceName() OptString {
-	return s.TargetCollaborationWorkspaceName
+// GetTargetScopeID returns the value of TargetScopeID.
+func (s *MessageDispatchRecord) GetTargetScopeID() OptUUID {
+	return s.TargetScopeID
+}
+
+// GetTargetWorkspaceID returns the value of TargetWorkspaceID.
+func (s *MessageDispatchRecord) GetTargetWorkspaceID() OptUUID {
+	return s.TargetWorkspaceID
+}
+
+// GetTargetWorkspaceName returns the value of TargetWorkspaceName.
+func (s *MessageDispatchRecord) GetTargetWorkspaceName() OptString {
+	return s.TargetWorkspaceName
 }
 
 // GetSenderName returns the value of SenderName.
@@ -10422,14 +10544,24 @@ func (s *MessageDispatchRecord) SetScopeID(val OptUUID) {
 	s.ScopeID = val
 }
 
-// SetTargetCollaborationWorkspaceID sets the value of TargetCollaborationWorkspaceID.
-func (s *MessageDispatchRecord) SetTargetCollaborationWorkspaceID(val OptUUID) {
-	s.TargetCollaborationWorkspaceID = val
+// SetTargetScopeType sets the value of TargetScopeType.
+func (s *MessageDispatchRecord) SetTargetScopeType(val OptString) {
+	s.TargetScopeType = val
 }
 
-// SetTargetCollaborationWorkspaceName sets the value of TargetCollaborationWorkspaceName.
-func (s *MessageDispatchRecord) SetTargetCollaborationWorkspaceName(val OptString) {
-	s.TargetCollaborationWorkspaceName = val
+// SetTargetScopeID sets the value of TargetScopeID.
+func (s *MessageDispatchRecord) SetTargetScopeID(val OptUUID) {
+	s.TargetScopeID = val
+}
+
+// SetTargetWorkspaceID sets the value of TargetWorkspaceID.
+func (s *MessageDispatchRecord) SetTargetWorkspaceID(val OptUUID) {
+	s.TargetWorkspaceID = val
+}
+
+// SetTargetWorkspaceName sets the value of TargetWorkspaceName.
+func (s *MessageDispatchRecord) SetTargetWorkspaceName(val OptString) {
+	s.TargetWorkspaceName = val
 }
 
 // SetSenderName sets the value of SenderName.
@@ -10548,22 +10680,22 @@ func (s *MessageDispatchRecordListResponse) SetSummary(val DispatchRecordSummary
 
 // Ref: #/components/schemas/MessageDispatchRequest
 type MessageDispatchRequest struct {
-	SenderID                        OptString `json:"sender_id"`
-	TemplateID                      OptString `json:"template_id"`
-	TemplateKey                     OptString `json:"template_key"`
-	MessageType                     OptString `json:"message_type"`
-	AudienceType                    OptString `json:"audience_type"`
-	TargetCollaborationWorkspaceIds []string  `json:"target_collaboration_workspace_ids"`
-	TargetUserIds                   []string  `json:"target_user_ids"`
-	TargetGroupIds                  []string  `json:"target_group_ids"`
-	Title                           OptString `json:"title"`
-	Summary                         OptString `json:"summary"`
-	Content                         OptString `json:"content"`
-	Priority                        OptString `json:"priority"`
-	ActionType                      OptString `json:"action_type"`
-	ActionTarget                    OptString `json:"action_target"`
-	BizType                         OptString `json:"biz_type"`
-	ExpiredAt                       OptString `json:"expired_at"`
+	SenderID           OptString `json:"sender_id"`
+	TemplateID         OptString `json:"template_id"`
+	TemplateKey        OptString `json:"template_key"`
+	MessageType        OptString `json:"message_type"`
+	AudienceType       OptString `json:"audience_type"`
+	TargetWorkspaceIds []string  `json:"target_workspace_ids"`
+	TargetUserIds      []string  `json:"target_user_ids"`
+	TargetGroupIds     []string  `json:"target_group_ids"`
+	Title              OptString `json:"title"`
+	Summary            OptString `json:"summary"`
+	Content            OptString `json:"content"`
+	Priority           OptString `json:"priority"`
+	ActionType         OptString `json:"action_type"`
+	ActionTarget       OptString `json:"action_target"`
+	BizType            OptString `json:"biz_type"`
+	ExpiredAt          OptString `json:"expired_at"`
 	// True 时进入沙箱预览：服务端完成参数/模板/收件人解析与校验，但 **不写
 	// messages 表、不入队、不触发交付**。
 	// 返回的 `dispatch_status = "preview"`，`message_id` 为零值 UUID。
@@ -10597,9 +10729,9 @@ func (s *MessageDispatchRequest) GetAudienceType() OptString {
 	return s.AudienceType
 }
 
-// GetTargetCollaborationWorkspaceIds returns the value of TargetCollaborationWorkspaceIds.
-func (s *MessageDispatchRequest) GetTargetCollaborationWorkspaceIds() []string {
-	return s.TargetCollaborationWorkspaceIds
+// GetTargetWorkspaceIds returns the value of TargetWorkspaceIds.
+func (s *MessageDispatchRequest) GetTargetWorkspaceIds() []string {
+	return s.TargetWorkspaceIds
 }
 
 // GetTargetUserIds returns the value of TargetUserIds.
@@ -10682,9 +10814,9 @@ func (s *MessageDispatchRequest) SetAudienceType(val OptString) {
 	s.AudienceType = val
 }
 
-// SetTargetCollaborationWorkspaceIds sets the value of TargetCollaborationWorkspaceIds.
-func (s *MessageDispatchRequest) SetTargetCollaborationWorkspaceIds(val []string) {
-	s.TargetCollaborationWorkspaceIds = val
+// SetTargetWorkspaceIds sets the value of TargetWorkspaceIds.
+func (s *MessageDispatchRequest) SetTargetWorkspaceIds(val []string) {
+	s.TargetWorkspaceIds = val
 }
 
 // SetTargetUserIds sets the value of TargetUserIds.
@@ -10784,12 +10916,12 @@ func (s *MessageDispatchResult) SetDispatchStatus(val string) {
 
 // Ref: #/components/schemas/MessageInboxMeta
 type MessageInboxMeta struct {
-	DispatchStatus                  OptString   `json:"dispatch_status"`
-	DispatchError                   OptString   `json:"dispatch_error"`
-	RecipientCount                  OptInt      `json:"recipient_count"`
-	PublishedAt                     OptDateTime `json:"published_at"`
-	FailedAt                        OptDateTime `json:"failed_at"`
-	TargetCollaborationWorkspaceIds []uuid.UUID `json:"target_collaboration_workspace_ids"`
+	DispatchStatus     OptString   `json:"dispatch_status"`
+	DispatchError      OptString   `json:"dispatch_error"`
+	RecipientCount     OptInt      `json:"recipient_count"`
+	PublishedAt        OptDateTime `json:"published_at"`
+	FailedAt           OptDateTime `json:"failed_at"`
+	TargetWorkspaceIds []uuid.UUID `json:"target_workspace_ids"`
 }
 
 // GetDispatchStatus returns the value of DispatchStatus.
@@ -10817,9 +10949,9 @@ func (s *MessageInboxMeta) GetFailedAt() OptDateTime {
 	return s.FailedAt
 }
 
-// GetTargetCollaborationWorkspaceIds returns the value of TargetCollaborationWorkspaceIds.
-func (s *MessageInboxMeta) GetTargetCollaborationWorkspaceIds() []uuid.UUID {
-	return s.TargetCollaborationWorkspaceIds
+// GetTargetWorkspaceIds returns the value of TargetWorkspaceIds.
+func (s *MessageInboxMeta) GetTargetWorkspaceIds() []uuid.UUID {
+	return s.TargetWorkspaceIds
 }
 
 // SetDispatchStatus sets the value of DispatchStatus.
@@ -10847,9 +10979,9 @@ func (s *MessageInboxMeta) SetFailedAt(val OptDateTime) {
 	s.FailedAt = val
 }
 
-// SetTargetCollaborationWorkspaceIds sets the value of TargetCollaborationWorkspaceIds.
-func (s *MessageInboxMeta) SetTargetCollaborationWorkspaceIds(val []uuid.UUID) {
-	s.TargetCollaborationWorkspaceIds = val
+// SetTargetWorkspaceIds sets the value of TargetWorkspaceIds.
+func (s *MessageInboxMeta) SetTargetWorkspaceIds(val []uuid.UUID) {
+	s.TargetWorkspaceIds = val
 }
 
 // Ref: #/components/schemas/MessageRecipientGroupItem
@@ -11098,18 +11230,20 @@ func (s *MessageRecipientGroupSaveRequest) SetTargets(val []MessageRecipientGrou
 
 // Ref: #/components/schemas/MessageRecipientGroupTargetItem
 type MessageRecipientGroupTargetItem struct {
-	ID                         uuid.UUID                          `json:"id"`
-	TargetType                 string                             `json:"target_type"`
-	UserID                     OptUUID                            `json:"user_id"`
-	UserName                   OptString                          `json:"user_name"`
-	CollaborationWorkspaceID   OptUUID                            `json:"collaboration_workspace_id"`
-	CollaborationWorkspaceName OptString                          `json:"collaboration_workspace_name"`
-	RoleCode                   OptString                          `json:"role_code"`
-	RoleName                   OptString                          `json:"role_name"`
-	PackageKey                 OptString                          `json:"package_key"`
-	PackageName                OptString                          `json:"package_name"`
-	SortOrder                  OptInt                             `json:"sort_order"`
-	Meta                       OptMessageRecipientGroupTargetMeta `json:"meta"`
+	ID              uuid.UUID                          `json:"id"`
+	TargetType      string                             `json:"target_type"`
+	UserID          OptUUID                            `json:"user_id"`
+	UserName        OptString                          `json:"user_name"`
+	WorkspaceID     OptUUID                            `json:"workspace_id"`
+	WorkspaceName   OptString                          `json:"workspace_name"`
+	TargetScopeType OptString                          `json:"target_scope_type"`
+	TargetScopeID   OptUUID                            `json:"target_scope_id"`
+	RoleCode        OptString                          `json:"role_code"`
+	RoleName        OptString                          `json:"role_name"`
+	PackageKey      OptString                          `json:"package_key"`
+	PackageName     OptString                          `json:"package_name"`
+	SortOrder       OptInt                             `json:"sort_order"`
+	Meta            OptMessageRecipientGroupTargetMeta `json:"meta"`
 }
 
 // GetID returns the value of ID.
@@ -11132,14 +11266,24 @@ func (s *MessageRecipientGroupTargetItem) GetUserName() OptString {
 	return s.UserName
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *MessageRecipientGroupTargetItem) GetCollaborationWorkspaceID() OptUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *MessageRecipientGroupTargetItem) GetWorkspaceID() OptUUID {
+	return s.WorkspaceID
 }
 
-// GetCollaborationWorkspaceName returns the value of CollaborationWorkspaceName.
-func (s *MessageRecipientGroupTargetItem) GetCollaborationWorkspaceName() OptString {
-	return s.CollaborationWorkspaceName
+// GetWorkspaceName returns the value of WorkspaceName.
+func (s *MessageRecipientGroupTargetItem) GetWorkspaceName() OptString {
+	return s.WorkspaceName
+}
+
+// GetTargetScopeType returns the value of TargetScopeType.
+func (s *MessageRecipientGroupTargetItem) GetTargetScopeType() OptString {
+	return s.TargetScopeType
+}
+
+// GetTargetScopeID returns the value of TargetScopeID.
+func (s *MessageRecipientGroupTargetItem) GetTargetScopeID() OptUUID {
+	return s.TargetScopeID
 }
 
 // GetRoleCode returns the value of RoleCode.
@@ -11192,14 +11336,24 @@ func (s *MessageRecipientGroupTargetItem) SetUserName(val OptString) {
 	s.UserName = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *MessageRecipientGroupTargetItem) SetCollaborationWorkspaceID(val OptUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *MessageRecipientGroupTargetItem) SetWorkspaceID(val OptUUID) {
+	s.WorkspaceID = val
 }
 
-// SetCollaborationWorkspaceName sets the value of CollaborationWorkspaceName.
-func (s *MessageRecipientGroupTargetItem) SetCollaborationWorkspaceName(val OptString) {
-	s.CollaborationWorkspaceName = val
+// SetWorkspaceName sets the value of WorkspaceName.
+func (s *MessageRecipientGroupTargetItem) SetWorkspaceName(val OptString) {
+	s.WorkspaceName = val
+}
+
+// SetTargetScopeType sets the value of TargetScopeType.
+func (s *MessageRecipientGroupTargetItem) SetTargetScopeType(val OptString) {
+	s.TargetScopeType = val
+}
+
+// SetTargetScopeID sets the value of TargetScopeID.
+func (s *MessageRecipientGroupTargetItem) SetTargetScopeID(val OptUUID) {
+	s.TargetScopeID = val
 }
 
 // SetRoleCode sets the value of RoleCode.
@@ -11246,13 +11400,15 @@ func (s *MessageRecipientGroupTargetMeta) init() MessageRecipientGroupTargetMeta
 
 // Ref: #/components/schemas/MessageRecipientGroupTargetSaveRequest
 type MessageRecipientGroupTargetSaveRequest struct {
-	TargetType               string                             `json:"target_type"`
-	UserID                   OptUUID                            `json:"user_id"`
-	CollaborationWorkspaceID OptUUID                            `json:"collaboration_workspace_id"`
-	RoleCode                 OptString                          `json:"role_code"`
-	PackageKey               OptString                          `json:"package_key"`
-	SortOrder                OptInt                             `json:"sort_order"`
-	Meta                     OptMessageRecipientGroupTargetMeta `json:"meta"`
+	TargetType      string                             `json:"target_type"`
+	UserID          OptUUID                            `json:"user_id"`
+	WorkspaceID     OptUUID                            `json:"workspace_id"`
+	TargetScopeType OptString                          `json:"target_scope_type"`
+	TargetScopeID   OptUUID                            `json:"target_scope_id"`
+	RoleCode        OptString                          `json:"role_code"`
+	PackageKey      OptString                          `json:"package_key"`
+	SortOrder       OptInt                             `json:"sort_order"`
+	Meta            OptMessageRecipientGroupTargetMeta `json:"meta"`
 }
 
 // GetTargetType returns the value of TargetType.
@@ -11265,9 +11421,19 @@ func (s *MessageRecipientGroupTargetSaveRequest) GetUserID() OptUUID {
 	return s.UserID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *MessageRecipientGroupTargetSaveRequest) GetCollaborationWorkspaceID() OptUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *MessageRecipientGroupTargetSaveRequest) GetWorkspaceID() OptUUID {
+	return s.WorkspaceID
+}
+
+// GetTargetScopeType returns the value of TargetScopeType.
+func (s *MessageRecipientGroupTargetSaveRequest) GetTargetScopeType() OptString {
+	return s.TargetScopeType
+}
+
+// GetTargetScopeID returns the value of TargetScopeID.
+func (s *MessageRecipientGroupTargetSaveRequest) GetTargetScopeID() OptUUID {
+	return s.TargetScopeID
 }
 
 // GetRoleCode returns the value of RoleCode.
@@ -11300,9 +11466,19 @@ func (s *MessageRecipientGroupTargetSaveRequest) SetUserID(val OptUUID) {
 	s.UserID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *MessageRecipientGroupTargetSaveRequest) SetCollaborationWorkspaceID(val OptUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *MessageRecipientGroupTargetSaveRequest) SetWorkspaceID(val OptUUID) {
+	s.WorkspaceID = val
+}
+
+// SetTargetScopeType sets the value of TargetScopeType.
+func (s *MessageRecipientGroupTargetSaveRequest) SetTargetScopeType(val OptString) {
+	s.TargetScopeType = val
+}
+
+// SetTargetScopeID sets the value of TargetScopeID.
+func (s *MessageRecipientGroupTargetSaveRequest) SetTargetScopeID(val OptUUID) {
+	s.TargetScopeID = val
 }
 
 // SetRoleCode sets the value of RoleCode.
@@ -11560,23 +11736,24 @@ func (s *MessageSenderSaveRequest) SetMeta(val OptMessageSenderMeta) {
 
 // Ref: #/components/schemas/MessageTemplateItem
 type MessageTemplateItem struct {
-	ID                              uuid.UUID            `json:"id"`
-	TemplateKey                     string               `json:"template_key"`
-	Name                            string               `json:"name"`
-	Description                     OptString            `json:"description"`
-	MessageType                     string               `json:"message_type"`
-	OwnerScope                      string               `json:"owner_scope"`
-	OwnerCollaborationWorkspaceID   OptUUID              `json:"owner_collaboration_workspace_id"`
-	OwnerCollaborationWorkspaceName OptString            `json:"owner_collaboration_workspace_name"`
-	AudienceType                    string               `json:"audience_type"`
-	TitleTemplate                   OptString            `json:"title_template"`
-	SummaryTemplate                 OptString            `json:"summary_template"`
-	ContentTemplate                 OptString            `json:"content_template"`
-	Status                          string               `json:"status"`
-	Editable                        bool                 `json:"editable"`
-	Meta                            *MessageTemplateMeta `json:"meta"`
-	CreatedAt                       OptDateTime          `json:"created_at"`
-	UpdatedAt                       OptDateTime          `json:"updated_at"`
+	ID                 uuid.UUID            `json:"id"`
+	TemplateKey        string               `json:"template_key"`
+	Name               string               `json:"name"`
+	Description        OptString            `json:"description"`
+	MessageType        string               `json:"message_type"`
+	OwnerScope         string               `json:"owner_scope"`
+	OwnerScopeID       OptUUID              `json:"owner_scope_id"`
+	OwnerWorkspaceID   OptUUID              `json:"owner_workspace_id"`
+	OwnerWorkspaceName OptString            `json:"owner_workspace_name"`
+	AudienceType       string               `json:"audience_type"`
+	TitleTemplate      OptString            `json:"title_template"`
+	SummaryTemplate    OptString            `json:"summary_template"`
+	ContentTemplate    OptString            `json:"content_template"`
+	Status             string               `json:"status"`
+	Editable           bool                 `json:"editable"`
+	Meta               *MessageTemplateMeta `json:"meta"`
+	CreatedAt          OptDateTime          `json:"created_at"`
+	UpdatedAt          OptDateTime          `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -11609,14 +11786,19 @@ func (s *MessageTemplateItem) GetOwnerScope() string {
 	return s.OwnerScope
 }
 
-// GetOwnerCollaborationWorkspaceID returns the value of OwnerCollaborationWorkspaceID.
-func (s *MessageTemplateItem) GetOwnerCollaborationWorkspaceID() OptUUID {
-	return s.OwnerCollaborationWorkspaceID
+// GetOwnerScopeID returns the value of OwnerScopeID.
+func (s *MessageTemplateItem) GetOwnerScopeID() OptUUID {
+	return s.OwnerScopeID
 }
 
-// GetOwnerCollaborationWorkspaceName returns the value of OwnerCollaborationWorkspaceName.
-func (s *MessageTemplateItem) GetOwnerCollaborationWorkspaceName() OptString {
-	return s.OwnerCollaborationWorkspaceName
+// GetOwnerWorkspaceID returns the value of OwnerWorkspaceID.
+func (s *MessageTemplateItem) GetOwnerWorkspaceID() OptUUID {
+	return s.OwnerWorkspaceID
+}
+
+// GetOwnerWorkspaceName returns the value of OwnerWorkspaceName.
+func (s *MessageTemplateItem) GetOwnerWorkspaceName() OptString {
+	return s.OwnerWorkspaceName
 }
 
 // GetAudienceType returns the value of AudienceType.
@@ -11694,14 +11876,19 @@ func (s *MessageTemplateItem) SetOwnerScope(val string) {
 	s.OwnerScope = val
 }
 
-// SetOwnerCollaborationWorkspaceID sets the value of OwnerCollaborationWorkspaceID.
-func (s *MessageTemplateItem) SetOwnerCollaborationWorkspaceID(val OptUUID) {
-	s.OwnerCollaborationWorkspaceID = val
+// SetOwnerScopeID sets the value of OwnerScopeID.
+func (s *MessageTemplateItem) SetOwnerScopeID(val OptUUID) {
+	s.OwnerScopeID = val
 }
 
-// SetOwnerCollaborationWorkspaceName sets the value of OwnerCollaborationWorkspaceName.
-func (s *MessageTemplateItem) SetOwnerCollaborationWorkspaceName(val OptString) {
-	s.OwnerCollaborationWorkspaceName = val
+// SetOwnerWorkspaceID sets the value of OwnerWorkspaceID.
+func (s *MessageTemplateItem) SetOwnerWorkspaceID(val OptUUID) {
+	s.OwnerWorkspaceID = val
+}
+
+// SetOwnerWorkspaceName sets the value of OwnerWorkspaceName.
+func (s *MessageTemplateItem) SetOwnerWorkspaceName(val OptString) {
+	s.OwnerWorkspaceName = val
 }
 
 // SetAudienceType sets the value of AudienceType.
@@ -11928,17 +12115,17 @@ func (*MutationResult) logoutRes()                {}
 
 // Ref: #/components/schemas/NavigationContext
 type NavigationContext struct {
-	AppKey                   string  `json:"app_key"`
-	MenuSpaceKey             string  `json:"menu_space_key"`
-	RequestHost              string  `json:"request_host"`
-	RequestedMenuSpaceKey    string  `json:"requested_menu_space_key"`
-	Authenticated            bool    `json:"authenticated"`
-	SuperAdmin               bool    `json:"super_admin"`
-	VisibleMenuCount         int     `json:"visible_menu_count"`
-	ManagedPageCount         int     `json:"managed_page_count"`
-	ActionKeyCount           int     `json:"action_key_count"`
-	UserID                   OptUUID `json:"user_id"`
-	CollaborationWorkspaceID OptUUID `json:"collaboration_workspace_id"`
+	AppKey                string  `json:"app_key"`
+	MenuSpaceKey          string  `json:"menu_space_key"`
+	RequestHost           string  `json:"request_host"`
+	RequestedMenuSpaceKey string  `json:"requested_menu_space_key"`
+	Authenticated         bool    `json:"authenticated"`
+	SuperAdmin            bool    `json:"super_admin"`
+	VisibleMenuCount      int     `json:"visible_menu_count"`
+	ManagedPageCount      int     `json:"managed_page_count"`
+	ActionKeyCount        int     `json:"action_key_count"`
+	UserID                OptUUID `json:"user_id"`
+	WorkspaceID           OptUUID `json:"workspace_id"`
 }
 
 // GetAppKey returns the value of AppKey.
@@ -11991,9 +12178,9 @@ func (s *NavigationContext) GetUserID() OptUUID {
 	return s.UserID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *NavigationContext) GetCollaborationWorkspaceID() OptUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *NavigationContext) GetWorkspaceID() OptUUID {
+	return s.WorkspaceID
 }
 
 // SetAppKey sets the value of AppKey.
@@ -12046,9 +12233,9 @@ func (s *NavigationContext) SetUserID(val OptUUID) {
 	s.UserID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *NavigationContext) SetCollaborationWorkspaceID(val OptUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *NavigationContext) SetWorkspaceID(val OptUUID) {
+	s.WorkspaceID = val
 }
 
 // Ref: #/components/schemas/NavigationManifest
@@ -12130,51 +12317,6 @@ func (s *NavigationManifest) SetEntryRoutes(val []MenuTreeItem) {
 // SetManagedPages sets the value of ManagedPages.
 func (s *NavigationManifest) SetManagedPages(val []PageListItem) {
 	s.ManagedPages = val
-}
-
-// NewNilUUID returns new NilUUID with value set to v.
-func NewNilUUID(v uuid.UUID) NilUUID {
-	return NilUUID{
-		Value: v,
-	}
-}
-
-// NilUUID is nullable uuid.UUID.
-type NilUUID struct {
-	Value uuid.UUID
-	Null  bool
-}
-
-// SetTo sets value to v.
-func (o *NilUUID) SetTo(v uuid.UUID) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilUUID) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilUUID) SetToNull() {
-	o.Null = true
-	var v uuid.UUID
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o NilUUID) Get() (v uuid.UUID, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o NilUUID) Or(d uuid.UUID) uuid.UUID {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
 }
 
 // 整个 observability 子系统的运行时观测指标。不按 tenant 分桶（基础设施
@@ -17422,16 +17564,16 @@ func (s *PageAccessTracePageItem) SetEffectiveChain(val []string) {
 
 // Ref: #/components/schemas/PageAccessTraceResponse
 type PageAccessTraceResponse struct {
-	UserID                   string                    `json:"user_id"`
-	CollaborationWorkspaceID OptString                 `json:"collaboration_workspace_id"`
-	MenuSpaceKey             string                    `json:"menu_space_key"`
-	Authenticated            bool                      `json:"authenticated"`
-	SuperAdmin               bool                      `json:"super_admin"`
-	ActionKeyCount           int                       `json:"action_key_count"`
-	VisibleMenuIds           []string                  `json:"visible_menu_ids"`
-	Menus                    []PageAccessTraceMenuItem `json:"menus"`
-	Roles                    []PageAccessTraceRoleItem `json:"roles"`
-	Pages                    []PageAccessTracePageItem `json:"pages"`
+	UserID         string                    `json:"user_id"`
+	WorkspaceID    OptString                 `json:"workspace_id"`
+	MenuSpaceKey   string                    `json:"menu_space_key"`
+	Authenticated  bool                      `json:"authenticated"`
+	SuperAdmin     bool                      `json:"super_admin"`
+	ActionKeyCount int                       `json:"action_key_count"`
+	VisibleMenuIds []string                  `json:"visible_menu_ids"`
+	Menus          []PageAccessTraceMenuItem `json:"menus"`
+	Roles          []PageAccessTraceRoleItem `json:"roles"`
+	Pages          []PageAccessTracePageItem `json:"pages"`
 }
 
 // GetUserID returns the value of UserID.
@@ -17439,9 +17581,9 @@ func (s *PageAccessTraceResponse) GetUserID() string {
 	return s.UserID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *PageAccessTraceResponse) GetCollaborationWorkspaceID() OptString {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *PageAccessTraceResponse) GetWorkspaceID() OptString {
+	return s.WorkspaceID
 }
 
 // GetMenuSpaceKey returns the value of MenuSpaceKey.
@@ -17489,9 +17631,9 @@ func (s *PageAccessTraceResponse) SetUserID(val string) {
 	s.UserID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *PageAccessTraceResponse) SetCollaborationWorkspaceID(val OptString) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *PageAccessTraceResponse) SetWorkspaceID(val OptString) {
+	s.WorkspaceID = val
 }
 
 // SetMenuSpaceKey sets the value of MenuSpaceKey.
@@ -20415,13 +20557,13 @@ func (s *PermissionActionGroupSaveRequest) SetSortOrder(val OptInt) {
 
 // Ref: #/components/schemas/PermissionActionImpactPreview
 type PermissionActionImpactPreview struct {
-	PermissionKey               string `json:"permission_key"`
-	APICount                    int64  `json:"api_count"`
-	PageCount                   int64  `json:"page_count"`
-	PackageCount                int64  `json:"package_count"`
-	RoleCount                   int64  `json:"role_count"`
-	CollaborationWorkspaceCount int64  `json:"collaboration_workspace_count"`
-	UserCount                   int64  `json:"user_count"`
+	PermissionKey  string `json:"permission_key"`
+	APICount       int64  `json:"api_count"`
+	PageCount      int64  `json:"page_count"`
+	PackageCount   int64  `json:"package_count"`
+	RoleCount      int64  `json:"role_count"`
+	WorkspaceCount int64  `json:"workspace_count"`
+	UserCount      int64  `json:"user_count"`
 }
 
 // GetPermissionKey returns the value of PermissionKey.
@@ -20449,9 +20591,9 @@ func (s *PermissionActionImpactPreview) GetRoleCount() int64 {
 	return s.RoleCount
 }
 
-// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
-func (s *PermissionActionImpactPreview) GetCollaborationWorkspaceCount() int64 {
-	return s.CollaborationWorkspaceCount
+// GetWorkspaceCount returns the value of WorkspaceCount.
+func (s *PermissionActionImpactPreview) GetWorkspaceCount() int64 {
+	return s.WorkspaceCount
 }
 
 // GetUserCount returns the value of UserCount.
@@ -20484,9 +20626,9 @@ func (s *PermissionActionImpactPreview) SetRoleCount(val int64) {
 	s.RoleCount = val
 }
 
-// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
-func (s *PermissionActionImpactPreview) SetCollaborationWorkspaceCount(val int64) {
-	s.CollaborationWorkspaceCount = val
+// SetWorkspaceCount sets the value of WorkspaceCount.
+func (s *PermissionActionImpactPreview) SetWorkspaceCount(val int64) {
+	s.WorkspaceCount = val
 }
 
 // SetUserCount sets the value of UserCount.
@@ -21265,13 +21407,13 @@ func (*PreviewLogPolicyUnauthorized) previewLogPolicyRes() {}
 
 // Ref: #/components/schemas/RefreshStats
 type RefreshStats struct {
-	RequestedPackageCount       int64     `json:"requested_package_count"`
-	ImpactedPackageCount        int64     `json:"impacted_package_count"`
-	RoleCount                   int64     `json:"role_count"`
-	CollaborationWorkspaceCount int64     `json:"collaboration_workspace_count"`
-	UserCount                   int64     `json:"user_count"`
-	ElapsedMilliseconds         int64     `json:"elapsed_milliseconds"`
-	FinishedAt                  time.Time `json:"finished_at"`
+	RequestedPackageCount int64     `json:"requested_package_count"`
+	ImpactedPackageCount  int64     `json:"impacted_package_count"`
+	RoleCount             int64     `json:"role_count"`
+	WorkspaceCount        int64     `json:"workspace_count"`
+	UserCount             int64     `json:"user_count"`
+	ElapsedMilliseconds   int64     `json:"elapsed_milliseconds"`
+	FinishedAt            time.Time `json:"finished_at"`
 }
 
 // GetRequestedPackageCount returns the value of RequestedPackageCount.
@@ -21289,9 +21431,9 @@ func (s *RefreshStats) GetRoleCount() int64 {
 	return s.RoleCount
 }
 
-// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
-func (s *RefreshStats) GetCollaborationWorkspaceCount() int64 {
-	return s.CollaborationWorkspaceCount
+// GetWorkspaceCount returns the value of WorkspaceCount.
+func (s *RefreshStats) GetWorkspaceCount() int64 {
+	return s.WorkspaceCount
 }
 
 // GetUserCount returns the value of UserCount.
@@ -21324,9 +21466,9 @@ func (s *RefreshStats) SetRoleCount(val int64) {
 	s.RoleCount = val
 }
 
-// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
-func (s *RefreshStats) SetCollaborationWorkspaceCount(val int64) {
-	s.CollaborationWorkspaceCount = val
+// SetWorkspaceCount sets the value of WorkspaceCount.
+func (s *RefreshStats) SetWorkspaceCount(val int64) {
+	s.WorkspaceCount = val
 }
 
 // SetUserCount sets the value of UserCount.
@@ -22681,16 +22823,16 @@ func (s *RiskAuditItem) SetCreatedAt(val time.Time) {
 
 // Ref: #/components/schemas/RiskAuditSummary
 type RiskAuditSummary struct {
-	PermissionKey               OptString `json:"permission_key"`
-	Status                      OptString `json:"status"`
-	ContextType                 OptString `json:"context_type"`
-	ModuleCode                  OptString `json:"module_code"`
-	FeatureKind                 OptString `json:"feature_kind"`
-	ModuleGroupID               OptUUID   `json:"module_group_id"`
-	FeatureGroupID              OptUUID   `json:"feature_group_id"`
-	TemplateName                OptString `json:"template_name"`
-	PackageCount                OptInt    `json:"package_count"`
-	CollaborationWorkspaceCount OptInt    `json:"collaboration_workspace_count"`
+	PermissionKey  OptString `json:"permission_key"`
+	Status         OptString `json:"status"`
+	ContextType    OptString `json:"context_type"`
+	ModuleCode     OptString `json:"module_code"`
+	FeatureKind    OptString `json:"feature_kind"`
+	ModuleGroupID  OptUUID   `json:"module_group_id"`
+	FeatureGroupID OptUUID   `json:"feature_group_id"`
+	TemplateName   OptString `json:"template_name"`
+	PackageCount   OptInt    `json:"package_count"`
+	WorkspaceCount OptInt    `json:"workspace_count"`
 }
 
 // GetPermissionKey returns the value of PermissionKey.
@@ -22738,9 +22880,9 @@ func (s *RiskAuditSummary) GetPackageCount() OptInt {
 	return s.PackageCount
 }
 
-// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
-func (s *RiskAuditSummary) GetCollaborationWorkspaceCount() OptInt {
-	return s.CollaborationWorkspaceCount
+// GetWorkspaceCount returns the value of WorkspaceCount.
+func (s *RiskAuditSummary) GetWorkspaceCount() OptInt {
+	return s.WorkspaceCount
 }
 
 // SetPermissionKey sets the value of PermissionKey.
@@ -22788,9 +22930,9 @@ func (s *RiskAuditSummary) SetPackageCount(val OptInt) {
 	s.PackageCount = val
 }
 
-// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
-func (s *RiskAuditSummary) SetCollaborationWorkspaceCount(val OptInt) {
-	s.CollaborationWorkspaceCount = val
+// SetWorkspaceCount sets the value of WorkspaceCount.
+func (s *RiskAuditSummary) SetWorkspaceCount(val OptInt) {
+	s.WorkspaceCount = val
 }
 
 // Ref: #/components/schemas/RoleActionsResponse
@@ -31610,54 +31752,54 @@ func (s *UserAssignRolesRequest) SetRoleIds(val []string) {
 	s.RoleIds = val
 }
 
-// Ref: #/components/schemas/UserCollaborationWorkspacesResponse
-type UserCollaborationWorkspacesResponse struct {
-	Records []UserCollaborationWorkspacesResponseRecordsItem `json:"records"`
+// Ref: #/components/schemas/UserCollaborationsResponse
+type UserCollaborationsResponse struct {
+	Records []UserCollaborationsResponseRecordsItem `json:"records"`
 }
 
 // GetRecords returns the value of Records.
-func (s *UserCollaborationWorkspacesResponse) GetRecords() []UserCollaborationWorkspacesResponseRecordsItem {
+func (s *UserCollaborationsResponse) GetRecords() []UserCollaborationsResponseRecordsItem {
 	return s.Records
 }
 
 // SetRecords sets the value of Records.
-func (s *UserCollaborationWorkspacesResponse) SetRecords(val []UserCollaborationWorkspacesResponseRecordsItem) {
+func (s *UserCollaborationsResponse) SetRecords(val []UserCollaborationsResponseRecordsItem) {
 	s.Records = val
 }
 
-type UserCollaborationWorkspacesResponseRecordsItem struct {
+type UserCollaborationsResponseRecordsItem struct {
 	ID     uuid.UUID `json:"id"`
 	Name   string    `json:"name"`
 	Status string    `json:"status"`
 }
 
 // GetID returns the value of ID.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) GetID() uuid.UUID {
+func (s *UserCollaborationsResponseRecordsItem) GetID() uuid.UUID {
 	return s.ID
 }
 
 // GetName returns the value of Name.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) GetName() string {
+func (s *UserCollaborationsResponseRecordsItem) GetName() string {
 	return s.Name
 }
 
 // GetStatus returns the value of Status.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) GetStatus() string {
+func (s *UserCollaborationsResponseRecordsItem) GetStatus() string {
 	return s.Status
 }
 
 // SetID sets the value of ID.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) SetID(val uuid.UUID) {
+func (s *UserCollaborationsResponseRecordsItem) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) SetName(val string) {
+func (s *UserCollaborationsResponseRecordsItem) SetName(val string) {
 	s.Name = val
 }
 
 // SetStatus sets the value of Status.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) SetStatus(val string) {
+func (s *UserCollaborationsResponseRecordsItem) SetStatus(val string) {
 	s.Status = val
 }
 
@@ -32134,12 +32276,12 @@ func (s *UserPackagesResponse) SetPackages(val []FeaturePackageRef) {
 
 // Ref: #/components/schemas/UserPermissionCollaborationMember
 type UserPermissionCollaborationMember struct {
-	ID                       string `json:"id"`
-	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
-	UserID                   string `json:"user_id"`
-	RoleCode                 string `json:"role_code"`
-	Status                   string `json:"status"`
-	Matched                  bool   `json:"matched"`
+	ID          string `json:"id"`
+	WorkspaceID string `json:"workspace_id"`
+	UserID      string `json:"user_id"`
+	RoleCode    string `json:"role_code"`
+	Status      string `json:"status"`
+	Matched     bool   `json:"matched"`
 }
 
 // GetID returns the value of ID.
@@ -32147,9 +32289,9 @@ func (s *UserPermissionCollaborationMember) GetID() string {
 	return s.ID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *UserPermissionCollaborationMember) GetCollaborationWorkspaceID() string {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *UserPermissionCollaborationMember) GetWorkspaceID() string {
+	return s.WorkspaceID
 }
 
 // GetUserID returns the value of UserID.
@@ -32177,9 +32319,9 @@ func (s *UserPermissionCollaborationMember) SetID(val string) {
 	s.ID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *UserPermissionCollaborationMember) SetCollaborationWorkspaceID(val string) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *UserPermissionCollaborationMember) SetWorkspaceID(val string) {
+	s.WorkspaceID = val
 }
 
 // SetUserID sets the value of UserID.
@@ -32373,10 +32515,10 @@ func (s *UserPermissionDiagnosisAction) SetRoleResults(val []UserPermissionRoleR
 
 // Ref: #/components/schemas/UserPermissionDiagnosisContext
 type UserPermissionDiagnosisContext struct {
-	Type                              string `json:"type"`
-	BindingWorkspaceID                string `json:"binding_workspace_id"`
-	CurrentCollaborationWorkspaceID   string `json:"current_collaboration_workspace_id"`
-	CurrentCollaborationWorkspaceName string `json:"current_collaboration_workspace_name"`
+	Type                 string `json:"type"`
+	BindingWorkspaceID   string `json:"binding_workspace_id"`
+	CurrentWorkspaceID   string `json:"current_workspace_id"`
+	CurrentWorkspaceName string `json:"current_workspace_name"`
 }
 
 // GetType returns the value of Type.
@@ -32389,14 +32531,14 @@ func (s *UserPermissionDiagnosisContext) GetBindingWorkspaceID() string {
 	return s.BindingWorkspaceID
 }
 
-// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
-func (s *UserPermissionDiagnosisContext) GetCurrentCollaborationWorkspaceID() string {
-	return s.CurrentCollaborationWorkspaceID
+// GetCurrentWorkspaceID returns the value of CurrentWorkspaceID.
+func (s *UserPermissionDiagnosisContext) GetCurrentWorkspaceID() string {
+	return s.CurrentWorkspaceID
 }
 
-// GetCurrentCollaborationWorkspaceName returns the value of CurrentCollaborationWorkspaceName.
-func (s *UserPermissionDiagnosisContext) GetCurrentCollaborationWorkspaceName() string {
-	return s.CurrentCollaborationWorkspaceName
+// GetCurrentWorkspaceName returns the value of CurrentWorkspaceName.
+func (s *UserPermissionDiagnosisContext) GetCurrentWorkspaceName() string {
+	return s.CurrentWorkspaceName
 }
 
 // SetType sets the value of Type.
@@ -32409,26 +32551,26 @@ func (s *UserPermissionDiagnosisContext) SetBindingWorkspaceID(val string) {
 	s.BindingWorkspaceID = val
 }
 
-// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
-func (s *UserPermissionDiagnosisContext) SetCurrentCollaborationWorkspaceID(val string) {
-	s.CurrentCollaborationWorkspaceID = val
+// SetCurrentWorkspaceID sets the value of CurrentWorkspaceID.
+func (s *UserPermissionDiagnosisContext) SetCurrentWorkspaceID(val string) {
+	s.CurrentWorkspaceID = val
 }
 
-// SetCurrentCollaborationWorkspaceName sets the value of CurrentCollaborationWorkspaceName.
-func (s *UserPermissionDiagnosisContext) SetCurrentCollaborationWorkspaceName(val string) {
-	s.CurrentCollaborationWorkspaceName = val
+// SetCurrentWorkspaceName sets the value of CurrentWorkspaceName.
+func (s *UserPermissionDiagnosisContext) SetCurrentWorkspaceName(val string) {
+	s.CurrentWorkspaceName = val
 }
 
 // Ref: #/components/schemas/UserPermissionDiagnosisResponse
 type UserPermissionDiagnosisResponse struct {
-	User                           UserPermissionDiagnosisUser          `json:"user"`
-	Context                        UserPermissionDiagnosisContext       `json:"context"`
-	Snapshot                       UserPermissionSnapshotSummary        `json:"snapshot"`
-	Roles                          []UserPermissionRoleResult           `json:"roles"`
-	CollaborationWorkspaceMember   OptUserPermissionCollaborationMember `json:"collaboration_workspace_member"`
-	CollaborationWorkspacePackages []FeaturePackageRef                  `json:"collaboration_workspace_packages"`
-	Diagnosis                      OptUserPermissionDiagnosisResult     `json:"diagnosis"`
-	Menus                          []UserPermissionMenuTreeItem         `json:"menus"`
+	User                UserPermissionDiagnosisUser          `json:"user"`
+	Context             UserPermissionDiagnosisContext       `json:"context"`
+	Snapshot            UserPermissionSnapshotSummary        `json:"snapshot"`
+	Roles               []UserPermissionRoleResult           `json:"roles"`
+	CollaborationMember OptUserPermissionCollaborationMember `json:"collaboration_member"`
+	WorkspacePackages   []FeaturePackageRef                  `json:"workspace_packages"`
+	Diagnosis           OptUserPermissionDiagnosisResult     `json:"diagnosis"`
+	Menus               []UserPermissionMenuTreeItem         `json:"menus"`
 }
 
 // GetUser returns the value of User.
@@ -32451,14 +32593,14 @@ func (s *UserPermissionDiagnosisResponse) GetRoles() []UserPermissionRoleResult 
 	return s.Roles
 }
 
-// GetCollaborationWorkspaceMember returns the value of CollaborationWorkspaceMember.
-func (s *UserPermissionDiagnosisResponse) GetCollaborationWorkspaceMember() OptUserPermissionCollaborationMember {
-	return s.CollaborationWorkspaceMember
+// GetCollaborationMember returns the value of CollaborationMember.
+func (s *UserPermissionDiagnosisResponse) GetCollaborationMember() OptUserPermissionCollaborationMember {
+	return s.CollaborationMember
 }
 
-// GetCollaborationWorkspacePackages returns the value of CollaborationWorkspacePackages.
-func (s *UserPermissionDiagnosisResponse) GetCollaborationWorkspacePackages() []FeaturePackageRef {
-	return s.CollaborationWorkspacePackages
+// GetWorkspacePackages returns the value of WorkspacePackages.
+func (s *UserPermissionDiagnosisResponse) GetWorkspacePackages() []FeaturePackageRef {
+	return s.WorkspacePackages
 }
 
 // GetDiagnosis returns the value of Diagnosis.
@@ -32491,14 +32633,14 @@ func (s *UserPermissionDiagnosisResponse) SetRoles(val []UserPermissionRoleResul
 	s.Roles = val
 }
 
-// SetCollaborationWorkspaceMember sets the value of CollaborationWorkspaceMember.
-func (s *UserPermissionDiagnosisResponse) SetCollaborationWorkspaceMember(val OptUserPermissionCollaborationMember) {
-	s.CollaborationWorkspaceMember = val
+// SetCollaborationMember sets the value of CollaborationMember.
+func (s *UserPermissionDiagnosisResponse) SetCollaborationMember(val OptUserPermissionCollaborationMember) {
+	s.CollaborationMember = val
 }
 
-// SetCollaborationWorkspacePackages sets the value of CollaborationWorkspacePackages.
-func (s *UserPermissionDiagnosisResponse) SetCollaborationWorkspacePackages(val []FeaturePackageRef) {
-	s.CollaborationWorkspacePackages = val
+// SetWorkspacePackages sets the value of WorkspacePackages.
+func (s *UserPermissionDiagnosisResponse) SetWorkspacePackages(val []FeaturePackageRef) {
+	s.WorkspacePackages = val
 }
 
 // SetDiagnosis sets the value of Diagnosis.
@@ -32513,25 +32655,25 @@ func (s *UserPermissionDiagnosisResponse) SetMenus(val []UserPermissionMenuTreeI
 
 // Ref: #/components/schemas/UserPermissionDiagnosisResult
 type UserPermissionDiagnosisResult struct {
-	PermissionKey                   string                           `json:"permission_key"`
-	Allowed                         bool                             `json:"allowed"`
-	ReasonText                      OptString                        `json:"reason_text"`
-	Reasons                         []string                         `json:"reasons"`
-	MatchedInSnapshot               bool                             `json:"matched_in_snapshot"`
-	BypassedBySuperAdmin            bool                             `json:"bypassed_by_super_admin"`
-	BlockedByCollaborationWorkspace bool                             `json:"blocked_by_collaboration_workspace"`
-	DenialStage                     OptString                        `json:"denial_stage"`
-	DenialReason                    OptString                        `json:"denial_reason"`
-	MemberStatus                    OptString                        `json:"member_status"`
-	MemberMatched                   bool                             `json:"member_matched"`
-	BoundaryState                   OptString                        `json:"boundary_state"`
-	BoundaryConfigured              bool                             `json:"boundary_configured"`
-	RoleChainMatched                bool                             `json:"role_chain_matched"`
-	RoleChainDisabled               bool                             `json:"role_chain_disabled"`
-	RoleChainAvailable              bool                             `json:"role_chain_available"`
-	Action                          OptUserPermissionDiagnosisAction `json:"action"`
-	SourcePackages                  []FeaturePackageRef              `json:"source_packages"`
-	RoleResults                     []UserPermissionRoleResult       `json:"role_results"`
+	PermissionKey          string                           `json:"permission_key"`
+	Allowed                bool                             `json:"allowed"`
+	ReasonText             OptString                        `json:"reason_text"`
+	Reasons                []string                         `json:"reasons"`
+	MatchedInSnapshot      bool                             `json:"matched_in_snapshot"`
+	BypassedBySuperAdmin   bool                             `json:"bypassed_by_super_admin"`
+	BlockedByCollaboration bool                             `json:"blocked_by_collaboration"`
+	DenialStage            OptString                        `json:"denial_stage"`
+	DenialReason           OptString                        `json:"denial_reason"`
+	MemberStatus           OptString                        `json:"member_status"`
+	MemberMatched          bool                             `json:"member_matched"`
+	BoundaryState          OptString                        `json:"boundary_state"`
+	BoundaryConfigured     bool                             `json:"boundary_configured"`
+	RoleChainMatched       bool                             `json:"role_chain_matched"`
+	RoleChainDisabled      bool                             `json:"role_chain_disabled"`
+	RoleChainAvailable     bool                             `json:"role_chain_available"`
+	Action                 OptUserPermissionDiagnosisAction `json:"action"`
+	SourcePackages         []FeaturePackageRef              `json:"source_packages"`
+	RoleResults            []UserPermissionRoleResult       `json:"role_results"`
 }
 
 // GetPermissionKey returns the value of PermissionKey.
@@ -32564,9 +32706,9 @@ func (s *UserPermissionDiagnosisResult) GetBypassedBySuperAdmin() bool {
 	return s.BypassedBySuperAdmin
 }
 
-// GetBlockedByCollaborationWorkspace returns the value of BlockedByCollaborationWorkspace.
-func (s *UserPermissionDiagnosisResult) GetBlockedByCollaborationWorkspace() bool {
-	return s.BlockedByCollaborationWorkspace
+// GetBlockedByCollaboration returns the value of BlockedByCollaboration.
+func (s *UserPermissionDiagnosisResult) GetBlockedByCollaboration() bool {
+	return s.BlockedByCollaboration
 }
 
 // GetDenialStage returns the value of DenialStage.
@@ -32659,9 +32801,9 @@ func (s *UserPermissionDiagnosisResult) SetBypassedBySuperAdmin(val bool) {
 	s.BypassedBySuperAdmin = val
 }
 
-// SetBlockedByCollaborationWorkspace sets the value of BlockedByCollaborationWorkspace.
-func (s *UserPermissionDiagnosisResult) SetBlockedByCollaborationWorkspace(val bool) {
-	s.BlockedByCollaborationWorkspace = val
+// SetBlockedByCollaboration sets the value of BlockedByCollaboration.
+func (s *UserPermissionDiagnosisResult) SetBlockedByCollaboration(val bool) {
+	s.BlockedByCollaboration = val
 }
 
 // SetDenialStage sets the value of DenialStage.
@@ -33553,13 +33695,13 @@ func (*WorkspaceList) listMyWorkspacesRes() {}
 
 // Ref: #/components/schemas/WorkspaceSummary
 type WorkspaceSummary struct {
-	ID                       uuid.UUID                     `json:"id"`
-	WorkspaceType            WorkspaceSummaryWorkspaceType `json:"workspace_type"`
-	Name                     string                        `json:"name"`
-	Code                     string                        `json:"code"`
-	OwnerUserID              OptNilUUID                    `json:"owner_user_id"`
-	CollaborationWorkspaceID OptNilUUID                    `json:"collaboration_workspace_id"`
-	Status                   string                        `json:"status"`
+	ID            uuid.UUID                     `json:"id"`
+	WorkspaceType WorkspaceSummaryWorkspaceType `json:"workspace_type"`
+	Name          string                        `json:"name"`
+	Code          string                        `json:"code"`
+	OwnerUserID   OptNilUUID                    `json:"owner_user_id"`
+	WorkspaceID   OptNilUUID                    `json:"workspace_id"`
+	Status        string                        `json:"status"`
 }
 
 // GetID returns the value of ID.
@@ -33587,9 +33729,9 @@ func (s *WorkspaceSummary) GetOwnerUserID() OptNilUUID {
 	return s.OwnerUserID
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *WorkspaceSummary) GetCollaborationWorkspaceID() OptNilUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *WorkspaceSummary) GetWorkspaceID() OptNilUUID {
+	return s.WorkspaceID
 }
 
 // GetStatus returns the value of Status.
@@ -33622,9 +33764,9 @@ func (s *WorkspaceSummary) SetOwnerUserID(val OptNilUUID) {
 	s.OwnerUserID = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *WorkspaceSummary) SetCollaborationWorkspaceID(val OptNilUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *WorkspaceSummary) SetWorkspaceID(val OptNilUUID) {
+	s.WorkspaceID = val
 }
 
 // SetStatus sets the value of Status.
@@ -33693,10 +33835,10 @@ func (s *WorkspaceSwitchRequest) SetWorkspaceID(val uuid.UUID) {
 
 // Ref: #/components/schemas/WorkspaceSwitchResponse
 type WorkspaceSwitchResponse struct {
-	AuthWorkspaceID          uuid.UUID                                `json:"auth_workspace_id"`
-	AuthWorkspaceType        WorkspaceSwitchResponseAuthWorkspaceType `json:"auth_workspace_type"`
-	CollaborationWorkspaceID OptNilUUID                               `json:"collaboration_workspace_id"`
-	Workspace                WorkspaceSummary                         `json:"workspace"`
+	AuthWorkspaceID   uuid.UUID                                `json:"auth_workspace_id"`
+	AuthWorkspaceType WorkspaceSwitchResponseAuthWorkspaceType `json:"auth_workspace_type"`
+	WorkspaceID       OptNilUUID                               `json:"workspace_id"`
+	Workspace         WorkspaceSummary                         `json:"workspace"`
 }
 
 // GetAuthWorkspaceID returns the value of AuthWorkspaceID.
@@ -33709,9 +33851,9 @@ func (s *WorkspaceSwitchResponse) GetAuthWorkspaceType() WorkspaceSwitchResponse
 	return s.AuthWorkspaceType
 }
 
-// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
-func (s *WorkspaceSwitchResponse) GetCollaborationWorkspaceID() OptNilUUID {
-	return s.CollaborationWorkspaceID
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *WorkspaceSwitchResponse) GetWorkspaceID() OptNilUUID {
+	return s.WorkspaceID
 }
 
 // GetWorkspace returns the value of Workspace.
@@ -33729,9 +33871,9 @@ func (s *WorkspaceSwitchResponse) SetAuthWorkspaceType(val WorkspaceSwitchRespon
 	s.AuthWorkspaceType = val
 }
 
-// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
-func (s *WorkspaceSwitchResponse) SetCollaborationWorkspaceID(val OptNilUUID) {
-	s.CollaborationWorkspaceID = val
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *WorkspaceSwitchResponse) SetWorkspaceID(val OptNilUUID) {
+	s.WorkspaceID = val
 }
 
 // SetWorkspace sets the value of Workspace.

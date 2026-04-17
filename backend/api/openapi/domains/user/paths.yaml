@@ -1,4 +1,4 @@
-# domains/user/paths.yaml — AUTO-SPLIT by split_spec.py
+﻿# domains/user/paths.yaml — AUTO-SPLIT by split_spec.py
 paths:
   /users:
     post:
@@ -303,9 +303,9 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/Error'
-  /users/{id}/collaboration-workspaces:
+  /users/{id}/collaborations:
     get:
-      operationId: getUserCollaborationWorkspaces
+      operationId: getUserCollaborations
       summary: 获取用户所在协作空间列表
       tags:
       - user
@@ -324,14 +324,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/UserCollaborationWorkspacesResponse'
+                $ref: './schemas.yaml#/components/schemas/UserCollaborationsResponse'
   /users/{id}/packages:
     get:
       operationId: getUserPackages
       summary: 获取用户功能包
       tags:
       - user
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id
@@ -356,7 +356,7 @@ paths:
       summary: 配置用户功能包
       tags:
       - user
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id
@@ -480,7 +480,7 @@ paths:
         in: query
         schema:
           type: string
-      - name: collaboration_workspace_id
+      - name: workspace_id
         in: query
         schema:
           type: string
@@ -513,3 +513,4 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+

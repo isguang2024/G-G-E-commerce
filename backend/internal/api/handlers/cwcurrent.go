@@ -1,4 +1,4 @@
-﻿// cwcurrent.go — Phase 4 ogen handlers for current/my collaboration workspace
+// cwcurrent.go — Phase 4 ogen handlers for current/my collaboration workspace
 // basic operations (list, get, members CRUD). Hooks into cwSvc + cwMemberRepo.
 package handlers
 
@@ -18,7 +18,7 @@ import (
 // authenticated user, preferring the JWT-carried value and falling back to the
 // member repo lookup.
 func (h *cwAPIHandler) resolveCurrentCwID(ctx context.Context) (uuid.UUID, error) {
-	if raw := stringFromCtx(ctx, CtxCollaborationWorkspaceID); raw != "" {
+	if raw := stringFromCtx(ctx, CtxCollaborationID); raw != "" {
 		if id, err := uuid.Parse(raw); err == nil {
 			return id, nil
 		}
@@ -34,26 +34,26 @@ func (h *cwAPIHandler) resolveCurrentCwID(ctx context.Context) (uuid.UUID, error
 	return m.CollaborationWorkspaceID, nil
 }
 
-func (h *cwAPIHandler) ListMyCollaborationWorkspaces(ctx context.Context) (*gen.CollaborationWorkspaceList, error) {
+func (h *cwAPIHandler) ListMyCollaborations(ctx context.Context) (*gen.CollaborationList, error) {
 	uid, ok := userIDFromContext(ctx)
 	if !ok {
-		return &gen.CollaborationWorkspaceList{Records: []gen.CollaborationWorkspaceItem{}, Total: 0}, nil
+		return &gen.CollaborationList{Records: []gen.CollaborationItem{}, Total: 0}, nil
 	}
 	items, err := h.cwMemberRepo.GetCollaborationWorkspacesByUserID(uid)
 	if err != nil {
 		h.logger.Error("list my collaboration workspaces failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceList{
+	return &gen.CollaborationList{
 		Records: collaborationWorkspaceItemsFromModels(items),
 		Total:   len(items),
 	}, nil
 }
 
-func (h *cwAPIHandler) GetCurrentCollaborationWorkspace(ctx context.Context) (*gen.CollaborationWorkspaceItem, error) {
+func (h *cwAPIHandler) GetCurrentCollaboration(ctx context.Context) (*gen.CollaborationItem, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceItem{}, nil
+		return &gen.CollaborationItem{}, nil
 	}
 	cw, err := h.cwSvc.Get(cwID)
 	if err != nil {
@@ -64,11 +64,11 @@ func (h *cwAPIHandler) GetCurrentCollaborationWorkspace(ctx context.Context) (*g
 	return &item, nil
 }
 
-func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*gen.CollaborationWorkspaceMemberList, error) {
+func (h *cwAPIHandler) ListCurrentCollaborationMembers(ctx context.Context) (*gen.CollaborationMemberList, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
-		return &gen.CollaborationWorkspaceMemberList{
-			Records: []gen.CollaborationWorkspaceMemberItem{},
+		return &gen.CollaborationMemberList{
+			Records: []gen.CollaborationMemberItem{},
 			Total:   0,
 		}, nil
 	}
@@ -77,13 +77,13 @@ func (h *cwAPIHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Cont
 		h.logger.Error("list current cw members failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.CollaborationWorkspaceMemberList{
+	return &gen.CollaborationMemberList{
 		Records: collaborationWorkspaceMemberItemsFromModels(members),
 		Total:   len(members),
 	}, nil
 }
 
-func (h *cwAPIHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Context, req *gen.CollaborationWorkspaceMemberAddRequest) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) AddCurrentCollaborationMember(ctx context.Context, req *gen.CollaborationMemberAddRequest) (*gen.MutationResult, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (h *cwAPIHandler) AddCurrentCollaborationWorkspaceMember(ctx context.Contex
 	return ok(), nil
 }
 
-func (h *cwAPIHandler) RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params gen.RemoveCurrentCollaborationWorkspaceMemberParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) RemoveCurrentCollaborationMember(ctx context.Context, params gen.RemoveCurrentCollaborationMemberParams) (*gen.MutationResult, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (h *cwAPIHandler) RemoveCurrentCollaborationWorkspaceMember(ctx context.Con
 	return ok(), nil
 }
 
-func (h *cwAPIHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, req *gen.CollaborationWorkspaceMemberRoleRequest, params gen.UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*gen.MutationResult, error) {
+func (h *cwAPIHandler) UpdateCurrentCollaborationMemberRole(ctx context.Context, req *gen.CollaborationMemberRoleRequest, params gen.UpdateCurrentCollaborationMemberRoleParams) (*gen.MutationResult, error) {
 	cwID, err := h.resolveCurrentCwID(ctx)
 	if err != nil {
 		return nil, err
@@ -131,4 +131,5 @@ func (h *cwAPIHandler) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context
 	}
 	return ok(), nil
 }
+
 

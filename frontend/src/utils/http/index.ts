@@ -16,7 +16,6 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/domains/auth/store'
-import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
@@ -109,7 +108,6 @@ axiosInstance.interceptors.request.use(
     }
   ) => {
     const { accessToken } = useUserStore()
-    const { currentCollaborationWorkspaceId, currentContextMode } = useCollaborationWorkspaceStore()
     const { currentAuthWorkspaceId } = useWorkspaceStore()
     if (accessToken) {
       // 添加 Bearer 前缀（如果还没有）
@@ -120,12 +118,6 @@ axiosInstance.interceptors.request.use(
     const skipAuthWorkspaceHeader = Boolean(request.skipAuthWorkspaceHeader)
     if (!request.skipWorkspaceHeader && !skipAuthWorkspaceHeader && currentAuthWorkspaceId) {
       request.headers.set('X-Auth-Workspace-Id', currentAuthWorkspaceId)
-    }
-
-    if (!request.skipCollaborationWorkspaceHeader && currentContextMode === 'collaboration') {
-      if (currentCollaborationWorkspaceId) {
-        request.headers.set('X-Collaboration-Workspace-Id', currentCollaborationWorkspaceId)
-      }
     }
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {

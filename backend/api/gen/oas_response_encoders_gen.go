@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func encodeAddCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeAddCollaborationMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -26,7 +26,7 @@ func encodeAddCollaborationWorkspaceMemberResponse(response *MutationResult, w h
 	return nil
 }
 
-func encodeAddCurrentCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeAddCurrentCollaborationMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -292,7 +292,7 @@ func encodeCreateApiEndpointCategoryResponse(response CreateApiEndpointCategoryR
 	}
 }
 
-func encodeCreateCollaborationWorkspaceResponse(response *IDResult, w http.ResponseWriter, span trace.Span) error {
+func encodeCreateCollaborationResponse(response *IDResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -306,7 +306,7 @@ func encodeCreateCollaborationWorkspaceResponse(response *IDResult, w http.Respo
 	return nil
 }
 
-func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeCreateCurrentCollaborationBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -320,7 +320,7 @@ func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *Mut
 	return nil
 }
 
-func encodeCreateCurrentCollaborationWorkspaceRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeCreateCurrentCollaborationRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -889,7 +889,7 @@ func encodeDeleteAppHostBindingResponse(response *MutationResult, w http.Respons
 	return nil
 }
 
-func encodeDeleteCollaborationWorkspaceResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeDeleteCollaborationResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -903,7 +903,7 @@ func encodeDeleteCollaborationWorkspaceResponse(response *MutationResult, w http
 	return nil
 }
 
-func encodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeDeleteCurrentCollaborationBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1871,7 +1871,7 @@ func encodeGetAuthMeResponse(response GetAuthMeRes, w http.ResponseWriter, span 
 	}
 }
 
-func encodeGetCollaborationWorkspaceResponse(response *CollaborationWorkspaceItem, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationResponse(response *CollaborationItem, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1885,7 +1885,7 @@ func encodeGetCollaborationWorkspaceResponse(response *CollaborationWorkspaceIte
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceActionOriginsResponse(response *CollaborationWorkspaceActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationActionOriginsResponse(response *CollaborationActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1899,7 +1899,7 @@ func encodeGetCollaborationWorkspaceActionOriginsResponse(response *Collaboratio
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceActionsResponse(response *CollaborationWorkspaceActionsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationActionsResponse(response *CollaborationActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1913,7 +1913,7 @@ func encodeGetCollaborationWorkspaceActionsResponse(response *CollaborationWorks
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *CollaborationWorkspaceMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationMenuOriginsResponse(response *CollaborationMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1927,7 +1927,7 @@ func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *CollaborationW
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceMenusResponse(response *CollaborationWorkspaceMenusResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationMenusResponse(response *CollaborationMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1941,7 +1941,7 @@ func encodeGetCollaborationWorkspaceMenusResponse(response *CollaborationWorkspa
 	return nil
 }
 
-func encodeGetCollaborationWorkspacePackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationPackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1969,7 +1969,7 @@ func encodeGetCurrentAppResponse(response *SystemCurrentAppResponse, w http.Resp
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceResponse(response *CollaborationWorkspaceItem, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationResponse(response *CollaborationItem, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1983,7 +1983,7 @@ func encodeGetCurrentCollaborationWorkspaceResponse(response *CollaborationWorks
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *CollaborationWorkspaceActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationActionOriginsResponse(response *CollaborationActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1997,7 +1997,7 @@ func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *Colla
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceActionsResponse(response *CollaborationWorkspaceActionsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationActionsResponse(response *CollaborationActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2011,7 +2011,7 @@ func encodeGetCurrentCollaborationWorkspaceActionsResponse(response *Collaborati
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationBoundaryPackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2025,7 +2025,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *Fe
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response *RoleActionsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationBoundaryRoleActionsResponse(response *RoleActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2039,7 +2039,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response 
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *RoleMenusResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationBoundaryRoleMenusResponse(response *RoleMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2053,7 +2053,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *R
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response *CollaborationWorkspaceBoundaryRolePackagesResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationBoundaryRolePackagesResponse(response *CollaborationBoundaryRolePackagesResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2067,7 +2067,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response *CollaborationWorkspaceMemberRolesResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationMemberRolesResponse(response *CollaborationMemberRolesResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2081,7 +2081,7 @@ func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response *Collabo
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *CollaborationWorkspaceMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationMenuOriginsResponse(response *CollaborationMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2095,7 +2095,7 @@ func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *Collabo
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMenusResponse(response *CollaborationWorkspaceMenusResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationMenusResponse(response *CollaborationMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2278,7 +2278,7 @@ func encodeGetFeaturePackageChildrenResponse(response *FeaturePackageAssignmentR
 	return nil
 }
 
-func encodeGetFeaturePackageCollaborationWorkspacesResponse(response *FeaturePackageCollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
+func encodeGetFeaturePackageCollaborationsResponse(response *FeaturePackageCollaborationList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3042,7 +3042,7 @@ func encodeGetUserResponse(response GetUserRes, w http.ResponseWriter, span trac
 	}
 }
 
-func encodeGetUserCollaborationWorkspacesResponse(response *UserCollaborationWorkspacesResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetUserCollaborationsResponse(response *UserCollaborationsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3398,7 +3398,7 @@ func encodeListAuditLogsResponse(response ListAuditLogsRes, w http.ResponseWrite
 	}
 }
 
-func encodeListCollaborationWorkspaceMembersResponse(response *CollaborationWorkspaceMemberList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationMembersResponse(response *CollaborationMemberList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3412,7 +3412,7 @@ func encodeListCollaborationWorkspaceMembersResponse(response *CollaborationWork
 	return nil
 }
 
-func encodeListCollaborationWorkspaceOptionsResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationOptionsResponse(response *CollaborationList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3426,7 +3426,7 @@ func encodeListCollaborationWorkspaceOptionsResponse(response *CollaborationWork
 	return nil
 }
 
-func encodeListCollaborationWorkspaceRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationRolesResponse(response *CollaborationRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3440,7 +3440,7 @@ func encodeListCollaborationWorkspaceRolesResponse(response *CollaborationWorksp
 	return nil
 }
 
-func encodeListCollaborationWorkspacesResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationsResponse(response *CollaborationList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3454,7 +3454,7 @@ func encodeListCollaborationWorkspacesResponse(response *CollaborationWorkspaceL
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationBoundaryRolesResponse(response *CollaborationRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3468,7 +3468,7 @@ func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *Coll
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceMembersResponse(response *CollaborationWorkspaceMemberList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationMembersResponse(response *CollaborationMemberList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3482,7 +3482,7 @@ func encodeListCurrentCollaborationWorkspaceMembersResponse(response *Collaborat
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationRolesResponse(response *CollaborationRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -3836,7 +3836,7 @@ func encodeListMessageTemplatesResponse(response *MessageTemplateListResponse, w
 	return nil
 }
 
-func encodeListMyCollaborationWorkspacesResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
+func encodeListMyCollaborationsResponse(response *CollaborationList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -4925,7 +4925,7 @@ func encodeRegisterResponse(response RegisterRes, w http.ResponseWriter, span tr
 	}
 }
 
-func encodeRemoveCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeRemoveCollaborationMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -4939,7 +4939,7 @@ func encodeRemoveCollaborationWorkspaceMemberResponse(response *MutationResult, 
 	return nil
 }
 
-func encodeRemoveCurrentCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeRemoveCurrentCollaborationMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5158,7 +5158,7 @@ func encodeSavePermissionActionBatchTemplateResponse(response *PermissionActionB
 	return nil
 }
 
-func encodeSetCollaborationWorkspaceActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCollaborationActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5172,7 +5172,7 @@ func encodeSetCollaborationWorkspaceActionsResponse(response *MutationResult, w 
 	return nil
 }
 
-func encodeSetCollaborationWorkspaceMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCollaborationMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5186,7 +5186,7 @@ func encodeSetCollaborationWorkspaceMenusResponse(response *MutationResult, w ht
 	return nil
 }
 
-func encodeSetCollaborationWorkspacePackagesResponse(response *FeaturePackageMutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCollaborationPackagesResponse(response *FeaturePackageMutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5200,7 +5200,7 @@ func encodeSetCollaborationWorkspacePackagesResponse(response *FeaturePackageMut
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCurrentCollaborationBoundaryRoleActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5214,7 +5214,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response 
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCurrentCollaborationBoundaryRoleMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5228,7 +5228,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *M
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCurrentCollaborationBoundaryRolePackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5242,7 +5242,7 @@ func encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response
 	return nil
 }
 
-func encodeSetCurrentCollaborationWorkspaceMemberRolesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetCurrentCollaborationMemberRolesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5284,7 +5284,7 @@ func encodeSetFeaturePackageChildrenResponse(response *FeaturePackageMutationRes
 	return nil
 }
 
-func encodeSetFeaturePackageCollaborationWorkspacesResponse(response *FeaturePackageMutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSetFeaturePackageCollaborationsResponse(response *FeaturePackageMutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5706,7 +5706,7 @@ func encodeUpdateApiEndpointContextScopeResponse(response UpdateApiEndpointConte
 	}
 }
 
-func encodeUpdateCollaborationWorkspaceResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeUpdateCollaborationResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5720,7 +5720,7 @@ func encodeUpdateCollaborationWorkspaceResponse(response *MutationResult, w http
 	return nil
 }
 
-func encodeUpdateCollaborationWorkspaceMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeUpdateCollaborationMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5734,7 +5734,7 @@ func encodeUpdateCollaborationWorkspaceMemberRoleResponse(response *MutationResu
 	return nil
 }
 
-func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeUpdateCurrentCollaborationBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -5748,7 +5748,7 @@ func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *Mut
 	return nil
 }
 
-func encodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+func encodeUpdateCurrentCollaborationMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))

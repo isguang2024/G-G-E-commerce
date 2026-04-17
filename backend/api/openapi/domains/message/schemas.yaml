@@ -1,4 +1,4 @@
-# domains/message/schemas.yaml
+﻿# domains/message/schemas.yaml
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
@@ -54,7 +54,12 @@ components:
         last_action_at:
           type: string
           format: date-time
-        recipient_collaboration_workspace_id:
+        recipient_workspace_id:
+          type: string
+          format: uuid
+        recipient_scope_type:
+          type: string
+        recipient_scope_id:
           type: string
           format: uuid
         title:
@@ -90,7 +95,12 @@ components:
           type: string
         audience_scope:
           type: string
-        target_collaboration_workspace_id:
+        target_scope_type:
+          type: string
+        target_scope_id:
+          type: string
+          format: uuid
+        target_workspace_id:
           type: string
           format: uuid
         published_at:
@@ -113,7 +123,7 @@ components:
         recipient_count: {type: integer}
         published_at: {type: string, format: date-time}
         failed_at: {type: string, format: date-time}
-        target_collaboration_workspace_ids:
+        target_workspace_ids:
           type: array
           items: {type: string, format: uuid}
     InboxListResponse:
@@ -151,11 +161,12 @@ components:
         description: {type: string}
         message_type: {type: string}
         owner_scope: {type: string}
+        owner_scope_id: {type: string, format: uuid}
         audience_type: {type: string}
         title_template: {type: string}
         summary_template: {type: string}
         content_template: {type: string}
-    DispatchCollaborationWorkspaceOption:
+    DispatchCollaborationOption:
       type: object
       required: [id, name]
       properties:
@@ -178,8 +189,8 @@ components:
         name: {type: string}
         display_name: {type: string}
         description: {type: string}
-        collaboration_workspace_id: {type: string, format: uuid}
-        collaboration_workspace_name: {type: string}
+        workspace_id: {type: string, format: uuid}
+        workspace_name: {type: string}
     DispatchRecipientGroupOption:
       type: object
       required: [id, name]
@@ -212,7 +223,7 @@ components:
       - sender_options
       - audience_options
       - template_options
-      - collaboration_workspaces
+      - collaborations
       - users
       - recipient_groups
       - roles
@@ -223,8 +234,8 @@ components:
       - supports_external_link
       properties:
         sender_scope: {type: string}
-        current_collaboration_workspace_id: {type: string}
-        current_collaboration_workspace_name: {type: string}
+        current_workspace_id: {type: string}
+        current_workspace_name: {type: string}
         sender_options:
           type: array
           items: {$ref: '#/components/schemas/DispatchSenderOption'}
@@ -235,9 +246,9 @@ components:
         template_options:
           type: array
           items: {$ref: '#/components/schemas/DispatchTemplateOption'}
-        collaboration_workspaces:
+        collaborations:
           type: array
-          items: {$ref: '#/components/schemas/DispatchCollaborationWorkspaceOption'}
+          items: {$ref: '#/components/schemas/DispatchCollaborationOption'}
         users:
           type: array
           items: {$ref: '#/components/schemas/DispatchUserOption'}
@@ -278,7 +289,7 @@ components:
         template_key: {type: string}
         message_type: {type: string}
         audience_type: {type: string}
-        target_collaboration_workspace_ids:
+        target_workspace_ids:
           type: array
           items: {type: string}
         target_user_ids:
@@ -311,8 +322,9 @@ components:
         description: {type: string}
         message_type: {type: string}
         owner_scope: {type: string}
-        owner_collaboration_workspace_id: {type: string, format: uuid}
-        owner_collaboration_workspace_name: {type: string}
+        owner_scope_id: {type: string, format: uuid}
+        owner_workspace_id: {type: string, format: uuid}
+        owner_workspace_name: {type: string}
         audience_type: {type: string}
         title_template: {type: string}
         summary_template: {type: string}
@@ -397,8 +409,10 @@ components:
         target_type: {type: string}
         user_id: {type: string, format: uuid}
         user_name: {type: string}
-        collaboration_workspace_id: {type: string, format: uuid}
-        collaboration_workspace_name: {type: string}
+        workspace_id: {type: string, format: uuid}
+        workspace_name: {type: string}
+        target_scope_type: {type: string}
+        target_scope_id: {type: string, format: uuid}
         role_code: {type: string}
         role_name: {type: string}
         package_key: {type: string}
@@ -462,7 +476,9 @@ components:
       properties:
         target_type: {type: string}
         user_id: {type: string, format: uuid}
-        collaboration_workspace_id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        target_scope_type: {type: string}
+        target_scope_id: {type: string, format: uuid}
         role_code: {type: string}
         package_key: {type: string}
         sort_order: {type: integer}
@@ -498,8 +514,10 @@ components:
         audience_type: {type: string}
         scope_type: {type: string}
         scope_id: {type: string, format: uuid}
-        target_collaboration_workspace_id: {type: string, format: uuid}
-        target_collaboration_workspace_name: {type: string}
+        target_scope_type: {type: string}
+        target_scope_id: {type: string, format: uuid}
+        target_workspace_id: {type: string, format: uuid}
+        target_workspace_name: {type: string}
         sender_name: {type: string}
         template_name: {type: string}
         priority: {type: string}
@@ -517,8 +535,10 @@ components:
         id: {type: string, format: uuid}
         recipient_user_id: {type: string, format: uuid}
         recipient_name: {type: string}
-        recipient_collaboration_workspace_id: {type: string, format: uuid}
-        recipient_collaboration_workspace_name: {type: string}
+        recipient_scope_type: {type: string}
+        recipient_scope_id: {type: string, format: uuid}
+        recipient_workspace_id: {type: string, format: uuid}
+        recipient_workspace_name: {type: string}
         delivery_status: {type: string}
         todo_status: {type: string}
         read_at: {type: string, format: date-time}
@@ -552,3 +572,4 @@ components:
           deliveries:
             type: array
             items: {$ref: '#/components/schemas/DispatchRecordDeliveryItem'}
+

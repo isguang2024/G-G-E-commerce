@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -279,3 +279,4 @@ func (h *mediaAPIHandler) DeleteMedia(ctx context.Context, params gen.DeleteMedi
 	}
 	return ok(), nil
 }
+

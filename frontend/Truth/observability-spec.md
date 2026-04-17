@@ -60,7 +60,7 @@
 | `fix-system-message-required` | `/system/message` | `send-field-error` | 发送表单必填错误 |
 | `fix-system-message-confirm` | 同上 | `send-confirm-dialog` | 二次确认对话框 |
 | `fix-system-message-confirm` | 同上 | `send-status` | 发送状态标签 |
-| `fix-collab-message` | `/collaboration-workspace/message` | `send-preview`、`send-status` | 同上，协作空间版本 |
+| `fix-collab-message` | `/collaboration/message` | `send-preview`、`send-status` | 同上，协作态版本 |
 
 ### 1.4 例外与禁忌
 

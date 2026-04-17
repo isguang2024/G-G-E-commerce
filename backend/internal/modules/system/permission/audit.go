@@ -207,6 +207,10 @@ func normalizePermissionAuditResource(value string) string {
 		target = strings.TrimPrefix(target, "system_")
 	case strings.HasPrefix(target, "personal_"):
 		target = strings.TrimPrefix(target, "personal_")
+	case strings.HasPrefix(target, "workspace_"):
+		target = strings.TrimPrefix(target, "workspace_")
+	case strings.HasPrefix(target, "collaboration_"):
+		target = strings.TrimPrefix(target, "collaboration_")
 	case strings.HasPrefix(target, "collaboration_workspace_"):
 		target = strings.TrimPrefix(target, "collaboration_workspace_")
 	}

@@ -232,15 +232,15 @@
           formatter: (row: RoleListItem) => {
             const isDefaultRole = [
               'admin',
-              'collaboration_workspace_admin',
-              'collaboration_workspace_member'
+              'collaboration_admin',
+              'collaboration_member'
             ].includes(row.roleCode)
             const list: ButtonMoreItem[] = [
               {
                 key: 'packages',
                 label: '功能包',
                 icon: 'ri:apps-2-line',
-                auth: 'feature_package.assign_collaboration_workspace'
+                auth: 'feature_package.assign_workspace'
               },
               {
                 key: 'permission',

@@ -31,9 +31,9 @@
 | API 注册 | `frontend/src/views/system/api-endpoint/` | API 注册、权限绑定、分类检索 |
 | 权限模拟 | `frontend/src/views/system/permission-simulator/` | 权限结果模拟与验证 |
 | 作用域 | `frontend/src/views/system/scope/` | 作用域相关管理页 |
-| 协作角色权限 | `frontend/src/views/system/collaboration-workspace-roles-permissions/` | 协作空间角色、菜单、动作、功能包权限 |
+| 协作角色权限 | `frontend/src/views/system/` | 协作角色、菜单、动作、功能包权限 |
 | 访问追踪 | `frontend/src/views/system/access-trace/` | 访问记录与追踪 |
-| 协作空间 | `frontend/src/views/collaboration-workspace/` | 协作空间工作台、成员、消息、空间主页 |
+| 协作空间 | `frontend/src/views/` | 协作工作台、成员、消息、空间主页 |
 | 消息工作台 | `frontend/src/views/message/` | 消息发送、接收组、记录、模板、导航 |
 | 工作区 | `frontend/src/views/workspace/` | 工作区收件箱 |
 | 异常 | `frontend/src/views/exception/` | 403、404、500 |
@@ -62,7 +62,7 @@
 | --- | --- |
 | 权限 | `frontend/src/views/system/action-permission/`、`role/`、`user/`、`feature-package/`、`api-endpoint/`、`permission-simulator/` |
 | 用户 | `frontend/src/views/auth/`、`frontend/src/views/system/user/` |
-| 空间 | `frontend/src/views/collaboration-workspace/`、`frontend/src/views/workspace/`、`frontend/src/views/system/menu-space/` |
+| 空间 | `frontend/src/views/workspace/`、`frontend/src/views/system/menu-space/`、`frontend/src/views/` |
 | 菜单 | `frontend/src/views/system/menu/`、`frontend/src/views/system/page/` |
 | APP | `frontend/src/views/system/app/` |
 

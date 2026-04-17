@@ -1,4 +1,4 @@
-﻿package collaborationworkspace
+package collaborationworkspace
 
 import (
 	"errors"
@@ -32,8 +32,8 @@ type CollaborationWorkspaceService interface {
 	UpdateMemberRole(collaborationWorkspaceID, userID uuid.UUID, roleCode string) error
 }
 
-const defaultCollaborationWorkspaceRoleAdminCode = "collaboration_workspace_admin"
-const defaultCollaborationWorkspaceRoleMemberCode = "collaboration_workspace_member"
+const defaultCollaborationWorkspaceRoleAdminCode = "collaboration_admin"
+const defaultCollaborationWorkspaceRoleMemberCode = "collaboration_member"
 
 type collaborationWorkspaceService struct {
 	db                               *gorm.DB
@@ -231,9 +231,18 @@ func (s *collaborationWorkspaceService) Delete(id uuid.UUID) error {
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		var roleIDs []uuid.UUID
-		if err := tx.Model(&user.Role{}).Where("collaboration_workspace_id = ?", id).Pluck("id", &roleIDs).Error; err != nil {
+		workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, id)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
+		}
+
+		var roleIDs []uuid.UUID
+		if workspace != nil {
+			if err := tx.Model(&models.RoleScope{}).
+				Where("scope_type = ? AND scope_id = ? AND deleted_at IS NULL", models.ScopeTypeCollaboration, workspace.ID).
+				Pluck("role_id", &roleIDs).Error; err != nil {
+				return err
+			}
 		}
 
 		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
@@ -264,15 +273,23 @@ func (s *collaborationWorkspaceService) Delete(id uuid.UUID) error {
 			return err
 		}
 
-		workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, id)
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if err == nil && workspace != nil {
+		if workspace != nil {
 			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceRoleBinding{}).Error; err != nil {
 				return err
 			}
 			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceFeaturePackage{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceBlockedMenu{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceBlockedAction{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceRoleAccessSnapshot{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceAccessSnapshot{}).Error; err != nil {
 				return err
 			}
 			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceMember{}).Error; err != nil {
@@ -556,10 +573,14 @@ func appendIfMissingUUID(items []uuid.UUID, id uuid.UUID) []uuid.UUID {
 }
 
 func normalizeCollaborationWorkspaceRoleCode(roleCode string) string {
-	if strings.TrimSpace(roleCode) != "" {
-		return roleCode
+	switch strings.TrimSpace(roleCode) {
+	case "", defaultCollaborationWorkspaceRoleMemberCode:
+		return defaultCollaborationWorkspaceRoleMemberCode
+	case defaultCollaborationWorkspaceRoleAdminCode:
+		return defaultCollaborationWorkspaceRoleAdminCode
+	default:
+		return strings.TrimSpace(roleCode)
 	}
-	return defaultCollaborationWorkspaceRoleMemberCode
 }
 
 func (s *collaborationWorkspaceService) syncCollaborationWorkspaceIdentityRole(userID, collaborationWorkspaceID uuid.UUID, roleCode string) error {
@@ -572,7 +593,8 @@ func (s *collaborationWorkspaceService) syncCollaborationWorkspaceIdentityRoleTx
 	roleCode = normalizeCollaborationWorkspaceRoleCode(roleCode)
 	var roleIDs []uuid.UUID
 	if err := tx.Model(&user.Role{}).
-		Where("collaboration_workspace_id IS NULL AND code IN ?", []string{defaultCollaborationWorkspaceRoleAdminCode, defaultCollaborationWorkspaceRoleMemberCode}).
+		Where("code IN ?", []string{defaultCollaborationWorkspaceRoleAdminCode, defaultCollaborationWorkspaceRoleMemberCode}).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 		Pluck("id", &roleIDs).Error; err != nil {
 		return err
 	}
@@ -583,7 +605,10 @@ func (s *collaborationWorkspaceService) syncCollaborationWorkspaceIdentityRoleTx
 	}
 
 	var roles []user.Role
-	if err := tx.Where("code = ? AND collaboration_workspace_id IS NULL", roleCode).Find(&roles).Error; err != nil {
+	if err := tx.Model(&user.Role{}).
+		Where("code = ?", roleCode).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		Find(&roles).Error; err != nil {
 		return err
 	}
 	if len(roles) == 0 {
@@ -612,7 +637,8 @@ func (s *collaborationWorkspaceService) syncCollaborationWorkspaceCanonicalAcces
 	var roleIDs []uuid.UUID
 	if roleCode != "" {
 		if err := tx.Model(&user.Role{}).
-			Where("code = ? AND collaboration_workspace_id IS NULL AND deleted_at IS NULL", roleCode).
+			Where("code = ? AND deleted_at IS NULL", roleCode).
+			Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 			Pluck("id", &roleIDs).Error; err != nil {
 			return err
 		}
@@ -642,10 +668,10 @@ func ensureCollaborationWorkspaceWorkspaceTx(tx *gorm.DB, item *user.Collaborati
 	err := tx.Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, item.ID).First(&existing).Error
 	if err == nil {
 		return tx.Model(&existing).Updates(map[string]interface{}{
-			"name":        strings.TrimSpace(item.Name),
+			"name":          strings.TrimSpace(item.Name),
 			"owner_user_id": item.OwnerID,
-			"status":      normalizeWorkspaceStatus(item.Status),
-			"updated_at":  tx.NowFunc(),
+			"status":        normalizeWorkspaceStatus(item.Status),
+			"updated_at":    tx.NowFunc(),
 			"meta": models.MetaJSON{
 				"legacy_source":                "collaboration_workspace",
 				"collaboration_workspace_plan": item.Plan,
@@ -744,4 +770,3 @@ func normalizeWorkspaceCodeComponent(value string) string {
 	}
 	return strings.Trim(builder.String(), "-")
 }
-

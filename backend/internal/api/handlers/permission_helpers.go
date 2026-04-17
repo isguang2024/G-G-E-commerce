@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
@@ -35,3 +35,4 @@ func grantedPermissionKeysFromContext(ctx context.Context, eval evaluator.Evalua
 	}
 	return resolved.Keys, nil
 }
+

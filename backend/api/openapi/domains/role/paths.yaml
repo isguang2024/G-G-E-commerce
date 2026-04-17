@@ -160,7 +160,7 @@ paths:
       summary: 获取角色功能包
       tags:
       - role
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id
@@ -186,7 +186,7 @@ paths:
       summary: 配置角色功能包
       tags:
       - role
-      x-permission-key: feature_package.assign_collaboration_workspace
+      x-permission-key: feature_package.assign_workspace
       x-access-mode: permission
       parameters:
       - name: id

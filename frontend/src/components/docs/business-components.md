@@ -30,11 +30,11 @@
 
 ---
 
-## business/collaboration-workspace
+## business/collaboration
 
 | 组件 | 路径 | 用途 |
 | --- | --- | --- |
-| `NoCollaborationWorkspaceState` | `business/collaboration-workspace/NoCollaborationWorkspaceState.vue` | 无协作工作空间时的引导占位态 |
+| `NoCollaborationState` | `business/collaboration/NoCollaborationState.vue` | 无协作工作空间时的引导占位态 |
 
 ---
 

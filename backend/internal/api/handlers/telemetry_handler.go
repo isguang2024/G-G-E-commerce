@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -15,3 +15,4 @@ type telemetryAPIHandler struct {
 func newTelemetryAPIHandler(telemetryIngester telemetry.Ingester, logger *zap.Logger) *telemetryAPIHandler {
 	return &telemetryAPIHandler{telemetry: telemetryIngester, logger: logger}
 }
+

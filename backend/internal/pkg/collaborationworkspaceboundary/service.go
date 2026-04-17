@@ -1,12 +1,16 @@
-﻿package collaborationworkspaceboundary
+package collaborationworkspaceboundary
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/maben/backend/internal/modules/system/models"
 	appctx "github.com/maben/backend/internal/pkg/appctx"
+	"github.com/maben/backend/internal/pkg/workspacefeaturebinding"
+	"github.com/maben/backend/internal/pkg/workspacerolebinding"
 )
 
 type Snapshot struct {
@@ -282,8 +286,15 @@ func (s *service) RefreshSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...
 }
 
 func (s *service) loadActionSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*Snapshot, error) {
-	var record models.CollaborationWorkspaceAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).First(&record).Error; err != nil {
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var record models.WorkspaceAccessSnapshot
+	if err := s.db.Where("app_key = ? AND workspace_id = ?", appctx.NormalizeAppKey(appKey), workspaceID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -300,8 +311,15 @@ func (s *service) loadActionSnapshot(collaborationWorkspaceID uuid.UUID, appKey 
 }
 
 func (s *service) loadMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*MenuSnapshot, error) {
-	var record models.CollaborationWorkspaceAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).First(&record).Error; err != nil {
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var record models.WorkspaceAccessSnapshot
+	if err := s.db.Where("app_key = ? AND workspace_id = ?", appctx.NormalizeAppKey(appKey), workspaceID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -318,29 +336,43 @@ func (s *service) loadMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey st
 }
 
 func (s *service) saveSnapshot(collaborationWorkspaceID uuid.UUID, appKey string, actionSnapshot *Snapshot, menuSnapshot *MenuSnapshot) error {
-	record := models.CollaborationWorkspaceAccessSnapshot{
-		AppKey:                   appctx.NormalizeAppKey(appKey),
-		CollaborationWorkspaceID: collaborationWorkspaceID,
-		PackageIDs:               idsToUUIDStrings(actionSnapshot.PackageIDs),
-		ExpandedPackageIDs:       idsToUUIDStrings(actionSnapshot.ExpandedPackageIDs),
-		DerivedActionIDs:         idsToUUIDStrings(actionSnapshot.DerivedIDs),
-		DerivedActionMap:         sourceMapUUIDsToStrings(actionSnapshot.DerivedMap),
-		BlockedActionIDs:         idsToUUIDStrings(actionSnapshot.BlockedIDs),
-		EffectiveActionIDs:       idsToUUIDStrings(actionSnapshot.EffectiveIDs),
-		DerivedMenuIDs:           idsToUUIDStrings(menuSnapshot.DerivedIDs),
-		DerivedMenuMap:           sourceMapUUIDsToStrings(menuSnapshot.DerivedMap),
-		BlockedMenuIDs:           idsToUUIDStrings(menuSnapshot.BlockedIDs),
-		EffectiveMenuIDs:         idsToUUIDStrings(menuSnapshot.EffectiveIDs),
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	record := models.WorkspaceAccessSnapshot{
+		AppKey:             appctx.NormalizeAppKey(appKey),
+		WorkspaceID:        workspaceID,
+		PackageIDs:         idsToUUIDStrings(actionSnapshot.PackageIDs),
+		ExpandedPackageIDs: idsToUUIDStrings(actionSnapshot.ExpandedPackageIDs),
+		DerivedActionIDs:   idsToUUIDStrings(actionSnapshot.DerivedIDs),
+		DerivedActionMap:   sourceMapUUIDsToStrings(actionSnapshot.DerivedMap),
+		BlockedActionIDs:   idsToUUIDStrings(actionSnapshot.BlockedIDs),
+		EffectiveActionIDs: idsToUUIDStrings(actionSnapshot.EffectiveIDs),
+		DerivedMenuIDs:     idsToUUIDStrings(menuSnapshot.DerivedIDs),
+		DerivedMenuMap:     sourceMapUUIDsToStrings(menuSnapshot.DerivedMap),
+		BlockedMenuIDs:     idsToUUIDStrings(menuSnapshot.BlockedIDs),
+		EffectiveMenuIDs:   idsToUUIDStrings(menuSnapshot.EffectiveIDs),
 	}
 	return s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "app_key"}, {Name: "collaboration_workspace_id"}},
+		Columns:   []clause.Column{{Name: "app_key"}, {Name: "workspace_id"}},
 		UpdateAll: true,
 	}).Create(&record).Error
 }
 
 func (s *service) loadRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, appKey string) (*RoleSnapshot, error) {
-	var record models.CollaborationWorkspaceRoleAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID, roleID).First(&record).Error; err != nil {
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var record models.WorkspaceRoleAccessSnapshot
+	if err := s.db.Where("app_key = ? AND workspace_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), workspaceID, roleID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -362,24 +394,31 @@ func (s *service) loadRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, a
 }
 
 func (s *service) saveRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, appKey string, snapshot *RoleSnapshot) error {
-	record := models.CollaborationWorkspaceRoleAccessSnapshot{
-		AppKey:                   appctx.NormalizeAppKey(appKey),
-		CollaborationWorkspaceID: collaborationWorkspaceID,
-		RoleID:                   roleID,
-		PackageIDs:               idsToUUIDStrings(snapshot.PackageIDs),
-		ExpandedPackageIDs:       idsToUUIDStrings(snapshot.ExpandedPackageIDs),
-		AvailableActionIDs:       idsToUUIDStrings(snapshot.AvailableActionIDs),
-		DisabledActionIDs:        idsToUUIDStrings(snapshot.DisabledActionIDs),
-		ActionIDs:                idsToUUIDStrings(snapshot.ActionIDs),
-		ActionSourceMap:          sourceMapUUIDsToStrings(snapshot.ActionSourceMap),
-		AvailableMenuIDs:         idsToUUIDStrings(snapshot.AvailableMenuIDs),
-		HiddenMenuIDs:            idsToUUIDStrings(snapshot.HiddenMenuIDs),
-		MenuIDs:                  idsToUUIDStrings(snapshot.MenuIDs),
-		MenuSourceMap:            sourceMapUUIDsToStrings(snapshot.MenuSourceMap),
-		Inherited:                snapshot.Inherited,
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	record := models.WorkspaceRoleAccessSnapshot{
+		AppKey:             appctx.NormalizeAppKey(appKey),
+		WorkspaceID:        workspaceID,
+		RoleID:             roleID,
+		PackageIDs:         idsToUUIDStrings(snapshot.PackageIDs),
+		ExpandedPackageIDs: idsToUUIDStrings(snapshot.ExpandedPackageIDs),
+		AvailableActionIDs: idsToUUIDStrings(snapshot.AvailableActionIDs),
+		DisabledActionIDs:  idsToUUIDStrings(snapshot.DisabledActionIDs),
+		ActionIDs:          idsToUUIDStrings(snapshot.ActionIDs),
+		ActionSourceMap:    sourceMapUUIDsToStrings(snapshot.ActionSourceMap),
+		AvailableMenuIDs:   idsToUUIDStrings(snapshot.AvailableMenuIDs),
+		HiddenMenuIDs:      idsToUUIDStrings(snapshot.HiddenMenuIDs),
+		MenuIDs:            idsToUUIDStrings(snapshot.MenuIDs),
+		MenuSourceMap:      sourceMapUUIDsToStrings(snapshot.MenuSourceMap),
+		Inherited:          snapshot.Inherited,
 	}
 	return s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "app_key"}, {Name: "collaboration_workspace_id"}, {Name: "role_id"}},
+		Columns:   []clause.Column{{Name: "app_key"}, {Name: "workspace_id"}, {Name: "role_id"}},
 		UpdateAll: true,
 	}).Create(&record).Error
 }
@@ -403,10 +442,17 @@ func (s *service) refreshRoleSnapshots(collaborationWorkspaceID uuid.UUID, appKe
 			return err
 		}
 	}
-	if len(roleIDs) == 0 {
-		return s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
 	}
-	return s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id NOT IN ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID, roleIDs).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
+	if len(roleIDs) == 0 {
+		return s.db.Where("app_key = ? AND workspace_id = ?", appctx.NormalizeAppKey(appKey), workspaceID).Delete(&models.WorkspaceRoleAccessSnapshot{}).Error
+	}
+	return s.db.Where("app_key = ? AND workspace_id = ? AND role_id NOT IN ?", appctx.NormalizeAppKey(appKey), workspaceID, roleIDs).Delete(&models.WorkspaceRoleAccessSnapshot{}).Error
 }
 
 func (s *service) getDerivedActionIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
@@ -440,34 +486,7 @@ func (s *service) getDerivedActionIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[
 }
 
 func (s *service) getPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	var workspace models.Workspace
-	if err := s.db.
-		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, collaborationWorkspaceID).
-		First(&workspace).Error; err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	} else if err == nil {
-		var workspacePackageIDs []uuid.UUID
-		if queryErr := s.db.Model(&models.WorkspaceFeaturePackage{}).
-			Joins("JOIN feature_packages ON feature_packages.id = workspace_feature_packages.package_id").
-			Where("workspace_feature_packages.workspace_id = ? AND workspace_feature_packages.enabled = ? AND workspace_feature_packages.deleted_at IS NULL", workspace.ID, true).
-			Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
-			Distinct("workspace_feature_packages.package_id").
-			Pluck("package_id", &workspacePackageIDs).Error; queryErr != nil {
-			return nil, queryErr
-		}
-		if len(workspacePackageIDs) > 0 {
-			return workspacePackageIDs, nil
-		}
-	}
-
-	var packageIDs []uuid.UUID
-	err := s.db.Model(&models.CollaborationWorkspaceFeaturePackage{}).
-		Joins("JOIN feature_packages ON feature_packages.id = collaboration_workspace_feature_packages.package_id").
-		Where("collaboration_workspace_id = ? AND enabled = ?", collaborationWorkspaceID, true).
-		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
-		Distinct("collaboration_workspace_feature_packages.package_id").
-		Pluck("package_id", &packageIDs).Error
-	return packageIDs, err
+	return workspacefeaturebinding.ListPackageIDsByCollaborationWorkspaceID(s.db, collaborationWorkspaceID, appKey)
 }
 
 func (s *service) resolvePackageSet(ids []uuid.UUID, workspaceContext string, appKey string) ([]uuid.UUID, []uuid.UUID, error) {
@@ -576,46 +595,58 @@ func (s *service) getPackageIDsByRoleID(roleID uuid.UUID, appKey string) ([]uuid
 }
 
 func (s *service) getRelevantRoleIDs(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
+	workspace, err := s.resolveWorkspace(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
 	roleIDs := make([]uuid.UUID, 0)
 	var directRoleIDs []uuid.UUID
 	if err := s.db.Model(&models.Role{}).
-		Where("collaboration_workspace_id = ? AND status = ?", collaborationWorkspaceID, "normal").
-		Distinct("id").
-		Pluck("id", &directRoleIDs).Error; err != nil {
+		Select("roles.id").
+		Joins("JOIN role_scopes ON role_scopes.role_id = roles.id AND role_scopes.deleted_at IS NULL").
+		Where("role_scopes.scope_type = ? AND role_scopes.scope_id = ?", models.ScopeTypeCollaboration, workspace.ID).
+		Where("roles.status = ? AND roles.deleted_at IS NULL", "normal").
+		Distinct("roles.id").
+		Pluck("roles.id", &directRoleIDs).Error; err != nil {
 		return nil, err
 	}
 	roleIDs = append(roleIDs, directRoleIDs...)
 	var assignedRoleIDs []uuid.UUID
-	if err := s.db.Model(&models.UserRole{}).
-		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
+	if err := s.db.Model(&models.WorkspaceRoleBinding{}).
+		Where("workspace_id = ? AND enabled = ? AND deleted_at IS NULL", workspace.ID, true).
 		Distinct("role_id").
 		Pluck("role_id", &assignedRoleIDs).Error; err != nil {
 		return nil, err
 	}
-	identityRoleIDs, err := s.getCollaborationWorkspaceIdentityRoleIDs(collaborationWorkspaceID)
+	identityRoleIDs, err := s.getCollaborationWorkspaceIdentityRoleIDs(workspace.ID)
 	if err != nil {
 		return nil, err
 	}
 	return mergeActionIDs(roleIDs, assignedRoleIDs, identityRoleIDs), nil
 }
 
-func (s *service) getCollaborationWorkspaceIdentityRoleIDs(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
-	var roleCodes []string
-	if err := s.db.Model(&models.CollaborationWorkspaceMember{}).
-		Where("collaboration_workspace_id = ? AND status = ?", collaborationWorkspaceID, "active").
-		Distinct("role_code").
-		Pluck("role_code", &roleCodes).Error; err != nil {
+func (s *service) getCollaborationWorkspaceIdentityRoleIDs(workspaceID uuid.UUID) ([]uuid.UUID, error) {
+	var memberTypes []string
+	if err := s.db.Model(&models.WorkspaceMember{}).
+		Where("workspace_id = ? AND status = ? AND deleted_at IS NULL", workspaceID, "active").
+		Distinct("member_type").
+		Pluck("member_type", &memberTypes).Error; err != nil {
 		return nil, err
 	}
+	roleCodes := memberTypesToCollaborationRoleCodes(memberTypes)
 	if len(roleCodes) == 0 {
 		return []uuid.UUID{}, nil
 	}
 
 	var roleIDs []uuid.UUID
 	err := s.db.Model(&models.Role{}).
-		Where("collaboration_workspace_id IS NULL AND status = ? AND code IN ?", "normal", roleCodes).
-		Distinct("id").
-		Pluck("id", &roleIDs).Error
+		Where("roles.status = ? AND roles.code IN ? AND roles.deleted_at IS NULL", "normal", roleCodes).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		Distinct("roles.id").
+		Pluck("roles.id", &roleIDs).Error
 	return roleIDs, err
 }
 
@@ -624,19 +655,20 @@ func (s *service) getInheritedRoleMap(roleIDs []uuid.UUID) (map[uuid.UUID]bool, 
 	if len(roleIDs) == 0 {
 		return result, nil
 	}
-	type roleCollaborationWorkspaceRow struct {
-		ID                       uuid.UUID
-		CollaborationWorkspaceID *uuid.UUID
+	type roleScopeRow struct {
+		ID        uuid.UUID `gorm:"column:id"`
+		ScopeType string    `gorm:"column:scope_type"`
 	}
-	var rows []roleCollaborationWorkspaceRow
+	var rows []roleScopeRow
 	if err := s.db.Model(&models.Role{}).
-		Select("id", "collaboration_workspace_id").
-		Where("id IN ?", roleIDs).
+		Select("roles.id", "COALESCE(role_scopes.scope_type, ?) AS scope_type", models.ScopeTypeGlobal).
+		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id AND role_scopes.deleted_at IS NULL").
+		Where("roles.id IN ?", roleIDs).
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	for _, row := range rows {
-		result[row.ID] = row.CollaborationWorkspaceID == nil || *row.CollaborationWorkspaceID == uuid.Nil
+		result[row.ID] = row.ScopeType != models.ScopeTypeCollaboration
 	}
 	return result, nil
 }
@@ -728,21 +760,76 @@ func emptyRoleSnapshot(inherited bool) *RoleSnapshot {
 	}
 }
 
+func (s *service) resolveWorkspace(collaborationWorkspaceID uuid.UUID) (*models.Workspace, error) {
+	return workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(s.db, collaborationWorkspaceID)
+}
+
+func (s *service) resolveWorkspaceID(collaborationWorkspaceID uuid.UUID) (uuid.UUID, error) {
+	workspace, err := s.resolveWorkspace(collaborationWorkspaceID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return workspace.ID, nil
+}
+
+func memberTypesToCollaborationRoleCodes(memberTypes []string) []string {
+	if len(memberTypes) == 0 {
+		return []string{}
+	}
+	roleCodes := make([]string, 0, len(memberTypes))
+	seen := make(map[string]struct{}, len(memberTypes))
+	for _, memberType := range memberTypes {
+		for _, roleCode := range collaborationRoleCodesForMemberType(memberType) {
+			if _, ok := seen[roleCode]; ok {
+				continue
+			}
+			seen[roleCode] = struct{}{}
+			roleCodes = append(roleCodes, roleCode)
+		}
+	}
+	return roleCodes
+}
+
+func collaborationRoleCodesForMemberType(memberType string) []string {
+	switch memberType {
+	case models.WorkspaceMemberOwner, models.WorkspaceMemberAdmin:
+		return []string{"collaboration_admin", "collaboration_member"}
+	case models.WorkspaceMemberMember, models.WorkspaceMemberViewer:
+		return []string{"collaboration_member"}
+	default:
+		return nil
+	}
+}
+
 func (s *service) getBlockedActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
 	var actionIDs []uuid.UUID
-	err := s.db.Model(&models.CollaborationWorkspaceBlockedAction{}).
-		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
+	err = s.db.Model(&models.WorkspaceBlockedAction{}).
+		Where("workspace_id = ?", workspaceID).
 		Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
 }
 
 func (s *service) getBlockedMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	workspaceID, err := s.resolveWorkspaceID(collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
 	var menuIDs []uuid.UUID
-	err := s.db.Model(&models.CollaborationWorkspaceBlockedMenu{}).
-		Joins("JOIN menu_definitions ON menu_definitions.id = collaboration_workspace_blocked_menus.menu_id").
-		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
+	err = s.db.Model(&models.WorkspaceBlockedMenu{}).
+		Joins("JOIN menu_definitions ON menu_definitions.id = workspace_blocked_menus.menu_id").
+		Where("workspace_id = ?", workspaceID).
 		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
-		Distinct("collaboration_workspace_blocked_menus.menu_id").
+		Distinct("workspace_blocked_menus.menu_id").
 		Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
@@ -945,4 +1032,3 @@ func resolveAppKey(appKey ...string) string {
 	}
 	return appctx.NormalizeAppKey(appKey[0])
 }
-

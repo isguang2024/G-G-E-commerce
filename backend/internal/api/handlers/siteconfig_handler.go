@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -17,3 +17,4 @@ type siteConfigAPIHandler struct {
 func newSiteConfigAPIHandler(siteConfigSvc siteconfig.Service, auditRecorder audit.Recorder, logger *zap.Logger) *siteConfigAPIHandler {
 	return &siteConfigAPIHandler{siteConfigSvc: siteConfigSvc, audit: auditRecorder, logger: logger}
 }
+

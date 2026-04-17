@@ -595,9 +595,9 @@ func (s *service) buildRuntimeAccessContext(
 
 // intersectVisibleMenusByPermissionKey 在已经由 feature_package 计算出的可见菜单集合
 // 之上，再用菜单自身声明的 MenuDefinition.PermissionKey 兜底裁剪：
-//   - menu.PermissionKey == ''   -> 保留（保持向后兼容，行为由 feature_package 决定）
-//   - menu.PermissionKey != '' 且 actionKeys 未授予该 key -> 剔除
-//   - menu.PermissionKey != '' 且 actionKeys 授予该 key  -> 保留
+//   - menu.PermissionKey == ”   -> 保留（保持向后兼容，行为由 feature_package 决定）
+//   - menu.PermissionKey != ” 且 actionKeys 未授予该 key -> 剔除
+//   - menu.PermissionKey != ” 且 actionKeys 授予该 key  -> 保留
 //
 // 注意：SuperAdmin 分支在 buildRuntimeAccessContext 中已 short-circuit，不会走到这里。
 func intersectVisibleMenusByPermissionKey(
@@ -735,40 +735,42 @@ func (s *service) loadRuntimeEffectiveActiveRoles(userID, collaborationWorkspace
 			return roles, nil
 		}
 	}
-
-	var roles []models.Role
-	if err := s.db.Model(&models.Role{}).
-		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.collaboration_workspace_id = ?", collaborationWorkspaceID).
-		Where("roles.status = ?", "normal").
-		Where("roles.deleted_at IS NULL").
-		Distinct("roles.*").
-		Find(&roles).Error; err != nil {
-		return nil, err
-	}
-	if len(roles) > 0 {
-		return roles, nil
-	}
-
-	var member models.CollaborationWorkspaceMember
-	if err := s.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).First(&member).Error; err != nil {
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(s.db, collaborationWorkspaceID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []models.Role{}, nil
 		}
 		return nil, err
 	}
-	if strings.TrimSpace(member.Status) != "active" {
+	var member models.WorkspaceMember
+	if err := s.db.Where("workspace_id = ? AND user_id = ? AND deleted_at IS NULL", workspace.ID, userID).First(&member).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []models.Role{}, nil
+		}
+		return nil, err
+	}
+	if strings.TrimSpace(member.Status) != models.WorkspaceStatusActive {
 		return []models.Role{}, nil
 	}
 
 	var identityRoles []models.Role
-	if err := s.db.Where("code = ? AND collaboration_workspace_id IS NULL AND status = ? AND deleted_at IS NULL", member.RoleCode, "normal").
+	if err := s.db.Model(&models.Role{}).
+		Where("code = ? AND status = ? AND deleted_at IS NULL", runtimeCollaborationIdentityRoleCode(member.MemberType), "normal").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
 		Order("sort_order ASC, created_at DESC").
 		Find(&identityRoles).Error; err != nil {
 		return nil, err
 	}
 	return identityRoles, nil
+}
+
+func runtimeCollaborationIdentityRoleCode(memberType string) string {
+	switch strings.ToLower(strings.TrimSpace(memberType)) {
+	case models.WorkspaceMemberOwner, models.WorkspaceMemberAdmin:
+		return "collaboration_admin"
+	default:
+		return "collaboration_member"
+	}
 }
 
 func buildVisibleRuntimeMenuIndex(

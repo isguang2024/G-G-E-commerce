@@ -216,20 +216,20 @@ func (h *featurePackageAPIHandler) SetFeaturePackageMenus(ctx context.Context, r
 	return featurePackageMutationResultFromStats(stats), nil
 }
 
-func (h *featurePackageAPIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageCollaborationWorkspaceList, error) {
+func (h *featurePackageAPIHandler) GetFeaturePackageCollaborations(ctx context.Context, params gen.GetFeaturePackageCollaborationsParams) (*gen.FeaturePackageCollaborationList, error) {
 	ids, err := h.featurePkgSvc.GetPackageCollaborationWorkspaces(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package cws failed", zap.Error(err))
 		return nil, err
 	}
-	records := make([]gen.FeaturePackageCollaborationWorkspaceItem, 0, len(ids))
+	records := make([]gen.FeaturePackageCollaborationItem, 0, len(ids))
 	for _, id := range ids {
-		records = append(records, gen.FeaturePackageCollaborationWorkspaceItem{ID: id})
+		records = append(records, gen.FeaturePackageCollaborationItem{ID: id})
 	}
-	return &gen.FeaturePackageCollaborationWorkspaceList{Records: records, Total: int64(len(records))}, nil
+	return &gen.FeaturePackageCollaborationList{Records: records, Total: int64(len(records))}, nil
 }
 
-func (h *featurePackageAPIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageMutationResult, error) {
+func (h *featurePackageAPIHandler) SetFeaturePackageCollaborations(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationsParams) (*gen.FeaturePackageMutationResult, error) {
 	var grantedBy *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		grantedBy = &uid
@@ -251,7 +251,7 @@ func (h *featurePackageAPIHandler) GetFeaturePackageImpactPreview(ctx context.Co
 	return &gen.FeaturePackageImpactPreview{
 		PackageID:                   preview.PackageID,
 		RoleCount:                   preview.RoleCount,
-		CollaborationWorkspaceCount: preview.CollaborationWorkspaceCount,
+		WorkspaceCount:              preview.CollaborationWorkspaceCount,
 		UserCount:                   preview.UserCount,
 		MenuCount:                   preview.MenuCount,
 		ActionCount:                 preview.ActionCount,
@@ -303,11 +303,12 @@ func featurePackageMutationResultFromStats(stats *permissionrefresh.RefreshStats
 			RequestedPackageCount:       int64(stats.RequestedPackageCount),
 			ImpactedPackageCount:        int64(stats.ImpactedPackageCount),
 			RoleCount:                   int64(stats.RoleCount),
-			CollaborationWorkspaceCount: int64(stats.CollaborationWorkspaceCount),
+			WorkspaceCount:              int64(stats.CollaborationWorkspaceCount),
 			UserCount:                   int64(stats.UserCount),
 			ElapsedMilliseconds:         stats.ElapsedMilliseconds,
 			FinishedAt:                  stats.FinishedAt,
 		},
 	}
 }
+
 

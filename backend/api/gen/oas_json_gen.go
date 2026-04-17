@@ -3735,15 +3735,15 @@ func (s *AuthMe) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
-		if s.CurrentCollaborationWorkspaceID.Set {
-			e.FieldStart("current_collaboration_workspace_id")
-			s.CurrentCollaborationWorkspaceID.Encode(e)
+		if s.CurrentWorkspaceID.Set {
+			e.FieldStart("current_workspace_id")
+			s.CurrentWorkspaceID.Encode(e)
 		}
 	}
 	{
@@ -3777,8 +3777,8 @@ var jsonFieldsNameOfAuthMe = [16]string{
 	9:  "created_at",
 	10: "current_auth_workspace_id",
 	11: "current_auth_workspace_type",
-	12: "collaboration_workspace_id",
-	13: "current_collaboration_workspace_id",
+	12: "workspace_id",
+	13: "current_workspace_id",
 	14: "actions",
 	15: "roles",
 }
@@ -3918,25 +3918,25 @@ func (s *AuthMe) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"current_auth_workspace_type\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
-		case "current_collaboration_workspace_id":
+		case "current_workspace_id":
 			if err := func() error {
-				s.CurrentCollaborationWorkspaceID.Reset()
-				if err := s.CurrentCollaborationWorkspaceID.Decode(d); err != nil {
+				s.CurrentWorkspaceID.Reset()
+				if err := s.CurrentWorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"current_workspace_id\"")
 			}
 		case "actions":
 			requiredBitSet[1] |= 1 << 6
@@ -4461,14 +4461,14 @@ func (s *CleanupStaleResult) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceActionOriginsResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationActionOriginsResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceActionOriginsResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationActionOriginsResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("derived_action_ids")
 		e.ArrStart()
@@ -4495,16 +4495,16 @@ func (s *CollaborationWorkspaceActionOriginsResponse) encodeFields(e *jx.Encoder
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceActionOriginsResponse = [3]string{
+var jsonFieldsNameOfCollaborationActionOriginsResponse = [3]string{
 	0: "derived_action_ids",
 	1: "derived_sources",
 	2: "blocked_action_ids",
 }
 
-// Decode decodes CollaborationWorkspaceActionOriginsResponse from json.
-func (s *CollaborationWorkspaceActionOriginsResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationActionOriginsResponse from json.
+func (s *CollaborationActionOriginsResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceActionOriginsResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationActionOriginsResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -4573,7 +4573,7 @@ func (s *CollaborationWorkspaceActionOriginsResponse) Decode(d *jx.Decoder) erro
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceActionOriginsResponse")
+		return errors.Wrap(err, "decode CollaborationActionOriginsResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -4590,8 +4590,8 @@ func (s *CollaborationWorkspaceActionOriginsResponse) Decode(d *jx.Decoder) erro
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceActionOriginsResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceActionOriginsResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationActionOriginsResponse) {
+					name = jsonFieldsNameOfCollaborationActionOriginsResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -4612,27 +4612,27 @@ func (s *CollaborationWorkspaceActionOriginsResponse) Decode(d *jx.Decoder) erro
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceActionOriginsResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationActionOriginsResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceActionOriginsResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationActionOriginsResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceActionsResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationActionsResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceActionsResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationActionsResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("action_ids")
 		e.ArrStart()
@@ -4651,15 +4651,15 @@ func (s *CollaborationWorkspaceActionsResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceActionsResponse = [2]string{
+var jsonFieldsNameOfCollaborationActionsResponse = [2]string{
 	0: "action_ids",
 	1: "actions",
 }
 
-// Decode decodes CollaborationWorkspaceActionsResponse from json.
-func (s *CollaborationWorkspaceActionsResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationActionsResponse from json.
+func (s *CollaborationActionsResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceActionsResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationActionsResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -4708,7 +4708,7 @@ func (s *CollaborationWorkspaceActionsResponse) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceActionsResponse")
+		return errors.Wrap(err, "decode CollaborationActionsResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -4725,8 +4725,8 @@ func (s *CollaborationWorkspaceActionsResponse) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceActionsResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceActionsResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationActionsResponse) {
+					name = jsonFieldsNameOfCollaborationActionsResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -4747,27 +4747,27 @@ func (s *CollaborationWorkspaceActionsResponse) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceActionsResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationActionsResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceActionsResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationActionsResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationBoundaryRolePackagesResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationBoundaryRolePackagesResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("package_ids")
 		e.ArrStart()
@@ -4790,16 +4790,16 @@ func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) encodeFields(e *jx.
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceBoundaryRolePackagesResponse = [3]string{
+var jsonFieldsNameOfCollaborationBoundaryRolePackagesResponse = [3]string{
 	0: "package_ids",
 	1: "packages",
 	2: "inherited",
 }
 
-// Decode decodes CollaborationWorkspaceBoundaryRolePackagesResponse from json.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationBoundaryRolePackagesResponse from json.
+func (s *CollaborationBoundaryRolePackagesResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceBoundaryRolePackagesResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationBoundaryRolePackagesResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -4860,7 +4860,7 @@ func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Decode(d *jx.Decode
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceBoundaryRolePackagesResponse")
+		return errors.Wrap(err, "decode CollaborationBoundaryRolePackagesResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -4877,8 +4877,8 @@ func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Decode(d *jx.Decode
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceBoundaryRolePackagesResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceBoundaryRolePackagesResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationBoundaryRolePackagesResponse) {
+					name = jsonFieldsNameOfCollaborationBoundaryRolePackagesResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -4899,27 +4899,27 @@ func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) Decode(d *jx.Decode
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationBoundaryRolePackagesResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationBoundaryRolePackagesResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceItem) Encode(e *jx.Encoder) {
+func (s *CollaborationItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceItem) encodeFields(e *jx.Encoder) {
+func (s *CollaborationItem) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
@@ -4962,7 +4962,7 @@ func (s *CollaborationWorkspaceItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceItem = [10]string{
+var jsonFieldsNameOfCollaborationItem = [10]string{
 	0: "id",
 	1: "name",
 	2: "remark",
@@ -4975,10 +4975,10 @@ var jsonFieldsNameOfCollaborationWorkspaceItem = [10]string{
 	9: "updated_at",
 }
 
-// Decode decodes CollaborationWorkspaceItem from json.
-func (s *CollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationItem from json.
+func (s *CollaborationItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceItem to nil")
+		return errors.New("invalid: unable to decode CollaborationItem to nil")
 	}
 	var requiredBitSet [2]uint8
 
@@ -5109,7 +5109,7 @@ func (s *CollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceItem")
+		return errors.Wrap(err, "decode CollaborationItem")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5127,8 +5127,8 @@ func (s *CollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceItem) {
-					name = jsonFieldsNameOfCollaborationWorkspaceItem[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationItem) {
+					name = jsonFieldsNameOfCollaborationItem[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5149,27 +5149,27 @@ func (s *CollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceItem) MarshalJSON() ([]byte, error) {
+func (s *CollaborationItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceItem) UnmarshalJSON(data []byte) error {
+func (s *CollaborationItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceList) Encode(e *jx.Encoder) {
+func (s *CollaborationList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceList) encodeFields(e *jx.Encoder) {
+func (s *CollaborationList) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("records")
 		e.ArrStart()
@@ -5184,15 +5184,15 @@ func (s *CollaborationWorkspaceList) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceList = [2]string{
+var jsonFieldsNameOfCollaborationList = [2]string{
 	0: "records",
 	1: "total",
 }
 
-// Decode decodes CollaborationWorkspaceList from json.
-func (s *CollaborationWorkspaceList) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationList from json.
+func (s *CollaborationList) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceList to nil")
+		return errors.New("invalid: unable to decode CollaborationList to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -5201,9 +5201,9 @@ func (s *CollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 		case "records":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Records = make([]CollaborationWorkspaceItem, 0)
+				s.Records = make([]CollaborationItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem CollaborationWorkspaceItem
+					var elem CollaborationItem
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -5233,7 +5233,7 @@ func (s *CollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceList")
+		return errors.Wrap(err, "decode CollaborationList")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5250,8 +5250,8 @@ func (s *CollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceList) {
-					name = jsonFieldsNameOfCollaborationWorkspaceList[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationList) {
+					name = jsonFieldsNameOfCollaborationList[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5272,27 +5272,27 @@ func (s *CollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceList) MarshalJSON() ([]byte, error) {
+func (s *CollaborationList) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceList) UnmarshalJSON(data []byte) error {
+func (s *CollaborationList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMemberAddRequest) Encode(e *jx.Encoder) {
+func (s *CollaborationMemberAddRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMemberAddRequest) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMemberAddRequest) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("user_id")
 		json.EncodeUUID(e, s.UserID)
@@ -5305,15 +5305,15 @@ func (s *CollaborationWorkspaceMemberAddRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMemberAddRequest = [2]string{
+var jsonFieldsNameOfCollaborationMemberAddRequest = [2]string{
 	0: "user_id",
 	1: "role_code",
 }
 
-// Decode decodes CollaborationWorkspaceMemberAddRequest from json.
-func (s *CollaborationWorkspaceMemberAddRequest) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMemberAddRequest from json.
+func (s *CollaborationMemberAddRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMemberAddRequest to nil")
+		return errors.New("invalid: unable to decode CollaborationMemberAddRequest to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -5346,7 +5346,7 @@ func (s *CollaborationWorkspaceMemberAddRequest) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMemberAddRequest")
+		return errors.Wrap(err, "decode CollaborationMemberAddRequest")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5363,8 +5363,8 @@ func (s *CollaborationWorkspaceMemberAddRequest) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMemberAddRequest) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMemberAddRequest[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMemberAddRequest) {
+					name = jsonFieldsNameOfCollaborationMemberAddRequest[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5385,34 +5385,34 @@ func (s *CollaborationWorkspaceMemberAddRequest) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMemberAddRequest) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMemberAddRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMemberAddRequest) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMemberAddRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMemberItem) Encode(e *jx.Encoder) {
+func (s *CollaborationMemberItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMemberItem) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMemberItem) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
 	}
 	{
-		e.FieldStart("collaboration_workspace_id")
-		json.EncodeUUID(e, s.CollaborationWorkspaceID)
+		e.FieldStart("workspace_id")
+		json.EncodeUUID(e, s.WorkspaceID)
 	}
 	{
 		e.FieldStart("user_id")
@@ -5452,9 +5452,9 @@ func (s *CollaborationWorkspaceMemberItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMemberItem = [10]string{
+var jsonFieldsNameOfCollaborationMemberItem = [10]string{
 	0: "id",
-	1: "collaboration_workspace_id",
+	1: "workspace_id",
 	2: "user_id",
 	3: "role_code",
 	4: "role_id",
@@ -5465,10 +5465,10 @@ var jsonFieldsNameOfCollaborationWorkspaceMemberItem = [10]string{
 	9: "updated_at",
 }
 
-// Decode decodes CollaborationWorkspaceMemberItem from json.
-func (s *CollaborationWorkspaceMemberItem) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMemberItem from json.
+func (s *CollaborationMemberItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMemberItem to nil")
+		return errors.New("invalid: unable to decode CollaborationMemberItem to nil")
 	}
 	var requiredBitSet [2]uint8
 
@@ -5486,17 +5486,17 @@ func (s *CollaborationWorkspaceMemberItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeUUID(d)
-				s.CollaborationWorkspaceID = v
+				s.WorkspaceID = v
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		case "user_id":
 			requiredBitSet[0] |= 1 << 2
@@ -5595,7 +5595,7 @@ func (s *CollaborationWorkspaceMemberItem) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMemberItem")
+		return errors.Wrap(err, "decode CollaborationMemberItem")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5613,8 +5613,8 @@ func (s *CollaborationWorkspaceMemberItem) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMemberItem) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMemberItem[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMemberItem) {
+					name = jsonFieldsNameOfCollaborationMemberItem[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5635,27 +5635,27 @@ func (s *CollaborationWorkspaceMemberItem) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMemberItem) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMemberItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMemberItem) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMemberItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMemberList) Encode(e *jx.Encoder) {
+func (s *CollaborationMemberList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMemberList) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMemberList) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("records")
 		e.ArrStart()
@@ -5670,15 +5670,15 @@ func (s *CollaborationWorkspaceMemberList) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMemberList = [2]string{
+var jsonFieldsNameOfCollaborationMemberList = [2]string{
 	0: "records",
 	1: "total",
 }
 
-// Decode decodes CollaborationWorkspaceMemberList from json.
-func (s *CollaborationWorkspaceMemberList) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMemberList from json.
+func (s *CollaborationMemberList) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMemberList to nil")
+		return errors.New("invalid: unable to decode CollaborationMemberList to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -5687,9 +5687,9 @@ func (s *CollaborationWorkspaceMemberList) Decode(d *jx.Decoder) error {
 		case "records":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Records = make([]CollaborationWorkspaceMemberItem, 0)
+				s.Records = make([]CollaborationMemberItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem CollaborationWorkspaceMemberItem
+					var elem CollaborationMemberItem
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -5719,7 +5719,7 @@ func (s *CollaborationWorkspaceMemberList) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMemberList")
+		return errors.Wrap(err, "decode CollaborationMemberList")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5736,8 +5736,8 @@ func (s *CollaborationWorkspaceMemberList) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMemberList) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMemberList[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMemberList) {
+					name = jsonFieldsNameOfCollaborationMemberList[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5758,41 +5758,41 @@ func (s *CollaborationWorkspaceMemberList) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMemberList) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMemberList) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMemberList) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMemberList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMemberRoleRequest) Encode(e *jx.Encoder) {
+func (s *CollaborationMemberRoleRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMemberRoleRequest) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMemberRoleRequest) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("role_code")
 		e.Str(s.RoleCode)
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMemberRoleRequest = [1]string{
+var jsonFieldsNameOfCollaborationMemberRoleRequest = [1]string{
 	0: "role_code",
 }
 
-// Decode decodes CollaborationWorkspaceMemberRoleRequest from json.
-func (s *CollaborationWorkspaceMemberRoleRequest) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMemberRoleRequest from json.
+func (s *CollaborationMemberRoleRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMemberRoleRequest to nil")
+		return errors.New("invalid: unable to decode CollaborationMemberRoleRequest to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -5815,7 +5815,7 @@ func (s *CollaborationWorkspaceMemberRoleRequest) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMemberRoleRequest")
+		return errors.Wrap(err, "decode CollaborationMemberRoleRequest")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5832,8 +5832,8 @@ func (s *CollaborationWorkspaceMemberRoleRequest) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMemberRoleRequest) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMemberRoleRequest[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMemberRoleRequest) {
+					name = jsonFieldsNameOfCollaborationMemberRoleRequest[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5854,27 +5854,27 @@ func (s *CollaborationWorkspaceMemberRoleRequest) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMemberRoleRequest) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMemberRoleRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMemberRoleRequest) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMemberRoleRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMemberRolesResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationMemberRolesResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMemberRolesResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMemberRolesResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("role_ids")
 		e.ArrStart()
@@ -5893,15 +5893,15 @@ func (s *CollaborationWorkspaceMemberRolesResponse) encodeFields(e *jx.Encoder) 
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMemberRolesResponse = [2]string{
+var jsonFieldsNameOfCollaborationMemberRolesResponse = [2]string{
 	0: "role_ids",
 	1: "roles",
 }
 
-// Decode decodes CollaborationWorkspaceMemberRolesResponse from json.
-func (s *CollaborationWorkspaceMemberRolesResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMemberRolesResponse from json.
+func (s *CollaborationMemberRolesResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMemberRolesResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationMemberRolesResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -5950,7 +5950,7 @@ func (s *CollaborationWorkspaceMemberRolesResponse) Decode(d *jx.Decoder) error 
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMemberRolesResponse")
+		return errors.Wrap(err, "decode CollaborationMemberRolesResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -5967,8 +5967,8 @@ func (s *CollaborationWorkspaceMemberRolesResponse) Decode(d *jx.Decoder) error 
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMemberRolesResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMemberRolesResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMemberRolesResponse) {
+					name = jsonFieldsNameOfCollaborationMemberRolesResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5989,27 +5989,27 @@ func (s *CollaborationWorkspaceMemberRolesResponse) Decode(d *jx.Decoder) error 
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMemberRolesResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMemberRolesResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMemberRolesResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMemberRolesResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMenuOriginsResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationMenuOriginsResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMenuOriginsResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMenuOriginsResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("derived_menu_ids")
 		e.ArrStart()
@@ -6036,16 +6036,16 @@ func (s *CollaborationWorkspaceMenuOriginsResponse) encodeFields(e *jx.Encoder) 
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMenuOriginsResponse = [3]string{
+var jsonFieldsNameOfCollaborationMenuOriginsResponse = [3]string{
 	0: "derived_menu_ids",
 	1: "derived_sources",
 	2: "blocked_menu_ids",
 }
 
-// Decode decodes CollaborationWorkspaceMenuOriginsResponse from json.
-func (s *CollaborationWorkspaceMenuOriginsResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMenuOriginsResponse from json.
+func (s *CollaborationMenuOriginsResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMenuOriginsResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationMenuOriginsResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -6114,7 +6114,7 @@ func (s *CollaborationWorkspaceMenuOriginsResponse) Decode(d *jx.Decoder) error 
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMenuOriginsResponse")
+		return errors.Wrap(err, "decode CollaborationMenuOriginsResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -6131,8 +6131,8 @@ func (s *CollaborationWorkspaceMenuOriginsResponse) Decode(d *jx.Decoder) error 
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMenuOriginsResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMenuOriginsResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMenuOriginsResponse) {
+					name = jsonFieldsNameOfCollaborationMenuOriginsResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6153,27 +6153,27 @@ func (s *CollaborationWorkspaceMenuOriginsResponse) Decode(d *jx.Decoder) error 
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMenuOriginsResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMenuOriginsResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMenuOriginsResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMenuOriginsResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceMenusResponse) Encode(e *jx.Encoder) {
+func (s *CollaborationMenusResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceMenusResponse) encodeFields(e *jx.Encoder) {
+func (s *CollaborationMenusResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("menu_ids")
 		e.ArrStart()
@@ -6184,14 +6184,14 @@ func (s *CollaborationWorkspaceMenusResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceMenusResponse = [1]string{
+var jsonFieldsNameOfCollaborationMenusResponse = [1]string{
 	0: "menu_ids",
 }
 
-// Decode decodes CollaborationWorkspaceMenusResponse from json.
-func (s *CollaborationWorkspaceMenusResponse) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationMenusResponse from json.
+func (s *CollaborationMenusResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceMenusResponse to nil")
+		return errors.New("invalid: unable to decode CollaborationMenusResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -6222,7 +6222,7 @@ func (s *CollaborationWorkspaceMenusResponse) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceMenusResponse")
+		return errors.Wrap(err, "decode CollaborationMenusResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -6239,8 +6239,8 @@ func (s *CollaborationWorkspaceMenusResponse) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceMenusResponse) {
-					name = jsonFieldsNameOfCollaborationWorkspaceMenusResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationMenusResponse) {
+					name = jsonFieldsNameOfCollaborationMenusResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6261,34 +6261,40 @@ func (s *CollaborationWorkspaceMenusResponse) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceMenusResponse) MarshalJSON() ([]byte, error) {
+func (s *CollaborationMenusResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceMenusResponse) UnmarshalJSON(data []byte) error {
+func (s *CollaborationMenusResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceRoleItem) Encode(e *jx.Encoder) {
+func (s *CollaborationRoleItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceRoleItem) encodeFields(e *jx.Encoder) {
+func (s *CollaborationRoleItem) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
 	}
 	{
-		e.FieldStart("collaboration_workspace_id")
-		s.CollaborationWorkspaceID.Encode(e)
+		e.FieldStart("scope_type")
+		e.Str(s.ScopeType)
+	}
+	{
+		if s.ScopeID.Set {
+			e.FieldStart("scope_id")
+			s.ScopeID.Encode(e)
+		}
 	}
 	{
 		e.FieldStart("code")
@@ -6332,24 +6338,25 @@ func (s *CollaborationWorkspaceRoleItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceRoleItem = [11]string{
+var jsonFieldsNameOfCollaborationRoleItem = [12]string{
 	0:  "id",
-	1:  "collaboration_workspace_id",
-	2:  "code",
-	3:  "name",
-	4:  "description",
-	5:  "status",
-	6:  "is_system",
-	7:  "is_global",
-	8:  "sort_order",
-	9:  "created_at",
-	10: "updated_at",
+	1:  "scope_type",
+	2:  "scope_id",
+	3:  "code",
+	4:  "name",
+	5:  "description",
+	6:  "status",
+	7:  "is_system",
+	8:  "is_global",
+	9:  "sort_order",
+	10: "created_at",
+	11: "updated_at",
 }
 
-// Decode decodes CollaborationWorkspaceRoleItem from json.
-func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationRoleItem from json.
+func (s *CollaborationRoleItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceRoleItem to nil")
+		return errors.New("invalid: unable to decode CollaborationRoleItem to nil")
 	}
 	var requiredBitSet [2]uint8
 
@@ -6367,18 +6374,30 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "collaboration_workspace_id":
+		case "scope_type":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				v, err := d.Str()
+				s.ScopeType = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"scope_type\"")
+			}
+		case "scope_id":
+			if err := func() error {
+				s.ScopeID.Reset()
+				if err := s.ScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_id\"")
 			}
 		case "code":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.Code = string(v)
@@ -6390,7 +6409,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		case "name":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -6402,7 +6421,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		case "description":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.Description = string(v)
@@ -6414,7 +6433,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "status":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -6426,7 +6445,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
 		case "is_system":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Bool()
 				s.IsSystem = bool(v)
@@ -6438,7 +6457,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"is_system\"")
 			}
 		case "is_global":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Bool()
 				s.IsGlobal = bool(v)
@@ -6460,7 +6479,7 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sort_order\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -6486,13 +6505,13 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceRoleItem")
+		return errors.Wrap(err, "decode CollaborationRoleItem")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b11111111,
-		0b00000010,
+		0b11111011,
+		0b00000101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -6504,8 +6523,8 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceRoleItem) {
-					name = jsonFieldsNameOfCollaborationWorkspaceRoleItem[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationRoleItem) {
+					name = jsonFieldsNameOfCollaborationRoleItem[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6526,27 +6545,27 @@ func (s *CollaborationWorkspaceRoleItem) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceRoleItem) MarshalJSON() ([]byte, error) {
+func (s *CollaborationRoleItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceRoleItem) UnmarshalJSON(data []byte) error {
+func (s *CollaborationRoleItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceRoleList) Encode(e *jx.Encoder) {
+func (s *CollaborationRoleList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceRoleList) encodeFields(e *jx.Encoder) {
+func (s *CollaborationRoleList) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("records")
 		e.ArrStart()
@@ -6561,15 +6580,15 @@ func (s *CollaborationWorkspaceRoleList) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceRoleList = [2]string{
+var jsonFieldsNameOfCollaborationRoleList = [2]string{
 	0: "records",
 	1: "total",
 }
 
-// Decode decodes CollaborationWorkspaceRoleList from json.
-func (s *CollaborationWorkspaceRoleList) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationRoleList from json.
+func (s *CollaborationRoleList) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceRoleList to nil")
+		return errors.New("invalid: unable to decode CollaborationRoleList to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -6578,9 +6597,9 @@ func (s *CollaborationWorkspaceRoleList) Decode(d *jx.Decoder) error {
 		case "records":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Records = make([]CollaborationWorkspaceRoleItem, 0)
+				s.Records = make([]CollaborationRoleItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem CollaborationWorkspaceRoleItem
+					var elem CollaborationRoleItem
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -6610,7 +6629,7 @@ func (s *CollaborationWorkspaceRoleList) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceRoleList")
+		return errors.Wrap(err, "decode CollaborationRoleList")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -6627,8 +6646,8 @@ func (s *CollaborationWorkspaceRoleList) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceRoleList) {
-					name = jsonFieldsNameOfCollaborationWorkspaceRoleList[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationRoleList) {
+					name = jsonFieldsNameOfCollaborationRoleList[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6649,27 +6668,27 @@ func (s *CollaborationWorkspaceRoleList) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceRoleList) MarshalJSON() ([]byte, error) {
+func (s *CollaborationRoleList) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceRoleList) UnmarshalJSON(data []byte) error {
+func (s *CollaborationRoleList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceRoleSaveRequest) Encode(e *jx.Encoder) {
+func (s *CollaborationRoleSaveRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceRoleSaveRequest) encodeFields(e *jx.Encoder) {
+func (s *CollaborationRoleSaveRequest) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("code")
 		e.Str(s.Code)
@@ -6698,7 +6717,7 @@ func (s *CollaborationWorkspaceRoleSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest = [5]string{
+var jsonFieldsNameOfCollaborationRoleSaveRequest = [5]string{
 	0: "code",
 	1: "name",
 	2: "description",
@@ -6706,10 +6725,10 @@ var jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest = [5]string{
 	4: "status",
 }
 
-// Decode decodes CollaborationWorkspaceRoleSaveRequest from json.
-func (s *CollaborationWorkspaceRoleSaveRequest) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationRoleSaveRequest from json.
+func (s *CollaborationRoleSaveRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceRoleSaveRequest to nil")
+		return errors.New("invalid: unable to decode CollaborationRoleSaveRequest to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -6774,7 +6793,7 @@ func (s *CollaborationWorkspaceRoleSaveRequest) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceRoleSaveRequest")
+		return errors.Wrap(err, "decode CollaborationRoleSaveRequest")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -6791,8 +6810,8 @@ func (s *CollaborationWorkspaceRoleSaveRequest) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest) {
-					name = jsonFieldsNameOfCollaborationWorkspaceRoleSaveRequest[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationRoleSaveRequest) {
+					name = jsonFieldsNameOfCollaborationRoleSaveRequest[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6813,27 +6832,27 @@ func (s *CollaborationWorkspaceRoleSaveRequest) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceRoleSaveRequest) MarshalJSON() ([]byte, error) {
+func (s *CollaborationRoleSaveRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceRoleSaveRequest) UnmarshalJSON(data []byte) error {
+func (s *CollaborationRoleSaveRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *CollaborationWorkspaceSaveRequest) Encode(e *jx.Encoder) {
+func (s *CollaborationSaveRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *CollaborationWorkspaceSaveRequest) encodeFields(e *jx.Encoder) {
+func (s *CollaborationSaveRequest) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
 		e.Str(s.Name)
@@ -6880,7 +6899,7 @@ func (s *CollaborationWorkspaceSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollaborationWorkspaceSaveRequest = [7]string{
+var jsonFieldsNameOfCollaborationSaveRequest = [7]string{
 	0: "name",
 	1: "remark",
 	2: "logo_url",
@@ -6890,10 +6909,10 @@ var jsonFieldsNameOfCollaborationWorkspaceSaveRequest = [7]string{
 	6: "admin_user_ids",
 }
 
-// Decode decodes CollaborationWorkspaceSaveRequest from json.
-func (s *CollaborationWorkspaceSaveRequest) Decode(d *jx.Decoder) error {
+// Decode decodes CollaborationSaveRequest from json.
+func (s *CollaborationSaveRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode CollaborationWorkspaceSaveRequest to nil")
+		return errors.New("invalid: unable to decode CollaborationSaveRequest to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -6985,7 +7004,7 @@ func (s *CollaborationWorkspaceSaveRequest) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode CollaborationWorkspaceSaveRequest")
+		return errors.Wrap(err, "decode CollaborationSaveRequest")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -7002,8 +7021,8 @@ func (s *CollaborationWorkspaceSaveRequest) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfCollaborationWorkspaceSaveRequest) {
-					name = jsonFieldsNameOfCollaborationWorkspaceSaveRequest[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfCollaborationSaveRequest) {
+					name = jsonFieldsNameOfCollaborationSaveRequest[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -7024,14 +7043,14 @@ func (s *CollaborationWorkspaceSaveRequest) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *CollaborationWorkspaceSaveRequest) MarshalJSON() ([]byte, error) {
+func (s *CollaborationSaveRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *CollaborationWorkspaceSaveRequest) UnmarshalJSON(data []byte) error {
+func (s *CollaborationSaveRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -10497,14 +10516,14 @@ func (s *DispatchAudienceOption) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *DispatchCollaborationWorkspaceOption) Encode(e *jx.Encoder) {
+func (s *DispatchCollaborationOption) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *DispatchCollaborationWorkspaceOption) encodeFields(e *jx.Encoder) {
+func (s *DispatchCollaborationOption) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
@@ -10515,15 +10534,15 @@ func (s *DispatchCollaborationWorkspaceOption) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDispatchCollaborationWorkspaceOption = [2]string{
+var jsonFieldsNameOfDispatchCollaborationOption = [2]string{
 	0: "id",
 	1: "name",
 }
 
-// Decode decodes DispatchCollaborationWorkspaceOption from json.
-func (s *DispatchCollaborationWorkspaceOption) Decode(d *jx.Decoder) error {
+// Decode decodes DispatchCollaborationOption from json.
+func (s *DispatchCollaborationOption) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode DispatchCollaborationWorkspaceOption to nil")
+		return errors.New("invalid: unable to decode DispatchCollaborationOption to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -10558,7 +10577,7 @@ func (s *DispatchCollaborationWorkspaceOption) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode DispatchCollaborationWorkspaceOption")
+		return errors.Wrap(err, "decode DispatchCollaborationOption")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -10575,8 +10594,8 @@ func (s *DispatchCollaborationWorkspaceOption) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfDispatchCollaborationWorkspaceOption) {
-					name = jsonFieldsNameOfDispatchCollaborationWorkspaceOption[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfDispatchCollaborationOption) {
+					name = jsonFieldsNameOfDispatchCollaborationOption[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -10597,14 +10616,14 @@ func (s *DispatchCollaborationWorkspaceOption) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *DispatchCollaborationWorkspaceOption) MarshalJSON() ([]byte, error) {
+func (s *DispatchCollaborationOption) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *DispatchCollaborationWorkspaceOption) UnmarshalJSON(data []byte) error {
+func (s *DispatchCollaborationOption) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -10942,15 +10961,27 @@ func (s *DispatchRecordDeliveryItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.RecipientName)
 	}
 	{
-		if s.RecipientCollaborationWorkspaceID.Set {
-			e.FieldStart("recipient_collaboration_workspace_id")
-			s.RecipientCollaborationWorkspaceID.Encode(e)
+		if s.RecipientScopeType.Set {
+			e.FieldStart("recipient_scope_type")
+			s.RecipientScopeType.Encode(e)
 		}
 	}
 	{
-		if s.RecipientCollaborationWorkspaceName.Set {
-			e.FieldStart("recipient_collaboration_workspace_name")
-			s.RecipientCollaborationWorkspaceName.Encode(e)
+		if s.RecipientScopeID.Set {
+			e.FieldStart("recipient_scope_id")
+			s.RecipientScopeID.Encode(e)
+		}
+	}
+	{
+		if s.RecipientWorkspaceID.Set {
+			e.FieldStart("recipient_workspace_id")
+			s.RecipientWorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.RecipientWorkspaceName.Set {
+			e.FieldStart("recipient_workspace_name")
+			s.RecipientWorkspaceName.Encode(e)
 		}
 	}
 	{
@@ -11025,24 +11056,26 @@ func (s *DispatchRecordDeliveryItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDispatchRecordDeliveryItem = [17]string{
+var jsonFieldsNameOfDispatchRecordDeliveryItem = [19]string{
 	0:  "id",
 	1:  "recipient_user_id",
 	2:  "recipient_name",
-	3:  "recipient_collaboration_workspace_id",
-	4:  "recipient_collaboration_workspace_name",
-	5:  "delivery_status",
-	6:  "todo_status",
-	7:  "read_at",
-	8:  "done_at",
-	9:  "last_action_at",
-	10: "source_group_id",
-	11: "source_group_name",
-	12: "source_rule_type",
-	13: "source_rule_label",
-	14: "source_target_id",
-	15: "source_target_type",
-	16: "source_target_value",
+	3:  "recipient_scope_type",
+	4:  "recipient_scope_id",
+	5:  "recipient_workspace_id",
+	6:  "recipient_workspace_name",
+	7:  "delivery_status",
+	8:  "todo_status",
+	9:  "read_at",
+	10: "done_at",
+	11: "last_action_at",
+	12: "source_group_id",
+	13: "source_group_name",
+	14: "source_rule_type",
+	15: "source_rule_label",
+	16: "source_target_id",
+	17: "source_target_type",
+	18: "source_target_value",
 }
 
 // Decode decodes DispatchRecordDeliveryItem from json.
@@ -11090,28 +11123,48 @@ func (s *DispatchRecordDeliveryItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"recipient_name\"")
 			}
-		case "recipient_collaboration_workspace_id":
+		case "recipient_scope_type":
 			if err := func() error {
-				s.RecipientCollaborationWorkspaceID.Reset()
-				if err := s.RecipientCollaborationWorkspaceID.Decode(d); err != nil {
+				s.RecipientScopeType.Reset()
+				if err := s.RecipientScopeType.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"recipient_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"recipient_scope_type\"")
 			}
-		case "recipient_collaboration_workspace_name":
+		case "recipient_scope_id":
 			if err := func() error {
-				s.RecipientCollaborationWorkspaceName.Reset()
-				if err := s.RecipientCollaborationWorkspaceName.Decode(d); err != nil {
+				s.RecipientScopeID.Reset()
+				if err := s.RecipientScopeID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"recipient_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"recipient_scope_id\"")
+			}
+		case "recipient_workspace_id":
+			if err := func() error {
+				s.RecipientWorkspaceID.Reset()
+				if err := s.RecipientWorkspaceID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipient_workspace_id\"")
+			}
+		case "recipient_workspace_name":
+			if err := func() error {
+				s.RecipientWorkspaceName.Reset()
+				if err := s.RecipientWorkspaceName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipient_workspace_name\"")
 			}
 		case "delivery_status":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.DeliveryStatus = string(v)
@@ -11242,7 +11295,7 @@ func (s *DispatchRecordDeliveryItem) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b00100111,
+		0b10000111,
 		0b00000000,
 		0b00000000,
 	} {
@@ -11338,15 +11391,27 @@ func (s *DispatchRecordItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceID.Set {
-			e.FieldStart("target_collaboration_workspace_id")
-			s.TargetCollaborationWorkspaceID.Encode(e)
+		if s.TargetScopeType.Set {
+			e.FieldStart("target_scope_type")
+			s.TargetScopeType.Encode(e)
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceName.Set {
-			e.FieldStart("target_collaboration_workspace_name")
-			s.TargetCollaborationWorkspaceName.Encode(e)
+		if s.TargetScopeID.Set {
+			e.FieldStart("target_scope_id")
+			s.TargetScopeID.Encode(e)
+		}
+	}
+	{
+		if s.TargetWorkspaceID.Set {
+			e.FieldStart("target_workspace_id")
+			s.TargetWorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.TargetWorkspaceName.Set {
+			e.FieldStart("target_workspace_name")
+			s.TargetWorkspaceName.Encode(e)
 		}
 	}
 	{
@@ -11401,7 +11466,7 @@ func (s *DispatchRecordItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDispatchRecordItem = [20]string{
+var jsonFieldsNameOfDispatchRecordItem = [22]string{
 	0:  "id",
 	1:  "title",
 	2:  "summary",
@@ -11410,18 +11475,20 @@ var jsonFieldsNameOfDispatchRecordItem = [20]string{
 	5:  "audience_type",
 	6:  "scope_type",
 	7:  "scope_id",
-	8:  "target_collaboration_workspace_id",
-	9:  "target_collaboration_workspace_name",
-	10: "sender_name",
-	11: "template_name",
-	12: "priority",
-	13: "status",
-	14: "published_at",
-	15: "created_at",
-	16: "delivery_count",
-	17: "read_count",
-	18: "unread_count",
-	19: "pending_todo_count",
+	8:  "target_scope_type",
+	9:  "target_scope_id",
+	10: "target_workspace_id",
+	11: "target_workspace_name",
+	12: "sender_name",
+	13: "template_name",
+	14: "priority",
+	15: "status",
+	16: "published_at",
+	17: "created_at",
+	18: "delivery_count",
+	19: "read_count",
+	20: "unread_count",
+	21: "pending_todo_count",
 }
 
 // Decode decodes DispatchRecordItem from json.
@@ -11523,25 +11590,45 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"scope_id\"")
 			}
-		case "target_collaboration_workspace_id":
+		case "target_scope_type":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceID.Reset()
-				if err := s.TargetCollaborationWorkspaceID.Decode(d); err != nil {
+				s.TargetScopeType.Reset()
+				if err := s.TargetScopeType.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"target_scope_type\"")
 			}
-		case "target_collaboration_workspace_name":
+		case "target_scope_id":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceName.Reset()
-				if err := s.TargetCollaborationWorkspaceName.Decode(d); err != nil {
+				s.TargetScopeID.Reset()
+				if err := s.TargetScopeID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"target_scope_id\"")
+			}
+		case "target_workspace_id":
+			if err := func() error {
+				s.TargetWorkspaceID.Reset()
+				if err := s.TargetWorkspaceID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_workspace_id\"")
+			}
+		case "target_workspace_name":
+			if err := func() error {
+				s.TargetWorkspaceName.Reset()
+				if err := s.TargetWorkspaceName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_workspace_name\"")
 			}
 		case "sender_name":
 			if err := func() error {
@@ -11594,7 +11681,7 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"published_at\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -11606,7 +11693,7 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"created_at\"")
 			}
 		case "delivery_count":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int()
 				s.DeliveryCount = int(v)
@@ -11618,7 +11705,7 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"delivery_count\"")
 			}
 		case "read_count":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int()
 				s.ReadCount = int(v)
@@ -11630,7 +11717,7 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"read_count\"")
 			}
 		case "unread_count":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int()
 				s.UnreadCount = int(v)
@@ -11642,7 +11729,7 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unread_count\"")
 			}
 		case "pending_todo_count":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int()
 				s.PendingTodoCount = int(v)
@@ -11664,8 +11751,8 @@ func (s *DispatchRecordItem) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b01110011,
-		0b10000000,
-		0b00001111,
+		0b00000000,
+		0b00111110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -12203,6 +12290,12 @@ func (s *DispatchTemplateOption) encodeFields(e *jx.Encoder) {
 		e.Str(s.OwnerScope)
 	}
 	{
+		if s.OwnerScopeID.Set {
+			e.FieldStart("owner_scope_id")
+			s.OwnerScopeID.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("audience_type")
 		e.Str(s.AudienceType)
 	}
@@ -12226,17 +12319,18 @@ func (s *DispatchTemplateOption) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfDispatchTemplateOption = [10]string{
-	0: "id",
-	1: "template_key",
-	2: "name",
-	3: "description",
-	4: "message_type",
-	5: "owner_scope",
-	6: "audience_type",
-	7: "title_template",
-	8: "summary_template",
-	9: "content_template",
+var jsonFieldsNameOfDispatchTemplateOption = [11]string{
+	0:  "id",
+	1:  "template_key",
+	2:  "name",
+	3:  "description",
+	4:  "message_type",
+	5:  "owner_scope",
+	6:  "owner_scope_id",
+	7:  "audience_type",
+	8:  "title_template",
+	9:  "summary_template",
+	10: "content_template",
 }
 
 // Decode decodes DispatchTemplateOption from json.
@@ -12320,8 +12414,18 @@ func (s *DispatchTemplateOption) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"owner_scope\"")
 			}
+		case "owner_scope_id":
+			if err := func() error {
+				s.OwnerScopeID.Reset()
+				if err := s.OwnerScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"owner_scope_id\"")
+			}
 		case "audience_type":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.AudienceType = string(v)
@@ -12372,7 +12476,7 @@ func (s *DispatchTemplateOption) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b01111111,
+		0b10111111,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -12447,15 +12551,15 @@ func (s *DispatchUserOption) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
-		if s.CollaborationWorkspaceName.Set {
-			e.FieldStart("collaboration_workspace_name")
-			s.CollaborationWorkspaceName.Encode(e)
+		if s.WorkspaceName.Set {
+			e.FieldStart("workspace_name")
+			s.WorkspaceName.Encode(e)
 		}
 	}
 }
@@ -12465,8 +12569,8 @@ var jsonFieldsNameOfDispatchUserOption = [6]string{
 	1: "name",
 	2: "display_name",
 	3: "description",
-	4: "collaboration_workspace_id",
-	5: "collaboration_workspace_name",
+	4: "workspace_id",
+	5: "workspace_name",
 }
 
 // Decode decodes DispatchUserOption from json.
@@ -12524,25 +12628,25 @@ func (s *DispatchUserOption) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
-		case "collaboration_workspace_name":
+		case "workspace_name":
 			if err := func() error {
-				s.CollaborationWorkspaceName.Reset()
-				if err := s.CollaborationWorkspaceName.Decode(d); err != nil {
+				s.WorkspaceName.Reset()
+				if err := s.WorkspaceName.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"workspace_name\"")
 			}
 		default:
 			return d.Skip()
@@ -13323,28 +13427,28 @@ func (s *FeaturePackageAssignmentResponse) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *FeaturePackageCollaborationWorkspaceItem) Encode(e *jx.Encoder) {
+func (s *FeaturePackageCollaborationItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *FeaturePackageCollaborationWorkspaceItem) encodeFields(e *jx.Encoder) {
+func (s *FeaturePackageCollaborationItem) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
 	}
 }
 
-var jsonFieldsNameOfFeaturePackageCollaborationWorkspaceItem = [1]string{
+var jsonFieldsNameOfFeaturePackageCollaborationItem = [1]string{
 	0: "id",
 }
 
-// Decode decodes FeaturePackageCollaborationWorkspaceItem from json.
-func (s *FeaturePackageCollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
+// Decode decodes FeaturePackageCollaborationItem from json.
+func (s *FeaturePackageCollaborationItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode FeaturePackageCollaborationWorkspaceItem to nil")
+		return errors.New("invalid: unable to decode FeaturePackageCollaborationItem to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -13367,7 +13471,7 @@ func (s *FeaturePackageCollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode FeaturePackageCollaborationWorkspaceItem")
+		return errors.Wrap(err, "decode FeaturePackageCollaborationItem")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -13384,8 +13488,8 @@ func (s *FeaturePackageCollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfFeaturePackageCollaborationWorkspaceItem) {
-					name = jsonFieldsNameOfFeaturePackageCollaborationWorkspaceItem[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfFeaturePackageCollaborationItem) {
+					name = jsonFieldsNameOfFeaturePackageCollaborationItem[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -13406,27 +13510,27 @@ func (s *FeaturePackageCollaborationWorkspaceItem) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *FeaturePackageCollaborationWorkspaceItem) MarshalJSON() ([]byte, error) {
+func (s *FeaturePackageCollaborationItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *FeaturePackageCollaborationWorkspaceItem) UnmarshalJSON(data []byte) error {
+func (s *FeaturePackageCollaborationItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *FeaturePackageCollaborationWorkspaceList) Encode(e *jx.Encoder) {
+func (s *FeaturePackageCollaborationList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *FeaturePackageCollaborationWorkspaceList) encodeFields(e *jx.Encoder) {
+func (s *FeaturePackageCollaborationList) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("records")
 		e.ArrStart()
@@ -13441,15 +13545,15 @@ func (s *FeaturePackageCollaborationWorkspaceList) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfFeaturePackageCollaborationWorkspaceList = [2]string{
+var jsonFieldsNameOfFeaturePackageCollaborationList = [2]string{
 	0: "records",
 	1: "total",
 }
 
-// Decode decodes FeaturePackageCollaborationWorkspaceList from json.
-func (s *FeaturePackageCollaborationWorkspaceList) Decode(d *jx.Decoder) error {
+// Decode decodes FeaturePackageCollaborationList from json.
+func (s *FeaturePackageCollaborationList) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode FeaturePackageCollaborationWorkspaceList to nil")
+		return errors.New("invalid: unable to decode FeaturePackageCollaborationList to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -13458,9 +13562,9 @@ func (s *FeaturePackageCollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 		case "records":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Records = make([]FeaturePackageCollaborationWorkspaceItem, 0)
+				s.Records = make([]FeaturePackageCollaborationItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem FeaturePackageCollaborationWorkspaceItem
+					var elem FeaturePackageCollaborationItem
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -13490,7 +13594,7 @@ func (s *FeaturePackageCollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode FeaturePackageCollaborationWorkspaceList")
+		return errors.Wrap(err, "decode FeaturePackageCollaborationList")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -13507,8 +13611,8 @@ func (s *FeaturePackageCollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfFeaturePackageCollaborationWorkspaceList) {
-					name = jsonFieldsNameOfFeaturePackageCollaborationWorkspaceList[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfFeaturePackageCollaborationList) {
+					name = jsonFieldsNameOfFeaturePackageCollaborationList[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -13529,14 +13633,14 @@ func (s *FeaturePackageCollaborationWorkspaceList) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *FeaturePackageCollaborationWorkspaceList) MarshalJSON() ([]byte, error) {
+func (s *FeaturePackageCollaborationList) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *FeaturePackageCollaborationWorkspaceList) UnmarshalJSON(data []byte) error {
+func (s *FeaturePackageCollaborationList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -13559,8 +13663,8 @@ func (s *FeaturePackageImpactPreview) encodeFields(e *jx.Encoder) {
 		e.Int64(s.RoleCount)
 	}
 	{
-		e.FieldStart("collaboration_workspace_count")
-		e.Int64(s.CollaborationWorkspaceCount)
+		e.FieldStart("workspace_count")
+		e.Int64(s.WorkspaceCount)
 	}
 	{
 		e.FieldStart("user_count")
@@ -13579,7 +13683,7 @@ func (s *FeaturePackageImpactPreview) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfFeaturePackageImpactPreview = [6]string{
 	0: "package_id",
 	1: "role_count",
-	2: "collaboration_workspace_count",
+	2: "workspace_count",
 	3: "user_count",
 	4: "menu_count",
 	5: "action_count",
@@ -13618,17 +13722,17 @@ func (s *FeaturePackageImpactPreview) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"role_count\"")
 			}
-		case "collaboration_workspace_count":
+		case "workspace_count":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int64()
-				s.CollaborationWorkspaceCount = int64(v)
+				s.WorkspaceCount = int64(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_count\"")
+				return errors.Wrap(err, "decode field \"workspace_count\"")
 			}
 		case "user_count":
 			requiredBitSet[0] |= 1 << 3
@@ -15579,9 +15683,9 @@ func (s *FeaturePackageSnapshot) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
-		e.FieldStart("collaboration_workspace_ids")
+		e.FieldStart("workspace_ids")
 		e.ArrStart()
-		for _, elem := range s.CollaborationWorkspaceIds {
+		for _, elem := range s.WorkspaceIds {
 			json.EncodeUUID(e, elem)
 		}
 		e.ArrEnd()
@@ -15606,7 +15710,7 @@ var jsonFieldsNameOfFeaturePackageSnapshot = [15]string{
 	10: "child_package_ids",
 	11: "action_ids",
 	12: "menu_ids",
-	13: "collaboration_workspace_ids",
+	13: "workspace_ids",
 	14: "snapshot_created_at",
 }
 
@@ -15807,10 +15911,10 @@ func (s *FeaturePackageSnapshot) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"menu_ids\"")
 			}
-		case "collaboration_workspace_ids":
+		case "workspace_ids":
 			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
-				s.CollaborationWorkspaceIds = make([]uuid.UUID, 0)
+				s.WorkspaceIds = make([]uuid.UUID, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem uuid.UUID
 					v, err := json.DecodeUUID(d)
@@ -15818,14 +15922,14 @@ func (s *FeaturePackageSnapshot) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.CollaborationWorkspaceIds = append(s.CollaborationWorkspaceIds, elem)
+					s.WorkspaceIds = append(s.WorkspaceIds, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_ids\"")
+				return errors.Wrap(err, "decode field \"workspace_ids\"")
 			}
 		case "snapshot_created_at":
 			requiredBitSet[1] |= 1 << 6
@@ -15964,9 +16068,9 @@ func (s *FeaturePackageSummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceCount.Set {
-			e.FieldStart("collaboration_workspace_count")
-			s.CollaborationWorkspaceCount.Encode(e)
+		if s.WorkspaceCount.Set {
+			e.FieldStart("workspace_count")
+			s.WorkspaceCount.Encode(e)
 		}
 	}
 }
@@ -15983,7 +16087,7 @@ var jsonFieldsNameOfFeaturePackageSummary = [12]string{
 	8:  "sort_order",
 	9:  "action_count",
 	10: "menu_count",
-	11: "collaboration_workspace_count",
+	11: "workspace_count",
 }
 
 // Decode decodes FeaturePackageSummary from json.
@@ -16113,15 +16217,15 @@ func (s *FeaturePackageSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"menu_count\"")
 			}
-		case "collaboration_workspace_count":
+		case "workspace_count":
 			if err := func() error {
-				s.CollaborationWorkspaceCount.Reset()
-				if err := s.CollaborationWorkspaceCount.Decode(d); err != nil {
+				s.WorkspaceCount.Reset()
+				if err := s.WorkspaceCount.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_count\"")
+				return errors.Wrap(err, "decode field \"workspace_count\"")
 			}
 		default:
 			return d.Skip()
@@ -17498,9 +17602,21 @@ func (s *InboxItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.RecipientCollaborationWorkspaceID.Set {
-			e.FieldStart("recipient_collaboration_workspace_id")
-			s.RecipientCollaborationWorkspaceID.Encode(e)
+		if s.RecipientWorkspaceID.Set {
+			e.FieldStart("recipient_workspace_id")
+			s.RecipientWorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.RecipientScopeType.Set {
+			e.FieldStart("recipient_scope_type")
+			s.RecipientScopeType.Encode(e)
+		}
+	}
+	{
+		if s.RecipientScopeID.Set {
+			e.FieldStart("recipient_scope_id")
+			s.RecipientScopeID.Encode(e)
 		}
 	}
 	{
@@ -17598,9 +17714,21 @@ func (s *InboxItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceID.Set {
-			e.FieldStart("target_collaboration_workspace_id")
-			s.TargetCollaborationWorkspaceID.Encode(e)
+		if s.TargetScopeType.Set {
+			e.FieldStart("target_scope_type")
+			s.TargetScopeType.Encode(e)
+		}
+	}
+	{
+		if s.TargetScopeID.Set {
+			e.FieldStart("target_scope_id")
+			s.TargetScopeID.Encode(e)
+		}
+	}
+	{
+		if s.TargetWorkspaceID.Set {
+			e.FieldStart("target_workspace_id")
+			s.TargetWorkspaceID.Encode(e)
 		}
 	}
 	{
@@ -17627,7 +17755,7 @@ func (s *InboxItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfInboxItem = [30]string{
+var jsonFieldsNameOfInboxItem = [34]string{
 	0:  "id",
 	1:  "message_id",
 	2:  "box_type",
@@ -17636,28 +17764,32 @@ var jsonFieldsNameOfInboxItem = [30]string{
 	5:  "read_at",
 	6:  "done_at",
 	7:  "last_action_at",
-	8:  "recipient_collaboration_workspace_id",
-	9:  "title",
-	10: "summary",
-	11: "content",
-	12: "priority",
-	13: "action_type",
-	14: "action_target",
-	15: "message_type",
-	16: "biz_type",
-	17: "scope_type",
-	18: "scope_id",
-	19: "sender_type",
-	20: "sender_name_snapshot",
-	21: "sender_avatar_snapshot",
-	22: "sender_service_key",
-	23: "audience_type",
-	24: "audience_scope",
-	25: "target_collaboration_workspace_id",
-	26: "published_at",
-	27: "expired_at",
-	28: "created_at",
-	29: "meta",
+	8:  "recipient_workspace_id",
+	9:  "recipient_scope_type",
+	10: "recipient_scope_id",
+	11: "title",
+	12: "summary",
+	13: "content",
+	14: "priority",
+	15: "action_type",
+	16: "action_target",
+	17: "message_type",
+	18: "biz_type",
+	19: "scope_type",
+	20: "scope_id",
+	21: "sender_type",
+	22: "sender_name_snapshot",
+	23: "sender_avatar_snapshot",
+	24: "sender_service_key",
+	25: "audience_type",
+	26: "audience_scope",
+	27: "target_scope_type",
+	28: "target_scope_id",
+	29: "target_workspace_id",
+	30: "published_at",
+	31: "expired_at",
+	32: "created_at",
+	33: "meta",
 }
 
 // Decode decodes InboxItem from json.
@@ -17665,7 +17797,7 @@ func (s *InboxItem) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode InboxItem to nil")
 	}
-	var requiredBitSet [4]uint8
+	var requiredBitSet [5]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -17757,18 +17889,38 @@ func (s *InboxItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"last_action_at\"")
 			}
-		case "recipient_collaboration_workspace_id":
+		case "recipient_workspace_id":
 			if err := func() error {
-				s.RecipientCollaborationWorkspaceID.Reset()
-				if err := s.RecipientCollaborationWorkspaceID.Decode(d); err != nil {
+				s.RecipientWorkspaceID.Reset()
+				if err := s.RecipientWorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"recipient_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"recipient_workspace_id\"")
+			}
+		case "recipient_scope_type":
+			if err := func() error {
+				s.RecipientScopeType.Reset()
+				if err := s.RecipientScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipient_scope_type\"")
+			}
+		case "recipient_scope_id":
+			if err := func() error {
+				s.RecipientScopeID.Reset()
+				if err := s.RecipientScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipient_scope_id\"")
 			}
 		case "title":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.Title = string(v)
@@ -17929,15 +18081,35 @@ func (s *InboxItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"audience_scope\"")
 			}
-		case "target_collaboration_workspace_id":
+		case "target_scope_type":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceID.Reset()
-				if err := s.TargetCollaborationWorkspaceID.Decode(d); err != nil {
+				s.TargetScopeType.Reset()
+				if err := s.TargetScopeType.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"target_scope_type\"")
+			}
+		case "target_scope_id":
+			if err := func() error {
+				s.TargetScopeID.Reset()
+				if err := s.TargetScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_scope_id\"")
+			}
+		case "target_workspace_id":
+			if err := func() error {
+				s.TargetWorkspaceID.Reset()
+				if err := s.TargetWorkspaceID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_workspace_id\"")
 			}
 		case "published_at":
 			if err := func() error {
@@ -17960,7 +18132,7 @@ func (s *InboxItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"expired_at\"")
 			}
 		case "created_at":
-			requiredBitSet[3] |= 1 << 4
+			requiredBitSet[4] |= 1 << 0
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -17990,11 +18162,12 @@ func (s *InboxItem) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [4]uint8{
+	for i, mask := range [5]uint8{
 		0b00001111,
-		0b00000010,
+		0b00001000,
 		0b00000000,
-		0b00010000,
+		0b00000000,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -26502,15 +26675,15 @@ func (s *MessageDispatchOptions) encodeFields(e *jx.Encoder) {
 		e.Str(s.SenderScope)
 	}
 	{
-		if s.CurrentCollaborationWorkspaceID.Set {
-			e.FieldStart("current_collaboration_workspace_id")
-			s.CurrentCollaborationWorkspaceID.Encode(e)
+		if s.CurrentWorkspaceID.Set {
+			e.FieldStart("current_workspace_id")
+			s.CurrentWorkspaceID.Encode(e)
 		}
 	}
 	{
-		if s.CurrentCollaborationWorkspaceName.Set {
-			e.FieldStart("current_collaboration_workspace_name")
-			s.CurrentCollaborationWorkspaceName.Encode(e)
+		if s.CurrentWorkspaceName.Set {
+			e.FieldStart("current_workspace_name")
+			s.CurrentWorkspaceName.Encode(e)
 		}
 	}
 	{
@@ -26544,9 +26717,9 @@ func (s *MessageDispatchOptions) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
-		e.FieldStart("collaboration_workspaces")
+		e.FieldStart("collaborations")
 		e.ArrStart()
-		for _, elem := range s.CollaborationWorkspaces {
+		for _, elem := range s.Collaborations {
 			elem.Encode(e)
 		}
 		e.ArrEnd()
@@ -26603,13 +26776,13 @@ func (s *MessageDispatchOptions) encodeFields(e *jx.Encoder) {
 
 var jsonFieldsNameOfMessageDispatchOptions = [16]string{
 	0:  "sender_scope",
-	1:  "current_collaboration_workspace_id",
-	2:  "current_collaboration_workspace_name",
+	1:  "current_workspace_id",
+	2:  "current_workspace_name",
 	3:  "sender_options",
 	4:  "default_sender_id",
 	5:  "audience_options",
 	6:  "template_options",
-	7:  "collaboration_workspaces",
+	7:  "collaborations",
 	8:  "users",
 	9:  "recipient_groups",
 	10: "roles",
@@ -26641,25 +26814,25 @@ func (s *MessageDispatchOptions) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sender_scope\"")
 			}
-		case "current_collaboration_workspace_id":
+		case "current_workspace_id":
 			if err := func() error {
-				s.CurrentCollaborationWorkspaceID.Reset()
-				if err := s.CurrentCollaborationWorkspaceID.Decode(d); err != nil {
+				s.CurrentWorkspaceID.Reset()
+				if err := s.CurrentWorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"current_workspace_id\"")
 			}
-		case "current_collaboration_workspace_name":
+		case "current_workspace_name":
 			if err := func() error {
-				s.CurrentCollaborationWorkspaceName.Reset()
-				if err := s.CurrentCollaborationWorkspaceName.Decode(d); err != nil {
+				s.CurrentWorkspaceName.Reset()
+				if err := s.CurrentWorkspaceName.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"current_workspace_name\"")
 			}
 		case "sender_options":
 			requiredBitSet[0] |= 1 << 3
@@ -26725,23 +26898,23 @@ func (s *MessageDispatchOptions) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"template_options\"")
 			}
-		case "collaboration_workspaces":
+		case "collaborations":
 			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
-				s.CollaborationWorkspaces = make([]DispatchCollaborationWorkspaceOption, 0)
+				s.Collaborations = make([]DispatchCollaborationOption, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem DispatchCollaborationWorkspaceOption
+					var elem DispatchCollaborationOption
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
-					s.CollaborationWorkspaces = append(s.CollaborationWorkspaces, elem)
+					s.Collaborations = append(s.Collaborations, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspaces\"")
+				return errors.Wrap(err, "decode field \"collaborations\"")
 			}
 		case "users":
 			requiredBitSet[1] |= 1 << 0
@@ -26968,15 +27141,27 @@ func (s *MessageDispatchRecord) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceID.Set {
-			e.FieldStart("target_collaboration_workspace_id")
-			s.TargetCollaborationWorkspaceID.Encode(e)
+		if s.TargetScopeType.Set {
+			e.FieldStart("target_scope_type")
+			s.TargetScopeType.Encode(e)
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceName.Set {
-			e.FieldStart("target_collaboration_workspace_name")
-			s.TargetCollaborationWorkspaceName.Encode(e)
+		if s.TargetScopeID.Set {
+			e.FieldStart("target_scope_id")
+			s.TargetScopeID.Encode(e)
+		}
+	}
+	{
+		if s.TargetWorkspaceID.Set {
+			e.FieldStart("target_workspace_id")
+			s.TargetWorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.TargetWorkspaceName.Set {
+			e.FieldStart("target_workspace_name")
+			s.TargetWorkspaceName.Encode(e)
 		}
 	}
 	{
@@ -27039,7 +27224,7 @@ func (s *MessageDispatchRecord) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMessageDispatchRecord = [21]string{
+var jsonFieldsNameOfMessageDispatchRecord = [23]string{
 	0:  "id",
 	1:  "title",
 	2:  "summary",
@@ -27048,19 +27233,21 @@ var jsonFieldsNameOfMessageDispatchRecord = [21]string{
 	5:  "audience_type",
 	6:  "scope_type",
 	7:  "scope_id",
-	8:  "target_collaboration_workspace_id",
-	9:  "target_collaboration_workspace_name",
-	10: "sender_name",
-	11: "template_name",
-	12: "priority",
-	13: "status",
-	14: "published_at",
-	15: "created_at",
-	16: "delivery_count",
-	17: "read_count",
-	18: "unread_count",
-	19: "pending_todo_count",
-	20: "deliveries",
+	8:  "target_scope_type",
+	9:  "target_scope_id",
+	10: "target_workspace_id",
+	11: "target_workspace_name",
+	12: "sender_name",
+	13: "template_name",
+	14: "priority",
+	15: "status",
+	16: "published_at",
+	17: "created_at",
+	18: "delivery_count",
+	19: "read_count",
+	20: "unread_count",
+	21: "pending_todo_count",
+	22: "deliveries",
 }
 
 // Decode decodes MessageDispatchRecord from json.
@@ -27162,25 +27349,45 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"scope_id\"")
 			}
-		case "target_collaboration_workspace_id":
+		case "target_scope_type":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceID.Reset()
-				if err := s.TargetCollaborationWorkspaceID.Decode(d); err != nil {
+				s.TargetScopeType.Reset()
+				if err := s.TargetScopeType.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"target_scope_type\"")
 			}
-		case "target_collaboration_workspace_name":
+		case "target_scope_id":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceName.Reset()
-				if err := s.TargetCollaborationWorkspaceName.Decode(d); err != nil {
+				s.TargetScopeID.Reset()
+				if err := s.TargetScopeID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"target_scope_id\"")
+			}
+		case "target_workspace_id":
+			if err := func() error {
+				s.TargetWorkspaceID.Reset()
+				if err := s.TargetWorkspaceID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_workspace_id\"")
+			}
+		case "target_workspace_name":
+			if err := func() error {
+				s.TargetWorkspaceName.Reset()
+				if err := s.TargetWorkspaceName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_workspace_name\"")
 			}
 		case "sender_name":
 			if err := func() error {
@@ -27233,7 +27440,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"published_at\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -27245,7 +27452,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"created_at\"")
 			}
 		case "delivery_count":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int()
 				s.DeliveryCount = int(v)
@@ -27257,7 +27464,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"delivery_count\"")
 			}
 		case "read_count":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int()
 				s.ReadCount = int(v)
@@ -27269,7 +27476,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"read_count\"")
 			}
 		case "unread_count":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int()
 				s.UnreadCount = int(v)
@@ -27281,7 +27488,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unread_count\"")
 			}
 		case "pending_todo_count":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int()
 				s.PendingTodoCount = int(v)
@@ -27293,7 +27500,7 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"pending_todo_count\"")
 			}
 		case "deliveries":
-			requiredBitSet[2] |= 1 << 4
+			requiredBitSet[2] |= 1 << 6
 			if err := func() error {
 				s.Deliveries = make([]DispatchRecordDeliveryItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -27321,8 +27528,8 @@ func (s *MessageDispatchRecord) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b01110011,
-		0b10000000,
-		0b00011111,
+		0b00000000,
+		0b01111110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -27580,10 +27787,10 @@ func (s *MessageDispatchRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceIds != nil {
-			e.FieldStart("target_collaboration_workspace_ids")
+		if s.TargetWorkspaceIds != nil {
+			e.FieldStart("target_workspace_ids")
 			e.ArrStart()
-			for _, elem := range s.TargetCollaborationWorkspaceIds {
+			for _, elem := range s.TargetWorkspaceIds {
 				e.Str(elem)
 			}
 			e.ArrEnd()
@@ -27671,7 +27878,7 @@ var jsonFieldsNameOfMessageDispatchRequest = [17]string{
 	2:  "template_key",
 	3:  "message_type",
 	4:  "audience_type",
-	5:  "target_collaboration_workspace_ids",
+	5:  "target_workspace_ids",
 	6:  "target_user_ids",
 	7:  "target_group_ids",
 	8:  "title",
@@ -27743,9 +27950,9 @@ func (s *MessageDispatchRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"audience_type\"")
 			}
-		case "target_collaboration_workspace_ids":
+		case "target_workspace_ids":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceIds = make([]string, 0)
+				s.TargetWorkspaceIds = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem string
 					v, err := d.Str()
@@ -27753,14 +27960,14 @@ func (s *MessageDispatchRequest) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.TargetCollaborationWorkspaceIds = append(s.TargetCollaborationWorkspaceIds, elem)
+					s.TargetWorkspaceIds = append(s.TargetWorkspaceIds, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_ids\"")
+				return errors.Wrap(err, "decode field \"target_workspace_ids\"")
 			}
 		case "target_user_ids":
 			if err := func() error {
@@ -28084,10 +28291,10 @@ func (s *MessageInboxMeta) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.TargetCollaborationWorkspaceIds != nil {
-			e.FieldStart("target_collaboration_workspace_ids")
+		if s.TargetWorkspaceIds != nil {
+			e.FieldStart("target_workspace_ids")
 			e.ArrStart()
-			for _, elem := range s.TargetCollaborationWorkspaceIds {
+			for _, elem := range s.TargetWorkspaceIds {
 				json.EncodeUUID(e, elem)
 			}
 			e.ArrEnd()
@@ -28101,7 +28308,7 @@ var jsonFieldsNameOfMessageInboxMeta = [6]string{
 	2: "recipient_count",
 	3: "published_at",
 	4: "failed_at",
-	5: "target_collaboration_workspace_ids",
+	5: "target_workspace_ids",
 }
 
 // Decode decodes MessageInboxMeta from json.
@@ -28162,9 +28369,9 @@ func (s *MessageInboxMeta) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"failed_at\"")
 			}
-		case "target_collaboration_workspace_ids":
+		case "target_workspace_ids":
 			if err := func() error {
-				s.TargetCollaborationWorkspaceIds = make([]uuid.UUID, 0)
+				s.TargetWorkspaceIds = make([]uuid.UUID, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem uuid.UUID
 					v, err := json.DecodeUUID(d)
@@ -28172,14 +28379,14 @@ func (s *MessageInboxMeta) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.TargetCollaborationWorkspaceIds = append(s.TargetCollaborationWorkspaceIds, elem)
+					s.TargetWorkspaceIds = append(s.TargetWorkspaceIds, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_collaboration_workspace_ids\"")
+				return errors.Wrap(err, "decode field \"target_workspace_ids\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -28901,15 +29108,27 @@ func (s *MessageRecipientGroupTargetItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
-		if s.CollaborationWorkspaceName.Set {
-			e.FieldStart("collaboration_workspace_name")
-			s.CollaborationWorkspaceName.Encode(e)
+		if s.WorkspaceName.Set {
+			e.FieldStart("workspace_name")
+			s.WorkspaceName.Encode(e)
+		}
+	}
+	{
+		if s.TargetScopeType.Set {
+			e.FieldStart("target_scope_type")
+			s.TargetScopeType.Encode(e)
+		}
+	}
+	{
+		if s.TargetScopeID.Set {
+			e.FieldStart("target_scope_id")
+			s.TargetScopeID.Encode(e)
 		}
 	}
 	{
@@ -28950,19 +29169,21 @@ func (s *MessageRecipientGroupTargetItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMessageRecipientGroupTargetItem = [12]string{
+var jsonFieldsNameOfMessageRecipientGroupTargetItem = [14]string{
 	0:  "id",
 	1:  "target_type",
 	2:  "user_id",
 	3:  "user_name",
-	4:  "collaboration_workspace_id",
-	5:  "collaboration_workspace_name",
-	6:  "role_code",
-	7:  "role_name",
-	8:  "package_key",
-	9:  "package_name",
-	10: "sort_order",
-	11: "meta",
+	4:  "workspace_id",
+	5:  "workspace_name",
+	6:  "target_scope_type",
+	7:  "target_scope_id",
+	8:  "role_code",
+	9:  "role_name",
+	10: "package_key",
+	11: "package_name",
+	12: "sort_order",
+	13: "meta",
 }
 
 // Decode decodes MessageRecipientGroupTargetItem from json.
@@ -29018,25 +29239,45 @@ func (s *MessageRecipientGroupTargetItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"user_name\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
-		case "collaboration_workspace_name":
+		case "workspace_name":
 			if err := func() error {
-				s.CollaborationWorkspaceName.Reset()
-				if err := s.CollaborationWorkspaceName.Decode(d); err != nil {
+				s.WorkspaceName.Reset()
+				if err := s.WorkspaceName.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"workspace_name\"")
+			}
+		case "target_scope_type":
+			if err := func() error {
+				s.TargetScopeType.Reset()
+				if err := s.TargetScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_scope_type\"")
+			}
+		case "target_scope_id":
+			if err := func() error {
+				s.TargetScopeID.Reset()
+				if err := s.TargetScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_scope_id\"")
 			}
 		case "role_code":
 			if err := func() error {
@@ -29233,9 +29474,21 @@ func (s *MessageRecipientGroupTargetSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.TargetScopeType.Set {
+			e.FieldStart("target_scope_type")
+			s.TargetScopeType.Encode(e)
+		}
+	}
+	{
+		if s.TargetScopeID.Set {
+			e.FieldStart("target_scope_id")
+			s.TargetScopeID.Encode(e)
 		}
 	}
 	{
@@ -29264,14 +29517,16 @@ func (s *MessageRecipientGroupTargetSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMessageRecipientGroupTargetSaveRequest = [7]string{
+var jsonFieldsNameOfMessageRecipientGroupTargetSaveRequest = [9]string{
 	0: "target_type",
 	1: "user_id",
-	2: "collaboration_workspace_id",
-	3: "role_code",
-	4: "package_key",
-	5: "sort_order",
-	6: "meta",
+	2: "workspace_id",
+	3: "target_scope_type",
+	4: "target_scope_id",
+	5: "role_code",
+	6: "package_key",
+	7: "sort_order",
+	8: "meta",
 }
 
 // Decode decodes MessageRecipientGroupTargetSaveRequest from json.
@@ -29279,7 +29534,7 @@ func (s *MessageRecipientGroupTargetSaveRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode MessageRecipientGroupTargetSaveRequest to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -29305,15 +29560,35 @@ func (s *MessageRecipientGroupTargetSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"user_id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
+			}
+		case "target_scope_type":
+			if err := func() error {
+				s.TargetScopeType.Reset()
+				if err := s.TargetScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_scope_type\"")
+			}
+		case "target_scope_id":
+			if err := func() error {
+				s.TargetScopeID.Reset()
+				if err := s.TargetScopeID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target_scope_id\"")
 			}
 		case "role_code":
 			if err := func() error {
@@ -29364,8 +29639,9 @@ func (s *MessageRecipientGroupTargetSaveRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b00000001,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -30076,15 +30352,21 @@ func (s *MessageTemplateItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.OwnerScope)
 	}
 	{
-		if s.OwnerCollaborationWorkspaceID.Set {
-			e.FieldStart("owner_collaboration_workspace_id")
-			s.OwnerCollaborationWorkspaceID.Encode(e)
+		if s.OwnerScopeID.Set {
+			e.FieldStart("owner_scope_id")
+			s.OwnerScopeID.Encode(e)
 		}
 	}
 	{
-		if s.OwnerCollaborationWorkspaceName.Set {
-			e.FieldStart("owner_collaboration_workspace_name")
-			s.OwnerCollaborationWorkspaceName.Encode(e)
+		if s.OwnerWorkspaceID.Set {
+			e.FieldStart("owner_workspace_id")
+			s.OwnerWorkspaceID.Encode(e)
+		}
+	}
+	{
+		if s.OwnerWorkspaceName.Set {
+			e.FieldStart("owner_workspace_name")
+			s.OwnerWorkspaceName.Encode(e)
 		}
 	}
 	{
@@ -30137,24 +30419,25 @@ func (s *MessageTemplateItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMessageTemplateItem = [17]string{
+var jsonFieldsNameOfMessageTemplateItem = [18]string{
 	0:  "id",
 	1:  "template_key",
 	2:  "name",
 	3:  "description",
 	4:  "message_type",
 	5:  "owner_scope",
-	6:  "owner_collaboration_workspace_id",
-	7:  "owner_collaboration_workspace_name",
-	8:  "audience_type",
-	9:  "title_template",
-	10: "summary_template",
-	11: "content_template",
-	12: "status",
-	13: "editable",
-	14: "meta",
-	15: "created_at",
-	16: "updated_at",
+	6:  "owner_scope_id",
+	7:  "owner_workspace_id",
+	8:  "owner_workspace_name",
+	9:  "audience_type",
+	10: "title_template",
+	11: "summary_template",
+	12: "content_template",
+	13: "status",
+	14: "editable",
+	15: "meta",
+	16: "created_at",
+	17: "updated_at",
 }
 
 // Decode decodes MessageTemplateItem from json.
@@ -30236,28 +30519,38 @@ func (s *MessageTemplateItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"owner_scope\"")
 			}
-		case "owner_collaboration_workspace_id":
+		case "owner_scope_id":
 			if err := func() error {
-				s.OwnerCollaborationWorkspaceID.Reset()
-				if err := s.OwnerCollaborationWorkspaceID.Decode(d); err != nil {
+				s.OwnerScopeID.Reset()
+				if err := s.OwnerScopeID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"owner_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"owner_scope_id\"")
 			}
-		case "owner_collaboration_workspace_name":
+		case "owner_workspace_id":
 			if err := func() error {
-				s.OwnerCollaborationWorkspaceName.Reset()
-				if err := s.OwnerCollaborationWorkspaceName.Decode(d); err != nil {
+				s.OwnerWorkspaceID.Reset()
+				if err := s.OwnerWorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"owner_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"owner_workspace_id\"")
+			}
+		case "owner_workspace_name":
+			if err := func() error {
+				s.OwnerWorkspaceName.Reset()
+				if err := s.OwnerWorkspaceName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"owner_workspace_name\"")
 			}
 		case "audience_type":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.AudienceType = string(v)
@@ -30299,7 +30592,7 @@ func (s *MessageTemplateItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"content_template\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -30311,7 +30604,7 @@ func (s *MessageTemplateItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
 		case "editable":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.Editable = bool(v)
@@ -30365,7 +30658,7 @@ func (s *MessageTemplateItem) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b00110111,
-		0b00110001,
+		0b01100010,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -30994,9 +31287,9 @@ func (s *NavigationContext) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 }
@@ -31012,7 +31305,7 @@ var jsonFieldsNameOfNavigationContext = [11]string{
 	7:  "managed_page_count",
 	8:  "action_key_count",
 	9:  "user_id",
-	10: "collaboration_workspace_id",
+	10: "workspace_id",
 }
 
 // Decode decodes NavigationContext from json.
@@ -31142,15 +31435,15 @@ func (s *NavigationContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"user_id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -31433,52 +31726,6 @@ func (s *NavigationManifest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *NavigationManifest) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes uuid.UUID as json.
-func (o NilUUID) Encode(e *jx.Encoder) {
-	if o.Null {
-		e.Null()
-		return
-	}
-	json.EncodeUUID(e, o.Value)
-}
-
-// Decode decodes uuid.UUID from json.
-func (o *NilUUID) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode NilUUID to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v uuid.UUID
-		o.Value = v
-		o.Null = true
-		return nil
-	}
-	o.Null = false
-	v, err := json.DecodeUUID(d)
-	if err != nil {
-		return err
-	}
-	o.Value = v
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s NilUUID) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *NilUUID) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -35816,9 +36063,9 @@ func (s *PageAccessTraceResponse) encodeFields(e *jx.Encoder) {
 		e.Str(s.UserID)
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
@@ -35873,7 +36120,7 @@ func (s *PageAccessTraceResponse) encodeFields(e *jx.Encoder) {
 
 var jsonFieldsNameOfPageAccessTraceResponse = [10]string{
 	0: "user_id",
-	1: "collaboration_workspace_id",
+	1: "workspace_id",
 	2: "menu_space_key",
 	3: "authenticated",
 	4: "super_admin",
@@ -35905,15 +36152,15 @@ func (s *PageAccessTraceResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"user_id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 2
@@ -43325,8 +43572,8 @@ func (s *PermissionActionImpactPreview) encodeFields(e *jx.Encoder) {
 		e.Int64(s.RoleCount)
 	}
 	{
-		e.FieldStart("collaboration_workspace_count")
-		e.Int64(s.CollaborationWorkspaceCount)
+		e.FieldStart("workspace_count")
+		e.Int64(s.WorkspaceCount)
 	}
 	{
 		e.FieldStart("user_count")
@@ -43340,7 +43587,7 @@ var jsonFieldsNameOfPermissionActionImpactPreview = [7]string{
 	2: "page_count",
 	3: "package_count",
 	4: "role_count",
-	5: "collaboration_workspace_count",
+	5: "workspace_count",
 	6: "user_count",
 }
 
@@ -43413,17 +43660,17 @@ func (s *PermissionActionImpactPreview) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"role_count\"")
 			}
-		case "collaboration_workspace_count":
+		case "workspace_count":
 			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int64()
-				s.CollaborationWorkspaceCount = int64(v)
+				s.WorkspaceCount = int64(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_count\"")
+				return errors.Wrap(err, "decode field \"workspace_count\"")
 			}
 		case "user_count":
 			requiredBitSet[0] |= 1 << 6
@@ -45612,8 +45859,8 @@ func (s *RefreshStats) encodeFields(e *jx.Encoder) {
 		e.Int64(s.RoleCount)
 	}
 	{
-		e.FieldStart("collaboration_workspace_count")
-		e.Int64(s.CollaborationWorkspaceCount)
+		e.FieldStart("workspace_count")
+		e.Int64(s.WorkspaceCount)
 	}
 	{
 		e.FieldStart("user_count")
@@ -45633,7 +45880,7 @@ var jsonFieldsNameOfRefreshStats = [7]string{
 	0: "requested_package_count",
 	1: "impacted_package_count",
 	2: "role_count",
-	3: "collaboration_workspace_count",
+	3: "workspace_count",
 	4: "user_count",
 	5: "elapsed_milliseconds",
 	6: "finished_at",
@@ -45684,17 +45931,17 @@ func (s *RefreshStats) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"role_count\"")
 			}
-		case "collaboration_workspace_count":
+		case "workspace_count":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int64()
-				s.CollaborationWorkspaceCount = int64(v)
+				s.WorkspaceCount = int64(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_count\"")
+				return errors.Wrap(err, "decode field \"workspace_count\"")
 			}
 		case "user_count":
 			requiredBitSet[0] |= 1 << 4
@@ -48611,9 +48858,9 @@ func (s *RiskAuditSummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceCount.Set {
-			e.FieldStart("collaboration_workspace_count")
-			s.CollaborationWorkspaceCount.Encode(e)
+		if s.WorkspaceCount.Set {
+			e.FieldStart("workspace_count")
+			s.WorkspaceCount.Encode(e)
 		}
 	}
 }
@@ -48628,7 +48875,7 @@ var jsonFieldsNameOfRiskAuditSummary = [10]string{
 	6: "feature_group_id",
 	7: "template_name",
 	8: "package_count",
-	9: "collaboration_workspace_count",
+	9: "workspace_count",
 }
 
 // Decode decodes RiskAuditSummary from json.
@@ -48729,15 +48976,15 @@ func (s *RiskAuditSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"package_count\"")
 			}
-		case "collaboration_workspace_count":
+		case "workspace_count":
 			if err := func() error {
-				s.CollaborationWorkspaceCount.Reset()
-				if err := s.CollaborationWorkspaceCount.Decode(d); err != nil {
+				s.WorkspaceCount.Reset()
+				if err := s.WorkspaceCount.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_count\"")
+				return errors.Wrap(err, "decode field \"workspace_count\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -69779,14 +70026,14 @@ func (s *UserAssignRolesRequest) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *UserCollaborationWorkspacesResponse) Encode(e *jx.Encoder) {
+func (s *UserCollaborationsResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *UserCollaborationWorkspacesResponse) encodeFields(e *jx.Encoder) {
+func (s *UserCollaborationsResponse) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("records")
 		e.ArrStart()
@@ -69797,14 +70044,14 @@ func (s *UserCollaborationWorkspacesResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUserCollaborationWorkspacesResponse = [1]string{
+var jsonFieldsNameOfUserCollaborationsResponse = [1]string{
 	0: "records",
 }
 
-// Decode decodes UserCollaborationWorkspacesResponse from json.
-func (s *UserCollaborationWorkspacesResponse) Decode(d *jx.Decoder) error {
+// Decode decodes UserCollaborationsResponse from json.
+func (s *UserCollaborationsResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode UserCollaborationWorkspacesResponse to nil")
+		return errors.New("invalid: unable to decode UserCollaborationsResponse to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -69813,9 +70060,9 @@ func (s *UserCollaborationWorkspacesResponse) Decode(d *jx.Decoder) error {
 		case "records":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Records = make([]UserCollaborationWorkspacesResponseRecordsItem, 0)
+				s.Records = make([]UserCollaborationsResponseRecordsItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem UserCollaborationWorkspacesResponseRecordsItem
+					var elem UserCollaborationsResponseRecordsItem
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -69833,7 +70080,7 @@ func (s *UserCollaborationWorkspacesResponse) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode UserCollaborationWorkspacesResponse")
+		return errors.Wrap(err, "decode UserCollaborationsResponse")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -69850,8 +70097,8 @@ func (s *UserCollaborationWorkspacesResponse) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfUserCollaborationWorkspacesResponse) {
-					name = jsonFieldsNameOfUserCollaborationWorkspacesResponse[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfUserCollaborationsResponse) {
+					name = jsonFieldsNameOfUserCollaborationsResponse[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -69872,27 +70119,27 @@ func (s *UserCollaborationWorkspacesResponse) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *UserCollaborationWorkspacesResponse) MarshalJSON() ([]byte, error) {
+func (s *UserCollaborationsResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *UserCollaborationWorkspacesResponse) UnmarshalJSON(data []byte) error {
+func (s *UserCollaborationsResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) Encode(e *jx.Encoder) {
+func (s *UserCollaborationsResponseRecordsItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) encodeFields(e *jx.Encoder) {
+func (s *UserCollaborationsResponseRecordsItem) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		json.EncodeUUID(e, s.ID)
@@ -69907,16 +70154,16 @@ func (s *UserCollaborationWorkspacesResponseRecordsItem) encodeFields(e *jx.Enco
 	}
 }
 
-var jsonFieldsNameOfUserCollaborationWorkspacesResponseRecordsItem = [3]string{
+var jsonFieldsNameOfUserCollaborationsResponseRecordsItem = [3]string{
 	0: "id",
 	1: "name",
 	2: "status",
 }
 
-// Decode decodes UserCollaborationWorkspacesResponseRecordsItem from json.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) Decode(d *jx.Decoder) error {
+// Decode decodes UserCollaborationsResponseRecordsItem from json.
+func (s *UserCollaborationsResponseRecordsItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode UserCollaborationWorkspacesResponseRecordsItem to nil")
+		return errors.New("invalid: unable to decode UserCollaborationsResponseRecordsItem to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -69963,7 +70210,7 @@ func (s *UserCollaborationWorkspacesResponseRecordsItem) Decode(d *jx.Decoder) e
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode UserCollaborationWorkspacesResponseRecordsItem")
+		return errors.Wrap(err, "decode UserCollaborationsResponseRecordsItem")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -69980,8 +70227,8 @@ func (s *UserCollaborationWorkspacesResponseRecordsItem) Decode(d *jx.Decoder) e
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfUserCollaborationWorkspacesResponseRecordsItem) {
-					name = jsonFieldsNameOfUserCollaborationWorkspacesResponseRecordsItem[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfUserCollaborationsResponseRecordsItem) {
+					name = jsonFieldsNameOfUserCollaborationsResponseRecordsItem[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -70002,14 +70249,14 @@ func (s *UserCollaborationWorkspacesResponseRecordsItem) Decode(d *jx.Decoder) e
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) MarshalJSON() ([]byte, error) {
+func (s *UserCollaborationsResponseRecordsItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *UserCollaborationWorkspacesResponseRecordsItem) UnmarshalJSON(data []byte) error {
+func (s *UserCollaborationsResponseRecordsItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -71471,8 +71718,8 @@ func (s *UserPermissionCollaborationMember) encodeFields(e *jx.Encoder) {
 		e.Str(s.ID)
 	}
 	{
-		e.FieldStart("collaboration_workspace_id")
-		e.Str(s.CollaborationWorkspaceID)
+		e.FieldStart("workspace_id")
+		e.Str(s.WorkspaceID)
 	}
 	{
 		e.FieldStart("user_id")
@@ -71494,7 +71741,7 @@ func (s *UserPermissionCollaborationMember) encodeFields(e *jx.Encoder) {
 
 var jsonFieldsNameOfUserPermissionCollaborationMember = [6]string{
 	0: "id",
-	1: "collaboration_workspace_id",
+	1: "workspace_id",
 	2: "user_id",
 	3: "role_code",
 	4: "status",
@@ -71522,17 +71769,17 @@ func (s *UserPermissionCollaborationMember) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
-				s.CollaborationWorkspaceID = string(v)
+				s.WorkspaceID = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		case "user_id":
 			requiredBitSet[0] |= 1 << 2
@@ -72011,20 +72258,20 @@ func (s *UserPermissionDiagnosisContext) encodeFields(e *jx.Encoder) {
 		e.Str(s.BindingWorkspaceID)
 	}
 	{
-		e.FieldStart("current_collaboration_workspace_id")
-		e.Str(s.CurrentCollaborationWorkspaceID)
+		e.FieldStart("current_workspace_id")
+		e.Str(s.CurrentWorkspaceID)
 	}
 	{
-		e.FieldStart("current_collaboration_workspace_name")
-		e.Str(s.CurrentCollaborationWorkspaceName)
+		e.FieldStart("current_workspace_name")
+		e.Str(s.CurrentWorkspaceName)
 	}
 }
 
 var jsonFieldsNameOfUserPermissionDiagnosisContext = [4]string{
 	0: "type",
 	1: "binding_workspace_id",
-	2: "current_collaboration_workspace_id",
-	3: "current_collaboration_workspace_name",
+	2: "current_workspace_id",
+	3: "current_workspace_name",
 }
 
 // Decode decodes UserPermissionDiagnosisContext from json.
@@ -72060,29 +72307,29 @@ func (s *UserPermissionDiagnosisContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"binding_workspace_id\"")
 			}
-		case "current_collaboration_workspace_id":
+		case "current_workspace_id":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
-				s.CurrentCollaborationWorkspaceID = string(v)
+				s.CurrentWorkspaceID = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"current_workspace_id\"")
 			}
-		case "current_collaboration_workspace_name":
+		case "current_workspace_name":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.CurrentCollaborationWorkspaceName = string(v)
+				s.CurrentWorkspaceName = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_collaboration_workspace_name\"")
+				return errors.Wrap(err, "decode field \"current_workspace_name\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -72170,15 +72417,15 @@ func (s *UserPermissionDiagnosisResponse) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
-		if s.CollaborationWorkspaceMember.Set {
-			e.FieldStart("collaboration_workspace_member")
-			s.CollaborationWorkspaceMember.Encode(e)
+		if s.CollaborationMember.Set {
+			e.FieldStart("collaboration_member")
+			s.CollaborationMember.Encode(e)
 		}
 	}
 	{
-		e.FieldStart("collaboration_workspace_packages")
+		e.FieldStart("workspace_packages")
 		e.ArrStart()
-		for _, elem := range s.CollaborationWorkspacePackages {
+		for _, elem := range s.WorkspacePackages {
 			elem.Encode(e)
 		}
 		e.ArrEnd()
@@ -72204,8 +72451,8 @@ var jsonFieldsNameOfUserPermissionDiagnosisResponse = [8]string{
 	1: "context",
 	2: "snapshot",
 	3: "roles",
-	4: "collaboration_workspace_member",
-	5: "collaboration_workspace_packages",
+	4: "collaboration_member",
+	5: "workspace_packages",
 	6: "diagnosis",
 	7: "menus",
 }
@@ -72267,33 +72514,33 @@ func (s *UserPermissionDiagnosisResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"roles\"")
 			}
-		case "collaboration_workspace_member":
+		case "collaboration_member":
 			if err := func() error {
-				s.CollaborationWorkspaceMember.Reset()
-				if err := s.CollaborationWorkspaceMember.Decode(d); err != nil {
+				s.CollaborationMember.Reset()
+				if err := s.CollaborationMember.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_member\"")
+				return errors.Wrap(err, "decode field \"collaboration_member\"")
 			}
-		case "collaboration_workspace_packages":
+		case "workspace_packages":
 			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
-				s.CollaborationWorkspacePackages = make([]FeaturePackageRef, 0)
+				s.WorkspacePackages = make([]FeaturePackageRef, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem FeaturePackageRef
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
-					s.CollaborationWorkspacePackages = append(s.CollaborationWorkspacePackages, elem)
+					s.WorkspacePackages = append(s.WorkspacePackages, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_packages\"")
+				return errors.Wrap(err, "decode field \"workspace_packages\"")
 			}
 		case "diagnosis":
 			if err := func() error {
@@ -72419,8 +72666,8 @@ func (s *UserPermissionDiagnosisResult) encodeFields(e *jx.Encoder) {
 		e.Bool(s.BypassedBySuperAdmin)
 	}
 	{
-		e.FieldStart("blocked_by_collaboration_workspace")
-		e.Bool(s.BlockedByCollaborationWorkspace)
+		e.FieldStart("blocked_by_collaboration")
+		e.Bool(s.BlockedByCollaboration)
 	}
 	{
 		if s.DenialStage.Set {
@@ -72497,7 +72744,7 @@ var jsonFieldsNameOfUserPermissionDiagnosisResult = [19]string{
 	3:  "reasons",
 	4:  "matched_in_snapshot",
 	5:  "bypassed_by_super_admin",
-	6:  "blocked_by_collaboration_workspace",
+	6:  "blocked_by_collaboration",
 	7:  "denial_stage",
 	8:  "denial_reason",
 	9:  "member_status",
@@ -72599,17 +72846,17 @@ func (s *UserPermissionDiagnosisResult) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"bypassed_by_super_admin\"")
 			}
-		case "blocked_by_collaboration_workspace":
+		case "blocked_by_collaboration":
 			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
-				s.BlockedByCollaborationWorkspace = bool(v)
+				s.BlockedByCollaboration = bool(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"blocked_by_collaboration_workspace\"")
+				return errors.Wrap(err, "decode field \"blocked_by_collaboration\"")
 			}
 		case "denial_stage":
 			if err := func() error {
@@ -74979,9 +75226,9 @@ func (s *WorkspaceSummary) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
@@ -74996,7 +75243,7 @@ var jsonFieldsNameOfWorkspaceSummary = [7]string{
 	2: "name",
 	3: "code",
 	4: "owner_user_id",
-	5: "collaboration_workspace_id",
+	5: "workspace_id",
 	6: "status",
 }
 
@@ -75065,15 +75312,15 @@ func (s *WorkspaceSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"owner_user_id\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		case "status":
 			requiredBitSet[0] |= 1 << 6
@@ -75297,9 +75544,9 @@ func (s *WorkspaceSwitchResponse) encodeFields(e *jx.Encoder) {
 		s.AuthWorkspaceType.Encode(e)
 	}
 	{
-		if s.CollaborationWorkspaceID.Set {
-			e.FieldStart("collaboration_workspace_id")
-			s.CollaborationWorkspaceID.Encode(e)
+		if s.WorkspaceID.Set {
+			e.FieldStart("workspace_id")
+			s.WorkspaceID.Encode(e)
 		}
 	}
 	{
@@ -75311,7 +75558,7 @@ func (s *WorkspaceSwitchResponse) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfWorkspaceSwitchResponse = [4]string{
 	0: "auth_workspace_id",
 	1: "auth_workspace_type",
-	2: "collaboration_workspace_id",
+	2: "workspace_id",
 	3: "workspace",
 }
 
@@ -75346,15 +75593,15 @@ func (s *WorkspaceSwitchResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"auth_workspace_type\"")
 			}
-		case "collaboration_workspace_id":
+		case "workspace_id":
 			if err := func() error {
-				s.CollaborationWorkspaceID.Reset()
-				if err := s.CollaborationWorkspaceID.Decode(d); err != nil {
+				s.WorkspaceID.Reset()
+				if err := s.WorkspaceID.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
+				return errors.Wrap(err, "decode field \"workspace_id\"")
 			}
 		case "workspace":
 			requiredBitSet[0] |= 1 << 3

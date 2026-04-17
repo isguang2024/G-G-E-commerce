@@ -1,4 +1,4 @@
-﻿// Package handlers_test provides smoke tests for the ogen bridge layer.
+// Package handlers_test provides smoke tests for the ogen bridge layer.
 // These tests verify that HTTP requests correctly route through ogen →
 // APIHandler and return expected status codes and response shapes.
 //
@@ -158,7 +158,7 @@ func testEngine(t *testing.T) *gin.Engine {
 		ctx := context.WithValue(c.Request.Context(), handlers.CtxUserID, c.GetString("user_id"))
 		ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
 		ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
-		ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
+		ctx = context.WithValue(ctx, handlers.CtxCollaborationID, c.GetString("collaboration_id"))
 		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
 		req := c.Request.Clone(ctx)
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
@@ -185,7 +185,7 @@ func testEngine(t *testing.T) *gin.Engine {
 			authed.GET("/roles", ogenBridgeAuth)
 			authed.GET("/menus/tree", ogenBridgeAuth)
 			authed.GET("/feature-packages", ogenBridgeAuth)
-			authed.GET("/collaboration-workspaces", ogenBridgeAuth)
+			authed.GET("/workspaces/collaboration", ogenBridgeAuth)
 			authed.GET("/auth/me", ogenBridgeAuth)
 		}
 	}
@@ -304,10 +304,10 @@ func TestSmokeFeaturePackagesWithoutTokenReturns401(t *testing.T) {
 }
 
 // TestSmokeCollaborationWorkspacesWithoutTokenReturns401 verifies that
-// /collaboration-workspaces requires authentication.
+// /workspaces/collaboration requires authentication.
 func TestSmokeCollaborationWorkspacesWithoutTokenReturns401(t *testing.T) {
 	r := testEngine(t)
-	w := doRequest(t, r, http.MethodGet, "/api/v1/collaboration-workspaces", nil, nil)
+	w := doRequest(t, r, http.MethodGet, "/api/v1/workspaces/collaboration", nil, nil)
 
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("want 401, got %d — body: %s", w.Code, w.Body.String())
@@ -406,4 +406,5 @@ func TestSmokeAuthMeWithoutTokenReturns401(t *testing.T) {
 		t.Fatalf("want 401, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
+
 

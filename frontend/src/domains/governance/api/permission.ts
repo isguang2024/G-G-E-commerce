@@ -12,7 +12,7 @@ import {
   normalizeFeaturePackage,
   normalizeFeaturePackageRelationTree,
   normalizeRefreshStats,
-  normalizeCollaborationWorkspace,
+  normalizeCollaboration,
   type V5Query,
   type V5RequestBody
 } from './_shared'
@@ -156,7 +156,7 @@ export async function fetchGetPermissionActionImpactPreview(id: string) {
     pageCount: Number(res.page_count ?? 0),
     packageCount: Number(res.package_count ?? 0),
     roleCount: Number(res.role_count ?? 0),
-    collaborationWorkspaceCount: Number(res.collaboration_workspace_count ?? 0),
+    collaborationWorkspaceCount: Number(res.workspace_count ?? (res as any).collaboration_workspace_count ?? 0),
     userCount: Number(res.user_count ?? 0)
   }
 }
@@ -310,13 +310,13 @@ export async function fetchGetFeaturePackageOptions(
   }
 }
 
-export async function fetchGetCollaborationWorkspaceOptions(
-  params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
+export async function fetchGetCollaborationOptions(
+  params?: Partial<Api.SystemManage.CollaborationSearchParams>
 ) {
   void params
-  const res = await unwrap(v5Client.GET('/collaboration-workspaces/options'))
+  const res = await unwrap(v5Client.GET('/workspaces/collaboration/options'))
   return {
-    records: (res.records || []).map(normalizeCollaborationWorkspace),
+    records: (res.records || []).map(normalizeCollaboration),
     total: res.total || 0
   }
 }
@@ -500,14 +500,14 @@ export async function fetchSetFeaturePackageMenus(
 /** 获取已开通当前功能包的协作空间 */
 export async function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
   const res = await unwrap(
-    v5Client.GET('/feature-packages/{id}/collaboration-workspaces', {
+    v5Client.GET('/feature-packages/{id}/workspaces/collaboration', {
       params: { path: { id } }
     })
   )
   return {
     collaboration_workspace_ids: (res.records || [])
-      .map((item: { id?: string; collaboration_workspace_id?: string }) =>
-        `${item.id || item.collaboration_workspace_id || ''}`.trim()
+      .map((item: { id?: string; workspace_id?: string }) =>
+        `${item.id || item.workspace_id || ''}`.trim()
       )
       .filter(Boolean)
   } satisfies Api.SystemManage.FeaturePackageCollaborationWorkspaceBinding
@@ -520,11 +520,11 @@ export async function fetchSetFeaturePackageCollaborationWorkspaces(
     | string[]
     | Api.SystemManage.FeaturePackageCollaborationWorkspaceSetParams
 ) {
-  const body: V5RequestBody<'/feature-packages/{id}/collaboration-workspaces', 'put'> = Array.isArray(collaborationWorkspaceIds)
+  const body: V5RequestBody<'/feature-packages/{id}/workspaces/collaboration', 'put'> = Array.isArray(collaborationWorkspaceIds)
     ? { ids: collaborationWorkspaceIds }
     : { ids: collaborationWorkspaceIds.collaboration_workspace_ids }
   const res = await unwrap(
-    v5Client.PUT('/feature-packages/{id}/collaboration-workspaces', {
+    v5Client.PUT('/feature-packages/{id}/workspaces/collaboration', {
       params: { path: { id } },
       body
     })
@@ -537,12 +537,12 @@ export async function fetchGetCollaborationWorkspaceFeaturePackages(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const query: V5Query<'/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', 'get'> =
+  const query: V5Query<'/feature-packages/workspaces/collaboration/{workspaceId}', 'get'> =
     appKey ? { app_key: appKey } : {}
   const res = await unwrap(
-    v5Client.GET('/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', {
+    v5Client.GET('/feature-packages/workspaces/collaboration/{workspaceId}', {
       params: {
-        path: { collaborationWorkspaceId },
+        path: { workspaceId: collaborationWorkspaceId },
         query
       }
     })
@@ -559,14 +559,14 @@ export async function fetchSetCollaborationWorkspaceFeaturePackages(
   packageIds: string[] | Api.SystemManage.CollaborationWorkspaceFeaturePackageSetParams,
   appKey?: string
 ) {
-  const query: V5Query<'/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', 'put'> =
+  const query: V5Query<'/feature-packages/workspaces/collaboration/{workspaceId}', 'put'> =
     appKey ? { app_key: appKey } : {}
-  const body: V5RequestBody<'/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', 'put'> =
+  const body: V5RequestBody<'/feature-packages/workspaces/collaboration/{workspaceId}', 'put'> =
     Array.isArray(packageIds) ? { ids: packageIds } : { ids: packageIds.package_ids }
   const res = await unwrap(
-    v5Client.PUT('/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', {
+    v5Client.PUT('/feature-packages/workspaces/collaboration/{workspaceId}', {
       params: {
-        path: { collaborationWorkspaceId },
+        path: { workspaceId: collaborationWorkspaceId },
         query
       },
       body
@@ -582,7 +582,7 @@ export async function fetchGetFeaturePackageImpactPreview(id: string) {
   return {
     packageId: res?.package_id || '',
     roleCount: Number(res?.role_count ?? 0),
-    collaborationWorkspaceCount: Number(res?.collaboration_workspace_count ?? 0),
+    collaborationWorkspaceCount: Number(res?.workspace_count ?? (res as any)?.collaboration_workspace_count ?? 0),
     userCount: Number(res?.user_count ?? 0),
     menuCount: Number(res?.menu_count ?? 0),
     actionCount: Number(res?.action_count ?? 0)
@@ -616,7 +616,8 @@ export async function fetchGetFeaturePackageVersions(id: string, current = 1, si
         child_package_ids: item?.snapshot?.child_package_ids || [],
         action_ids: item?.snapshot?.action_ids || [],
         menu_ids: item?.snapshot?.menu_ids || [],
-        collaboration_workspace_ids: item?.snapshot?.collaboration_workspace_ids || [],
+        collaboration_workspace_ids:
+          item?.snapshot?.workspace_ids || (item?.snapshot as any)?.collaboration_workspace_ids || [],
         snapshot_created_at: item?.snapshot?.snapshot_created_at || ''
       },
       operatorId: item?.operator_id || '',

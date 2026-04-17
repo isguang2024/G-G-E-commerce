@@ -1,4 +1,4 @@
-// system.go — Phase 4 ogen handlers for the system app/space domain.
+﻿// system.go — Phase 4 ogen handlers for the system app/space domain.
 // Hooks into the already-injected appSvc and spaceSvc.
 package handlers
 
@@ -488,3 +488,4 @@ func systemMenuSpaceHostBindingItemsFromModels(items []spacemod.HostBindingRecor
 	}
 	return out
 }
+

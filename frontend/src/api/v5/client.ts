@@ -19,8 +19,6 @@ import {
 } from '@/utils/http/auth-session'
 import {
   getCurrentAuthWorkspaceId,
-  getCurrentCollaborationWorkspaceId,
-  getCurrentContextMode,
   getCurrentRuntimeBackendEntryURL,
   getHttpAccessToken
 } from '@/utils/http/request-context'
@@ -75,7 +73,6 @@ function rewriteRequestWithDynamicBase(request: Request, dynamicBaseUrl: string)
 
 // 注入 Authorization + 工作空间头：与原 axios 拦截器行为对齐。
 // X-Auth-Workspace-Id: 当前鉴权工作空间（个人 / 协作）
-// X-Collaboration-Workspace-Id: 仅在协作模式下注入
 v5Client.use({
   onRequest({ request }) {
     let nextRequest = request
@@ -98,16 +95,6 @@ v5Client.use({
     const currentAuthWorkspaceId = getCurrentAuthWorkspaceId()
     if (!shouldSkipWorkspaceContext && currentAuthWorkspaceId) {
       nextRequest.headers.set('X-Auth-Workspace-Id', currentAuthWorkspaceId)
-    }
-
-    const currentCollaborationWorkspaceId = getCurrentCollaborationWorkspaceId()
-    const currentContextMode = getCurrentContextMode()
-    if (
-      !shouldSkipWorkspaceContext &&
-      currentContextMode === 'collaboration' &&
-      currentCollaborationWorkspaceId
-    ) {
-      nextRequest.headers.set('X-Collaboration-Workspace-Id', currentCollaborationWorkspaceId)
     }
 
     return nextRequest

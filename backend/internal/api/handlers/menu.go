@@ -1,4 +1,4 @@
-// menu.go: ogen handler implementations for /menus/*.
+﻿// menu.go: ogen handler implementations for /menus/*.
 package handlers
 
 import (
@@ -262,3 +262,4 @@ func filterStringArray(value any) []string {
 	}
 	return result
 }
+

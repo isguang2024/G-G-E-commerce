@@ -12,10 +12,6 @@ import (
 	appctx "github.com/maben/backend/internal/pkg/appctx"
 )
 
-const (
-	collaborationWorkspaceHeader = "X-Collaboration-Workspace-Id"
-)
-
 func AppContext(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if db == nil {
@@ -39,10 +35,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		userID := contextUUID(c, "user_id")
-		collaborationWorkspaceID := contextUUID(c, "collaboration_workspace_id")
-		if collaborationWorkspaceID == nil {
-			collaborationWorkspaceID = headerUUID(c.GetHeader(collaborationWorkspaceHeader))
-		}
+		collaborationWorkspaceID := spacepkg.ResolveContextCollaborationWorkspaceID(db, c)
 
 		// 优先尝试 Level 2 入口绑定（path 感知）
 		spaceKey, spaceResolvedBy := "", ""
@@ -79,7 +72,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		c.Set("menu_space_key", spaceKey)
 		c.Set("resolved_by", spaceResolvedBy)
 		if collaborationWorkspaceID != nil {
-			c.Set("collaboration_workspace_id", collaborationWorkspaceID.String())
+			c.Set("collaboration_id", collaborationWorkspaceID.String())
 		}
 
 		c.Next()

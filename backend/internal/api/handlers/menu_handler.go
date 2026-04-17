@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"go.uber.org/zap"
@@ -17,3 +17,4 @@ type menuAPIHandler struct {
 func newMenuAPIHandler(menuSvc menu.MenuService, auditRecorder audit.Recorder, logger *zap.Logger) *menuAPIHandler {
 	return &menuAPIHandler{menuSvc: menuSvc, audit: auditRecorder, logger: logger}
 }
+

@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useCollaborationStore } from '@/store/modules/collaboration'
   import { useMenuSpaceStore } from '@/domains/app-runtime/menu-space'
 
   defineOptions({ name: 'AppContextBadge' })
@@ -30,14 +30,14 @@
     }
   )
 
-  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const collaborationStore = useCollaborationStore()
   const menuSpaceStore = useMenuSpaceStore()
   const {
     currentContextMode,
-    currentCollaborationWorkspace,
+    currentCollaboration,
     currentAuthWorkspace,
     currentAuthWorkspaceType
-  } = storeToRefs(collaborationWorkspaceStore)
+  } = storeToRefs(collaborationStore)
   const { currentSpace, shouldShowSpaceBadge, isDefaultSpace } = storeToRefs(menuSpaceStore)
 
   const modeLabel = computed(() =>
@@ -46,14 +46,14 @@
   const scopeName = computed(() =>
     currentContextMode.value === 'personal'
       ? currentAuthWorkspace.value?.name || '当前个人空间'
-      : currentCollaborationWorkspace.value?.name ||
+      : currentCollaboration.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未启用协作空间视图'
   )
   const tagType = computed(() => (currentContextMode.value === 'personal' ? 'success' : 'warning'))
   const collaborationWorkspaceViewName = computed(() =>
     currentAuthWorkspaceType.value === 'collaboration'
-      ? currentCollaborationWorkspace.value?.name ||
+      ? currentCollaboration.value?.name ||
         currentAuthWorkspace.value?.name ||
         '当前协作空间'
       : '未启用协作空间视图'

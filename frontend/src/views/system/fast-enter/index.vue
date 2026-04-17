@@ -211,7 +211,7 @@
           <ElFormItem v-else-if="drawerTargetType === 'path'" label="内部路径">
             <ElInput
               v-model="drawerDraft.link"
-              placeholder="/system/user 或 /collaboration-workspace/members"
+              placeholder="/system/user 或 /collaboration/members"
             />
           </ElFormItem>
 
@@ -219,7 +219,7 @@
             <span>支持以 `/` 开头的站内路径。</span>
             <span
               >例如
-              `/system/user`、`/system/api-endpoint`、`/collaboration-workspace/members`。</span
+              `/system/user`、`/system/api-endpoint`、`/collaboration/members`。</span
             >
           </div>
 
@@ -288,11 +288,11 @@
     'MessageRecordManage',
     'MessageSenderManage',
     'MessageRecipientGroupManage',
-    'CollaborationWorkspaceMessageManage',
-    'CollaborationWorkspaceMessageTemplateManage',
-    'CollaborationWorkspaceMessageRecordManage',
-    'CollaborationWorkspaceMessageSenderManage',
-    'CollaborationWorkspaceMessageRecipientGroupManage'
+    'CollaborationMessageManage',
+    'CollaborationMessageTemplateManage',
+    'CollaborationMessageRecordManage',
+    'CollaborationMessageSenderManage',
+    'CollaborationMessageRecipientGroupManage'
   ])
 
   type DrawerApplicationDraft = FastEnterApplication & { id: string }

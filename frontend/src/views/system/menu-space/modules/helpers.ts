@@ -27,7 +27,7 @@ export function getAccessModeLabel(value?: string) {
   switch (`${value || 'all'}`.trim()) {
     case 'personal_workspace_admin':
       return '仅个人空间管理员'
-    case 'collaboration_workspace_admin':
+    case 'collaboration_admin':
       return '仅协作空间管理员'
     case 'role_codes':
       return '指定空间角色码'

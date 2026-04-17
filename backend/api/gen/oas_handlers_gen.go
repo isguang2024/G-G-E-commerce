@@ -33,24 +33,24 @@ func (c *codeRecorder) Unwrap() http.ResponseWriter {
 	return c.ResponseWriter
 }
 
-// handleAddCollaborationWorkspaceMemberRequest handles addCollaborationWorkspaceMember operation.
+// handleAddCollaborationMemberRequest handles addCollaborationMember operation.
 //
 // 添加协作空间成员.
 //
-// POST /collaboration-workspaces/{id}/members
-func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /workspaces/collaboration/{id}/members
+func (s *Server) handleAddCollaborationMemberRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("addCollaborationWorkspaceMember"),
+		otelogen.OperationID("addCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/members"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/members"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), AddCollaborationWorkspaceMemberOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), AddCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -105,15 +105,15 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: AddCollaborationWorkspaceMemberOperation,
-			ID:   "addCollaborationWorkspaceMember",
+			Name: AddCollaborationMemberOperation,
+			ID:   "addCollaborationMember",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, AddCollaborationWorkspaceMemberOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, AddCollaborationMemberOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -153,7 +153,7 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 			return
 		}
 	}
-	params, err := decodeAddCollaborationWorkspaceMemberParams(args, argsEscaped, r)
+	params, err := decodeAddCollaborationMemberParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -165,7 +165,7 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeAddCollaborationWorkspaceMemberRequest(r)
+	request, rawBody, close, err := s.decodeAddCollaborationMemberRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -185,9 +185,9 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    AddCollaborationWorkspaceMemberOperation,
+			OperationName:    AddCollaborationMemberOperation,
 			OperationSummary: "添加协作空间成员",
-			OperationID:      "addCollaborationWorkspaceMember",
+			OperationID:      "addCollaborationMember",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -200,8 +200,8 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceMemberAddRequest
-			Params   = AddCollaborationWorkspaceMemberParams
+			Request  = *CollaborationMemberAddRequest
+			Params   = AddCollaborationMemberParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -211,14 +211,14 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 		](
 			m,
 			mreq,
-			unpackAddCollaborationWorkspaceMemberParams,
+			unpackAddCollaborationMemberParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.AddCollaborationWorkspaceMember(ctx, request, params)
+				response, err = s.h.AddCollaborationMember(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.AddCollaborationWorkspaceMember(ctx, request, params)
+		response, err = s.h.AddCollaborationMember(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -226,7 +226,7 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 		return
 	}
 
-	if err := encodeAddCollaborationWorkspaceMemberResponse(response, w, span); err != nil {
+	if err := encodeAddCollaborationMemberResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -235,24 +235,24 @@ func (s *Server) handleAddCollaborationWorkspaceMemberRequest(args [1]string, ar
 	}
 }
 
-// handleAddCurrentCollaborationWorkspaceMemberRequest handles addCurrentCollaborationWorkspaceMember operation.
+// handleAddCurrentCollaborationMemberRequest handles addCurrentCollaborationMember operation.
 //
 // 添加当前协作空间成员.
 //
-// POST /collaboration-workspaces/current/members
-func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /collaboration/current/members
+func (s *Server) handleAddCurrentCollaborationMemberRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("addCurrentCollaborationWorkspaceMember"),
+		otelogen.OperationID("addCurrentCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), AddCurrentCollaborationWorkspaceMemberOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), AddCurrentCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -307,15 +307,15 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: AddCurrentCollaborationWorkspaceMemberOperation,
-			ID:   "addCurrentCollaborationWorkspaceMember",
+			Name: AddCurrentCollaborationMemberOperation,
+			ID:   "addCurrentCollaborationMember",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, AddCurrentCollaborationWorkspaceMemberOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, AddCurrentCollaborationMemberOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -357,7 +357,7 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeAddCurrentCollaborationWorkspaceMemberRequest(r)
+	request, rawBody, close, err := s.decodeAddCurrentCollaborationMemberRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -377,9 +377,9 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    AddCurrentCollaborationWorkspaceMemberOperation,
+			OperationName:    AddCurrentCollaborationMemberOperation,
 			OperationSummary: "添加当前协作空间成员",
-			OperationID:      "addCurrentCollaborationWorkspaceMember",
+			OperationID:      "addCurrentCollaborationMember",
 			Body:             request,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -387,7 +387,7 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceMemberAddRequest
+			Request  = *CollaborationMemberAddRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -400,12 +400,12 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.AddCurrentCollaborationWorkspaceMember(ctx, request)
+				response, err = s.h.AddCurrentCollaborationMember(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.AddCurrentCollaborationWorkspaceMember(ctx, request)
+		response, err = s.h.AddCurrentCollaborationMember(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -413,7 +413,7 @@ func (s *Server) handleAddCurrentCollaborationWorkspaceMemberRequest(args [0]str
 		return
 	}
 
-	if err := encodeAddCurrentCollaborationWorkspaceMemberResponse(response, w, span); err != nil {
+	if err := encodeAddCurrentCollaborationMemberResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -1746,24 +1746,24 @@ func (s *Server) handleCreateApiEndpointCategoryRequest(args [0]string, argsEsca
 	}
 }
 
-// handleCreateCollaborationWorkspaceRequest handles createCollaborationWorkspace operation.
+// handleCreateCollaborationRequest handles createCollaboration operation.
 //
 // 创建协作空间.
 //
-// POST /collaboration-workspaces
-func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /workspaces/collaboration
+func (s *Server) handleCreateCollaborationRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCollaborationWorkspace"),
+		otelogen.OperationID("createCollaboration"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCollaborationWorkspaceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -1818,15 +1818,15 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: CreateCollaborationWorkspaceOperation,
-			ID:   "createCollaborationWorkspace",
+			Name: CreateCollaborationOperation,
+			ID:   "createCollaboration",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, CreateCollaborationWorkspaceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, CreateCollaborationOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -1868,7 +1868,7 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeCreateCollaborationWorkspaceRequest(r)
+	request, rawBody, close, err := s.decodeCreateCollaborationRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -1888,9 +1888,9 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    CreateCollaborationWorkspaceOperation,
+			OperationName:    CreateCollaborationOperation,
 			OperationSummary: "创建协作空间",
-			OperationID:      "createCollaborationWorkspace",
+			OperationID:      "createCollaboration",
 			Body:             request,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -1898,7 +1898,7 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceSaveRequest
+			Request  = *CollaborationSaveRequest
 			Params   = struct{}
 			Response = *IDResult
 		)
@@ -1911,12 +1911,12 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.CreateCollaborationWorkspace(ctx, request)
+				response, err = s.h.CreateCollaboration(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.CreateCollaborationWorkspace(ctx, request)
+		response, err = s.h.CreateCollaboration(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -1924,7 +1924,7 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 		return
 	}
 
-	if err := encodeCreateCollaborationWorkspaceResponse(response, w, span); err != nil {
+	if err := encodeCreateCollaborationResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -1933,24 +1933,24 @@ func (s *Server) handleCreateCollaborationWorkspaceRequest(args [0]string, argsE
 	}
 }
 
-// handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest handles createCurrentCollaborationWorkspaceBoundaryRole operation.
+// handleCreateCurrentCollaborationBoundaryRoleRequest handles createCurrentCollaborationBoundaryRole operation.
 //
 // 创建当前协作空间角色(边界管理).
 //
-// POST /collaboration-workspaces/current/boundary/roles
-func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /collaboration/current/boundary/roles
+func (s *Server) handleCreateCurrentCollaborationBoundaryRoleRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("createCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -2005,15 +2005,15 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: CreateCurrentCollaborationWorkspaceBoundaryRoleOperation,
-			ID:   "createCurrentCollaborationWorkspaceBoundaryRole",
+			Name: CreateCurrentCollaborationBoundaryRoleOperation,
+			ID:   "createCurrentCollaborationBoundaryRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, CreateCurrentCollaborationWorkspaceBoundaryRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, CreateCurrentCollaborationBoundaryRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -2055,7 +2055,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(r)
+	request, rawBody, close, err := s.decodeCreateCurrentCollaborationBoundaryRoleRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -2075,9 +2075,9 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    CreateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+			OperationName:    CreateCurrentCollaborationBoundaryRoleOperation,
 			OperationSummary: "创建当前协作空间角色(边界管理)",
-			OperationID:      "createCurrentCollaborationWorkspaceBoundaryRole",
+			OperationID:      "createCurrentCollaborationBoundaryRole",
 			Body:             request,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -2085,7 +2085,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceRoleSaveRequest
+			Request  = *CollaborationRoleSaveRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -2098,12 +2098,12 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.CreateCurrentCollaborationWorkspaceBoundaryRole(ctx, request)
+				response, err = s.h.CreateCurrentCollaborationBoundaryRole(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.CreateCurrentCollaborationWorkspaceBoundaryRole(ctx, request)
+		response, err = s.h.CreateCurrentCollaborationBoundaryRole(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -2111,7 +2111,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		return
 	}
 
-	if err := encodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(response, w, span); err != nil {
+	if err := encodeCreateCurrentCollaborationBoundaryRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -2120,24 +2120,24 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	}
 }
 
-// handleCreateCurrentCollaborationWorkspaceRoleRequest handles createCurrentCollaborationWorkspaceRole operation.
+// handleCreateCurrentCollaborationRoleRequest handles createCurrentCollaborationRole operation.
 //
 // 创建当前协作空间角色.
 //
-// POST /collaboration-workspaces/current/roles
-func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /collaboration/current/roles
+func (s *Server) handleCreateCurrentCollaborationRoleRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createCurrentCollaborationWorkspaceRole"),
+		otelogen.OperationID("createCurrentCollaborationRole"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCurrentCollaborationWorkspaceRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateCurrentCollaborationRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -2192,15 +2192,15 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: CreateCurrentCollaborationWorkspaceRoleOperation,
-			ID:   "createCurrentCollaborationWorkspaceRole",
+			Name: CreateCurrentCollaborationRoleOperation,
+			ID:   "createCurrentCollaborationRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, CreateCurrentCollaborationWorkspaceRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, CreateCurrentCollaborationRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -2242,7 +2242,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeCreateCurrentCollaborationWorkspaceRoleRequest(r)
+	request, rawBody, close, err := s.decodeCreateCurrentCollaborationRoleRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -2262,9 +2262,9 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    CreateCurrentCollaborationWorkspaceRoleOperation,
+			OperationName:    CreateCurrentCollaborationRoleOperation,
 			OperationSummary: "创建当前协作空间角色",
-			OperationID:      "createCurrentCollaborationWorkspaceRole",
+			OperationID:      "createCurrentCollaborationRole",
 			Body:             request,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -2272,7 +2272,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceRoleSaveRequest
+			Request  = *CollaborationRoleSaveRequest
 			Params   = struct{}
 			Response = *MutationResult
 		)
@@ -2285,12 +2285,12 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.CreateCurrentCollaborationWorkspaceRole(ctx, request)
+				response, err = s.h.CreateCurrentCollaborationRole(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.CreateCurrentCollaborationWorkspaceRole(ctx, request)
+		response, err = s.h.CreateCurrentCollaborationRole(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -2298,7 +2298,7 @@ func (s *Server) handleCreateCurrentCollaborationWorkspaceRoleRequest(args [0]st
 		return
 	}
 
-	if err := encodeCreateCurrentCollaborationWorkspaceRoleResponse(response, w, span); err != nil {
+	if err := encodeCreateCurrentCollaborationRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -6096,24 +6096,24 @@ func (s *Server) handleDeleteAppHostBindingRequest(args [1]string, argsEscaped b
 	}
 }
 
-// handleDeleteCollaborationWorkspaceRequest handles deleteCollaborationWorkspace operation.
+// handleDeleteCollaborationRequest handles deleteCollaboration operation.
 //
 // 删除协作空间.
 //
-// DELETE /collaboration-workspaces/{id}
-func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// DELETE /workspaces/collaboration/{id}
+func (s *Server) handleDeleteCollaborationRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteCollaborationWorkspace"),
+		otelogen.OperationID("deleteCollaboration"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), DeleteCollaborationWorkspaceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), DeleteCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -6168,15 +6168,15 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: DeleteCollaborationWorkspaceOperation,
-			ID:   "deleteCollaborationWorkspace",
+			Name: DeleteCollaborationOperation,
+			ID:   "deleteCollaboration",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, DeleteCollaborationWorkspaceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, DeleteCollaborationOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -6216,7 +6216,7 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 			return
 		}
 	}
-	params, err := decodeDeleteCollaborationWorkspaceParams(args, argsEscaped, r)
+	params, err := decodeDeleteCollaborationParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -6233,9 +6233,9 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    DeleteCollaborationWorkspaceOperation,
+			OperationName:    DeleteCollaborationOperation,
 			OperationSummary: "删除协作空间",
-			OperationID:      "deleteCollaborationWorkspace",
+			OperationID:      "deleteCollaboration",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -6249,7 +6249,7 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 
 		type (
 			Request  = struct{}
-			Params   = DeleteCollaborationWorkspaceParams
+			Params   = DeleteCollaborationParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -6259,14 +6259,14 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 		](
 			m,
 			mreq,
-			unpackDeleteCollaborationWorkspaceParams,
+			unpackDeleteCollaborationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.DeleteCollaborationWorkspace(ctx, params)
+				response, err = s.h.DeleteCollaboration(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.DeleteCollaborationWorkspace(ctx, params)
+		response, err = s.h.DeleteCollaboration(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -6274,7 +6274,7 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 		return
 	}
 
-	if err := encodeDeleteCollaborationWorkspaceResponse(response, w, span); err != nil {
+	if err := encodeDeleteCollaborationResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -6283,24 +6283,24 @@ func (s *Server) handleDeleteCollaborationWorkspaceRequest(args [1]string, argsE
 	}
 }
 
-// handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest handles deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+// handleDeleteCurrentCollaborationBoundaryRoleRequest handles deleteCurrentCollaborationBoundaryRole operation.
 //
 // 删除当前协作空间角色(边界管理).
 //
-// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
-func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// DELETE /collaboration/current/boundary/roles/{roleId}
+func (s *Server) handleDeleteCurrentCollaborationBoundaryRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("deleteCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), DeleteCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -6355,15 +6355,15 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation,
-			ID:   "deleteCurrentCollaborationWorkspaceBoundaryRole",
+			Name: DeleteCurrentCollaborationBoundaryRoleOperation,
+			ID:   "deleteCurrentCollaborationBoundaryRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, DeleteCurrentCollaborationBoundaryRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -6403,7 +6403,7 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 			return
 		}
 	}
-	params, err := decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleParams(args, argsEscaped, r)
+	params, err := decodeDeleteCurrentCollaborationBoundaryRoleParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -6420,9 +6420,9 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation,
+			OperationName:    DeleteCurrentCollaborationBoundaryRoleOperation,
 			OperationSummary: "删除当前协作空间角色(边界管理)",
-			OperationID:      "deleteCurrentCollaborationWorkspaceBoundaryRole",
+			OperationID:      "deleteCurrentCollaborationBoundaryRole",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -6436,7 +6436,7 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 
 		type (
 			Request  = struct{}
-			Params   = DeleteCurrentCollaborationWorkspaceBoundaryRoleParams
+			Params   = DeleteCurrentCollaborationBoundaryRoleParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -6446,14 +6446,14 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		](
 			m,
 			mreq,
-			unpackDeleteCurrentCollaborationWorkspaceBoundaryRoleParams,
+			unpackDeleteCurrentCollaborationBoundaryRoleParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx, params)
+				response, err = s.h.DeleteCurrentCollaborationBoundaryRole(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx, params)
+		response, err = s.h.DeleteCurrentCollaborationBoundaryRole(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -6461,7 +6461,7 @@ func (s *Server) handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		return
 	}
 
-	if err := encodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(response, w, span); err != nil {
+	if err := encodeDeleteCurrentCollaborationBoundaryRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -11819,24 +11819,24 @@ func (s *Server) handleGetAuthMeRequest(args [0]string, argsEscaped bool, w http
 	}
 }
 
-// handleGetCollaborationWorkspaceRequest handles getCollaborationWorkspace operation.
+// handleGetCollaborationRequest handles getCollaboration operation.
 //
 // 获取协作空间详情.
 //
-// GET /collaboration-workspaces/{id}
-func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}
+func (s *Server) handleGetCollaborationRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspace"),
+		otelogen.OperationID("getCollaboration"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspaceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -11891,15 +11891,15 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspaceOperation,
-			ID:   "getCollaborationWorkspace",
+			Name: GetCollaborationOperation,
+			ID:   "getCollaboration",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspaceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -11939,7 +11939,7 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspaceParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -11952,13 +11952,13 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceItem
+	var response *CollaborationItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspaceOperation,
+			OperationName:    GetCollaborationOperation,
 			OperationSummary: "获取协作空间详情",
-			OperationID:      "getCollaborationWorkspace",
+			OperationID:      "getCollaboration",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -11972,8 +11972,8 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspaceParams
-			Response = *CollaborationWorkspaceItem
+			Params   = GetCollaborationParams
+			Response = *CollaborationItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11982,14 +11982,14 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspaceParams,
+			unpackGetCollaborationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspace(ctx, params)
+				response, err = s.h.GetCollaboration(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspace(ctx, params)
+		response, err = s.h.GetCollaboration(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -11997,7 +11997,7 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspaceResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -12006,24 +12006,24 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 	}
 }
 
-// handleGetCollaborationWorkspaceActionOriginsRequest handles getCollaborationWorkspaceActionOrigins operation.
+// handleGetCollaborationActionOriginsRequest handles getCollaborationActionOrigins operation.
 //
 // 获取协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/{id}/action-origins
-func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/action-origins
+func (s *Server) handleGetCollaborationActionOriginsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceActionOrigins"),
+		otelogen.OperationID("getCollaborationActionOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/action-origins"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/action-origins"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspaceActionOriginsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationActionOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -12078,15 +12078,15 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspaceActionOriginsOperation,
-			ID:   "getCollaborationWorkspaceActionOrigins",
+			Name: GetCollaborationActionOriginsOperation,
+			ID:   "getCollaborationActionOrigins",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspaceActionOriginsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationActionOriginsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -12126,7 +12126,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspaceActionOriginsParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationActionOriginsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -12139,13 +12139,13 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceActionOriginsResponse
+	var response *CollaborationActionOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspaceActionOriginsOperation,
+			OperationName:    GetCollaborationActionOriginsOperation,
 			OperationSummary: "获取协作空间功能权限来源",
-			OperationID:      "getCollaborationWorkspaceActionOrigins",
+			OperationID:      "getCollaborationActionOrigins",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -12159,8 +12159,8 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspaceActionOriginsParams
-			Response = *CollaborationWorkspaceActionOriginsResponse
+			Params   = GetCollaborationActionOriginsParams
+			Response = *CollaborationActionOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12169,14 +12169,14 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspaceActionOriginsParams,
+			unpackGetCollaborationActionOriginsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspaceActionOrigins(ctx, params)
+				response, err = s.h.GetCollaborationActionOrigins(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspaceActionOrigins(ctx, params)
+		response, err = s.h.GetCollaborationActionOrigins(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -12184,7 +12184,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspaceActionOriginsResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationActionOriginsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -12193,24 +12193,24 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 	}
 }
 
-// handleGetCollaborationWorkspaceActionsRequest handles getCollaborationWorkspaceActions operation.
+// handleGetCollaborationActionsRequest handles getCollaborationActions operation.
 //
 // 获取协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/{id}/actions
-func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/actions
+func (s *Server) handleGetCollaborationActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceActions"),
+		otelogen.OperationID("getCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/actions"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/actions"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspaceActionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -12265,15 +12265,15 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspaceActionsOperation,
-			ID:   "getCollaborationWorkspaceActions",
+			Name: GetCollaborationActionsOperation,
+			ID:   "getCollaborationActions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspaceActionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationActionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -12313,7 +12313,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspaceActionsParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationActionsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -12326,13 +12326,13 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceActionsResponse
+	var response *CollaborationActionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspaceActionsOperation,
+			OperationName:    GetCollaborationActionsOperation,
 			OperationSummary: "获取协作空间功能权限边界",
-			OperationID:      "getCollaborationWorkspaceActions",
+			OperationID:      "getCollaborationActions",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -12346,8 +12346,8 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspaceActionsParams
-			Response = *CollaborationWorkspaceActionsResponse
+			Params   = GetCollaborationActionsParams
+			Response = *CollaborationActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12356,14 +12356,14 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspaceActionsParams,
+			unpackGetCollaborationActionsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspaceActions(ctx, params)
+				response, err = s.h.GetCollaborationActions(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspaceActions(ctx, params)
+		response, err = s.h.GetCollaborationActions(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -12371,7 +12371,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspaceActionsResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationActionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -12380,24 +12380,24 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 	}
 }
 
-// handleGetCollaborationWorkspaceMenuOriginsRequest handles getCollaborationWorkspaceMenuOrigins operation.
+// handleGetCollaborationMenuOriginsRequest handles getCollaborationMenuOrigins operation.
 //
 // 获取协作空间菜单来源.
 //
-// GET /collaboration-workspaces/{id}/menu-origins
-func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/menu-origins
+func (s *Server) handleGetCollaborationMenuOriginsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceMenuOrigins"),
+		otelogen.OperationID("getCollaborationMenuOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/menu-origins"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/menu-origins"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspaceMenuOriginsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationMenuOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -12452,15 +12452,15 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspaceMenuOriginsOperation,
-			ID:   "getCollaborationWorkspaceMenuOrigins",
+			Name: GetCollaborationMenuOriginsOperation,
+			ID:   "getCollaborationMenuOrigins",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspaceMenuOriginsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationMenuOriginsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -12500,7 +12500,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspaceMenuOriginsParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationMenuOriginsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -12513,13 +12513,13 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMenuOriginsResponse
+	var response *CollaborationMenuOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspaceMenuOriginsOperation,
+			OperationName:    GetCollaborationMenuOriginsOperation,
 			OperationSummary: "获取协作空间菜单来源",
-			OperationID:      "getCollaborationWorkspaceMenuOrigins",
+			OperationID:      "getCollaborationMenuOrigins",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -12533,8 +12533,8 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspaceMenuOriginsParams
-			Response = *CollaborationWorkspaceMenuOriginsResponse
+			Params   = GetCollaborationMenuOriginsParams
+			Response = *CollaborationMenuOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12543,14 +12543,14 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspaceMenuOriginsParams,
+			unpackGetCollaborationMenuOriginsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspaceMenuOrigins(ctx, params)
+				response, err = s.h.GetCollaborationMenuOrigins(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspaceMenuOrigins(ctx, params)
+		response, err = s.h.GetCollaborationMenuOrigins(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -12558,7 +12558,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspaceMenuOriginsResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationMenuOriginsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -12567,24 +12567,24 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 	}
 }
 
-// handleGetCollaborationWorkspaceMenusRequest handles getCollaborationWorkspaceMenus operation.
+// handleGetCollaborationMenusRequest handles getCollaborationMenus operation.
 //
 // 获取协作空间菜单边界.
 //
-// GET /collaboration-workspaces/{id}/menus
-func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/menus
+func (s *Server) handleGetCollaborationMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspaceMenus"),
+		otelogen.OperationID("getCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/menus"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/menus"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspaceMenusOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -12639,15 +12639,15 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspaceMenusOperation,
-			ID:   "getCollaborationWorkspaceMenus",
+			Name: GetCollaborationMenusOperation,
+			ID:   "getCollaborationMenus",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspaceMenusOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationMenusOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -12687,7 +12687,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspaceMenusParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationMenusParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -12700,13 +12700,13 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMenusResponse
+	var response *CollaborationMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspaceMenusOperation,
+			OperationName:    GetCollaborationMenusOperation,
 			OperationSummary: "获取协作空间菜单边界",
-			OperationID:      "getCollaborationWorkspaceMenus",
+			OperationID:      "getCollaborationMenus",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -12720,8 +12720,8 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspaceMenusParams
-			Response = *CollaborationWorkspaceMenusResponse
+			Params   = GetCollaborationMenusParams
+			Response = *CollaborationMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12730,14 +12730,14 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspaceMenusParams,
+			unpackGetCollaborationMenusParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspaceMenus(ctx, params)
+				response, err = s.h.GetCollaborationMenus(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspaceMenus(ctx, params)
+		response, err = s.h.GetCollaborationMenus(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -12745,7 +12745,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspaceMenusResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationMenusResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -12754,24 +12754,24 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 	}
 }
 
-// handleGetCollaborationWorkspacePackagesRequest handles getCollaborationWorkspacePackages operation.
+// handleGetCollaborationPackagesRequest handles getCollaborationPackages operation.
 //
 // 获取协作空间功能包.
 //
-// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /feature-packages/workspaces/collaboration/{workspaceId}
+func (s *Server) handleGetCollaborationPackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCollaborationWorkspacePackages"),
+		otelogen.OperationID("getCollaborationPackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+		semconv.HTTPRouteKey.String("/feature-packages/workspaces/collaboration/{workspaceId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationWorkspacePackagesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCollaborationPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -12826,15 +12826,15 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCollaborationWorkspacePackagesOperation,
-			ID:   "getCollaborationWorkspacePackages",
+			Name: GetCollaborationPackagesOperation,
+			ID:   "getCollaborationPackages",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationWorkspacePackagesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCollaborationPackagesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -12874,7 +12874,7 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 			return
 		}
 	}
-	params, err := decodeGetCollaborationWorkspacePackagesParams(args, argsEscaped, r)
+	params, err := decodeGetCollaborationPackagesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -12891,16 +12891,16 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCollaborationWorkspacePackagesOperation,
+			OperationName:    GetCollaborationPackagesOperation,
 			OperationSummary: "获取协作空间功能包",
-			OperationID:      "getCollaborationWorkspacePackages",
+			OperationID:      "getCollaborationPackages",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "collaborationWorkspaceId",
+					Name: "workspaceId",
 					In:   "path",
-				}: params.CollaborationWorkspaceId,
+				}: params.WorkspaceId,
 				{
 					Name: "app_key",
 					In:   "query",
@@ -12911,7 +12911,7 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 
 		type (
 			Request  = struct{}
-			Params   = GetCollaborationWorkspacePackagesParams
+			Params   = GetCollaborationPackagesParams
 			Response = *FeaturePackageAssignmentResponse
 		)
 		response, err = middleware.HookMiddleware[
@@ -12921,14 +12921,14 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 		](
 			m,
 			mreq,
-			unpackGetCollaborationWorkspacePackagesParams,
+			unpackGetCollaborationPackagesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCollaborationWorkspacePackages(ctx, params)
+				response, err = s.h.GetCollaborationPackages(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCollaborationWorkspacePackages(ctx, params)
+		response, err = s.h.GetCollaborationPackages(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -12936,7 +12936,7 @@ func (s *Server) handleGetCollaborationWorkspacePackagesRequest(args [1]string, 
 		return
 	}
 
-	if err := encodeGetCollaborationWorkspacePackagesResponse(response, w, span); err != nil {
+	if err := encodeGetCollaborationPackagesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -13132,24 +13132,24 @@ func (s *Server) handleGetCurrentAppRequest(args [0]string, argsEscaped bool, w 
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceRequest handles getCurrentCollaborationWorkspace operation.
+// handleGetCurrentCollaborationRequest handles getCurrentCollaboration operation.
 //
 // 获取当前协作空间详情.
 //
-// GET /collaboration-workspaces/current
-func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current
+func (s *Server) handleGetCurrentCollaborationRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspace"),
+		otelogen.OperationID("getCurrentCollaboration"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current"),
+		semconv.HTTPRouteKey.String("/collaboration/current"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -13204,15 +13204,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceOperation,
-			ID:   "getCurrentCollaborationWorkspace",
+			Name: GetCurrentCollaborationOperation,
+			ID:   "getCurrentCollaboration",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -13255,13 +13255,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceItem
+	var response *CollaborationItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceOperation,
+			OperationName:    GetCurrentCollaborationOperation,
 			OperationSummary: "获取当前协作空间详情",
-			OperationID:      "getCurrentCollaborationWorkspace",
+			OperationID:      "getCurrentCollaboration",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -13271,7 +13271,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceItem
+			Response = *CollaborationItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13282,12 +13282,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspace(ctx)
+				response, err = s.h.GetCurrentCollaboration(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspace(ctx)
+		response, err = s.h.GetCurrentCollaboration(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -13295,7 +13295,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -13304,24 +13304,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceActionOriginsRequest handles getCurrentCollaborationWorkspaceActionOrigins operation.
+// handleGetCurrentCollaborationActionOriginsRequest handles getCurrentCollaborationActionOrigins operation.
 //
 // 获取当前协作空间功能权限来源.
 //
-// GET /collaboration-workspaces/current/action-origins
-func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/action-origins
+func (s *Server) handleGetCurrentCollaborationActionOriginsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceActionOrigins"),
+		otelogen.OperationID("getCurrentCollaborationActionOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/action-origins"),
+		semconv.HTTPRouteKey.String("/collaboration/current/action-origins"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceActionOriginsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationActionOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -13376,15 +13376,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceActionOriginsOperation,
-			ID:   "getCurrentCollaborationWorkspaceActionOrigins",
+			Name: GetCurrentCollaborationActionOriginsOperation,
+			ID:   "getCurrentCollaborationActionOrigins",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceActionOriginsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationActionOriginsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -13427,13 +13427,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceActionOriginsResponse
+	var response *CollaborationActionOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceActionOriginsOperation,
+			OperationName:    GetCurrentCollaborationActionOriginsOperation,
 			OperationSummary: "获取当前协作空间功能权限来源",
-			OperationID:      "getCurrentCollaborationWorkspaceActionOrigins",
+			OperationID:      "getCurrentCollaborationActionOrigins",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -13443,7 +13443,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceActionOriginsResponse
+			Response = *CollaborationActionOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13454,12 +13454,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceActionOrigins(ctx)
+				response, err = s.h.GetCurrentCollaborationActionOrigins(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceActionOrigins(ctx)
+		response, err = s.h.GetCurrentCollaborationActionOrigins(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -13467,7 +13467,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationActionOriginsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -13476,24 +13476,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceActionsRequest handles getCurrentCollaborationWorkspaceActions operation.
+// handleGetCurrentCollaborationActionsRequest handles getCurrentCollaborationActions operation.
 //
 // 获取当前协作空间功能权限边界.
 //
-// GET /collaboration-workspaces/current/actions
-func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/actions
+func (s *Server) handleGetCurrentCollaborationActionsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceActions"),
+		otelogen.OperationID("getCurrentCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/actions"),
+		semconv.HTTPRouteKey.String("/collaboration/current/actions"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceActionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -13548,15 +13548,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceActionsOperation,
-			ID:   "getCurrentCollaborationWorkspaceActions",
+			Name: GetCurrentCollaborationActionsOperation,
+			ID:   "getCurrentCollaborationActions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceActionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationActionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -13599,13 +13599,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceActionsResponse
+	var response *CollaborationActionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceActionsOperation,
+			OperationName:    GetCurrentCollaborationActionsOperation,
 			OperationSummary: "获取当前协作空间功能权限边界",
-			OperationID:      "getCurrentCollaborationWorkspaceActions",
+			OperationID:      "getCurrentCollaborationActions",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -13615,7 +13615,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceActionsResponse
+			Response = *CollaborationActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13626,12 +13626,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceActions(ctx)
+				response, err = s.h.GetCurrentCollaborationActions(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceActions(ctx)
+		response, err = s.h.GetCurrentCollaborationActions(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -13639,7 +13639,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceActionsResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationActionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -13648,24 +13648,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest handles getCurrentCollaborationWorkspaceBoundaryPackages operation.
+// handleGetCurrentCollaborationBoundaryPackagesRequest handles getCurrentCollaborationBoundaryPackages operation.
 //
 // 获取当前协作空间已开通功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/packages
-func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/boundary/packages
+func (s *Server) handleGetCurrentCollaborationBoundaryPackagesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryPackages"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryPackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/packages"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/packages"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceBoundaryPackagesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationBoundaryPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -13720,15 +13720,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceBoundaryPackagesOperation,
-			ID:   "getCurrentCollaborationWorkspaceBoundaryPackages",
+			Name: GetCurrentCollaborationBoundaryPackagesOperation,
+			ID:   "getCurrentCollaborationBoundaryPackages",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryPackagesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryPackagesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -13775,9 +13775,9 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceBoundaryPackagesOperation,
+			OperationName:    GetCurrentCollaborationBoundaryPackagesOperation,
 			OperationSummary: "获取当前协作空间已开通功能包(边界管理)",
-			OperationID:      "getCurrentCollaborationWorkspaceBoundaryPackages",
+			OperationID:      "getCurrentCollaborationBoundaryPackages",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -13798,12 +13798,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryPackages(ctx)
+				response, err = s.h.GetCurrentCollaborationBoundaryPackages(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryPackages(ctx)
+		response, err = s.h.GetCurrentCollaborationBoundaryPackages(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -13811,7 +13811,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationBoundaryPackagesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -13820,24 +13820,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest handles getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// handleGetCurrentCollaborationBoundaryRoleActionsRequest handles getCurrentCollaborationBoundaryRoleActions operation.
 //
 // 获取当前协作空间角色功能权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/boundary/roles/{roleId}/actions
+func (s *Server) handleGetCurrentCollaborationBoundaryRoleActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRoleActions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/actions"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationBoundaryRoleActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -13892,15 +13892,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
-			ID:   "getCurrentCollaborationWorkspaceBoundaryRoleActions",
+			Name: GetCurrentCollaborationBoundaryRoleActionsOperation,
+			ID:   "getCurrentCollaborationBoundaryRoleActions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRoleActionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -13940,7 +13940,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 			return
 		}
 	}
-	params, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args, argsEscaped, r)
+	params, err := decodeGetCurrentCollaborationBoundaryRoleActionsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -13957,9 +13957,9 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+			OperationName:    GetCurrentCollaborationBoundaryRoleActionsOperation,
 			OperationSummary: "获取当前协作空间角色功能权限(边界管理)",
-			OperationID:      "getCurrentCollaborationWorkspaceBoundaryRoleActions",
+			OperationID:      "getCurrentCollaborationBoundaryRoleActions",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -13973,7 +13973,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 
 		type (
 			Request  = struct{}
-			Params   = GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams
+			Params   = GetCurrentCollaborationBoundaryRoleActionsParams
 			Response = *RoleActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
@@ -13983,14 +13983,14 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		](
 			m,
 			mreq,
-			unpackGetCurrentCollaborationWorkspaceBoundaryRoleActionsParams,
+			unpackGetCurrentCollaborationBoundaryRoleActionsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, params)
+				response, err = s.h.GetCurrentCollaborationBoundaryRoleActions(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, params)
+		response, err = s.h.GetCurrentCollaborationBoundaryRoleActions(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -13998,7 +13998,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationBoundaryRoleActionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -14007,24 +14007,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest handles getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// handleGetCurrentCollaborationBoundaryRoleMenusRequest handles getCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 获取当前协作空间角色菜单权限(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/boundary/roles/{roleId}/menus
+func (s *Server) handleGetCurrentCollaborationBoundaryRoleMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRoleMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/menus"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationBoundaryRoleMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -14079,15 +14079,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
-			ID:   "getCurrentCollaborationWorkspaceBoundaryRoleMenus",
+			Name: GetCurrentCollaborationBoundaryRoleMenusOperation,
+			ID:   "getCurrentCollaborationBoundaryRoleMenus",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRoleMenusOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -14127,7 +14127,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 			return
 		}
 	}
-	params, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args, argsEscaped, r)
+	params, err := decodeGetCurrentCollaborationBoundaryRoleMenusParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -14144,9 +14144,9 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+			OperationName:    GetCurrentCollaborationBoundaryRoleMenusOperation,
 			OperationSummary: "获取当前协作空间角色菜单权限(边界管理)",
-			OperationID:      "getCurrentCollaborationWorkspaceBoundaryRoleMenus",
+			OperationID:      "getCurrentCollaborationBoundaryRoleMenus",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -14160,7 +14160,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 
 		type (
 			Request  = struct{}
-			Params   = GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams
+			Params   = GetCurrentCollaborationBoundaryRoleMenusParams
 			Response = *RoleMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
@@ -14170,14 +14170,14 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		](
 			m,
 			mreq,
-			unpackGetCurrentCollaborationWorkspaceBoundaryRoleMenusParams,
+			unpackGetCurrentCollaborationBoundaryRoleMenusParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, params)
+				response, err = s.h.GetCurrentCollaborationBoundaryRoleMenus(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, params)
+		response, err = s.h.GetCurrentCollaborationBoundaryRoleMenus(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -14185,7 +14185,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationBoundaryRoleMenusResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -14194,24 +14194,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest handles getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// handleGetCurrentCollaborationBoundaryRolePackagesRequest handles getCurrentCollaborationBoundaryRolePackages operation.
 //
 // 获取当前协作空间角色功能包(边界管理).
 //
-// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/boundary/roles/{roleId}/packages
+func (s *Server) handleGetCurrentCollaborationBoundaryRolePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		otelogen.OperationID("getCurrentCollaborationBoundaryRolePackages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/packages"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationBoundaryRolePackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -14266,15 +14266,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
-			ID:   "getCurrentCollaborationWorkspaceBoundaryRolePackages",
+			Name: GetCurrentCollaborationBoundaryRolePackagesOperation,
+			ID:   "getCurrentCollaborationBoundaryRolePackages",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationBoundaryRolePackagesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -14314,7 +14314,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 			return
 		}
 	}
-	params, err := decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args, argsEscaped, r)
+	params, err := decodeGetCurrentCollaborationBoundaryRolePackagesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -14327,13 +14327,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceBoundaryRolePackagesResponse
+	var response *CollaborationBoundaryRolePackagesResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+			OperationName:    GetCurrentCollaborationBoundaryRolePackagesOperation,
 			OperationSummary: "获取当前协作空间角色功能包(边界管理)",
-			OperationID:      "getCurrentCollaborationWorkspaceBoundaryRolePackages",
+			OperationID:      "getCurrentCollaborationBoundaryRolePackages",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -14347,8 +14347,8 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 
 		type (
 			Request  = struct{}
-			Params   = GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams
-			Response = *CollaborationWorkspaceBoundaryRolePackagesResponse
+			Params   = GetCurrentCollaborationBoundaryRolePackagesParams
+			Response = *CollaborationBoundaryRolePackagesResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14357,14 +14357,14 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		](
 			m,
 			mreq,
-			unpackGetCurrentCollaborationWorkspaceBoundaryRolePackagesParams,
+			unpackGetCurrentCollaborationBoundaryRolePackagesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, params)
+				response, err = s.h.GetCurrentCollaborationBoundaryRolePackages(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, params)
+		response, err = s.h.GetCurrentCollaborationBoundaryRolePackages(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -14372,7 +14372,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationBoundaryRolePackagesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -14381,24 +14381,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceMemberRolesRequest handles getCurrentCollaborationWorkspaceMemberRoles operation.
+// handleGetCurrentCollaborationMemberRolesRequest handles getCurrentCollaborationMemberRoles operation.
 //
 // 获取当前协作空间成员角色.
 //
-// GET /collaboration-workspaces/current/members/{userId}/roles
-func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/members/{userId}/roles
+func (s *Server) handleGetCurrentCollaborationMemberRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMemberRoles"),
+		otelogen.OperationID("getCurrentCollaborationMemberRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members/{userId}/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceMemberRolesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationMemberRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -14453,15 +14453,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceMemberRolesOperation,
-			ID:   "getCurrentCollaborationWorkspaceMemberRoles",
+			Name: GetCurrentCollaborationMemberRolesOperation,
+			ID:   "getCurrentCollaborationMemberRoles",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMemberRolesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationMemberRolesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -14501,7 +14501,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 			return
 		}
 	}
-	params, err := decodeGetCurrentCollaborationWorkspaceMemberRolesParams(args, argsEscaped, r)
+	params, err := decodeGetCurrentCollaborationMemberRolesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -14514,13 +14514,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMemberRolesResponse
+	var response *CollaborationMemberRolesResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceMemberRolesOperation,
+			OperationName:    GetCurrentCollaborationMemberRolesOperation,
 			OperationSummary: "获取当前协作空间成员角色",
-			OperationID:      "getCurrentCollaborationWorkspaceMemberRoles",
+			OperationID:      "getCurrentCollaborationMemberRoles",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -14534,8 +14534,8 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 
 		type (
 			Request  = struct{}
-			Params   = GetCurrentCollaborationWorkspaceMemberRolesParams
-			Response = *CollaborationWorkspaceMemberRolesResponse
+			Params   = GetCurrentCollaborationMemberRolesParams
+			Response = *CollaborationMemberRolesResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14544,14 +14544,14 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		](
 			m,
 			mreq,
-			unpackGetCurrentCollaborationWorkspaceMemberRolesParams,
+			unpackGetCurrentCollaborationMemberRolesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceMemberRoles(ctx, params)
+				response, err = s.h.GetCurrentCollaborationMemberRoles(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceMemberRoles(ctx, params)
+		response, err = s.h.GetCurrentCollaborationMemberRoles(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -14559,7 +14559,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationMemberRolesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -14568,24 +14568,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceMenuOriginsRequest handles getCurrentCollaborationWorkspaceMenuOrigins operation.
+// handleGetCurrentCollaborationMenuOriginsRequest handles getCurrentCollaborationMenuOrigins operation.
 //
 // 获取当前协作空间菜单来源.
 //
-// GET /collaboration-workspaces/current/menu-origins
-func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/menu-origins
+func (s *Server) handleGetCurrentCollaborationMenuOriginsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMenuOrigins"),
+		otelogen.OperationID("getCurrentCollaborationMenuOrigins"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/menu-origins"),
+		semconv.HTTPRouteKey.String("/collaboration/current/menu-origins"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceMenuOriginsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationMenuOriginsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -14640,15 +14640,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceMenuOriginsOperation,
-			ID:   "getCurrentCollaborationWorkspaceMenuOrigins",
+			Name: GetCurrentCollaborationMenuOriginsOperation,
+			ID:   "getCurrentCollaborationMenuOrigins",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMenuOriginsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationMenuOriginsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -14691,13 +14691,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMenuOriginsResponse
+	var response *CollaborationMenuOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceMenuOriginsOperation,
+			OperationName:    GetCurrentCollaborationMenuOriginsOperation,
 			OperationSummary: "获取当前协作空间菜单来源",
-			OperationID:      "getCurrentCollaborationWorkspaceMenuOrigins",
+			OperationID:      "getCurrentCollaborationMenuOrigins",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -14707,7 +14707,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceMenuOriginsResponse
+			Response = *CollaborationMenuOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14718,12 +14718,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceMenuOrigins(ctx)
+				response, err = s.h.GetCurrentCollaborationMenuOrigins(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceMenuOrigins(ctx)
+		response, err = s.h.GetCurrentCollaborationMenuOrigins(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -14731,7 +14731,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationMenuOriginsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -14740,24 +14740,24 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 	}
 }
 
-// handleGetCurrentCollaborationWorkspaceMenusRequest handles getCurrentCollaborationWorkspaceMenus operation.
+// handleGetCurrentCollaborationMenusRequest handles getCurrentCollaborationMenus operation.
 //
 // 获取当前协作空间菜单边界.
 //
-// GET /collaboration-workspaces/current/menus
-func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/menus
+func (s *Server) handleGetCurrentCollaborationMenusRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getCurrentCollaborationWorkspaceMenus"),
+		otelogen.OperationID("getCurrentCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/menus"),
+		semconv.HTTPRouteKey.String("/collaboration/current/menus"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationWorkspaceMenusOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetCurrentCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -14812,15 +14812,15 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetCurrentCollaborationWorkspaceMenusOperation,
-			ID:   "getCurrentCollaborationWorkspaceMenus",
+			Name: GetCurrentCollaborationMenusOperation,
+			ID:   "getCurrentCollaborationMenus",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationWorkspaceMenusOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetCurrentCollaborationMenusOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -14863,13 +14863,13 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMenusResponse
+	var response *CollaborationMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetCurrentCollaborationWorkspaceMenusOperation,
+			OperationName:    GetCurrentCollaborationMenusOperation,
 			OperationSummary: "获取当前协作空间菜单边界",
-			OperationID:      "getCurrentCollaborationWorkspaceMenus",
+			OperationID:      "getCurrentCollaborationMenus",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -14879,7 +14879,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceMenusResponse
+			Response = *CollaborationMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14890,12 +14890,12 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetCurrentCollaborationWorkspaceMenus(ctx)
+				response, err = s.h.GetCurrentCollaborationMenus(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetCurrentCollaborationWorkspaceMenus(ctx)
+		response, err = s.h.GetCurrentCollaborationMenus(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -14903,7 +14903,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 		return
 	}
 
-	if err := encodeGetCurrentCollaborationWorkspaceMenusResponse(response, w, span); err != nil {
+	if err := encodeGetCurrentCollaborationMenusResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -16390,24 +16390,24 @@ func (s *Server) handleGetFeaturePackageChildrenRequest(args [1]string, argsEsca
 	}
 }
 
-// handleGetFeaturePackageCollaborationWorkspacesRequest handles getFeaturePackageCollaborationWorkspaces operation.
+// handleGetFeaturePackageCollaborationsRequest handles getFeaturePackageCollaborations operation.
 //
 // 获取功能包协作空间.
 //
-// GET /feature-packages/{id}/collaboration-workspaces
-func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /feature-packages/{id}/workspaces/collaboration
+func (s *Server) handleGetFeaturePackageCollaborationsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getFeaturePackageCollaborationWorkspaces"),
+		otelogen.OperationID("getFeaturePackageCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/feature-packages/{id}/collaboration-workspaces"),
+		semconv.HTTPRouteKey.String("/feature-packages/{id}/workspaces/collaboration"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetFeaturePackageCollaborationWorkspacesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetFeaturePackageCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -16462,15 +16462,15 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetFeaturePackageCollaborationWorkspacesOperation,
-			ID:   "getFeaturePackageCollaborationWorkspaces",
+			Name: GetFeaturePackageCollaborationsOperation,
+			ID:   "getFeaturePackageCollaborations",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetFeaturePackageCollaborationWorkspacesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetFeaturePackageCollaborationsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -16510,7 +16510,7 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 			return
 		}
 	}
-	params, err := decodeGetFeaturePackageCollaborationWorkspacesParams(args, argsEscaped, r)
+	params, err := decodeGetFeaturePackageCollaborationsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -16523,13 +16523,13 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 
 	var rawBody []byte
 
-	var response *FeaturePackageCollaborationWorkspaceList
+	var response *FeaturePackageCollaborationList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetFeaturePackageCollaborationWorkspacesOperation,
+			OperationName:    GetFeaturePackageCollaborationsOperation,
 			OperationSummary: "获取功能包协作空间",
-			OperationID:      "getFeaturePackageCollaborationWorkspaces",
+			OperationID:      "getFeaturePackageCollaborations",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -16547,8 +16547,8 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 
 		type (
 			Request  = struct{}
-			Params   = GetFeaturePackageCollaborationWorkspacesParams
-			Response = *FeaturePackageCollaborationWorkspaceList
+			Params   = GetFeaturePackageCollaborationsParams
+			Response = *FeaturePackageCollaborationList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16557,14 +16557,14 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		](
 			m,
 			mreq,
-			unpackGetFeaturePackageCollaborationWorkspacesParams,
+			unpackGetFeaturePackageCollaborationsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetFeaturePackageCollaborationWorkspaces(ctx, params)
+				response, err = s.h.GetFeaturePackageCollaborations(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetFeaturePackageCollaborationWorkspaces(ctx, params)
+		response, err = s.h.GetFeaturePackageCollaborations(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -16572,7 +16572,7 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		return
 	}
 
-	if err := encodeGetFeaturePackageCollaborationWorkspacesResponse(response, w, span); err != nil {
+	if err := encodeGetFeaturePackageCollaborationsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -19680,9 +19680,9 @@ func (s *Server) handleGetPageAccessTraceRequest(args [0]string, argsEscaped boo
 					In:   "query",
 				}: params.UserID,
 				{
-					Name: "collaboration_workspace_id",
+					Name: "workspace_id",
 					In:   "query",
-				}: params.CollaborationWorkspaceID,
+				}: params.WorkspaceID,
 				{
 					Name: "menu_space_key",
 					In:   "query",
@@ -22516,24 +22516,24 @@ func (s *Server) handleGetUserRequest(args [1]string, argsEscaped bool, w http.R
 	}
 }
 
-// handleGetUserCollaborationWorkspacesRequest handles getUserCollaborationWorkspaces operation.
+// handleGetUserCollaborationsRequest handles getUserCollaborations operation.
 //
 // 获取用户所在协作空间列表.
 //
-// GET /users/{id}/collaboration-workspaces
-func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /users/{id}/collaborations
+func (s *Server) handleGetUserCollaborationsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getUserCollaborationWorkspaces"),
+		otelogen.OperationID("getUserCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/users/{id}/collaboration-workspaces"),
+		semconv.HTTPRouteKey.String("/users/{id}/collaborations"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), GetUserCollaborationWorkspacesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetUserCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -22588,15 +22588,15 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: GetUserCollaborationWorkspacesOperation,
-			ID:   "getUserCollaborationWorkspaces",
+			Name: GetUserCollaborationsOperation,
+			ID:   "getUserCollaborations",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, GetUserCollaborationWorkspacesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, GetUserCollaborationsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -22636,7 +22636,7 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 			return
 		}
 	}
-	params, err := decodeGetUserCollaborationWorkspacesParams(args, argsEscaped, r)
+	params, err := decodeGetUserCollaborationsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -22649,13 +22649,13 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response *UserCollaborationWorkspacesResponse
+	var response *UserCollaborationsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    GetUserCollaborationWorkspacesOperation,
+			OperationName:    GetUserCollaborationsOperation,
 			OperationSummary: "获取用户所在协作空间列表",
-			OperationID:      "getUserCollaborationWorkspaces",
+			OperationID:      "getUserCollaborations",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -22669,8 +22669,8 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 
 		type (
 			Request  = struct{}
-			Params   = GetUserCollaborationWorkspacesParams
-			Response = *UserCollaborationWorkspacesResponse
+			Params   = GetUserCollaborationsParams
+			Response = *UserCollaborationsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22679,14 +22679,14 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 		](
 			m,
 			mreq,
-			unpackGetUserCollaborationWorkspacesParams,
+			unpackGetUserCollaborationsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.GetUserCollaborationWorkspaces(ctx, params)
+				response, err = s.h.GetUserCollaborations(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.GetUserCollaborationWorkspaces(ctx, params)
+		response, err = s.h.GetUserCollaborations(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -22694,7 +22694,7 @@ func (s *Server) handleGetUserCollaborationWorkspacesRequest(args [1]string, arg
 		return
 	}
 
-	if err := encodeGetUserCollaborationWorkspacesResponse(response, w, span); err != nil {
+	if err := encodeGetUserCollaborationsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -23241,9 +23241,9 @@ func (s *Server) handleGetUserPermissionDiagnosisRequest(args [1]string, argsEsc
 					In:   "query",
 				}: params.PermissionKey,
 				{
-					Name: "collaboration_workspace_id",
+					Name: "workspace_id",
 					In:   "query",
-				}: params.CollaborationWorkspaceID,
+				}: params.WorkspaceID,
 			},
 			Raw: r,
 		}
@@ -25180,24 +25180,24 @@ func (s *Server) handleListAuditLogsRequest(args [0]string, argsEscaped bool, w 
 	}
 }
 
-// handleListCollaborationWorkspaceMembersRequest handles listCollaborationWorkspaceMembers operation.
+// handleListCollaborationMembersRequest handles listCollaborationMembers operation.
 //
 // 获取协作空间成员列表.
 //
-// GET /collaboration-workspaces/{id}/members
-func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/members
+func (s *Server) handleListCollaborationMembersRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceMembers"),
+		otelogen.OperationID("listCollaborationMembers"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/members"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/members"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationWorkspaceMembersOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationMembersOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -25252,15 +25252,15 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCollaborationWorkspaceMembersOperation,
-			ID:   "listCollaborationWorkspaceMembers",
+			Name: ListCollaborationMembersOperation,
+			ID:   "listCollaborationMembers",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationWorkspaceMembersOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationMembersOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -25300,7 +25300,7 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 			return
 		}
 	}
-	params, err := decodeListCollaborationWorkspaceMembersParams(args, argsEscaped, r)
+	params, err := decodeListCollaborationMembersParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -25313,13 +25313,13 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMemberList
+	var response *CollaborationMemberList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCollaborationWorkspaceMembersOperation,
+			OperationName:    ListCollaborationMembersOperation,
 			OperationSummary: "获取协作空间成员列表",
-			OperationID:      "listCollaborationWorkspaceMembers",
+			OperationID:      "listCollaborationMembers",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -25333,8 +25333,8 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 
 		type (
 			Request  = struct{}
-			Params   = ListCollaborationWorkspaceMembersParams
-			Response = *CollaborationWorkspaceMemberList
+			Params   = ListCollaborationMembersParams
+			Response = *CollaborationMemberList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25343,14 +25343,14 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 		](
 			m,
 			mreq,
-			unpackListCollaborationWorkspaceMembersParams,
+			unpackListCollaborationMembersParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCollaborationWorkspaceMembers(ctx, params)
+				response, err = s.h.ListCollaborationMembers(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCollaborationWorkspaceMembers(ctx, params)
+		response, err = s.h.ListCollaborationMembers(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -25358,7 +25358,7 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 		return
 	}
 
-	if err := encodeListCollaborationWorkspaceMembersResponse(response, w, span); err != nil {
+	if err := encodeListCollaborationMembersResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -25367,24 +25367,24 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 	}
 }
 
-// handleListCollaborationWorkspaceOptionsRequest handles listCollaborationWorkspaceOptions operation.
+// handleListCollaborationOptionsRequest handles listCollaborationOptions operation.
 //
 // 获取协作空间候选.
 //
-// GET /collaboration-workspaces/options
-func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/options
+func (s *Server) handleListCollaborationOptionsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceOptions"),
+		otelogen.OperationID("listCollaborationOptions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/options"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/options"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationWorkspaceOptionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationOptionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -25439,15 +25439,15 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCollaborationWorkspaceOptionsOperation,
-			ID:   "listCollaborationWorkspaceOptions",
+			Name: ListCollaborationOptionsOperation,
+			ID:   "listCollaborationOptions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationWorkspaceOptionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationOptionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -25490,13 +25490,13 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceList
+	var response *CollaborationList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCollaborationWorkspaceOptionsOperation,
+			OperationName:    ListCollaborationOptionsOperation,
 			OperationSummary: "获取协作空间候选",
-			OperationID:      "listCollaborationWorkspaceOptions",
+			OperationID:      "listCollaborationOptions",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -25506,7 +25506,7 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceList
+			Response = *CollaborationList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25517,12 +25517,12 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCollaborationWorkspaceOptions(ctx)
+				response, err = s.h.ListCollaborationOptions(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCollaborationWorkspaceOptions(ctx)
+		response, err = s.h.ListCollaborationOptions(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -25530,7 +25530,7 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 		return
 	}
 
-	if err := encodeListCollaborationWorkspaceOptionsResponse(response, w, span); err != nil {
+	if err := encodeListCollaborationOptionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -25539,24 +25539,24 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 	}
 }
 
-// handleListCollaborationWorkspaceRolesRequest handles listCollaborationWorkspaceRoles operation.
+// handleListCollaborationRolesRequest handles listCollaborationRoles operation.
 //
 // 获取协作空间可分配角色.
 //
-// GET /collaboration-workspaces/{id}/roles
-func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/{id}/roles
+func (s *Server) handleListCollaborationRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaceRoles"),
+		otelogen.OperationID("listCollaborationRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/roles"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationWorkspaceRolesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -25611,15 +25611,15 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCollaborationWorkspaceRolesOperation,
-			ID:   "listCollaborationWorkspaceRoles",
+			Name: ListCollaborationRolesOperation,
+			ID:   "listCollaborationRoles",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationWorkspaceRolesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationRolesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -25659,7 +25659,7 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 			return
 		}
 	}
-	params, err := decodeListCollaborationWorkspaceRolesParams(args, argsEscaped, r)
+	params, err := decodeListCollaborationRolesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -25672,13 +25672,13 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceRoleList
+	var response *CollaborationRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCollaborationWorkspaceRolesOperation,
+			OperationName:    ListCollaborationRolesOperation,
 			OperationSummary: "获取协作空间可分配角色",
-			OperationID:      "listCollaborationWorkspaceRoles",
+			OperationID:      "listCollaborationRoles",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -25692,8 +25692,8 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 
 		type (
 			Request  = struct{}
-			Params   = ListCollaborationWorkspaceRolesParams
-			Response = *CollaborationWorkspaceRoleList
+			Params   = ListCollaborationRolesParams
+			Response = *CollaborationRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25702,14 +25702,14 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 		](
 			m,
 			mreq,
-			unpackListCollaborationWorkspaceRolesParams,
+			unpackListCollaborationRolesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCollaborationWorkspaceRoles(ctx, params)
+				response, err = s.h.ListCollaborationRoles(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCollaborationWorkspaceRoles(ctx, params)
+		response, err = s.h.ListCollaborationRoles(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -25717,7 +25717,7 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 		return
 	}
 
-	if err := encodeListCollaborationWorkspaceRolesResponse(response, w, span); err != nil {
+	if err := encodeListCollaborationRolesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -25726,24 +25726,24 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 	}
 }
 
-// handleListCollaborationWorkspacesRequest handles listCollaborationWorkspaces operation.
+// handleListCollaborationsRequest handles listCollaborations operation.
 //
 // 获取协作空间列表.
 //
-// GET /collaboration-workspaces
-func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration
+func (s *Server) handleListCollaborationsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCollaborationWorkspaces"),
+		otelogen.OperationID("listCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationWorkspacesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -25798,15 +25798,15 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCollaborationWorkspacesOperation,
-			ID:   "listCollaborationWorkspaces",
+			Name: ListCollaborationsOperation,
+			ID:   "listCollaborations",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationWorkspacesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCollaborationsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -25846,7 +25846,7 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 			return
 		}
 	}
-	params, err := decodeListCollaborationWorkspacesParams(args, argsEscaped, r)
+	params, err := decodeListCollaborationsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -25859,13 +25859,13 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceList
+	var response *CollaborationList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCollaborationWorkspacesOperation,
+			OperationName:    ListCollaborationsOperation,
 			OperationSummary: "获取协作空间列表",
-			OperationID:      "listCollaborationWorkspaces",
+			OperationID:      "listCollaborations",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -25887,8 +25887,8 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 
 		type (
 			Request  = struct{}
-			Params   = ListCollaborationWorkspacesParams
-			Response = *CollaborationWorkspaceList
+			Params   = ListCollaborationsParams
+			Response = *CollaborationList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25897,14 +25897,14 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 		](
 			m,
 			mreq,
-			unpackListCollaborationWorkspacesParams,
+			unpackListCollaborationsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCollaborationWorkspaces(ctx, params)
+				response, err = s.h.ListCollaborations(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCollaborationWorkspaces(ctx, params)
+		response, err = s.h.ListCollaborations(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -25912,7 +25912,7 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 		return
 	}
 
-	if err := encodeListCollaborationWorkspacesResponse(response, w, span); err != nil {
+	if err := encodeListCollaborationsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -25921,24 +25921,24 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 	}
 }
 
-// handleListCurrentCollaborationWorkspaceBoundaryRolesRequest handles listCurrentCollaborationWorkspaceBoundaryRoles operation.
+// handleListCurrentCollaborationBoundaryRolesRequest handles listCurrentCollaborationBoundaryRoles operation.
 //
 // 获取当前协作空间边界可见角色.
 //
-// GET /collaboration-workspaces/current/boundary/roles
-func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/boundary/roles
+func (s *Server) handleListCurrentCollaborationBoundaryRolesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceBoundaryRoles"),
+		otelogen.OperationID("listCurrentCollaborationBoundaryRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationWorkspaceBoundaryRolesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationBoundaryRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -25993,15 +25993,15 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCurrentCollaborationWorkspaceBoundaryRolesOperation,
-			ID:   "listCurrentCollaborationWorkspaceBoundaryRoles",
+			Name: ListCurrentCollaborationBoundaryRolesOperation,
+			ID:   "listCurrentCollaborationBoundaryRoles",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceBoundaryRolesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationBoundaryRolesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -26044,13 +26044,13 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceRoleList
+	var response *CollaborationRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCurrentCollaborationWorkspaceBoundaryRolesOperation,
+			OperationName:    ListCurrentCollaborationBoundaryRolesOperation,
 			OperationSummary: "获取当前协作空间边界可见角色",
-			OperationID:      "listCurrentCollaborationWorkspaceBoundaryRoles",
+			OperationID:      "listCurrentCollaborationBoundaryRoles",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -26060,7 +26060,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceRoleList
+			Response = *CollaborationRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26071,12 +26071,12 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCurrentCollaborationWorkspaceBoundaryRoles(ctx)
+				response, err = s.h.ListCurrentCollaborationBoundaryRoles(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCurrentCollaborationWorkspaceBoundaryRoles(ctx)
+		response, err = s.h.ListCurrentCollaborationBoundaryRoles(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -26084,7 +26084,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 		return
 	}
 
-	if err := encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response, w, span); err != nil {
+	if err := encodeListCurrentCollaborationBoundaryRolesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -26093,24 +26093,24 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 	}
 }
 
-// handleListCurrentCollaborationWorkspaceMembersRequest handles listCurrentCollaborationWorkspaceMembers operation.
+// handleListCurrentCollaborationMembersRequest handles listCurrentCollaborationMembers operation.
 //
 // 获取当前协作空间成员列表.
 //
-// GET /collaboration-workspaces/current/members
-func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/members
+func (s *Server) handleListCurrentCollaborationMembersRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceMembers"),
+		otelogen.OperationID("listCurrentCollaborationMembers"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationWorkspaceMembersOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationMembersOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -26165,15 +26165,15 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCurrentCollaborationWorkspaceMembersOperation,
-			ID:   "listCurrentCollaborationWorkspaceMembers",
+			Name: ListCurrentCollaborationMembersOperation,
+			ID:   "listCurrentCollaborationMembers",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceMembersOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationMembersOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -26216,13 +26216,13 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceMemberList
+	var response *CollaborationMemberList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCurrentCollaborationWorkspaceMembersOperation,
+			OperationName:    ListCurrentCollaborationMembersOperation,
 			OperationSummary: "获取当前协作空间成员列表",
-			OperationID:      "listCurrentCollaborationWorkspaceMembers",
+			OperationID:      "listCurrentCollaborationMembers",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -26232,7 +26232,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceMemberList
+			Response = *CollaborationMemberList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26243,12 +26243,12 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCurrentCollaborationWorkspaceMembers(ctx)
+				response, err = s.h.ListCurrentCollaborationMembers(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCurrentCollaborationWorkspaceMembers(ctx)
+		response, err = s.h.ListCurrentCollaborationMembers(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -26256,7 +26256,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 		return
 	}
 
-	if err := encodeListCurrentCollaborationWorkspaceMembersResponse(response, w, span); err != nil {
+	if err := encodeListCurrentCollaborationMembersResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -26265,24 +26265,24 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 	}
 }
 
-// handleListCurrentCollaborationWorkspaceRolesRequest handles listCurrentCollaborationWorkspaceRoles operation.
+// handleListCurrentCollaborationRolesRequest handles listCurrentCollaborationRoles operation.
 //
 // 获取当前协作空间可分配角色.
 //
-// GET /collaboration-workspaces/current/roles
-func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /collaboration/current/roles
+func (s *Server) handleListCurrentCollaborationRolesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listCurrentCollaborationWorkspaceRoles"),
+		otelogen.OperationID("listCurrentCollaborationRoles"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationWorkspaceRolesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListCurrentCollaborationRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -26337,15 +26337,15 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListCurrentCollaborationWorkspaceRolesOperation,
-			ID:   "listCurrentCollaborationWorkspaceRoles",
+			Name: ListCurrentCollaborationRolesOperation,
+			ID:   "listCurrentCollaborationRoles",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationWorkspaceRolesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListCurrentCollaborationRolesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -26388,13 +26388,13 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceRoleList
+	var response *CollaborationRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListCurrentCollaborationWorkspaceRolesOperation,
+			OperationName:    ListCurrentCollaborationRolesOperation,
 			OperationSummary: "获取当前协作空间可分配角色",
-			OperationID:      "listCurrentCollaborationWorkspaceRoles",
+			OperationID:      "listCurrentCollaborationRoles",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -26404,7 +26404,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceRoleList
+			Response = *CollaborationRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26415,12 +26415,12 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListCurrentCollaborationWorkspaceRoles(ctx)
+				response, err = s.h.ListCurrentCollaborationRoles(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListCurrentCollaborationWorkspaceRoles(ctx)
+		response, err = s.h.ListCurrentCollaborationRoles(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -26428,7 +26428,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 		return
 	}
 
-	if err := encodeListCurrentCollaborationWorkspaceRolesResponse(response, w, span); err != nil {
+	if err := encodeListCurrentCollaborationRolesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -29594,24 +29594,24 @@ func (s *Server) handleListMessageTemplatesRequest(args [0]string, argsEscaped b
 	}
 }
 
-// handleListMyCollaborationWorkspacesRequest handles listMyCollaborationWorkspaces operation.
+// handleListMyCollaborationsRequest handles listMyCollaborations operation.
 //
 // 获取我的协作空间列表.
 //
-// GET /collaboration-workspaces/mine
-func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/collaboration/mine
+func (s *Server) handleListMyCollaborationsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listMyCollaborationWorkspaces"),
+		otelogen.OperationID("listMyCollaborations"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/mine"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/mine"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ListMyCollaborationWorkspacesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), ListMyCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -29666,15 +29666,15 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ListMyCollaborationWorkspacesOperation,
-			ID:   "listMyCollaborationWorkspaces",
+			Name: ListMyCollaborationsOperation,
+			ID:   "listMyCollaborations",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, ListMyCollaborationWorkspacesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, ListMyCollaborationsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -29717,13 +29717,13 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 
 	var rawBody []byte
 
-	var response *CollaborationWorkspaceList
+	var response *CollaborationList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ListMyCollaborationWorkspacesOperation,
+			OperationName:    ListMyCollaborationsOperation,
 			OperationSummary: "获取我的协作空间列表",
-			OperationID:      "listMyCollaborationWorkspaces",
+			OperationID:      "listMyCollaborations",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -29733,7 +29733,7 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *CollaborationWorkspaceList
+			Response = *CollaborationList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29744,12 +29744,12 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ListMyCollaborationWorkspaces(ctx)
+				response, err = s.h.ListMyCollaborations(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ListMyCollaborationWorkspaces(ctx)
+		response, err = s.h.ListMyCollaborations(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -29757,7 +29757,7 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 		return
 	}
 
-	if err := encodeListMyCollaborationWorkspacesResponse(response, w, span); err != nil {
+	if err := encodeListMyCollaborationsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -36968,24 +36968,24 @@ func (s *Server) handleRegisterRequest(args [0]string, argsEscaped bool, w http.
 	}
 }
 
-// handleRemoveCollaborationWorkspaceMemberRequest handles removeCollaborationWorkspaceMember operation.
+// handleRemoveCollaborationMemberRequest handles removeCollaborationMember operation.
 //
 // 移除协作空间成员.
 //
-// DELETE /collaboration-workspaces/{id}/members/{userId}
-func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// DELETE /workspaces/collaboration/{id}/members/{userId}
+func (s *Server) handleRemoveCollaborationMemberRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("removeCollaborationWorkspaceMember"),
+		otelogen.OperationID("removeCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/members/{userId}"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/members/{userId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), RemoveCollaborationWorkspaceMemberOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), RemoveCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -37040,15 +37040,15 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: RemoveCollaborationWorkspaceMemberOperation,
-			ID:   "removeCollaborationWorkspaceMember",
+			Name: RemoveCollaborationMemberOperation,
+			ID:   "removeCollaborationMember",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, RemoveCollaborationWorkspaceMemberOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, RemoveCollaborationMemberOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -37088,7 +37088,7 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 			return
 		}
 	}
-	params, err := decodeRemoveCollaborationWorkspaceMemberParams(args, argsEscaped, r)
+	params, err := decodeRemoveCollaborationMemberParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -37105,9 +37105,9 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    RemoveCollaborationWorkspaceMemberOperation,
+			OperationName:    RemoveCollaborationMemberOperation,
 			OperationSummary: "移除协作空间成员",
-			OperationID:      "removeCollaborationWorkspaceMember",
+			OperationID:      "removeCollaborationMember",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -37125,7 +37125,7 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 
 		type (
 			Request  = struct{}
-			Params   = RemoveCollaborationWorkspaceMemberParams
+			Params   = RemoveCollaborationMemberParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -37135,14 +37135,14 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 		](
 			m,
 			mreq,
-			unpackRemoveCollaborationWorkspaceMemberParams,
+			unpackRemoveCollaborationMemberParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.RemoveCollaborationWorkspaceMember(ctx, params)
+				response, err = s.h.RemoveCollaborationMember(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.RemoveCollaborationWorkspaceMember(ctx, params)
+		response, err = s.h.RemoveCollaborationMember(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -37150,7 +37150,7 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 		return
 	}
 
-	if err := encodeRemoveCollaborationWorkspaceMemberResponse(response, w, span); err != nil {
+	if err := encodeRemoveCollaborationMemberResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -37159,24 +37159,24 @@ func (s *Server) handleRemoveCollaborationWorkspaceMemberRequest(args [2]string,
 	}
 }
 
-// handleRemoveCurrentCollaborationWorkspaceMemberRequest handles removeCurrentCollaborationWorkspaceMember operation.
+// handleRemoveCurrentCollaborationMemberRequest handles removeCurrentCollaborationMember operation.
 //
 // 移除当前协作空间成员.
 //
-// DELETE /collaboration-workspaces/current/members/{userId}
-func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// DELETE /collaboration/current/members/{userId}
+func (s *Server) handleRemoveCurrentCollaborationMemberRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("removeCurrentCollaborationWorkspaceMember"),
+		otelogen.OperationID("removeCurrentCollaborationMember"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members/{userId}"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members/{userId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), RemoveCurrentCollaborationWorkspaceMemberOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), RemoveCurrentCollaborationMemberOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -37231,15 +37231,15 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: RemoveCurrentCollaborationWorkspaceMemberOperation,
-			ID:   "removeCurrentCollaborationWorkspaceMember",
+			Name: RemoveCurrentCollaborationMemberOperation,
+			ID:   "removeCurrentCollaborationMember",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, RemoveCurrentCollaborationWorkspaceMemberOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, RemoveCurrentCollaborationMemberOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -37279,7 +37279,7 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 			return
 		}
 	}
-	params, err := decodeRemoveCurrentCollaborationWorkspaceMemberParams(args, argsEscaped, r)
+	params, err := decodeRemoveCurrentCollaborationMemberParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -37296,9 +37296,9 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    RemoveCurrentCollaborationWorkspaceMemberOperation,
+			OperationName:    RemoveCurrentCollaborationMemberOperation,
 			OperationSummary: "移除当前协作空间成员",
-			OperationID:      "removeCurrentCollaborationWorkspaceMember",
+			OperationID:      "removeCurrentCollaborationMember",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -37312,7 +37312,7 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 
 		type (
 			Request  = struct{}
-			Params   = RemoveCurrentCollaborationWorkspaceMemberParams
+			Params   = RemoveCurrentCollaborationMemberParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -37322,14 +37322,14 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 		](
 			m,
 			mreq,
-			unpackRemoveCurrentCollaborationWorkspaceMemberParams,
+			unpackRemoveCurrentCollaborationMemberParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.RemoveCurrentCollaborationWorkspaceMember(ctx, params)
+				response, err = s.h.RemoveCurrentCollaborationMember(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.RemoveCurrentCollaborationWorkspaceMember(ctx, params)
+		response, err = s.h.RemoveCurrentCollaborationMember(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -37337,7 +37337,7 @@ func (s *Server) handleRemoveCurrentCollaborationWorkspaceMemberRequest(args [1]
 		return
 	}
 
-	if err := encodeRemoveCurrentCollaborationWorkspaceMemberResponse(response, w, span); err != nil {
+	if err := encodeRemoveCurrentCollaborationMemberResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -39449,24 +39449,24 @@ func (s *Server) handleSavePermissionActionBatchTemplateRequest(args [0]string, 
 	}
 }
 
-// handleSetCollaborationWorkspaceActionsRequest handles setCollaborationWorkspaceActions operation.
+// handleSetCollaborationActionsRequest handles setCollaborationActions operation.
 //
 // 配置协作空间功能权限边界.
 //
-// PUT /collaboration-workspaces/{id}/actions
-func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /workspaces/collaboration/{id}/actions
+func (s *Server) handleSetCollaborationActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspaceActions"),
+		otelogen.OperationID("setCollaborationActions"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/actions"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/actions"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationWorkspaceActionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -39521,15 +39521,15 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCollaborationWorkspaceActionsOperation,
-			ID:   "setCollaborationWorkspaceActions",
+			Name: SetCollaborationActionsOperation,
+			ID:   "setCollaborationActions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationWorkspaceActionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationActionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -39569,7 +39569,7 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 			return
 		}
 	}
-	params, err := decodeSetCollaborationWorkspaceActionsParams(args, argsEscaped, r)
+	params, err := decodeSetCollaborationActionsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -39581,7 +39581,7 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCollaborationWorkspaceActionsRequest(r)
+	request, rawBody, close, err := s.decodeSetCollaborationActionsRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -39601,9 +39601,9 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCollaborationWorkspaceActionsOperation,
+			OperationName:    SetCollaborationActionsOperation,
 			OperationSummary: "配置协作空间功能权限边界",
-			OperationID:      "setCollaborationWorkspaceActions",
+			OperationID:      "setCollaborationActions",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -39617,7 +39617,7 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCollaborationWorkspaceActionsParams
+			Params   = SetCollaborationActionsParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -39627,14 +39627,14 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 		](
 			m,
 			mreq,
-			unpackSetCollaborationWorkspaceActionsParams,
+			unpackSetCollaborationActionsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCollaborationWorkspaceActions(ctx, request, params)
+				response, err = s.h.SetCollaborationActions(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCollaborationWorkspaceActions(ctx, request, params)
+		response, err = s.h.SetCollaborationActions(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -39642,7 +39642,7 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 		return
 	}
 
-	if err := encodeSetCollaborationWorkspaceActionsResponse(response, w, span); err != nil {
+	if err := encodeSetCollaborationActionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -39651,24 +39651,24 @@ func (s *Server) handleSetCollaborationWorkspaceActionsRequest(args [1]string, a
 	}
 }
 
-// handleSetCollaborationWorkspaceMenusRequest handles setCollaborationWorkspaceMenus operation.
+// handleSetCollaborationMenusRequest handles setCollaborationMenus operation.
 //
 // 配置协作空间菜单边界.
 //
-// PUT /collaboration-workspaces/{id}/menus
-func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /workspaces/collaboration/{id}/menus
+func (s *Server) handleSetCollaborationMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspaceMenus"),
+		otelogen.OperationID("setCollaborationMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/menus"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/menus"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationWorkspaceMenusOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -39723,15 +39723,15 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCollaborationWorkspaceMenusOperation,
-			ID:   "setCollaborationWorkspaceMenus",
+			Name: SetCollaborationMenusOperation,
+			ID:   "setCollaborationMenus",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationWorkspaceMenusOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationMenusOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -39771,7 +39771,7 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 			return
 		}
 	}
-	params, err := decodeSetCollaborationWorkspaceMenusParams(args, argsEscaped, r)
+	params, err := decodeSetCollaborationMenusParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -39783,7 +39783,7 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCollaborationWorkspaceMenusRequest(r)
+	request, rawBody, close, err := s.decodeSetCollaborationMenusRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -39803,9 +39803,9 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCollaborationWorkspaceMenusOperation,
+			OperationName:    SetCollaborationMenusOperation,
 			OperationSummary: "配置协作空间菜单边界",
-			OperationID:      "setCollaborationWorkspaceMenus",
+			OperationID:      "setCollaborationMenus",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -39819,7 +39819,7 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCollaborationWorkspaceMenusParams
+			Params   = SetCollaborationMenusParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -39829,14 +39829,14 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		](
 			m,
 			mreq,
-			unpackSetCollaborationWorkspaceMenusParams,
+			unpackSetCollaborationMenusParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCollaborationWorkspaceMenus(ctx, request, params)
+				response, err = s.h.SetCollaborationMenus(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCollaborationWorkspaceMenus(ctx, request, params)
+		response, err = s.h.SetCollaborationMenus(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -39844,7 +39844,7 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		return
 	}
 
-	if err := encodeSetCollaborationWorkspaceMenusResponse(response, w, span); err != nil {
+	if err := encodeSetCollaborationMenusResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -39853,24 +39853,24 @@ func (s *Server) handleSetCollaborationWorkspaceMenusRequest(args [1]string, arg
 	}
 }
 
-// handleSetCollaborationWorkspacePackagesRequest handles setCollaborationWorkspacePackages operation.
+// handleSetCollaborationPackagesRequest handles setCollaborationPackages operation.
 //
 // 配置协作空间功能包.
 //
-// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
-func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /feature-packages/workspaces/collaboration/{workspaceId}
+func (s *Server) handleSetCollaborationPackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCollaborationWorkspacePackages"),
+		otelogen.OperationID("setCollaborationPackages"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+		semconv.HTTPRouteKey.String("/feature-packages/workspaces/collaboration/{workspaceId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationWorkspacePackagesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCollaborationPackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -39925,15 +39925,15 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCollaborationWorkspacePackagesOperation,
-			ID:   "setCollaborationWorkspacePackages",
+			Name: SetCollaborationPackagesOperation,
+			ID:   "setCollaborationPackages",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationWorkspacePackagesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCollaborationPackagesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -39973,7 +39973,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 			return
 		}
 	}
-	params, err := decodeSetCollaborationWorkspacePackagesParams(args, argsEscaped, r)
+	params, err := decodeSetCollaborationPackagesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -39985,7 +39985,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCollaborationWorkspacePackagesRequest(r)
+	request, rawBody, close, err := s.decodeSetCollaborationPackagesRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -40005,16 +40005,16 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCollaborationWorkspacePackagesOperation,
+			OperationName:    SetCollaborationPackagesOperation,
 			OperationSummary: "配置协作空间功能包",
-			OperationID:      "setCollaborationWorkspacePackages",
+			OperationID:      "setCollaborationPackages",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "collaborationWorkspaceId",
+					Name: "workspaceId",
 					In:   "path",
-				}: params.CollaborationWorkspaceId,
+				}: params.WorkspaceId,
 				{
 					Name: "app_key",
 					In:   "query",
@@ -40025,7 +40025,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCollaborationWorkspacePackagesParams
+			Params   = SetCollaborationPackagesParams
 			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -40035,14 +40035,14 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 		](
 			m,
 			mreq,
-			unpackSetCollaborationWorkspacePackagesParams,
+			unpackSetCollaborationPackagesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCollaborationWorkspacePackages(ctx, request, params)
+				response, err = s.h.SetCollaborationPackages(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCollaborationWorkspacePackages(ctx, request, params)
+		response, err = s.h.SetCollaborationPackages(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -40050,7 +40050,7 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 		return
 	}
 
-	if err := encodeSetCollaborationWorkspacePackagesResponse(response, w, span); err != nil {
+	if err := encodeSetCollaborationPackagesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -40059,24 +40059,24 @@ func (s *Server) handleSetCollaborationWorkspacePackagesRequest(args [1]string, 
 	}
 }
 
-// handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest handles setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+// handleSetCurrentCollaborationBoundaryRoleActionsRequest handles setCurrentCollaborationBoundaryRoleActions operation.
 //
 // 配置当前协作空间角色功能权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/boundary/roles/{roleId}/actions
+func (s *Server) handleSetCurrentCollaborationBoundaryRoleActionsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRoleActions"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/actions"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationBoundaryRoleActionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -40131,15 +40131,15 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
-			ID:   "setCurrentCollaborationWorkspaceBoundaryRoleActions",
+			Name: SetCurrentCollaborationBoundaryRoleActionsOperation,
+			ID:   "setCurrentCollaborationBoundaryRoleActions",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRoleActionsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -40179,7 +40179,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 			return
 		}
 	}
-	params, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams(args, argsEscaped, r)
+	params, err := decodeSetCurrentCollaborationBoundaryRoleActionsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -40191,7 +40191,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(r)
+	request, rawBody, close, err := s.decodeSetCurrentCollaborationBoundaryRoleActionsRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -40211,9 +40211,9 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+			OperationName:    SetCurrentCollaborationBoundaryRoleActionsOperation,
 			OperationSummary: "配置当前协作空间角色功能权限(边界管理)",
-			OperationID:      "setCurrentCollaborationWorkspaceBoundaryRoleActions",
+			OperationID:      "setCurrentCollaborationBoundaryRoleActions",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -40227,7 +40227,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams
+			Params   = SetCurrentCollaborationBoundaryRoleActionsParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -40237,14 +40237,14 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		](
 			m,
 			mreq,
-			unpackSetCurrentCollaborationWorkspaceBoundaryRoleActionsParams,
+			unpackSetCurrentCollaborationBoundaryRoleActionsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, request, params)
+				response, err = s.h.SetCurrentCollaborationBoundaryRoleActions(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, request, params)
+		response, err = s.h.SetCurrentCollaborationBoundaryRoleActions(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -40252,7 +40252,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		return
 	}
 
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response, w, span); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRoleActionsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -40261,24 +40261,24 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 	}
 }
 
-// handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest handles setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+// handleSetCurrentCollaborationBoundaryRoleMenusRequest handles setCurrentCollaborationBoundaryRoleMenus operation.
 //
 // 配置当前协作空间角色菜单权限(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/boundary/roles/{roleId}/menus
+func (s *Server) handleSetCurrentCollaborationBoundaryRoleMenusRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRoleMenus"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/menus"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationBoundaryRoleMenusOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -40333,15 +40333,15 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
-			ID:   "setCurrentCollaborationWorkspaceBoundaryRoleMenus",
+			Name: SetCurrentCollaborationBoundaryRoleMenusOperation,
+			ID:   "setCurrentCollaborationBoundaryRoleMenus",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRoleMenusOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -40381,7 +40381,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 			return
 		}
 	}
-	params, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams(args, argsEscaped, r)
+	params, err := decodeSetCurrentCollaborationBoundaryRoleMenusParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -40393,7 +40393,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(r)
+	request, rawBody, close, err := s.decodeSetCurrentCollaborationBoundaryRoleMenusRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -40413,9 +40413,9 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+			OperationName:    SetCurrentCollaborationBoundaryRoleMenusOperation,
 			OperationSummary: "配置当前协作空间角色菜单权限(边界管理)",
-			OperationID:      "setCurrentCollaborationWorkspaceBoundaryRoleMenus",
+			OperationID:      "setCurrentCollaborationBoundaryRoleMenus",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -40429,7 +40429,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams
+			Params   = SetCurrentCollaborationBoundaryRoleMenusParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -40439,14 +40439,14 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		](
 			m,
 			mreq,
-			unpackSetCurrentCollaborationWorkspaceBoundaryRoleMenusParams,
+			unpackSetCurrentCollaborationBoundaryRoleMenusParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, request, params)
+				response, err = s.h.SetCurrentCollaborationBoundaryRoleMenus(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, request, params)
+		response, err = s.h.SetCurrentCollaborationBoundaryRoleMenus(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -40454,7 +40454,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		return
 	}
 
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response, w, span); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRoleMenusResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -40463,24 +40463,24 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 	}
 }
 
-// handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest handles setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+// handleSetCurrentCollaborationBoundaryRolePackagesRequest handles setCurrentCollaborationBoundaryRolePackages operation.
 //
 // 配置当前协作空间角色功能包(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/boundary/roles/{roleId}/packages
+func (s *Server) handleSetCurrentCollaborationBoundaryRolePackagesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		otelogen.OperationID("setCurrentCollaborationBoundaryRolePackages"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}/packages"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationBoundaryRolePackagesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -40535,15 +40535,15 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
-			ID:   "setCurrentCollaborationWorkspaceBoundaryRolePackages",
+			Name: SetCurrentCollaborationBoundaryRolePackagesOperation,
+			ID:   "setCurrentCollaborationBoundaryRolePackages",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationBoundaryRolePackagesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -40583,7 +40583,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 			return
 		}
 	}
-	params, err := decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams(args, argsEscaped, r)
+	params, err := decodeSetCurrentCollaborationBoundaryRolePackagesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -40595,7 +40595,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(r)
+	request, rawBody, close, err := s.decodeSetCurrentCollaborationBoundaryRolePackagesRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -40615,9 +40615,9 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+			OperationName:    SetCurrentCollaborationBoundaryRolePackagesOperation,
 			OperationSummary: "配置当前协作空间角色功能包(边界管理)",
-			OperationID:      "setCurrentCollaborationWorkspaceBoundaryRolePackages",
+			OperationID:      "setCurrentCollaborationBoundaryRolePackages",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -40631,7 +40631,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams
+			Params   = SetCurrentCollaborationBoundaryRolePackagesParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -40641,14 +40641,14 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		](
 			m,
 			mreq,
-			unpackSetCurrentCollaborationWorkspaceBoundaryRolePackagesParams,
+			unpackSetCurrentCollaborationBoundaryRolePackagesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, request, params)
+				response, err = s.h.SetCurrentCollaborationBoundaryRolePackages(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, request, params)
+		response, err = s.h.SetCurrentCollaborationBoundaryRolePackages(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -40656,7 +40656,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		return
 	}
 
-	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response, w, span); err != nil {
+	if err := encodeSetCurrentCollaborationBoundaryRolePackagesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -40665,24 +40665,24 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 	}
 }
 
-// handleSetCurrentCollaborationWorkspaceMemberRolesRequest handles setCurrentCollaborationWorkspaceMemberRoles operation.
+// handleSetCurrentCollaborationMemberRolesRequest handles setCurrentCollaborationMemberRoles operation.
 //
 // 配置当前协作空间成员角色.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/roles
-func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/members/{userId}/roles
+func (s *Server) handleSetCurrentCollaborationMemberRolesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setCurrentCollaborationWorkspaceMemberRoles"),
+		otelogen.OperationID("setCurrentCollaborationMemberRoles"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members/{userId}/roles"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationWorkspaceMemberRolesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetCurrentCollaborationMemberRolesOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -40737,15 +40737,15 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetCurrentCollaborationWorkspaceMemberRolesOperation,
-			ID:   "setCurrentCollaborationWorkspaceMemberRoles",
+			Name: SetCurrentCollaborationMemberRolesOperation,
+			ID:   "setCurrentCollaborationMemberRoles",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationWorkspaceMemberRolesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetCurrentCollaborationMemberRolesOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -40785,7 +40785,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 			return
 		}
 	}
-	params, err := decodeSetCurrentCollaborationWorkspaceMemberRolesParams(args, argsEscaped, r)
+	params, err := decodeSetCurrentCollaborationMemberRolesParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -40797,7 +40797,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetCurrentCollaborationWorkspaceMemberRolesRequest(r)
+	request, rawBody, close, err := s.decodeSetCurrentCollaborationMemberRolesRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -40817,9 +40817,9 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetCurrentCollaborationWorkspaceMemberRolesOperation,
+			OperationName:    SetCurrentCollaborationMemberRolesOperation,
 			OperationSummary: "配置当前协作空间成员角色",
-			OperationID:      "setCurrentCollaborationWorkspaceMemberRoles",
+			OperationID:      "setCurrentCollaborationMemberRoles",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -40833,7 +40833,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetCurrentCollaborationWorkspaceMemberRolesParams
+			Params   = SetCurrentCollaborationMemberRolesParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -40843,14 +40843,14 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		](
 			m,
 			mreq,
-			unpackSetCurrentCollaborationWorkspaceMemberRolesParams,
+			unpackSetCurrentCollaborationMemberRolesParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetCurrentCollaborationWorkspaceMemberRoles(ctx, request, params)
+				response, err = s.h.SetCurrentCollaborationMemberRoles(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetCurrentCollaborationWorkspaceMemberRoles(ctx, request, params)
+		response, err = s.h.SetCurrentCollaborationMemberRoles(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -40858,7 +40858,7 @@ func (s *Server) handleSetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		return
 	}
 
-	if err := encodeSetCurrentCollaborationWorkspaceMemberRolesResponse(response, w, span); err != nil {
+	if err := encodeSetCurrentCollaborationMemberRolesResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -41279,24 +41279,24 @@ func (s *Server) handleSetFeaturePackageChildrenRequest(args [1]string, argsEsca
 	}
 }
 
-// handleSetFeaturePackageCollaborationWorkspacesRequest handles setFeaturePackageCollaborationWorkspaces operation.
+// handleSetFeaturePackageCollaborationsRequest handles setFeaturePackageCollaborations operation.
 //
 // 配置功能包协作空间.
 //
-// PUT /feature-packages/{id}/collaboration-workspaces
-func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /feature-packages/{id}/workspaces/collaboration
+func (s *Server) handleSetFeaturePackageCollaborationsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("setFeaturePackageCollaborationWorkspaces"),
+		otelogen.OperationID("setFeaturePackageCollaborations"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/feature-packages/{id}/collaboration-workspaces"),
+		semconv.HTTPRouteKey.String("/feature-packages/{id}/workspaces/collaboration"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SetFeaturePackageCollaborationWorkspacesOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SetFeaturePackageCollaborationsOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -41351,15 +41351,15 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: SetFeaturePackageCollaborationWorkspacesOperation,
-			ID:   "setFeaturePackageCollaborationWorkspaces",
+			Name: SetFeaturePackageCollaborationsOperation,
+			ID:   "setFeaturePackageCollaborations",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, SetFeaturePackageCollaborationWorkspacesOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, SetFeaturePackageCollaborationsOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -41399,7 +41399,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 			return
 		}
 	}
-	params, err := decodeSetFeaturePackageCollaborationWorkspacesParams(args, argsEscaped, r)
+	params, err := decodeSetFeaturePackageCollaborationsParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -41411,7 +41411,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeSetFeaturePackageCollaborationWorkspacesRequest(r)
+	request, rawBody, close, err := s.decodeSetFeaturePackageCollaborationsRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -41431,9 +41431,9 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    SetFeaturePackageCollaborationWorkspacesOperation,
+			OperationName:    SetFeaturePackageCollaborationsOperation,
 			OperationSummary: "配置功能包协作空间",
-			OperationID:      "setFeaturePackageCollaborationWorkspaces",
+			OperationID:      "setFeaturePackageCollaborations",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -41451,7 +41451,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 
 		type (
 			Request  = *UUIDListRequest
-			Params   = SetFeaturePackageCollaborationWorkspacesParams
+			Params   = SetFeaturePackageCollaborationsParams
 			Response = *FeaturePackageMutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -41461,14 +41461,14 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		](
 			m,
 			mreq,
-			unpackSetFeaturePackageCollaborationWorkspacesParams,
+			unpackSetFeaturePackageCollaborationsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SetFeaturePackageCollaborationWorkspaces(ctx, request, params)
+				response, err = s.h.SetFeaturePackageCollaborations(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SetFeaturePackageCollaborationWorkspaces(ctx, request, params)
+		response, err = s.h.SetFeaturePackageCollaborations(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -41476,7 +41476,7 @@ func (s *Server) handleSetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		return
 	}
 
-	if err := encodeSetFeaturePackageCollaborationWorkspacesResponse(response, w, span); err != nil {
+	if err := encodeSetFeaturePackageCollaborationsResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -44441,24 +44441,24 @@ func (s *Server) handleUpdateApiEndpointContextScopeRequest(args [1]string, args
 	}
 }
 
-// handleUpdateCollaborationWorkspaceRequest handles updateCollaborationWorkspace operation.
+// handleUpdateCollaborationRequest handles updateCollaboration operation.
 //
 // 更新协作空间.
 //
-// PUT /collaboration-workspaces/{id}
-func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /workspaces/collaboration/{id}
+func (s *Server) handleUpdateCollaborationRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCollaborationWorkspace"),
+		otelogen.OperationID("updateCollaboration"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCollaborationWorkspaceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCollaborationOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -44513,15 +44513,15 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: UpdateCollaborationWorkspaceOperation,
-			ID:   "updateCollaborationWorkspace",
+			Name: UpdateCollaborationOperation,
+			ID:   "updateCollaboration",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCollaborationWorkspaceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCollaborationOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -44561,7 +44561,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 			return
 		}
 	}
-	params, err := decodeUpdateCollaborationWorkspaceParams(args, argsEscaped, r)
+	params, err := decodeUpdateCollaborationParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -44573,7 +44573,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeUpdateCollaborationWorkspaceRequest(r)
+	request, rawBody, close, err := s.decodeUpdateCollaborationRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -44593,9 +44593,9 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    UpdateCollaborationWorkspaceOperation,
+			OperationName:    UpdateCollaborationOperation,
 			OperationSummary: "更新协作空间",
-			OperationID:      "updateCollaborationWorkspace",
+			OperationID:      "updateCollaboration",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -44608,8 +44608,8 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceSaveRequest
-			Params   = UpdateCollaborationWorkspaceParams
+			Request  = *CollaborationSaveRequest
+			Params   = UpdateCollaborationParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -44619,14 +44619,14 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 		](
 			m,
 			mreq,
-			unpackUpdateCollaborationWorkspaceParams,
+			unpackUpdateCollaborationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.UpdateCollaborationWorkspace(ctx, request, params)
+				response, err = s.h.UpdateCollaboration(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.UpdateCollaborationWorkspace(ctx, request, params)
+		response, err = s.h.UpdateCollaboration(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -44634,7 +44634,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 		return
 	}
 
-	if err := encodeUpdateCollaborationWorkspaceResponse(response, w, span); err != nil {
+	if err := encodeUpdateCollaborationResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -44643,24 +44643,24 @@ func (s *Server) handleUpdateCollaborationWorkspaceRequest(args [1]string, argsE
 	}
 }
 
-// handleUpdateCollaborationWorkspaceMemberRoleRequest handles updateCollaborationWorkspaceMemberRole operation.
+// handleUpdateCollaborationMemberRoleRequest handles updateCollaborationMemberRole operation.
 //
 // 更新协作空间成员身份.
 //
-// PUT /collaboration-workspaces/{id}/members/{userId}/role
-func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /workspaces/collaboration/{id}/members/{userId}/role
+func (s *Server) handleUpdateCollaborationMemberRoleRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCollaborationWorkspaceMemberRole"),
+		otelogen.OperationID("updateCollaborationMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/{id}/members/{userId}/role"),
+		semconv.HTTPRouteKey.String("/workspaces/collaboration/{id}/members/{userId}/role"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCollaborationWorkspaceMemberRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCollaborationMemberRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -44715,15 +44715,15 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: UpdateCollaborationWorkspaceMemberRoleOperation,
-			ID:   "updateCollaborationWorkspaceMemberRole",
+			Name: UpdateCollaborationMemberRoleOperation,
+			ID:   "updateCollaborationMemberRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCollaborationWorkspaceMemberRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCollaborationMemberRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -44763,7 +44763,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 			return
 		}
 	}
-	params, err := decodeUpdateCollaborationWorkspaceMemberRoleParams(args, argsEscaped, r)
+	params, err := decodeUpdateCollaborationMemberRoleParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -44775,7 +44775,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeUpdateCollaborationWorkspaceMemberRoleRequest(r)
+	request, rawBody, close, err := s.decodeUpdateCollaborationMemberRoleRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -44795,9 +44795,9 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    UpdateCollaborationWorkspaceMemberRoleOperation,
+			OperationName:    UpdateCollaborationMemberRoleOperation,
 			OperationSummary: "更新协作空间成员身份",
-			OperationID:      "updateCollaborationWorkspaceMemberRole",
+			OperationID:      "updateCollaborationMemberRole",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -44814,8 +44814,8 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceMemberRoleRequest
-			Params   = UpdateCollaborationWorkspaceMemberRoleParams
+			Request  = *CollaborationMemberRoleRequest
+			Params   = UpdateCollaborationMemberRoleParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -44825,14 +44825,14 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 		](
 			m,
 			mreq,
-			unpackUpdateCollaborationWorkspaceMemberRoleParams,
+			unpackUpdateCollaborationMemberRoleParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.UpdateCollaborationWorkspaceMemberRole(ctx, request, params)
+				response, err = s.h.UpdateCollaborationMemberRole(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.UpdateCollaborationWorkspaceMemberRole(ctx, request, params)
+		response, err = s.h.UpdateCollaborationMemberRole(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -44840,7 +44840,7 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 		return
 	}
 
-	if err := encodeUpdateCollaborationWorkspaceMemberRoleResponse(response, w, span); err != nil {
+	if err := encodeUpdateCollaborationMemberRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -44849,24 +44849,24 @@ func (s *Server) handleUpdateCollaborationWorkspaceMemberRoleRequest(args [2]str
 	}
 }
 
-// handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest handles updateCurrentCollaborationWorkspaceBoundaryRole operation.
+// handleUpdateCurrentCollaborationBoundaryRoleRequest handles updateCurrentCollaborationBoundaryRole operation.
 //
 // 更新当前协作空间角色(边界管理).
 //
-// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
-func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/boundary/roles/{roleId}
+func (s *Server) handleUpdateCurrentCollaborationBoundaryRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCurrentCollaborationWorkspaceBoundaryRole"),
+		otelogen.OperationID("updateCurrentCollaborationBoundaryRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+		semconv.HTTPRouteKey.String("/collaboration/current/boundary/roles/{roleId}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCurrentCollaborationBoundaryRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -44921,15 +44921,15 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation,
-			ID:   "updateCurrentCollaborationWorkspaceBoundaryRole",
+			Name: UpdateCurrentCollaborationBoundaryRoleOperation,
+			ID:   "updateCurrentCollaborationBoundaryRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCurrentCollaborationBoundaryRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -44969,7 +44969,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 			return
 		}
 	}
-	params, err := decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleParams(args, argsEscaped, r)
+	params, err := decodeUpdateCurrentCollaborationBoundaryRoleParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -44981,7 +44981,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(r)
+	request, rawBody, close, err := s.decodeUpdateCurrentCollaborationBoundaryRoleRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -45001,9 +45001,9 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+			OperationName:    UpdateCurrentCollaborationBoundaryRoleOperation,
 			OperationSummary: "更新当前协作空间角色(边界管理)",
-			OperationID:      "updateCurrentCollaborationWorkspaceBoundaryRole",
+			OperationID:      "updateCurrentCollaborationBoundaryRole",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -45016,8 +45016,8 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceRoleSaveRequest
-			Params   = UpdateCurrentCollaborationWorkspaceBoundaryRoleParams
+			Request  = *CollaborationRoleSaveRequest
+			Params   = UpdateCurrentCollaborationBoundaryRoleParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -45027,14 +45027,14 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		](
 			m,
 			mreq,
-			unpackUpdateCurrentCollaborationWorkspaceBoundaryRoleParams,
+			unpackUpdateCurrentCollaborationBoundaryRoleParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx, request, params)
+				response, err = s.h.UpdateCurrentCollaborationBoundaryRole(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx, request, params)
+		response, err = s.h.UpdateCurrentCollaborationBoundaryRole(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -45042,7 +45042,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 		return
 	}
 
-	if err := encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(response, w, span); err != nil {
+	if err := encodeUpdateCurrentCollaborationBoundaryRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -45051,24 +45051,24 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(ar
 	}
 }
 
-// handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest handles updateCurrentCollaborationWorkspaceMemberRole operation.
+// handleUpdateCurrentCollaborationMemberRoleRequest handles updateCurrentCollaborationMemberRole operation.
 //
 // 更新当前协作空间成员身份.
 //
-// PUT /collaboration-workspaces/current/members/{userId}/role
-func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /collaboration/current/members/{userId}/role
+func (s *Server) handleUpdateCurrentCollaborationMemberRoleRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateCurrentCollaborationWorkspaceMemberRole"),
+		otelogen.OperationID("updateCurrentCollaborationMemberRole"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/collaboration-workspaces/current/members/{userId}/role"),
+		semconv.HTTPRouteKey.String("/collaboration/current/members/{userId}/role"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCurrentCollaborationWorkspaceMemberRoleOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), UpdateCurrentCollaborationMemberRoleOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -45123,15 +45123,15 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: UpdateCurrentCollaborationWorkspaceMemberRoleOperation,
-			ID:   "updateCurrentCollaborationWorkspaceMemberRole",
+			Name: UpdateCurrentCollaborationMemberRoleOperation,
+			ID:   "updateCurrentCollaborationMemberRole",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCurrentCollaborationWorkspaceMemberRoleOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, UpdateCurrentCollaborationMemberRoleOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -45171,7 +45171,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 			return
 		}
 	}
-	params, err := decodeUpdateCurrentCollaborationWorkspaceMemberRoleParams(args, argsEscaped, r)
+	params, err := decodeUpdateCurrentCollaborationMemberRoleParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -45183,7 +45183,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(r)
+	request, rawBody, close, err := s.decodeUpdateCurrentCollaborationMemberRoleRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -45203,9 +45203,9 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    UpdateCurrentCollaborationWorkspaceMemberRoleOperation,
+			OperationName:    UpdateCurrentCollaborationMemberRoleOperation,
 			OperationSummary: "更新当前协作空间成员身份",
-			OperationID:      "updateCurrentCollaborationWorkspaceMemberRole",
+			OperationID:      "updateCurrentCollaborationMemberRole",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -45218,8 +45218,8 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 		}
 
 		type (
-			Request  = *CollaborationWorkspaceMemberRoleRequest
-			Params   = UpdateCurrentCollaborationWorkspaceMemberRoleParams
+			Request  = *CollaborationMemberRoleRequest
+			Params   = UpdateCurrentCollaborationMemberRoleParams
 			Response = *MutationResult
 		)
 		response, err = middleware.HookMiddleware[
@@ -45229,14 +45229,14 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 		](
 			m,
 			mreq,
-			unpackUpdateCurrentCollaborationWorkspaceMemberRoleParams,
+			unpackUpdateCurrentCollaborationMemberRoleParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.UpdateCurrentCollaborationWorkspaceMemberRole(ctx, request, params)
+				response, err = s.h.UpdateCurrentCollaborationMemberRole(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.UpdateCurrentCollaborationWorkspaceMemberRole(ctx, request, params)
+		response, err = s.h.UpdateCurrentCollaborationMemberRole(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -45244,7 +45244,7 @@ func (s *Server) handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest(args
 		return
 	}
 
-	if err := encodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(response, w, span); err != nil {
+	if err := encodeUpdateCurrentCollaborationMemberRoleResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

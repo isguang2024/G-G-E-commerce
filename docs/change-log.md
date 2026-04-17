@@ -458,3 +458,44 @@
 - 真正动手时先做 migration 方案，不要先做代码 rename：优先决定 `roles.collaboration_workspace_id` 是直接改 `workspace_id`，还是抽成独立 scope 表；同时清退 `user_roles.collaboration_workspace_id`、`workspaces.collaboration_workspace_id`、JWT `collaboration_workspace_id` 与 `X-Collaboration-Workspace-Id`。
 - OpenAPI 需要按两类重排：协作空间实体治理回 `workspace/workspaces`，当前协作态接口收口到 `collaboration/current/*`；对应前端再把 `collaboration-workspace.ts` / `collaboration-workspace` store 拆回 `workspace.ts` 与 `collaboration.ts` 两条主线。
 - 权限真相和实现也要一并对齐，尤其是 [backend/internal/pkg/permission/evaluator/evaluator.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permission/evaluator/evaluator.go:197) 这条仍然依赖 `workspaces.collaboration_workspace_id + user_roles.collaboration_workspace_id` 的旧链路，否则即便表名改完，运行时依旧会被旧模型锁死。
+
+## 2026-04-17 workspace/collaboration 单主域与 role/message scope 泛化落地
+
+### 本次改动
+- 新增迁移 [backend/internal/pkg/database/migrations/00039_workspace_collaboration_scope_unification.sql](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00039_workspace_collaboration_scope_unification.sql)，为 `roles` 补 `scope_type/scope_id`、新建 `role_scopes`，并把 message template / dispatch / delivery / recipient group target 的 scope 字段扩到 `global / personal / collaboration` 兼容模型，同时完成旧 collaboration 数据回填。
+- 后端运行时已切主链：鉴权 middleware 与 JWT 改走 `auth_workspace_id + auth_workspace_type`，权限评估和平台/个人角色读取改为 `workspace_role_bindings + role_scopes`，消息服务补上 `global` 语义，非协作上下文默认以全局模板、全局发送人、全局消息记录运行。
+- OpenAPI 与前端协议已同步收口：`/collaboration-workspaces*` 根路径改为 `/workspaces/collaboration*` 与 `/collaboration/current*` 两类，消息 schema 新增 `owner_scope_id / target_scope_type / recipient_scope_type` 等字段；前端请求头已删除 `X-Collaboration-Workspace-Id` 注入，消息模块系统侧统一改成 `global` scope。
+- 已按生成链刷新 `backend/api/gen/`、`frontend/src/api/v5/schema.d.ts`、权限 seed 与前端错误码；并复验 `go test ./internal/api/handlers -count=1`、`go test ./internal/api/router -count=1`、`pnpm run gen:api`、`pnpm exec vue-tsc --noEmit`、`pnpm build` 通过。
+- 继续收口后端低风险 legacy：`backend/internal/modules/system/user/repository.go` 中用户列表角色过滤、全局角色 fallback 加载与多处“无协作空间即全局角色”兜底查询，已统一切到 `role_scopes` 规则；`backend/internal/pkg/permissionseed/ensure.go` 与 `backend/internal/pkg/permissionseed/register_seed.go` 里的默认角色/自助角色查找也不再依赖 `roles.collaboration_workspace_id IS NULL`。
+- 额外补跑了 `go test ./internal/pkg/permissionseed -count=1`，确认新的全局角色判定不会把 seed/ensure 链路打断；同时把本轮已完成节点和剩余风险回写到任务树 `tsk_01KPDZT17355P7TTRRKBEM`，避免后续继续推进时状态漂移。
+- 本轮继续收口消息域 runtime：`backend/internal/modules/system/system/message_service.go` 中发送人、接收组、发送记录等协作上下文的 `scope_id` 已统一改用 workspace ID，不再把 `collaborationWorkspaceID` 直接写进新 scope 字段；模板/发送记录/投递明细/接收组目标项的空间名称解析也改成从 `workspaces` 读取。
+- 协作成员类查询已优先切到 `workspace_members + workspaces`：包括消息投递对象、协作空间指定成员、派发用户列表，以及基于内建协作角色/功能包的 identity recipient 解析；并新增接收组目标保存时的 `target_scope_type/target_scope_id` 写入，避免新数据继续落在半新半旧状态。
+- 已补跑 `go test ./internal/modules/system/system -count=1`、`go test ./internal/api/handlers -count=1`、`go test ./internal/api/router -count=1` 通过。当前消息域仍保留少量 legacy fallback：`user_roles.collaboration_workspace_id`、快照表上的 `collaboration_workspace_id`、以及若干对旧字段的展示兼容，这部分留到下一轮继续回收。
+
+### 下次方向
+- 当前仍保留一批 legacy `collaboration_workspace_id` 兼容字段和消息域内部查询，下一轮应继续清理 `message_service.go`、`user/repository.go` 中剩余的旧表/旧列依赖，再做真正的 schema 回收。
+- 这轮没有同步重命名旧 permission key，`collaboration_workspace.manage` 等权限点仍在兼容运行；若要彻底完成命名收口，下一步应单独规划 permission key、seed、菜单页面 key 与前端路由命名的统一迁移。
+
+## 2026-04-18 workspace 边界 canonical 第二阶段
+
+### 本次改动
+- 新增迁移 [backend/internal/pkg/database/migrations/00040_workspace_boundary_canonicalization.sql](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00040_workspace_boundary_canonicalization.sql)，补齐 `workspace_blocked_menus`、`workspace_blocked_actions`、`workspace_access_snapshots`、`workspace_role_access_snapshots`，并回填 `workspace_members`、`workspace_feature_packages`、`workspace_role_bindings` 等 canonical 数据，开始把协作边界运行时从旧 `collaboration_workspace_*` 表链路脱开。
+- 后端 runtime 已切一批主路径到 `workspace_id` 真相：`collaborationworkspaceboundary`、`appscope`、`permissionrefresh`、`workspacefeaturebinding`、`platformaccess`、`cmd/init-admin`、菜单清理与协作空间删除流程，现已优先读写 `workspace_*` 表，不再把旧协作阻断表和旧协作快照表当主存储。
+- 消息域继续回收 legacy：`backend/internal/modules/system/system/message_service.go` 中平台角色收件人与协作角色/功能包收件人的主查询，已移除对 `user_roles.collaboration_workspace_id` 和 `collaboration_workspace_role_access_snapshots` 的依赖，改为 `workspace_role_bindings` 与 `workspace_role_access_snapshots`。
+- 协议层也同步收口了一层：旧 JWT/APIKey middleware 现在会补齐 `auth_workspace_id/auth_workspace_type`，`router` 里的类型化 logger 改记 canonical workspace，上游 CORS 允许头移除了 `X-Collaboration-Workspace-Id`。已验证 `go test ./internal/pkg/collaborationworkspaceboundary ./internal/pkg/appscope ./internal/pkg/permissionrefresh ./internal/pkg/workspacefeaturebinding ./internal/modules/system/user ./internal/modules/system/menu -count=1`、`go test ./internal/pkg/platformaccess ./internal/modules/system/menu -count=1`、`go test ./internal/modules/system/system ./internal/api/handlers ./internal/api/router -count=1` 通过。
+
+### 下次方向
+- 继续清理 `backend/internal/api/middleware/app_context.go`、`page/service.go`、`page/runtime_cache.go`、`user/repository.go`、`cmd/migrate/main.go` 里剩余的 `collaboration_workspace_id` 查询与旧 consolidate 逻辑，把后端 runtime 里最后一批 legacy 判定链路收掉。
+- 后端真相层稳定后，再整批推进 OpenAPI / permission key / 前端目录与路由命名重排；当前 `CollaborationWorkspace*` schema、`collaboration-workspace` 路径和前端页面目录还没开始系统迁移，下一轮要接上生成链一起处理。
+
+## 2026-04-18 collaboration 导航 seed 合并与真实浏览器闭环
+
+### 本次改动
+- 在 [backend/cmd/migrate/main.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 新增 `consolidateNavigationSeeds`，把数据库里残留的 `CollaborationWorkspace*` 菜单和 `collaboration_workspace.message.*` 页面种子自动折叠到 canonical `Collaboration*` 记录，并在 `go run ./cmd/migrate` 时幂等执行。
+- 实际回收了旧 `menu_definitions` / `space_menu_placements` / `ui_pages` / `page_space_bindings` 中的 legacy 记录，浏览器失败根因“路由已是 `/collaboration/*`，但动态组件仍返回 `/collaboration-workspace/*`”已经消除。
+- 已重新执行生成与校验链：`bundle`、`lint`、`ogen`、`gen-permissions`、前端 `pnpm run gen:api`、`go run ./cmd/migrate`、`go test ./internal/api/handlers ./internal/api/router ./internal/modules/system/permission ./cmd/migrate -count=1`、`pnpm exec vue-tsc --noEmit`、`pnpm build` 全部通过。Windows 环境没有 `make`，本轮改为显式执行同等生成命令。
+- 真实浏览器回归已通过两轮：`frontend/e2e/tests/workspace-collaboration-pages.real.spec.ts` 与 `frontend/e2e/tests/high-risk-send.real.spec.ts` 共 4 个用例全部通过，覆盖 `/system/message`、`/collaboration/message`、`/collaboration/workspaces`、`/collaboration/members`、`/collaboration/roles` 等关键主路径。
+
+### 下次方向
+- 终态残留扫描仍有较多 legacy 命中，热点集中在 `backend/internal/modules/system/user/repository.go`、`backend/internal/modules/system/system/message_service.go`、`backend/internal/modules/system/collaborationworkspace/service.go`、`backend/internal/pkg/permissionkey/permissionkey.go`、`frontend/src/views/message/modules/message-dispatch-console.vue` 等文件；其中相当一部分仍是兼容旧表/旧字段的运行时桥接或旧类型名。
+- 下一轮应按热点继续拆分收口：优先处理 `user/repository.go`、`message_service.go`、`permission/service.go`、`permissionkey.go` 与前端消息/治理 API 的 legacy fallback，再决定是否把剩余旧模型名进一步压到仅历史迁移和 changelog 可见。

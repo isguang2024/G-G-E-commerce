@@ -1,4 +1,4 @@
-# domains/permission/schemas.yaml
+﻿# domains/permission/schemas.yaml
 components:
   schemas:
     PermissionActionAuditSummary:
@@ -175,7 +175,7 @@ components:
         - page_count
         - package_count
         - role_count
-        - collaboration_workspace_count
+        - workspace_count
         - user_count
       properties:
         permission_key: {type: string}
@@ -183,7 +183,7 @@ components:
         page_count: {type: integer, format: int64}
         package_count: {type: integer, format: int64}
         role_count: {type: integer, format: int64}
-        collaboration_workspace_count: {type: integer, format: int64}
+        workspace_count: {type: integer, format: int64}
         user_count: {type: integer, format: int64}
     PermissionActionGroupList:
       type: object
@@ -378,7 +378,7 @@ components:
         feature_group_id: {type: string, format: uuid}
         template_name: {type: string}
         package_count: {type: integer}
-        collaboration_workspace_count: {type: integer}
+        workspace_count: {type: integer}
     PermissionActionRiskAuditList:
       type: object
       required: [records, total]
@@ -387,3 +387,4 @@ components:
           type: array
           items: {$ref: '#/components/schemas/RiskAuditItem'}
         total: {type: integer, format: int64}
+

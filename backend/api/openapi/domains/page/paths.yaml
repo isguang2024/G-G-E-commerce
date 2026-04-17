@@ -1,4 +1,4 @@
-# domains/page/paths.yaml — AUTO-SPLIT by split_spec.py
+﻿# domains/page/paths.yaml — AUTO-SPLIT by split_spec.py
 paths:
   /pages/runtime:
     get:
@@ -118,7 +118,7 @@ paths:
         schema:
           type: string
           format: uuid
-      - name: collaboration_workspace_id
+      - name: workspace_id
         in: query
         description: 协作空间 ID；为空表示个人空间链路
         schema:
@@ -374,3 +374,4 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml#/components/schemas/PageBreadcrumbPreviewListResponse'
+

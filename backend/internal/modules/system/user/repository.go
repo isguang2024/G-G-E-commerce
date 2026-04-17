@@ -32,6 +32,8 @@ type userRepository struct {
 	db *gorm.DB
 }
 
+const globalRoleScopeExclusionSQL = "NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)"
+
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
@@ -178,8 +180,9 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 	}
 	if roleID != "" {
 		baseQuery = baseQuery.Where(
-			"EXISTS (SELECT 1 FROM user_roles JOIN roles ON roles.id = user_roles.role_id WHERE users.id = user_roles.user_id AND user_roles.collaboration_workspace_id IS NULL AND user_roles.role_id = ? AND roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL)",
+			"EXISTS (SELECT 1 FROM user_roles JOIN roles ON roles.id = user_roles.role_id WHERE users.id = user_roles.user_id AND user_roles.collaboration_workspace_id IS NULL AND user_roles.role_id = ? AND roles.deleted_at IS NULL AND "+globalRoleScopeExclusionSQL+")",
 			roleID,
+			models.ScopeTypeGlobal,
 		)
 	}
 
@@ -282,11 +285,17 @@ func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 
 func (r *roleRepository) GetByCode(code string) (*Role, error) {
 	var role Role
-	err := r.db.Where("code = ? AND collaboration_workspace_id IS NULL", code).First(&role).Error
+	err := r.db.
+		Where("code = ? AND deleted_at IS NULL", code).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+		return nil, err
+	}
+	if err := r.loadAppScopes([]*Role{&role}); err != nil {
 		return nil, err
 	}
 	return &role, nil
@@ -294,7 +303,13 @@ func (r *roleRepository) GetByCode(code string) (*Role, error) {
 
 func (r *roleRepository) FindByCode(code string) ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("code = ? AND collaboration_workspace_id IS NULL", code).Find(&roles).Error
+	err := r.db.
+		Where("code = ? AND deleted_at IS NULL", code).
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		Find(&roles).Error
+	if err == nil {
+		err = r.loadAppScopes(roleSlicePointers(roles))
+	}
 	return roles, err
 }
 
@@ -312,7 +327,10 @@ func (r *roleRepository) GetByIDs(ids []uuid.UUID) ([]Role, error) {
 
 func (r *roleRepository) List() ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("collaboration_workspace_id IS NULL").Find(&roles).Error
+	err := r.db.
+		Where("deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -324,9 +342,32 @@ func (r *roleRepository) List() ([]Role, error) {
 
 func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceID uuid.UUID) ([]Role, error) {
 	var roles []Role
-	err := r.db.
-		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"collaboration_workspace_admin", "collaboration_workspace_member"}, collaborationWorkspaceID).
-		Order("collaboration_workspace_id IS NULL DESC, sort_order ASC, created_at DESC").
+	err := r.db.Table("roles").
+		Select("roles.*").
+		Joins("LEFT JOIN role_scopes rs ON rs.role_id = roles.id AND rs.deleted_at IS NULL").
+		Joins("LEFT JOIN workspaces scoped_workspaces ON scoped_workspaces.id = rs.scope_id AND scoped_workspaces.deleted_at IS NULL").
+		Where("roles.deleted_at IS NULL").
+		Where(`
+			(
+				COALESCE(rs.scope_type, ?) = ?
+				AND roles.code IN ?
+			)
+			OR
+			(
+				rs.scope_type = ?
+				AND scoped_workspaces.workspace_type = ?
+				AND scoped_workspaces.collaboration_workspace_id = ?
+			)
+		`,
+			models.ScopeTypeGlobal,
+			models.ScopeTypeGlobal,
+			[]string{"collaboration_admin", "collaboration_member"},
+			models.ScopeTypeCollaboration,
+			models.WorkspaceTypeCollaboration,
+			collaborationWorkspaceID,
+		).
+		Order("CASE WHEN COALESCE(rs.scope_type, 'global') = 'global' THEN 0 ELSE 1 END ASC").
+		Order("roles.sort_order ASC, roles.created_at DESC").
 		Find(&roles).Error
 	if err != nil {
 		return nil, err
@@ -338,11 +379,21 @@ func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceI
 }
 
 func (r *roleRepository) Create(role *Role) error {
-	return r.db.Create(role).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(role).Error; err != nil {
+			return err
+		}
+		return r.syncRoleScopeTx(tx, role)
+	})
 }
 
 func (r *roleRepository) Update(role *Role) error {
-	return r.db.Model(role).Updates(role).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(role).Updates(role).Error; err != nil {
+			return err
+		}
+		return r.syncRoleScopeTx(tx, role)
+	})
 }
 
 func (r *roleRepository) Delete(id uuid.UUID) error {
@@ -351,7 +402,10 @@ func (r *roleRepository) Delete(id uuid.UUID) error {
 
 func (r *roleRepository) GetAll() ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("collaboration_workspace_id IS NULL").Find(&roles).Error
+	err := r.db.
+		Where("deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal).
+		Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +416,9 @@ func (r *roleRepository) GetAll() ([]Role, error) {
 }
 
 func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, appKey, startTime, endTime string, enabled, globalOnly *bool) ([]Role, int64, error) {
-	baseQuery := r.db.Model(&Role{}).Where("collaboration_workspace_id IS NULL")
+	baseQuery := r.db.Model(&Role{}).
+		Where("roles.deleted_at IS NULL").
+		Where("NOT EXISTS (SELECT 1 FROM role_scopes rs WHERE rs.role_id = roles.id AND rs.deleted_at IS NULL AND rs.scope_type <> ?)", models.ScopeTypeGlobal)
 	if roleCode != "" {
 		baseQuery = baseQuery.Where("code LIKE ?", "%"+roleCode+"%")
 	}
@@ -482,6 +538,40 @@ func (r *roleRepository) loadAppScopes(roles []*Role) error {
 			role.AppKeys = append(role.AppKeys, item.AppKey)
 		}
 	}
+
+	type roleScopeRow struct {
+		RoleID                   uuid.UUID  `gorm:"column:role_id"`
+		ScopeType                string     `gorm:"column:scope_type"`
+		ScopeID                  *uuid.UUID `gorm:"column:scope_id"`
+		CollaborationWorkspaceID *uuid.UUID `gorm:"column:collaboration_workspace_id"`
+	}
+	var scopeRows []roleScopeRow
+	if err := r.db.Table("role_scopes").
+		Select("role_scopes.role_id", "role_scopes.scope_type", "role_scopes.scope_id", "workspaces.collaboration_workspace_id").
+		Joins("LEFT JOIN workspaces ON workspaces.id = role_scopes.scope_id AND workspaces.deleted_at IS NULL").
+		Where("role_scopes.role_id IN ? AND role_scopes.deleted_at IS NULL", roleIDs).
+		Scan(&scopeRows).Error; err != nil {
+		return err
+	}
+	scopeByRoleID := make(map[uuid.UUID]roleScopeRow, len(scopeRows))
+	for _, item := range scopeRows {
+		scopeByRoleID[item.RoleID] = item
+	}
+	for _, role := range roles {
+		if role == nil {
+			continue
+		}
+		role.ScopeType = models.ScopeTypeGlobal
+		role.ScopeID = nil
+		role.CollaborationWorkspaceID = nil
+		if scope, ok := scopeByRoleID[role.ID]; ok {
+			if strings.TrimSpace(scope.ScopeType) != "" {
+				role.ScopeType = scope.ScopeType
+			}
+			role.ScopeID = scope.ScopeID
+			role.CollaborationWorkspaceID = scope.CollaborationWorkspaceID
+		}
+	}
 	return nil
 }
 
@@ -491,6 +581,42 @@ func roleSlicePointers(items []Role) []*Role {
 		result = append(result, &items[index])
 	}
 	return result
+}
+
+func (r *roleRepository) syncRoleScopeTx(tx *gorm.DB, role *Role) error {
+	if tx == nil || role == nil || role.ID == uuid.Nil {
+		return nil
+	}
+
+	scopeType := strings.TrimSpace(role.ScopeType)
+	scopeID := role.ScopeID
+	if role.CollaborationWorkspaceID != nil && *role.CollaborationWorkspaceID != uuid.Nil {
+		var workspace Workspace
+		if err := tx.
+			Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, *role.CollaborationWorkspaceID).
+			First(&workspace).Error; err != nil {
+			return err
+		}
+		scopeType = models.ScopeTypeCollaboration
+		scopeID = &workspace.ID
+	}
+	if scopeType == "" {
+		scopeType = models.ScopeTypeGlobal
+	}
+	if scopeType == models.ScopeTypeGlobal {
+		scopeID = nil
+	}
+	role.ScopeType = scopeType
+	role.ScopeID = scopeID
+
+	if err := tx.Where("role_id = ?", role.ID).Delete(&RoleScope{}).Error; err != nil {
+		return err
+	}
+	return tx.Create(&RoleScope{
+		RoleID:    role.ID,
+		ScopeType: scopeType,
+		ScopeID:   scopeID,
+	}).Error
 }
 
 type MenuRepository interface {
@@ -1004,7 +1130,7 @@ func (r *collaborationWorkspaceMemberRepository) GetAdminUsersByCollaborationWor
 		Where(
 			"collaboration_workspace_members.collaboration_workspace_id = ? AND collaboration_workspace_members.role_code = ? AND collaboration_workspace_members.deleted_at IS NULL",
 			collaborationWorkspaceID,
-			"collaboration_workspace_admin",
+			"collaboration_admin",
 		).
 		Find(&users).Error
 	return users, err
@@ -1091,20 +1217,16 @@ func (r *userRoleRepository) GetRoleIDsByUserAndCollaborationWorkspace(userID uu
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
 	}
+	if collaborationWorkspaceID != nil {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
+	}
 
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	if collaborationWorkspaceID == nil {
-		query = query.Where("collaboration_workspace_id IS NULL")
-	} else {
-		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
-	}
+	query = query.Where("collaboration_workspace_id IS NULL")
 	err := query.Pluck("role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
-	}
-	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
-		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
 	return roleIDs, nil
 }
@@ -1115,23 +1237,19 @@ func (r *userRoleRepository) GetRoleCodesByUserAndCollaborationWorkspace(userID 
 	} else if len(codes) > 0 {
 		return codes, nil
 	}
+	if collaborationWorkspaceID != nil {
+		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
+	}
 
 	var codes []string
 	query := r.db.Model(&UserRole{}).
 		Joins("JOIN roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.deleted_at IS NULL")
-	if collaborationWorkspaceID == nil {
-		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
-	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
-	}
+	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
 	err := query.Pluck("roles.code", &codes).Error
 	if err != nil {
 		return nil, err
-	}
-	if collaborationWorkspaceID != nil && len(codes) == 0 {
-		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
 	return codes, nil
 }
@@ -1142,20 +1260,16 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndCollaborationWorkspace(
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
 	}
+	if collaborationWorkspaceID != nil {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
+	}
 
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	if collaborationWorkspaceID == nil {
-		query = query.Where("collaboration_workspace_id IS NULL")
-	} else {
-		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
-	}
+	query = query.Where("collaboration_workspace_id IS NULL")
 	err := query.Pluck("role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
-	}
-	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
-		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
 	return roleIDs, nil
 }
@@ -1166,6 +1280,9 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndCollaborationWork
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
 	}
+	if collaborationWorkspaceID != nil {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, true)
+	}
 
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).
@@ -1173,17 +1290,10 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndCollaborationWork
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.status = ?", "normal").
 		Where("roles.deleted_at IS NULL")
-	if collaborationWorkspaceID == nil {
-		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
-	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
-	}
+	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
-	}
-	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
-		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, true)
 	}
 	return roleIDs, nil
 }
@@ -1194,23 +1304,19 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndCollaborationWorkspac
 	} else if len(codes) > 0 {
 		return codes, nil
 	}
+	if collaborationWorkspaceID != nil {
+		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
+	}
 
 	var codes []string
 	query := r.db.Model(&UserRole{}).
 		Joins("JOIN roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.deleted_at IS NULL")
-	if collaborationWorkspaceID == nil {
-		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
-	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
-	}
+	query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
 	err := query.Pluck("roles.code", &codes).Error
 	if err != nil {
 		return nil, err
-	}
-	if collaborationWorkspaceID != nil && len(codes) == 0 {
-		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
 	return codes, nil
 }
@@ -1240,25 +1346,43 @@ func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoleCodes(userID, 
 }
 
 func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoles(userID, collaborationWorkspaceID uuid.UUID, onlyActive bool) ([]Role, error) {
-	var member CollaborationWorkspaceMember
-	err := r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).First(&member).Error
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []Role{}, nil
 		}
 		return nil, err
 	}
-	if member.Status != "active" {
+	var member WorkspaceMember
+	err = r.db.Where("workspace_id = ? AND user_id = ? AND deleted_at IS NULL", workspace.ID, userID).First(&member).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []Role{}, nil
+		}
+		return nil, err
+	}
+	if strings.TrimSpace(member.Status) != models.WorkspaceStatusActive {
 		return []Role{}, nil
 	}
 
 	var roles []Role
-	query := r.db.Where("code = ? AND collaboration_workspace_id IS NULL", member.RoleCode)
+	query := r.db.Model(&Role{}).
+		Where("code = ?", collaborationWorkspaceIdentityRoleCode(member.MemberType)).
+		Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal)
 	if onlyActive {
 		query = query.Where("status = ?", "normal")
 	}
 	err = query.Order("sort_order ASC, created_at DESC").Find(&roles).Error
 	return roles, err
+}
+
+func collaborationWorkspaceIdentityRoleCode(memberType string) string {
+	switch strings.ToLower(strings.TrimSpace(memberType)) {
+	case models.WorkspaceMemberOwner, models.WorkspaceMemberAdmin:
+		return "collaboration_admin"
+	default:
+		return "collaboration_member"
+	}
 }
 
 func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleIDs []uuid.UUID) error {
@@ -1464,7 +1588,7 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id IN ?", fallbackUserIDs).
 		Where("user_roles.collaboration_workspace_id IS NULL").
-		Where("roles.collaboration_workspace_id IS NULL").
+		Where(globalRoleScopeExclusionSQL, models.ScopeTypeGlobal).
 		Where("roles.deleted_at IS NULL").
 		Scan(&rows).Error; err != nil {
 		return err
@@ -2564,20 +2688,34 @@ func NewCollaborationWorkspaceBlockedMenuRepository(db *gorm.DB) CollaborationWo
 }
 
 func (r *collaborationWorkspaceBlockedMenuRepository) GetMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
 	var menuIDs []uuid.UUID
-	err := r.db.Model(&CollaborationWorkspaceBlockedMenu{}).Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Pluck("menu_id", &menuIDs).Error
+	err = r.db.Model(&WorkspaceBlockedMenu{}).Where("workspace_id = ?", workspace.ID).Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 
 func (r *collaborationWorkspaceBlockedMenuRepository) ReplaceCollaborationWorkspaceBlockedMenus(collaborationWorkspaceID uuid.UUID, menuIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
+		workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, collaborationWorkspaceID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+		if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&WorkspaceBlockedMenu{}).Error; err != nil {
 			return err
 		}
 		if len(menuIDs) == 0 {
 			return nil
 		}
-		items := make([]CollaborationWorkspaceBlockedMenu, 0, len(menuIDs))
+		items := make([]WorkspaceBlockedMenu, 0, len(menuIDs))
 		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
 		for _, menuID := range menuIDs {
 			if menuID == uuid.Nil {
@@ -2587,7 +2725,7 @@ func (r *collaborationWorkspaceBlockedMenuRepository) ReplaceCollaborationWorksp
 				continue
 			}
 			seen[menuID] = struct{}{}
-			items = append(items, CollaborationWorkspaceBlockedMenu{CollaborationWorkspaceID: collaborationWorkspaceID, MenuID: menuID})
+			items = append(items, WorkspaceBlockedMenu{WorkspaceID: workspace.ID, MenuID: menuID})
 		}
 		if len(items) == 0 {
 			return nil
@@ -2597,11 +2735,18 @@ func (r *collaborationWorkspaceBlockedMenuRepository) ReplaceCollaborationWorksp
 }
 
 func (r *collaborationWorkspaceBlockedMenuRepository) DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error {
-	return r.db.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return r.db.Where("workspace_id = ?", workspace.ID).Delete(&WorkspaceBlockedMenu{}).Error
 }
 
 func (r *collaborationWorkspaceBlockedMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
-	return r.db.Where("menu_id = ?", menuID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error
+	return r.db.Where("menu_id = ?", menuID).Delete(&WorkspaceBlockedMenu{}).Error
 }
 
 type CollaborationWorkspaceBlockedActionRepository interface {
@@ -2620,20 +2765,34 @@ func NewCollaborationWorkspaceBlockedActionRepository(db *gorm.DB) Collaboration
 }
 
 func (r *collaborationWorkspaceBlockedActionRepository) GetActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
 	var actionIDs []uuid.UUID
-	err := r.db.Model(&CollaborationWorkspaceBlockedAction{}).Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Pluck("action_id", &actionIDs).Error
+	err = r.db.Model(&WorkspaceBlockedAction{}).Where("workspace_id = ?", workspace.ID).Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
 }
 
 func (r *collaborationWorkspaceBlockedActionRepository) ReplaceCollaborationWorkspaceBlockedActions(collaborationWorkspaceID uuid.UUID, actionIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedAction{}).Error; err != nil {
+		workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, collaborationWorkspaceID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+		if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&WorkspaceBlockedAction{}).Error; err != nil {
 			return err
 		}
 		if len(actionIDs) == 0 {
 			return nil
 		}
-		items := make([]CollaborationWorkspaceBlockedAction, 0, len(actionIDs))
+		items := make([]WorkspaceBlockedAction, 0, len(actionIDs))
 		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
 		for _, actionID := range actionIDs {
 			if actionID == uuid.Nil {
@@ -2643,7 +2802,7 @@ func (r *collaborationWorkspaceBlockedActionRepository) ReplaceCollaborationWork
 				continue
 			}
 			seen[actionID] = struct{}{}
-			items = append(items, CollaborationWorkspaceBlockedAction{CollaborationWorkspaceID: collaborationWorkspaceID, ActionID: actionID})
+			items = append(items, WorkspaceBlockedAction{WorkspaceID: workspace.ID, ActionID: actionID})
 		}
 		if len(items) == 0 {
 			return nil
@@ -2653,11 +2812,18 @@ func (r *collaborationWorkspaceBlockedActionRepository) ReplaceCollaborationWork
 }
 
 func (r *collaborationWorkspaceBlockedActionRepository) DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error {
-	return r.db.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedAction{}).Error
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(r.db, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return r.db.Where("workspace_id = ?", workspace.ID).Delete(&WorkspaceBlockedAction{}).Error
 }
 
 func (r *collaborationWorkspaceBlockedActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
-	return r.db.Where("action_id = ?", actionID).Delete(&CollaborationWorkspaceBlockedAction{}).Error
+	return r.db.Where("action_id = ?", actionID).Delete(&WorkspaceBlockedAction{}).Error
 }
 
 type UserHiddenMenuRepository interface {

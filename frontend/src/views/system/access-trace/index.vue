@@ -156,7 +156,7 @@
         :data-visible-page-count="visiblePageCount"
         :data-total-page-count="pageRows.length"
         :data-space-key="result.menuSpaceKey || ''"
-        :data-collaboration-workspace-id="result.collaborationWorkspaceId || ''"
+        :data-collaboration-id="result.collaborationWorkspaceId || ''"
         :data-user-id="result.userId || ''"
         hidden
       ></div>
@@ -502,15 +502,15 @@
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
   import {
-    fetchGetCollaborationWorkspaceMembers,
-    fetchGetCollaborationWorkspaceRoles
-  } from '@/api/collaboration-workspace'
+    fetchGetCollaborationMembers,
+    fetchGetCollaborationRoles
+  } from '@/api/collaboration'
   import {
     fetchGetMenuSpaces,
     fetchGetPageAccessTrace,
     fetchGetPageList,
     fetchGetRoleOptions,
-    fetchGetCollaborationWorkspaceOptions,
+    fetchGetCollaborationOptions,
     fetchGetUserList
   } from '@/domains/governance/api'
 
@@ -709,11 +709,11 @@
       userOptions.value = []
       return
     }
-    const useCollaborationWorkspaceMembers =
+    const useCollaborationMembers =
       Boolean(query.collaborationWorkspaceId) &&
       (onlyCollaborationWorkspaceUsers.value || Boolean(roleCodeFilter.value))
-    if (useCollaborationWorkspaceMembers && query.collaborationWorkspaceId) {
-      const collaborationWorkspaceMembers = await fetchGetCollaborationWorkspaceMembers(
+    if (useCollaborationMembers && query.collaborationWorkspaceId) {
+      const collaborationWorkspaceMembers = await fetchGetCollaborationMembers(
         query.collaborationWorkspaceId,
         {
           role_code: roleCodeFilter.value || undefined
@@ -759,14 +759,14 @@
       return
     }
     if (query.collaborationWorkspaceId) {
-      const collaborationWorkspaceRoles = await fetchGetCollaborationWorkspaceRoles(
+      const collaborationWorkspaceRoles = await fetchGetCollaborationRoles(
         query.collaborationWorkspaceId
       )
       roleOptions.value = (collaborationWorkspaceRoles || [])
         .filter((role: any) => {
           const code = `${role.roleCode || ''}`.trim()
           if (!code || code === 'admin') return false
-          if (code === 'collaboration_workspace_admin' || code === 'collaboration_workspace_member')
+          if (code === 'collaboration_admin' || code === 'collaboration_member')
             return true
           return Boolean(role.collaborationWorkspaceId)
         })
@@ -798,7 +798,7 @@
     }
     const [pages, collaborationWorkspacePage, spaces] = await Promise.all([
       fetchGetPageList({ current: 1, size: 500, appKey: targetAppKey.value }),
-      fetchGetCollaborationWorkspaceOptions({ current: 1, size: 200 }),
+      fetchGetCollaborationOptions({ current: 1, size: 200 }),
       fetchGetMenuSpaces(targetAppKey.value)
     ])
     pageOptions.value = pages.records || []

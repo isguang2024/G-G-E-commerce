@@ -23,7 +23,7 @@ func (h *navigationAPIHandler) GetNavigation(ctx context.Context, params gen.Get
 		userID = &uid
 	}
 	var cwID *uuid.UUID
-	if raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationWorkspaceID)); raw != "" {
+	if raw := strings.TrimSpace(stringFromCtx(ctx, CtxCollaborationID)); raw != "" {
 		if parsed, err := uuid.Parse(raw); err == nil {
 			cwID = &parsed
 		}
@@ -80,3 +80,4 @@ func (h *navigationAPIHandler) GetNavigation(ctx context.Context, params gen.Get
 	}
 	return out, nil
 }
+

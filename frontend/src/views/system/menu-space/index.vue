@@ -276,7 +276,7 @@
           <ElSelect v-model="spaceForm.access_mode" style="width: 100%">
             <ElOption label="全部可进" value="all" />
             <ElOption label="仅个人空间管理员" value="personal_workspace_admin" />
-            <ElOption label="仅协作空间管理员" value="collaboration_workspace_admin" />
+            <ElOption label="仅协作空间管理员" value="collaboration_admin" />
             <ElOption label="指定空间角色码" value="role_codes" />
           </ElSelect>
           <div class="field-hint"
@@ -288,7 +288,7 @@
             v-model="allowedRoleCodesText"
             type="textarea"
             :rows="3"
-            placeholder="多个角色码用英文逗号分隔，例如 admin, collaboration_workspace_admin, ops_manager"
+            placeholder="多个角色码用英文逗号分隔，例如 admin, collaboration_admin, ops_manager"
           />
         </ElFormItem>
         <div class="menu-space-drawer-grid">
