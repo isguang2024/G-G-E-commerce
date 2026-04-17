@@ -32,3 +32,17 @@
 - 项目边界：[docs/project-framework.md](docs/project-framework.md)
 - 前端规范：[docs/frontend-guideline.md](docs/frontend-guideline.md)
 - 专题手册：[docs/guides/README.md](docs/guides/README.md)
+
+## 前端模板与组件库
+
+- **基座模板**：[Art Design Pro](https://www.artd.pro/)（Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS 的企业级中后台模板）。
+  官方文档：<https://www.artd.pro/docs/zh/guide/introduce.html>。
+- **UI 基础库**：Element Plus（弹层、表单、表格、抽屉等原子组件）+ Tailwind（工具类排版/间距）。
+- **全局注册的基座组件**：`frontend/src/components/core/` 下所有 `Art` 前缀组件（`ArtTable`、`ArtTableHeader`、`ArtStatsCard`、图表家族等）通过 `utils/registerGlobalComponent.ts` 自动注册，页面直接写标签即可，**无需 import**。API 形状以基座官方文档为准。
+- **本仓沉淀的业务组件**：`frontend/src/components/business/`，需要 `import`。代表性组件：
+  - `FieldLabel`：表单标签 + 问号 tooltip，替代冗长 `form-tip`
+  - `DictSelect`：字典下拉（filterable + 缓存 + 默认项），所有枚举字段统一走它，**禁止硬编码 `<ElOption>` 列表**
+  - `PermissionActionWorkbench` / `PermissionSourcePanels` 等权限工作台组件
+  - `JsonViewer` / `TraceDrawer` 等可观测性组件
+- **配套 Hooks**：基座 `useTable`；本仓 `useDictionary` / `useDictionaries` / `useUpload`。
+- **完整清单与约束**：[frontend/src/components/README.md](frontend/src/components/README.md)（含新增组件的边界与命名原则）。

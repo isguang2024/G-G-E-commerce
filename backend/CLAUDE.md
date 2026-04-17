@@ -62,39 +62,73 @@ Operational rule:
 - If you introduced new tables, columns, baseline permission keys, or any
   other schema/default-data change, rerun `cmd/migrate` as well.
 - For a brand-new database, run `cmd/migrate` first, then `update-openapi.bat`.
-- **After regenerating `openapi_seed.json` — restart the running backend
-  process.** The route ↔ permission-key map is loaded once at router
-  initialisation and cached for the life of the process. Consolidations,
-  renames, or deletions that look correct in the DB will still be denied
-  by middleware until the server restarts and rereads the seed. Symptom:
-  "the new key works in SQL but the endpoint returns 403". Fix: restart,
-  don't chase permission-eval bugs.
 
-### 3. Implement the operation method (sub-handler/service)
+### 3. Implement the operation (sub-handler / service)
 
 Handlers are **domain-split**. Do not add new ops to a monolithic
 `APIHandler` — find the matching sub-handler and add the method there.
 
-Layout:
+#### Layout
 
-- `internal/api/handlers/{domain}_handler.go` — `{domain}APIHandler` struct
-  + constructor (holds the minimal dependency set for this domain)
-- `internal/api/handlers/{domain}.go` — all op methods with receiver
+- `internal/api/handlers/{domain}_handler.go` — `*{domain}APIHandler`
+  struct + `new{Domain}APIHandler(...)` constructor (holds only the
+  dependencies this domain needs)
+- `internal/api/handlers/{domain}.go` — every op method with receiver
   `*{domain}APIHandler`, matching the generated `gen.Handler` signature
-- `internal/api/handlers/workspace.go` — `APIHandler` main struct that
-  embeds every sub-handler plus `NewAPIHandler`
+- `internal/api/handlers/workspace.go` — main `APIHandler` struct that
+  anonymously embeds every sub-handler plus `NewAPIHandler`
 
-Business logic stays in the service layer
-(`internal/modules/system/{domain}`); the sub-handler is a thin adapter.
+Business logic stays in `internal/modules/system/{domain}`; the
+sub-handler is a thin adapter.
 
-You do **not** need to touch `internal/api/router/router.go`. The router
-iterates over `permissionseed.LoadOpenAPISeed().Operations` at startup and
-mounts each operation to the appropriate Gin group (`public` → v1 without
-JWT; `authenticated` / `permission` → v1 with JWT + permission middleware).
-Any operation you declared in step 1 and regenerated in step 2 is already
-reachable as soon as the server boots — there is no "bridge row" to add.
-The only routes still registered by hand in `router.go` are non-OpenAPI
-entries: `/health`, `/uploads`, OAuth callbacks, WebSocket, SSE, etc.
+#### Adding a new domain
+
+1. Define `{domain}APIHandler` struct + `new{Domain}APIHandler(...)`
+   in `{domain}_handler.go`
+2. Move op methods to `{domain}.go` with receiver `*{domain}APIHandler`
+3. Add `*{domain}APIHandler` as an anonymous embed in `APIHandler`
+   inside `workspace.go`
+4. Wire the constructor in `NewAPIHandler`
+5. `go build ./internal/api/handlers/...` — must compile without
+   ambiguous-selector errors
+
+#### Embedding depth rule (why ambiguous selectors happen)
+
+- `handlerBase` (wraps `gen.UnimplementedHandler`) sits at depth 2
+- Every `*{domain}APIHandler` sits at depth 1
+- Go picks the shallowest — sub-handler ops automatically override the
+  Unimplemented stubs
+- If two sub-handlers declare the same method name, Go cannot resolve
+  it: **the domain boundary is wrong; split or merge domains until
+  every op belongs to exactly one sub-handler**
+
+#### Testing sub-handlers
+
+Tests that instantiate `&APIHandler{...}` directly must set the
+embedded sub-handler field, not the legacy flat layout:
+
+```go
+h := &APIHandler{
+    logPolicyAPIHandler: &logPolicyAPIHandler{policyRepo: repo, ...},
+}
+```
+
+Smoke tests go under `internal/api/handlers/integration_test.go`
+(`//go:build integration`), reusing `integDo` / `integToken` / existing
+fixtures. Run with:
+
+```
+go test -tags integration ./internal/api/handlers/...
+```
+
+#### Router — do not touch
+
+You do **not** need to edit `internal/api/router/router.go`. The router
+iterates over `permissionseed.LoadOpenAPISeed().Operations` at startup
+and mounts each op to the correct Gin group (`public` → v1 without JWT;
+`authenticated` / `permission` → v1 with JWT + permission middleware).
+Only **non-OpenAPI** entries remain registered by hand: `/health`,
+`/uploads`, OAuth callbacks, WebSocket, SSE.
 
 Do NOT re-introduce a legacy Gin module shell
 (`internal/modules/system/*/module.go`).
@@ -108,34 +142,28 @@ it on next `cmd/migrate` run. For frequently-shipped, well-known baseline
 keys you may also add them to the goose migration
 `internal/pkg/database/migrations/00001_permission_seed_baseline.sql`.
 
-### 5. Add a smoke test
+**Invariant**: `permissionkey.go` mapping's `ResourceCode` must equal
+the `ModuleGroup.Code` in `seeds.go`, otherwise the permission key
+lands in the wrong group in the admin UI.
 
-Append a test to `internal/api/handlers/integration_test.go`
-(`//go:build integration`). Reuse `integDo`, `integToken`, and the existing
-fixtures. Run with:
+### 5. Verify
 
-```
-go test -tags integration ./internal/api/handlers/...
-```
-
-### 6. Update the frontend client
-
-Frontend consumes the generated TS client under `frontend/src/api/v5/`.
-Re-run the generator there and replace any hand-written axios calls.
+- `go build ./...`
+- `go test ./internal/api/handlers -count=1`
+- `go test ./internal/api/router -count=1` (whenever op set changes)
+- `go test -tags integration ./internal/api/handlers/...` (smoke)
+- Frontend: `cd ../frontend && pnpm run gen:api` then
+  `pnpm exec vue-tsc --noEmit`; replace any hand-written axios calls
+  with the regenerated client in `frontend/src/api/v5/`
 
 ## How to add a complete system module
 
-If you're adding a new **management page** (not just a single endpoint),
-the full checklist is in `docs/guides/new-module-checklist.md`. It covers:
-
-1. Migration → Model → OpenAPI spec → permission key mapping →
-   permission key seed → module group → menu seed → feature package
-   binding → code gen → restart backend → sub-handler/service →
-   frontend page → verify.
-
-Key invariant: `permissionkey.go` mapping's `ResourceCode` must equal
-the `ModuleGroup.Code` in `seeds.go`, otherwise the permission key
-lands in the wrong group in the admin UI.
+For a new **management page** (not just a single endpoint), the full
+14-stage closed-loop lives in
+[../docs/API_OPENAPI_FIXED_FLOW.md](../docs/API_OPENAPI_FIXED_FLOW.md);
+the concrete files/rows to touch are in
+[../docs/guides/new-module-checklist.md](../docs/guides/new-module-checklist.md).
+Do not restate the pipeline here.
 
 ## Anti-patterns
 
@@ -154,7 +182,4 @@ lands in the wrong group in the admin UI.
 - Do NOT write tenant-unaware queries; every query must filter on
   `tenant_id` (currently always `default`).
 - Do NOT hand-edit `openapi_seed.json` — it is regenerated from the spec.
-- Do NOT assume route↔permission bindings hot-reload. They are cached at
-  process startup. Always restart the backend after `gen-permissions` or
-  any permission-key consolidation migration.
 

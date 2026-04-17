@@ -44,15 +44,14 @@
 ## 新增能力固定闭环
 
 - 项目统一按这条顺序推进新增能力或新增接口：
-  `model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → restart backend → router/bridge check → sub-handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
+  `model/domain → migration → seed/ensure → OpenAPI spec → bundle → lint → ogen → gen-permissions → router/bridge check → sub-handler/service → frontend gen:api → frontend API 封装 → UI → build/test/browser verify`
 - 这条顺序的含义是：
   - 先定领域模型、表结构和默认数据策略，再谈 API
   - OpenAPI 是后端与前端共享的唯一契约真相源
-  - `restart backend` 是**硬性检查点**：`openapi_seed.json` 在 `router` 初始化时只读一次，路由↔权限键映射是进程级缓存。合并 / 重命名 / 删除权限键后若不重启，旧映射仍生效，会出现"DB 已对齐但接口 403"的假权限故障
-  - `router/bridge check` 是**自动步骤 + 覆盖率核对**：跑完 `make api`、并重启后端后，`backend/internal/api/router/router.go` 的 `mountOpenAPIBridgeRoutes` 已经把每条 operation 按 `x-access-mode` 挂到 Gin 的认证 / 权限 / endpoint-status 分组；除 `/health`、`/uploads`、OAuth 回调等**非 OpenAPI** 入口外，不要人工往 `router.go` 加行。核对靠 `go test ./internal/api/router -count=1`
+  - `router/bridge check` 是**自动步骤 + 覆盖率核对**：跑完 `make api` 后，`backend/internal/api/router/router.go` 的 `mountOpenAPIBridgeRoutes` 已经把每条 operation 按 `x-access-mode` 挂到 Gin 的认证 / 权限 / endpoint-status 分组；除 `/health`、`/uploads`、OAuth 回调等**非 OpenAPI** 入口外，不要人工往 `router.go` 加行。核对靠 `go test ./internal/api/router -count=1`
   - `sub-handler/service` 指按 domain 拆分的 sub-handler（`internal/api/handlers/{domain}.go` + `{domain}_handler.go`），不再写单一 god `APIHandler`
   - 前端不是只拿到 `schema.d.ts` 就结束，仍需补业务 API 封装与 UI 联调
-  - 未完成生成、权限种子、**后端重启**、联编和浏览器验证前，不视为闭环完成
+  - 未完成生成、权限种子、联编和浏览器验证前，不视为闭环完成
 
 ## 当前非目标
 

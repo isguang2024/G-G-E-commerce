@@ -1,4 +1,4 @@
-﻿{
+{
   "permissions": {
     "allow": [
       "Bash(xargs wc:*)",
@@ -133,9 +133,11 @@
       "Bash(npx @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml --max-problems 20)",
       "Bash(npx @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml --max-problems 600)",
       "Bash(go list:*)",
-      "Bash(go doc:*)"
+      "Bash(go doc:*)",
+      "Bash(rm -rf apps/web-antd apps/web-antdv-next apps/web-naive apps/web-tdesign)",
+      "Bash(rm -rf .git)",
+      "Bash(pnpm -v)"
     ]
   },
   "defaultMode": "bypassPermissions"
 }
-

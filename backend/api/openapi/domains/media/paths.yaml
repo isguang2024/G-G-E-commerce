@@ -6,7 +6,7 @@ paths:
       summary: 获取当前用户可见的上传配置
       tags:
       - media
-      x-permission-key: system.media.manage
+      x-permission-key: system.media.upload
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -35,7 +35,7 @@ paths:
       summary: 上传媒体资源
       tags:
       - media
-      x-permission-key: system.media.manage
+      x-permission-key: system.media.upload
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -78,7 +78,7 @@ paths:
       summary: 准备媒体上传
       tags:
       - media
-      x-permission-key: system.media.manage
+      x-permission-key: system.media.upload
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission
@@ -113,7 +113,7 @@ paths:
       summary: 完成媒体直传
       tags:
       - media
-      x-permission-key: system.media.manage
+      x-permission-key: system.media.upload
       x-tenant-scoped: true
       x-app-scope: none
       x-access-mode: permission

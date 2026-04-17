@@ -7,7 +7,7 @@
 | 目录 | 职责 |
 | --- | --- |
 | `api/` | 业务 API 封装与 `api/v5/` 生成层 |
-| `components/` | 复用组件，分 `core/` 与 `business/` |
+| `components/` | 复用组件，分 `core/`（全局注册）与 `business/`（按域显式 import）。清单见 [components/README.md](components/README.md) |
 | `domains/` | 跨页面的领域能力编排 |
 | `router/` | 路由表、守卫、动态路由运行时 |
 | `store/` | Pinia 状态管理 |
@@ -23,5 +23,6 @@
 
 ## 延伸阅读
 
+- 组件选用指南：[components/README.md](components/README.md)
 - 页面规范：[../../docs/frontend-guideline.md](../../docs/frontend-guideline.md)
 - 仓库结构：[../../docs/project-structure.md](../../docs/project-structure.md)

@@ -162,6 +162,7 @@ func main() {
 	runOptionalMigrationTasks(logger, "runtime-sync", []migrationTask{
 		{Name: "sync.consolidate_permission_keys", Run: consolidatePermissionKeys},
 		{Name: "sync.prune_feature_package_keys", Run: pruneBuiltinFeaturePackageKeys},
+		{Name: "sync.backfill_media_upload_on_manage", Run: backfillCustomMediaUploadOnManage},
 		{Name: "sync.openapi_endpoints", Run: initOpenAPIEndpoints},
 		{
 			Name: "sync.api_registry",
@@ -926,6 +927,60 @@ func pruneBuiltinFeaturePackageKeys(logger *zap.Logger) error {
 		}
 	}
 	logger.Info("feature_package_keys prune applied", zap.Int64("deleted", totalDeleted))
+	return nil
+}
+
+// backfillCustomMediaUploadOnManage 为历史自定义功能包补齐 system.media.upload 绑定。
+// 背景：原先 system.media.manage 同时承担「上传直传链路」与「删除/治理」两种语义，
+// 拆分为 system.media.upload（直传）+ system.media.manage（删除）后，builtin 包由
+// EnsureDefaultFeaturePackages + pruneBuiltinFeaturePackageKeys 自动对齐，但非 builtin
+// （IsBuiltin=false）包由租户手动维护，只有 manage 绑定时上传链路会 403。
+// 此任务：凡是已绑定 system.media.manage 且未绑定 system.media.upload 的非 builtin 包，
+// 自动追加 system.media.upload 绑定。幂等：已绑定者跳过（NOT EXISTS 保护）。
+func backfillCustomMediaUploadOnManage(logger *zap.Logger) error {
+	const manageKey = "system.media.manage"
+	const uploadKey = "system.media.upload"
+
+	var manage usermodel.PermissionKey
+	if err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", manageKey).First(&manage).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Info("media manage key not present, skip backfill", zap.String("key", manageKey))
+			return nil
+		}
+		return fmt.Errorf("lookup %s: %w", manageKey, err)
+	}
+
+	var upload usermodel.PermissionKey
+	if err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", uploadKey).First(&upload).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Info("media upload key not present, skip backfill", zap.String("key", uploadKey))
+			return nil
+		}
+		return fmt.Errorf("lookup %s: %w", uploadKey, err)
+	}
+
+	result := database.DB.Exec(`
+		INSERT INTO feature_package_keys (package_id, action_id, created_at)
+		SELECT fpk.package_id, ?, now()
+		  FROM feature_package_keys fpk
+		  JOIN feature_packages fp ON fp.id = fpk.package_id AND fp.deleted_at IS NULL
+		 WHERE fpk.action_id = ?
+		   AND fp.is_builtin = false
+		   AND NOT EXISTS (
+		       SELECT 1 FROM feature_package_keys fpk2
+		        WHERE fpk2.package_id = fpk.package_id
+		          AND fpk2.action_id = ?
+		   )
+	`, upload.ID, manage.ID, upload.ID)
+	if result.Error != nil {
+		return fmt.Errorf("backfill media.upload for custom packages: %w", result.Error)
+	}
+	if result.RowsAffected > 0 {
+		logger.Info("backfilled system.media.upload on custom packages",
+			zap.Int64("inserted", result.RowsAffected))
+	} else {
+		logger.Info("no custom packages need system.media.upload backfill")
+	}
 	return nil
 }
 

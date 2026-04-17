@@ -532,7 +532,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			Status:         "normal",
 			SortOrder:      6,
 			MenuNames:      []string{"System", "SystemConfig", "Dictionary", "SiteConfig", "SystemFile", "UploadConfig", "SystemAccount", "RegisterEntry", "LoginPageTemplate"},
-			PermissionKeys: []string{"system.dictionary.view", "system.dictionary.manage", "system.site_config.view", "system.site_config.manage", "system.upload.config.manage", "system.media.view", "system.media.manage", "system.register_entry.manage"},
+			PermissionKeys: []string{"system.dictionary.view", "system.dictionary.manage", "system.site_config.view", "system.site_config.manage", "system.upload.config.manage", "system.media.view", "system.media.upload", "system.media.manage", "system.register_entry.manage"},
 		},
 		{
 			PackageKey:     "collaboration_workspace.member_admin",

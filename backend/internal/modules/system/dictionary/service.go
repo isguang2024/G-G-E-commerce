@@ -512,6 +512,84 @@ var builtinDicts = []builtinDict{
 			{Label: "第三方登录注册", Value: "oauth", Description: "通过第三方身份提供商完成注册。", SortOrder: 6},
 		},
 	},
+	{
+		Code: "storage_driver", Name: "存储驱动", Description: "对象存储底层驱动类型",
+		Items: []DictItemInput{
+			{Label: "本地存储", Value: "local", Description: "将文件保存到服务器本地磁盘，适合开发或内网环境。", SortOrder: 1, IsDefault: true},
+			{Label: "阿里云 OSS", Value: "aliyun_oss", Description: "使用阿里云对象存储服务，支持前端直传与 CDN 加速。", SortOrder: 2},
+		},
+	},
+	{
+		Code: "storage_status", Name: "存储状态", Description: "存储服务/桶/上传配置的启用状态",
+		Items: []DictItemInput{
+			{Label: "启用", Value: "ready", Description: "资源处于可用状态，参与运行时解析。", SortOrder: 1, IsDefault: true},
+			{Label: "停用", Value: "disabled", Description: "资源被暂时关闭，运行时不再选中。", SortOrder: 2},
+			{Label: "异常", Value: "error", Description: "系统健康检查失败时自动标记，通常需要人工介入。", SortOrder: 3},
+		},
+	},
+	{
+		Code: "upload_mode", Name: "上传方式", Description: "上传配置默认的上传路径选择",
+		Items: []DictItemInput{
+			{Label: "自动选择", Value: "auto", Description: "按驱动能力与文件大小自动决定直传或中转。", SortOrder: 1, IsDefault: true},
+			{Label: "前端直传", Value: "direct", Description: "由浏览器直接把文件上传到对象存储,性能最好,需要驱动支持签名。", SortOrder: 2},
+			{Label: "后端中转", Value: "relay", Description: "前端先把文件发给业务后端,再由后端落库到对象存储,兼容性最好。", SortOrder: 3},
+		},
+	},
+	{
+		Code: "upload_mode_override", Name: "上传方式覆写", Description: "上传规则对父级上传方式的覆写取值",
+		Items: []DictItemInput{
+			{Label: "继承上传配置", Value: "inherit", Description: "保持与 UploadKey 相同的上传方式。", SortOrder: 1, IsDefault: true},
+			{Label: "强制前端直传", Value: "direct", Description: "无论父级如何,本规则一律走前端直传。", SortOrder: 2},
+			{Label: "强制后端中转", Value: "relay", Description: "无论父级如何,本规则一律走后端中转。", SortOrder: 3},
+		},
+	},
+	{
+		Code: "upload_visibility", Name: "上传可见性", Description: "上传后文件默认的访问控制级别",
+		Items: []DictItemInput{
+			{Label: "私有", Value: "private", Description: "对象默认私有,需通过签名 URL 或业务接口访问。", SortOrder: 1, IsDefault: true},
+			{Label: "公开", Value: "public", Description: "对象允许匿名访问,适合 CDN 场景与静态资源。", SortOrder: 2},
+		},
+	},
+	{
+		Code: "upload_visibility_override", Name: "可见性覆写", Description: "上传规则对父级可见性的覆写取值",
+		Items: []DictItemInput{
+			{Label: "继承上传配置", Value: "inherit", Description: "保持与 UploadKey 相同的可见性。", SortOrder: 1, IsDefault: true},
+			{Label: "公开", Value: "public", Description: "强制设为公开访问。", SortOrder: 2},
+			{Label: "私有", Value: "private", Description: "强制设为私有访问。", SortOrder: 3},
+		},
+	},
+	{
+		Code: "upload_filename_strategy", Name: "文件名策略", Description: "上传规则决定对象最终文件名的方式",
+		Items: []DictItemInput{
+			{Label: "随机生成（UUID）", Value: "uuid", Description: "用 UUID 作为文件名,避免冲突,推荐默认。", SortOrder: 1, IsDefault: true},
+			{Label: "保留原文件名", Value: "original", Description: "直接使用用户选择的文件名,会做安全清洗。", SortOrder: 2},
+			{Label: "时间戳", Value: "timestamp", Description: "使用上传时间戳作为文件名,便于按时间排序。", SortOrder: 3},
+			{Label: "哈希", Value: "hashed", Description: "使用文件内容哈希作为文件名,相同文件落同一对象键。", SortOrder: 4},
+		},
+	},
+	{
+		Code: "upload_mime_preset", Name: "上传文件类型", Description: "上传配置/规则可选的常见 MIME 类型",
+		Items: []DictItemInput{
+			{Label: "所有图片", Value: "image/*", Description: "涵盖所有图片类型,前端会自动匹配 jpg/png/webp 等。", SortOrder: 1},
+			{Label: "JPEG 图片", Value: "image/jpeg", Description: "标准 JPEG/JPG 图片。", SortOrder: 2},
+			{Label: "PNG 图片", Value: "image/png", Description: "无损 PNG 图片。", SortOrder: 3},
+			{Label: "WebP 图片", Value: "image/webp", Description: "WebP 压缩图片,体积更小。", SortOrder: 4},
+			{Label: "GIF 图片", Value: "image/gif", Description: "GIF 动图或静图。", SortOrder: 5},
+			{Label: "SVG 矢量图", Value: "image/svg+xml", Description: "SVG 矢量图,用于图标与插图。", SortOrder: 6},
+			{Label: "所有视频", Value: "video/*", Description: "涵盖所有视频类型。", SortOrder: 7},
+			{Label: "MP4 视频", Value: "video/mp4", Description: "MP4 封装的视频。", SortOrder: 8},
+			{Label: "所有音频", Value: "audio/*", Description: "涵盖所有音频类型。", SortOrder: 9},
+			{Label: "MP3 音频", Value: "audio/mpeg", Description: "MP3 音频。", SortOrder: 10},
+			{Label: "PDF 文档", Value: "application/pdf", Description: "PDF 文档。", SortOrder: 11},
+			{Label: "纯文本", Value: "text/plain", Description: "纯文本文件 .txt。", SortOrder: 12},
+			{Label: "CSV 表格", Value: "text/csv", Description: "CSV 表格,可被 Excel 打开。", SortOrder: 13},
+			{Label: "JSON 文件", Value: "application/json", Description: "JSON 数据文件。", SortOrder: 14},
+			{Label: "ZIP 压缩包", Value: "application/zip", Description: "ZIP 压缩包。", SortOrder: 15},
+			{Label: "Word 文档（.docx）", Value: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Description: "Microsoft Word 2007+ 文档。", SortOrder: 16},
+			{Label: "Excel 表格（.xlsx）", Value: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Description: "Microsoft Excel 2007+ 表格。", SortOrder: 17},
+			{Label: "PowerPoint 演示（.pptx）", Value: "application/vnd.openxmlformats-officedocument.presentationml.presentation", Description: "Microsoft PowerPoint 2007+ 演示文稿。", SortOrder: 18},
+		},
+	},
 }
 
 // EnsureBuiltinDicts idempotently creates built-in dictionaries.

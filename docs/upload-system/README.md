@@ -21,7 +21,7 @@
 | 模式开关 | 前端 SDK `MediaUploadOptions.mode = 'auto' \| 'direct' \| 'relay'` |
 | 配置面 | `/system/upload-config`：Provider / Bucket / UploadKey 三 tab CRUD + Provider 健康检查 |
 | 配置权限 | 单一 `system.upload.config.manage`（已写入 OpenAPI seed） |
-| 媒体权限 | `system.media.view`、`system.media.manage` |
+| 媒体权限 | `system.media.view`（列表）、`system.media.upload`（直传 + 中转上传 + 可见 key 发现）、`system.media.manage`（删除/治理）三键分治 |
 | 多租户 | 所有表带 `tenant_id`，仓储默认 `default` |
 | 密钥 | 应用层 `AES-256-GCM`，前缀 `secret_cipher_prefix:` 标记 |
 | 审计 | `CreateRecord` 写入 `system.upload.record.create` 事件 |
@@ -41,6 +41,24 @@ StorageProvider          驱动 + 凭据（aliyun_oss 的 endpoint/internal_endp
 继承顺序：`Provider → Bucket → UploadKey → Rule`，越往后优先级越高。
 
 Key 解析：先 `key.rule`，缺省回退 `UploadKey.default_rule_key`；`key` 不存在则回退系统默认 UploadKey；仍不存在返回 404，不静默兜底。
+
+### 权限三层心智模型
+
+一次上传请求依次穿过三个权限闸门：
+
+| 层级 | 谁校验 | 依据 | 目的 |
+| --- | --- | --- | --- |
+| ① OpenAPI 端点鉴权 | `internal/api/middleware/openapiperm` | paths.yaml 上的 `x-permission-key`（`system.media.upload`/`view`/`manage`） | 阻挡没有对应端点能力的角色 |
+| ② UploadKey 业务鉴权 | `internal/modules/system/upload.validateUploadPermission` | 目标 `UploadKey.permission_key` 字段 | 控制「即使拿到直传端点，也只能用自己被授权的业务场景 key」 |
+| ③ Driver 边界 | Storage Driver 自身 | provider/bucket 配置 + `storageKey` 前缀校验 | 防止越权访问其它 bucket / 路径 |
+
+关键约定：
+
+- ① 是粗粒度（端点级）；所有拥有 `system.media.upload` 的角色都能走直传链路的 API。
+- ② 是细粒度（UploadKey 级）；在 seed 中默认留空（`permission_key=""`），此时 `permissionGranted("")` 恒为真，放行。只有业务显式给某个 UploadKey 设置了 `permission_key` 时才生效——用于例如「只有客服能用 `support.inline`」这种场景。
+- ③ 是数据边界；driver 不读 HTTP 上下文，只校验 `storageKey` 是否落在允许目录内。
+
+默认功能包 `platform_admin.content_manage` 已同时包含 view/upload/manage 三键；普通业务角色通常只需要 `system.media.upload`（加可选的 `system.media.view`）。
 
 ---
 
@@ -147,11 +165,23 @@ flowchart LR
 
 | Method | Path | 权限 | 说明 |
 | --- | --- | --- | --- |
-| POST | `/api/v1/media/prepare` | `system.media.manage` | 直传准备：返回 `{ mode, url, headers, form, storageKey }` |
-| POST | `/api/v1/media/complete` | `system.media.manage` | 直传完成：核对对象 + 写 record |
-| POST | `/api/v1/media/upload` | `system.media.manage` | Relay 上传 |
+| GET  | `/api/v1/media/upload-keys` | `system.media.upload` | 列出当前用户可见的 UploadKey（供表单/测试 tab 下拉） |
+| POST | `/api/v1/media/prepare` | `system.media.upload` | 直传准备：返回 `{ mode, url, headers, form, storageKey }` |
+| POST | `/api/v1/media/complete` | `system.media.upload` | 直传完成：核对对象 + 写 record |
+| POST | `/api/v1/media/upload` | `system.media.upload` | Relay 上传 |
 | GET  | `/api/v1/media` | `system.media.view` | 媒体列表 |
 | DELETE | `/api/v1/media/{id}` | `system.media.manage` | 删除 |
+
+> **权限切分说明**：原 `system.media.manage` 同时承担「前端直传运行时」和「后台删除治理」两种语义，
+> 导致业务角色必须拿到管理员级权限才能走上传。现在拆成：
+> - `system.media.upload`：面向业务运行时，一般发给所有需要上传的角色（编辑器用户、客服等）。
+> - `system.media.manage`：面向后台治理，仅管理员与数据维护角色持有。
+> - `system.media.view`：面向列表/统计/审计，轻量只读。
+>
+> 默认 `platform_admin.content_manage` 功能包已同时携带三者（见 `permissionseed/seeds.go`）。
+> 存量租户自定义功能包由 `cmd/migrate` 的 runtime-sync 任务 `sync.backfill_media_upload_on_manage` 自动补齐：
+> 凡已绑 `system.media.manage` 且 `is_builtin=false` 的 `feature_packages` 会被追加 `system.media.upload`，
+> 保证升级不因权限缺口中断业务上传。
 
 ### 配置中心（管理侧）
 
@@ -357,7 +387,10 @@ upload.secret_cache_ttl_seconds
 | 现象 | 排查 |
 | --- | --- |
 | 401 | token / 工作区上下文头 |
-| 403 | `system.media.manage`（业务）或 `system.upload.config.manage`（配置） |
+| 403 直传/中转失败 | 缺 `system.media.upload`（一层 OpenAPI middleware）或 UploadKey 自身 `permission_key` 未匹配（二层 UploadService 校验） |
+| 403 媒体列表失败 | 缺 `system.media.view` |
+| 403 媒体删除失败 | 缺 `system.media.manage` |
+| 403 上传配置管理失败 | 缺 `system.upload.config.manage` |
 | 500 | 本地目录权限 / DB 连接 / `upload.*` 配置 |
 | 文件已写但列表为空 | `upload_records` 写入与 `tenant_id` |
 | 直传成功但预览 404 | OSS 三类域名错位（参见 §7） |
