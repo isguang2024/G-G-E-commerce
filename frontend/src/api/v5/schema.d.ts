@@ -3163,8 +3163,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 批量解析站点配置（全局+应用级合并） */
+        /** 批量解析参数 */
         get: operations["resolveSiteConfigs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/site-configs/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询单个参数 */
+        get: operations["lookupSiteConfig"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3180,10 +3197,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询站点配置项（管理端） */
+        /** 查询参数项（管理端） */
         get: operations["listSiteConfigs"];
         put?: never;
-        /** 新增或更新站点配置项 */
+        /** 新增或更新参数项 */
         post: operations["upsertSiteConfig"];
         delete?: never;
         options?: never;
@@ -3199,10 +3216,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 更新站点配置项 */
+        /** 更新参数项 */
         put: operations["updateSiteConfig"];
         post?: never;
-        /** 删除站点配置项 */
+        /** 删除参数项 */
         delete: operations["deleteSiteConfig"];
         options?: never;
         head?: never;
@@ -3216,10 +3233,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询站点配置集合 */
+        /** 查询参数集合 */
         get: operations["listSiteConfigSets"];
         put?: never;
-        /** 新增或更新配置集合 */
+        /** 新增或更新参数集合 */
         post: operations["upsertSiteConfigSet"];
         delete?: never;
         options?: never;
@@ -3235,10 +3252,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 更新配置集合 */
+        /** 更新参数集合 */
         put: operations["updateSiteConfigSet"];
         post?: never;
-        /** 删除配置集合 */
+        /** 删除参数集合 */
         delete: operations["deleteSiteConfigSet"];
         options?: never;
         head?: never;
@@ -3253,7 +3270,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 整体替换集合包含的 config_key 列表 */
+        /** 整体替换参数集合包含的 config_key 列表 */
         put: operations["updateSiteConfigSetItems"];
         post?: never;
         delete?: never;
@@ -4039,21 +4056,49 @@ export interface components {
             items: {
                 [key: string]: components["schemas"]["SiteConfigResolvedItem"];
             };
+            /**
+             * @description 当前解析生效的作用域类型
+             * @enum {string}
+             */
+            scope_type: "global" | "app";
+            /** @description 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key */
+            scope_key: string;
             /** @description 请求指纹，用于前端缓存命中校验 */
             version: string;
+        };
+        SiteConfigLookupResponse: {
+            config_key: string;
+            item: components["schemas"]["SiteConfigResolvedItem"];
+            /**
+             * @description 当前解析生效的作用域类型
+             * @enum {string}
+             */
+            scope_type: "global" | "app";
+            /** @description 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key */
+            scope_key: string;
         };
         SiteConfigSummary: {
             /** Format: uuid */
             id: string;
             tenant_id: string;
-            /** @description 空字符串代表全局配置 */
-            app_key: string;
+            /**
+             * @description 参数所属作用域类型
+             * @enum {string}
+             */
+            scope_type: "global" | "app";
+            /** @description 参数所属作用域 key；全局时为空，APP 时为目标 APP key */
+            scope_key: string;
             config_key: string;
             config_value?: {
                 [key: string]: unknown;
             };
             /** @enum {string} */
             value_type: "string" | "number" | "bool" | "image" | "json" | "svg";
+            /**
+             * @description 参数回退策略；inherit 表示当前作用域未命中时允许回退到全局默认，strict 表示不回退
+             * @enum {string}
+             */
+            fallback_policy: "inherit" | "strict";
             label?: string;
             description?: string;
             sort_order?: number;
@@ -4069,14 +4114,24 @@ export interface components {
             total: number;
         };
         SiteConfigSaveRequest: {
-            /** @description 空字符串代表全局；非空为应用级 */
-            app_key?: string;
+            /**
+             * @description 参数要写入的作用域类型
+             * @enum {string}
+             */
+            scope_type: "global" | "app";
+            /** @description 作用域 key；当 `scope_type=app` 时填写目标 APP key */
+            scope_key?: string;
             config_key: string;
             config_value?: {
                 [key: string]: unknown;
             };
             /** @enum {string} */
             value_type?: "string" | "number" | "bool" | "image" | "json" | "svg";
+            /**
+             * @description 参数回退策略；未填写时默认 inherit。APP 作用域参数会强制按 inherit 处理。
+             * @enum {string}
+             */
+            fallback_policy?: "inherit" | "strict";
             label?: string;
             description?: string;
             sort_order?: number;
@@ -13861,8 +13916,10 @@ export interface operations {
     resolveSiteConfigs: {
         parameters: {
             query?: {
-                /** @description 应用 key；留空仅解析全局配置 */
-                app_key?: string;
+                /** @description 解析作用域；`context` 使用当前请求上下文 APP，`global` 只取全局参数，`app` 读取指定 APP 作用域 */
+                scope_type?: "context" | "global" | "app";
+                /** @description 作用域 key；当 `scope_type=app` 时填写目标 APP key */
+                scope_key?: string;
                 /** @description 逗号分隔的 config_key 列表 */
                 keys?: string;
                 /** @description 逗号分隔的集合编码列表；集合内的 key 会自动展开到查询 */
@@ -13894,11 +13951,58 @@ export interface operations {
             };
         };
     };
+    lookupSiteConfig: {
+        parameters: {
+            query: {
+                /** @description 参数 key */
+                config_key: string;
+                /** @description 查询作用域；`context` 使用当前请求上下文 APP，`global` 只取全局参数，`app` 读取指定 APP 作用域 */
+                scope_type?: "context" | "global" | "app";
+                /** @description 作用域 key；当 `scope_type=app` 时填写目标 APP key */
+                scope_key?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteConfigLookupResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listSiteConfigs: {
         parameters: {
             query?: {
-                /** @description 应用 key；留空仅返回全局；`__all__` 返回所有作用域 */
-                app_key?: string;
+                /** @description 管理端查询范围；`global` 仅返回全局参数，`app` 返回指定 APP 作用域参数，`all` 返回全部作用域 */
+                scope_type?: "all" | "global" | "app";
+                /** @description 作用域 key；当 `scope_type=app` 时填写目标 APP key */
+                scope_key?: string;
             };
             header?: never;
             path?: never;

@@ -6451,6 +6451,54 @@ type ListMediaUnauthorized Error
 
 func (*ListMediaUnauthorized) listMediaRes() {}
 
+type ListSiteConfigsScopeType string
+
+const (
+	ListSiteConfigsScopeTypeAll    ListSiteConfigsScopeType = "all"
+	ListSiteConfigsScopeTypeGlobal ListSiteConfigsScopeType = "global"
+	ListSiteConfigsScopeTypeApp    ListSiteConfigsScopeType = "app"
+)
+
+// AllValues returns all ListSiteConfigsScopeType values.
+func (ListSiteConfigsScopeType) AllValues() []ListSiteConfigsScopeType {
+	return []ListSiteConfigsScopeType{
+		ListSiteConfigsScopeTypeAll,
+		ListSiteConfigsScopeTypeGlobal,
+		ListSiteConfigsScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ListSiteConfigsScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case ListSiteConfigsScopeTypeAll:
+		return []byte(s), nil
+	case ListSiteConfigsScopeTypeGlobal:
+		return []byte(s), nil
+	case ListSiteConfigsScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ListSiteConfigsScopeType) UnmarshalText(data []byte) error {
+	switch ListSiteConfigsScopeType(data) {
+	case ListSiteConfigsScopeTypeAll:
+		*s = ListSiteConfigsScopeTypeAll
+		return nil
+	case ListSiteConfigsScopeTypeGlobal:
+		*s = ListSiteConfigsScopeTypeGlobal
+		return nil
+	case ListSiteConfigsScopeTypeApp:
+		*s = ListSiteConfigsScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type ListStaleApiEndpointsInternalServerError Error
 
 func (*ListStaleApiEndpointsInternalServerError) listStaleApiEndpointsRes() {}
@@ -8372,6 +8420,62 @@ func (s *LoginResponseUser) init() LoginResponseUser {
 type LoginUnauthorized Error
 
 func (*LoginUnauthorized) loginRes() {}
+
+type LookupSiteConfigBadRequest Error
+
+func (*LookupSiteConfigBadRequest) lookupSiteConfigRes() {}
+
+type LookupSiteConfigScopeType string
+
+const (
+	LookupSiteConfigScopeTypeContext LookupSiteConfigScopeType = "context"
+	LookupSiteConfigScopeTypeGlobal  LookupSiteConfigScopeType = "global"
+	LookupSiteConfigScopeTypeApp     LookupSiteConfigScopeType = "app"
+)
+
+// AllValues returns all LookupSiteConfigScopeType values.
+func (LookupSiteConfigScopeType) AllValues() []LookupSiteConfigScopeType {
+	return []LookupSiteConfigScopeType{
+		LookupSiteConfigScopeTypeContext,
+		LookupSiteConfigScopeTypeGlobal,
+		LookupSiteConfigScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LookupSiteConfigScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case LookupSiteConfigScopeTypeContext:
+		return []byte(s), nil
+	case LookupSiteConfigScopeTypeGlobal:
+		return []byte(s), nil
+	case LookupSiteConfigScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LookupSiteConfigScopeType) UnmarshalText(data []byte) error {
+	switch LookupSiteConfigScopeType(data) {
+	case LookupSiteConfigScopeTypeContext:
+		*s = LookupSiteConfigScopeTypeContext
+		return nil
+	case LookupSiteConfigScopeTypeGlobal:
+		*s = LookupSiteConfigScopeTypeGlobal
+		return nil
+	case LookupSiteConfigScopeTypeApp:
+		*s = LookupSiteConfigScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type LookupSiteConfigUnauthorized Error
+
+func (*LookupSiteConfigUnauthorized) lookupSiteConfigRes() {}
 
 // Ref: #/components/schemas/MediaCompleteUploadRequest
 type MediaCompleteUploadRequest struct {
@@ -12660,6 +12764,52 @@ func (o OptListLogPoliciesPipeline) Or(d ListLogPoliciesPipeline) ListLogPolicie
 	return d
 }
 
+// NewOptListSiteConfigsScopeType returns new OptListSiteConfigsScopeType with value set to v.
+func NewOptListSiteConfigsScopeType(v ListSiteConfigsScopeType) OptListSiteConfigsScopeType {
+	return OptListSiteConfigsScopeType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptListSiteConfigsScopeType is optional ListSiteConfigsScopeType.
+type OptListSiteConfigsScopeType struct {
+	Value ListSiteConfigsScopeType
+	Set   bool
+}
+
+// IsSet returns true if OptListSiteConfigsScopeType was set.
+func (o OptListSiteConfigsScopeType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptListSiteConfigsScopeType) Reset() {
+	var v ListSiteConfigsScopeType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptListSiteConfigsScopeType) SetTo(v ListSiteConfigsScopeType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptListSiteConfigsScopeType) Get() (v ListSiteConfigsScopeType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptListSiteConfigsScopeType) Or(d ListSiteConfigsScopeType) ListSiteConfigsScopeType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptListStorageBucketsStatus returns new OptListStorageBucketsStatus with value set to v.
 func NewOptListStorageBucketsStatus(v ListStorageBucketsStatus) OptListStorageBucketsStatus {
 	return OptListStorageBucketsStatus{
@@ -13068,6 +13218,52 @@ func (o OptLoginPageTemplateUpsertRequestMeta) Get() (v LoginPageTemplateUpsertR
 
 // Or returns value if set, or given parameter if does not.
 func (o OptLoginPageTemplateUpsertRequestMeta) Or(d LoginPageTemplateUpsertRequestMeta) LoginPageTemplateUpsertRequestMeta {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptLookupSiteConfigScopeType returns new OptLookupSiteConfigScopeType with value set to v.
+func NewOptLookupSiteConfigScopeType(v LookupSiteConfigScopeType) OptLookupSiteConfigScopeType {
+	return OptLookupSiteConfigScopeType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLookupSiteConfigScopeType is optional LookupSiteConfigScopeType.
+type OptLookupSiteConfigScopeType struct {
+	Value LookupSiteConfigScopeType
+	Set   bool
+}
+
+// IsSet returns true if OptLookupSiteConfigScopeType was set.
+func (o OptLookupSiteConfigScopeType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLookupSiteConfigScopeType) Reset() {
+	var v LookupSiteConfigScopeType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLookupSiteConfigScopeType) SetTo(v LookupSiteConfigScopeType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLookupSiteConfigScopeType) Get() (v LookupSiteConfigScopeType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLookupSiteConfigScopeType) Or(d LookupSiteConfigScopeType) LookupSiteConfigScopeType {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14755,6 +14951,52 @@ func (o OptPermissionGroupItem) Or(d PermissionGroupItem) PermissionGroupItem {
 	return d
 }
 
+// NewOptResolveSiteConfigsScopeType returns new OptResolveSiteConfigsScopeType with value set to v.
+func NewOptResolveSiteConfigsScopeType(v ResolveSiteConfigsScopeType) OptResolveSiteConfigsScopeType {
+	return OptResolveSiteConfigsScopeType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptResolveSiteConfigsScopeType is optional ResolveSiteConfigsScopeType.
+type OptResolveSiteConfigsScopeType struct {
+	Value ResolveSiteConfigsScopeType
+	Set   bool
+}
+
+// IsSet returns true if OptResolveSiteConfigsScopeType was set.
+func (o OptResolveSiteConfigsScopeType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptResolveSiteConfigsScopeType) Reset() {
+	var v ResolveSiteConfigsScopeType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptResolveSiteConfigsScopeType) SetTo(v ResolveSiteConfigsScopeType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptResolveSiteConfigsScopeType) Get() (v ResolveSiteConfigsScopeType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptResolveSiteConfigsScopeType) Or(d ResolveSiteConfigsScopeType) ResolveSiteConfigsScopeType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteConfigSaveRequestConfigValue returns new OptSiteConfigSaveRequestConfigValue with value set to v.
 func NewOptSiteConfigSaveRequestConfigValue(v SiteConfigSaveRequestConfigValue) OptSiteConfigSaveRequestConfigValue {
 	return OptSiteConfigSaveRequestConfigValue{
@@ -14795,6 +15037,52 @@ func (o OptSiteConfigSaveRequestConfigValue) Get() (v SiteConfigSaveRequestConfi
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteConfigSaveRequestConfigValue) Or(d SiteConfigSaveRequestConfigValue) SiteConfigSaveRequestConfigValue {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteConfigSaveRequestFallbackPolicy returns new OptSiteConfigSaveRequestFallbackPolicy with value set to v.
+func NewOptSiteConfigSaveRequestFallbackPolicy(v SiteConfigSaveRequestFallbackPolicy) OptSiteConfigSaveRequestFallbackPolicy {
+	return OptSiteConfigSaveRequestFallbackPolicy{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteConfigSaveRequestFallbackPolicy is optional SiteConfigSaveRequestFallbackPolicy.
+type OptSiteConfigSaveRequestFallbackPolicy struct {
+	Value SiteConfigSaveRequestFallbackPolicy
+	Set   bool
+}
+
+// IsSet returns true if OptSiteConfigSaveRequestFallbackPolicy was set.
+func (o OptSiteConfigSaveRequestFallbackPolicy) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteConfigSaveRequestFallbackPolicy) Reset() {
+	var v SiteConfigSaveRequestFallbackPolicy
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteConfigSaveRequestFallbackPolicy) SetTo(v SiteConfigSaveRequestFallbackPolicy) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteConfigSaveRequestFallbackPolicy) Get() (v SiteConfigSaveRequestFallbackPolicy, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteConfigSaveRequestFallbackPolicy) Or(d SiteConfigSaveRequestFallbackPolicy) SiteConfigSaveRequestFallbackPolicy {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -22229,6 +22517,54 @@ func (s *RegisterRequest) SetSourceHomePath(val OptString) {
 	s.SourceHomePath = val
 }
 
+type ResolveSiteConfigsScopeType string
+
+const (
+	ResolveSiteConfigsScopeTypeContext ResolveSiteConfigsScopeType = "context"
+	ResolveSiteConfigsScopeTypeGlobal  ResolveSiteConfigsScopeType = "global"
+	ResolveSiteConfigsScopeTypeApp     ResolveSiteConfigsScopeType = "app"
+)
+
+// AllValues returns all ResolveSiteConfigsScopeType values.
+func (ResolveSiteConfigsScopeType) AllValues() []ResolveSiteConfigsScopeType {
+	return []ResolveSiteConfigsScopeType{
+		ResolveSiteConfigsScopeTypeContext,
+		ResolveSiteConfigsScopeTypeGlobal,
+		ResolveSiteConfigsScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ResolveSiteConfigsScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case ResolveSiteConfigsScopeTypeContext:
+		return []byte(s), nil
+	case ResolveSiteConfigsScopeTypeGlobal:
+		return []byte(s), nil
+	case ResolveSiteConfigsScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ResolveSiteConfigsScopeType) UnmarshalText(data []byte) error {
+	switch ResolveSiteConfigsScopeType(data) {
+	case ResolveSiteConfigsScopeTypeContext:
+		*s = ResolveSiteConfigsScopeTypeContext
+		return nil
+	case ResolveSiteConfigsScopeTypeGlobal:
+		*s = ResolveSiteConfigsScopeTypeGlobal
+		return nil
+	case ResolveSiteConfigsScopeTypeApp:
+		*s = ResolveSiteConfigsScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/RiskAuditItem
 type RiskAuditItem struct {
 	ID            uuid.UUID        `json:"id"`
@@ -23152,9 +23488,107 @@ func (s *SiteConfigListResponse) SetTotal(val int) {
 
 func (*SiteConfigListResponse) listSiteConfigsRes() {}
 
+// Ref: #/components/schemas/SiteConfigLookupResponse
+type SiteConfigLookupResponse struct {
+	ConfigKey string                 `json:"config_key"`
+	Item      SiteConfigResolvedItem `json:"item"`
+	// 当前解析生效的作用域类型.
+	ScopeType SiteConfigLookupResponseScopeType `json:"scope_type"`
+	// 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key.
+	ScopeKey string `json:"scope_key"`
+}
+
+// GetConfigKey returns the value of ConfigKey.
+func (s *SiteConfigLookupResponse) GetConfigKey() string {
+	return s.ConfigKey
+}
+
+// GetItem returns the value of Item.
+func (s *SiteConfigLookupResponse) GetItem() SiteConfigResolvedItem {
+	return s.Item
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *SiteConfigLookupResponse) GetScopeType() SiteConfigLookupResponseScopeType {
+	return s.ScopeType
+}
+
+// GetScopeKey returns the value of ScopeKey.
+func (s *SiteConfigLookupResponse) GetScopeKey() string {
+	return s.ScopeKey
+}
+
+// SetConfigKey sets the value of ConfigKey.
+func (s *SiteConfigLookupResponse) SetConfigKey(val string) {
+	s.ConfigKey = val
+}
+
+// SetItem sets the value of Item.
+func (s *SiteConfigLookupResponse) SetItem(val SiteConfigResolvedItem) {
+	s.Item = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *SiteConfigLookupResponse) SetScopeType(val SiteConfigLookupResponseScopeType) {
+	s.ScopeType = val
+}
+
+// SetScopeKey sets the value of ScopeKey.
+func (s *SiteConfigLookupResponse) SetScopeKey(val string) {
+	s.ScopeKey = val
+}
+
+func (*SiteConfigLookupResponse) lookupSiteConfigRes() {}
+
+// 当前解析生效的作用域类型.
+type SiteConfigLookupResponseScopeType string
+
+const (
+	SiteConfigLookupResponseScopeTypeGlobal SiteConfigLookupResponseScopeType = "global"
+	SiteConfigLookupResponseScopeTypeApp    SiteConfigLookupResponseScopeType = "app"
+)
+
+// AllValues returns all SiteConfigLookupResponseScopeType values.
+func (SiteConfigLookupResponseScopeType) AllValues() []SiteConfigLookupResponseScopeType {
+	return []SiteConfigLookupResponseScopeType{
+		SiteConfigLookupResponseScopeTypeGlobal,
+		SiteConfigLookupResponseScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigLookupResponseScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigLookupResponseScopeTypeGlobal:
+		return []byte(s), nil
+	case SiteConfigLookupResponseScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigLookupResponseScopeType) UnmarshalText(data []byte) error {
+	switch SiteConfigLookupResponseScopeType(data) {
+	case SiteConfigLookupResponseScopeTypeGlobal:
+		*s = SiteConfigLookupResponseScopeTypeGlobal
+		return nil
+	case SiteConfigLookupResponseScopeTypeApp:
+		*s = SiteConfigLookupResponseScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Ref: #/components/schemas/SiteConfigResolveResponse
 type SiteConfigResolveResponse struct {
 	Items SiteConfigResolveResponseItems `json:"items"`
+	// 当前解析生效的作用域类型.
+	ScopeType SiteConfigResolveResponseScopeType `json:"scope_type"`
+	// 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key.
+	ScopeKey string `json:"scope_key"`
 	// 请求指纹，用于前端缓存命中校验.
 	Version string `json:"version"`
 }
@@ -23162,6 +23596,16 @@ type SiteConfigResolveResponse struct {
 // GetItems returns the value of Items.
 func (s *SiteConfigResolveResponse) GetItems() SiteConfigResolveResponseItems {
 	return s.Items
+}
+
+// GetScopeType returns the value of ScopeType.
+func (s *SiteConfigResolveResponse) GetScopeType() SiteConfigResolveResponseScopeType {
+	return s.ScopeType
+}
+
+// GetScopeKey returns the value of ScopeKey.
+func (s *SiteConfigResolveResponse) GetScopeKey() string {
+	return s.ScopeKey
 }
 
 // GetVersion returns the value of Version.
@@ -23172,6 +23616,16 @@ func (s *SiteConfigResolveResponse) GetVersion() string {
 // SetItems sets the value of Items.
 func (s *SiteConfigResolveResponse) SetItems(val SiteConfigResolveResponseItems) {
 	s.Items = val
+}
+
+// SetScopeType sets the value of ScopeType.
+func (s *SiteConfigResolveResponse) SetScopeType(val SiteConfigResolveResponseScopeType) {
+	s.ScopeType = val
+}
+
+// SetScopeKey sets the value of ScopeKey.
+func (s *SiteConfigResolveResponse) SetScopeKey(val string) {
+	s.ScopeKey = val
 }
 
 // SetVersion sets the value of Version.
@@ -23190,6 +23644,48 @@ func (s *SiteConfigResolveResponseItems) init() SiteConfigResolveResponseItems {
 		*s = m
 	}
 	return m
+}
+
+// 当前解析生效的作用域类型.
+type SiteConfigResolveResponseScopeType string
+
+const (
+	SiteConfigResolveResponseScopeTypeGlobal SiteConfigResolveResponseScopeType = "global"
+	SiteConfigResolveResponseScopeTypeApp    SiteConfigResolveResponseScopeType = "app"
+)
+
+// AllValues returns all SiteConfigResolveResponseScopeType values.
+func (SiteConfigResolveResponseScopeType) AllValues() []SiteConfigResolveResponseScopeType {
+	return []SiteConfigResolveResponseScopeType{
+		SiteConfigResolveResponseScopeTypeGlobal,
+		SiteConfigResolveResponseScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigResolveResponseScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigResolveResponseScopeTypeGlobal:
+		return []byte(s), nil
+	case SiteConfigResolveResponseScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigResolveResponseScopeType) UnmarshalText(data []byte) error {
+	switch SiteConfigResolveResponseScopeType(data) {
+	case SiteConfigResolveResponseScopeTypeGlobal:
+		*s = SiteConfigResolveResponseScopeTypeGlobal
+		return nil
+	case SiteConfigResolveResponseScopeTypeApp:
+		*s = SiteConfigResolveResponseScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Ref: #/components/schemas/SiteConfigResolvedItem
@@ -23377,20 +23873,29 @@ func (s *SiteConfigResolvedItemValueType) UnmarshalText(data []byte) error {
 
 // Ref: #/components/schemas/SiteConfigSaveRequest
 type SiteConfigSaveRequest struct {
-	// 空字符串代表全局；非空为应用级.
-	AppKey      OptString                           `json:"app_key"`
+	// 参数要写入的作用域类型.
+	ScopeType SiteConfigSaveRequestScopeType `json:"scope_type"`
+	// 作用域 key；当 `scope_type=app` 时填写目标 APP key.
+	ScopeKey    OptString                           `json:"scope_key"`
 	ConfigKey   string                              `json:"config_key"`
 	ConfigValue OptSiteConfigSaveRequestConfigValue `json:"config_value"`
 	ValueType   OptSiteConfigSaveRequestValueType   `json:"value_type"`
-	Label       OptString                           `json:"label"`
-	Description OptString                           `json:"description"`
-	SortOrder   OptInt                              `json:"sort_order"`
-	Status      OptSiteConfigSaveRequestStatus      `json:"status"`
+	// 参数回退策略；未填写时默认 inherit。APP 作用域参数会强制按 inherit 处理。.
+	FallbackPolicy OptSiteConfigSaveRequestFallbackPolicy `json:"fallback_policy"`
+	Label          OptString                              `json:"label"`
+	Description    OptString                              `json:"description"`
+	SortOrder      OptInt                                 `json:"sort_order"`
+	Status         OptSiteConfigSaveRequestStatus         `json:"status"`
 }
 
-// GetAppKey returns the value of AppKey.
-func (s *SiteConfigSaveRequest) GetAppKey() OptString {
-	return s.AppKey
+// GetScopeType returns the value of ScopeType.
+func (s *SiteConfigSaveRequest) GetScopeType() SiteConfigSaveRequestScopeType {
+	return s.ScopeType
+}
+
+// GetScopeKey returns the value of ScopeKey.
+func (s *SiteConfigSaveRequest) GetScopeKey() OptString {
+	return s.ScopeKey
 }
 
 // GetConfigKey returns the value of ConfigKey.
@@ -23406,6 +23911,11 @@ func (s *SiteConfigSaveRequest) GetConfigValue() OptSiteConfigSaveRequestConfigV
 // GetValueType returns the value of ValueType.
 func (s *SiteConfigSaveRequest) GetValueType() OptSiteConfigSaveRequestValueType {
 	return s.ValueType
+}
+
+// GetFallbackPolicy returns the value of FallbackPolicy.
+func (s *SiteConfigSaveRequest) GetFallbackPolicy() OptSiteConfigSaveRequestFallbackPolicy {
+	return s.FallbackPolicy
 }
 
 // GetLabel returns the value of Label.
@@ -23428,9 +23938,14 @@ func (s *SiteConfigSaveRequest) GetStatus() OptSiteConfigSaveRequestStatus {
 	return s.Status
 }
 
-// SetAppKey sets the value of AppKey.
-func (s *SiteConfigSaveRequest) SetAppKey(val OptString) {
-	s.AppKey = val
+// SetScopeType sets the value of ScopeType.
+func (s *SiteConfigSaveRequest) SetScopeType(val SiteConfigSaveRequestScopeType) {
+	s.ScopeType = val
+}
+
+// SetScopeKey sets the value of ScopeKey.
+func (s *SiteConfigSaveRequest) SetScopeKey(val OptString) {
+	s.ScopeKey = val
 }
 
 // SetConfigKey sets the value of ConfigKey.
@@ -23446,6 +23961,11 @@ func (s *SiteConfigSaveRequest) SetConfigValue(val OptSiteConfigSaveRequestConfi
 // SetValueType sets the value of ValueType.
 func (s *SiteConfigSaveRequest) SetValueType(val OptSiteConfigSaveRequestValueType) {
 	s.ValueType = val
+}
+
+// SetFallbackPolicy sets the value of FallbackPolicy.
+func (s *SiteConfigSaveRequest) SetFallbackPolicy(val OptSiteConfigSaveRequestFallbackPolicy) {
+	s.FallbackPolicy = val
 }
 
 // SetLabel sets the value of Label.
@@ -23477,6 +23997,90 @@ func (s *SiteConfigSaveRequestConfigValue) init() SiteConfigSaveRequestConfigVal
 		*s = m
 	}
 	return m
+}
+
+// 参数回退策略；未填写时默认 inherit。APP 作用域参数会强制按 inherit 处理。.
+type SiteConfigSaveRequestFallbackPolicy string
+
+const (
+	SiteConfigSaveRequestFallbackPolicyInherit SiteConfigSaveRequestFallbackPolicy = "inherit"
+	SiteConfigSaveRequestFallbackPolicyStrict  SiteConfigSaveRequestFallbackPolicy = "strict"
+)
+
+// AllValues returns all SiteConfigSaveRequestFallbackPolicy values.
+func (SiteConfigSaveRequestFallbackPolicy) AllValues() []SiteConfigSaveRequestFallbackPolicy {
+	return []SiteConfigSaveRequestFallbackPolicy{
+		SiteConfigSaveRequestFallbackPolicyInherit,
+		SiteConfigSaveRequestFallbackPolicyStrict,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSaveRequestFallbackPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSaveRequestFallbackPolicyInherit:
+		return []byte(s), nil
+	case SiteConfigSaveRequestFallbackPolicyStrict:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSaveRequestFallbackPolicy) UnmarshalText(data []byte) error {
+	switch SiteConfigSaveRequestFallbackPolicy(data) {
+	case SiteConfigSaveRequestFallbackPolicyInherit:
+		*s = SiteConfigSaveRequestFallbackPolicyInherit
+		return nil
+	case SiteConfigSaveRequestFallbackPolicyStrict:
+		*s = SiteConfigSaveRequestFallbackPolicyStrict
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// 参数要写入的作用域类型.
+type SiteConfigSaveRequestScopeType string
+
+const (
+	SiteConfigSaveRequestScopeTypeGlobal SiteConfigSaveRequestScopeType = "global"
+	SiteConfigSaveRequestScopeTypeApp    SiteConfigSaveRequestScopeType = "app"
+)
+
+// AllValues returns all SiteConfigSaveRequestScopeType values.
+func (SiteConfigSaveRequestScopeType) AllValues() []SiteConfigSaveRequestScopeType {
+	return []SiteConfigSaveRequestScopeType{
+		SiteConfigSaveRequestScopeTypeGlobal,
+		SiteConfigSaveRequestScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSaveRequestScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSaveRequestScopeTypeGlobal:
+		return []byte(s), nil
+	case SiteConfigSaveRequestScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSaveRequestScopeType) UnmarshalText(data []byte) error {
+	switch SiteConfigSaveRequestScopeType(data) {
+	case SiteConfigSaveRequestScopeTypeGlobal:
+		*s = SiteConfigSaveRequestScopeTypeGlobal
+		return nil
+	case SiteConfigSaveRequestScopeTypeApp:
+		*s = SiteConfigSaveRequestScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type SiteConfigSaveRequestStatus string
@@ -23865,18 +24469,23 @@ func (*SiteConfigSetSummary) upsertSiteConfigSetRes()      {}
 type SiteConfigSummary struct {
 	ID       uuid.UUID `json:"id"`
 	TenantID string    `json:"tenant_id"`
-	// 空字符串代表全局配置.
-	AppKey      string                          `json:"app_key"`
+	// 参数所属作用域类型.
+	ScopeType SiteConfigSummaryScopeType `json:"scope_type"`
+	// 参数所属作用域 key；全局时为空，APP 时为目标 APP key.
+	ScopeKey    string                          `json:"scope_key"`
 	ConfigKey   string                          `json:"config_key"`
 	ConfigValue OptSiteConfigSummaryConfigValue `json:"config_value"`
 	ValueType   SiteConfigSummaryValueType      `json:"value_type"`
-	Label       OptString                       `json:"label"`
-	Description OptString                       `json:"description"`
-	SortOrder   OptInt                          `json:"sort_order"`
-	IsBuiltin   OptBool                         `json:"is_builtin"`
-	Status      string                          `json:"status"`
-	CreatedAt   OptDateTime                     `json:"created_at"`
-	UpdatedAt   OptDateTime                     `json:"updated_at"`
+	// 参数回退策略；inherit 表示当前作用域未命中时允许回退到全局默认，strict
+	// 表示不回退.
+	FallbackPolicy SiteConfigSummaryFallbackPolicy `json:"fallback_policy"`
+	Label          OptString                       `json:"label"`
+	Description    OptString                       `json:"description"`
+	SortOrder      OptInt                          `json:"sort_order"`
+	IsBuiltin      OptBool                         `json:"is_builtin"`
+	Status         string                          `json:"status"`
+	CreatedAt      OptDateTime                     `json:"created_at"`
+	UpdatedAt      OptDateTime                     `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -23889,9 +24498,14 @@ func (s *SiteConfigSummary) GetTenantID() string {
 	return s.TenantID
 }
 
-// GetAppKey returns the value of AppKey.
-func (s *SiteConfigSummary) GetAppKey() string {
-	return s.AppKey
+// GetScopeType returns the value of ScopeType.
+func (s *SiteConfigSummary) GetScopeType() SiteConfigSummaryScopeType {
+	return s.ScopeType
+}
+
+// GetScopeKey returns the value of ScopeKey.
+func (s *SiteConfigSummary) GetScopeKey() string {
+	return s.ScopeKey
 }
 
 // GetConfigKey returns the value of ConfigKey.
@@ -23907,6 +24521,11 @@ func (s *SiteConfigSummary) GetConfigValue() OptSiteConfigSummaryConfigValue {
 // GetValueType returns the value of ValueType.
 func (s *SiteConfigSummary) GetValueType() SiteConfigSummaryValueType {
 	return s.ValueType
+}
+
+// GetFallbackPolicy returns the value of FallbackPolicy.
+func (s *SiteConfigSummary) GetFallbackPolicy() SiteConfigSummaryFallbackPolicy {
+	return s.FallbackPolicy
 }
 
 // GetLabel returns the value of Label.
@@ -23954,9 +24573,14 @@ func (s *SiteConfigSummary) SetTenantID(val string) {
 	s.TenantID = val
 }
 
-// SetAppKey sets the value of AppKey.
-func (s *SiteConfigSummary) SetAppKey(val string) {
-	s.AppKey = val
+// SetScopeType sets the value of ScopeType.
+func (s *SiteConfigSummary) SetScopeType(val SiteConfigSummaryScopeType) {
+	s.ScopeType = val
+}
+
+// SetScopeKey sets the value of ScopeKey.
+func (s *SiteConfigSummary) SetScopeKey(val string) {
+	s.ScopeKey = val
 }
 
 // SetConfigKey sets the value of ConfigKey.
@@ -23972,6 +24596,11 @@ func (s *SiteConfigSummary) SetConfigValue(val OptSiteConfigSummaryConfigValue) 
 // SetValueType sets the value of ValueType.
 func (s *SiteConfigSummary) SetValueType(val SiteConfigSummaryValueType) {
 	s.ValueType = val
+}
+
+// SetFallbackPolicy sets the value of FallbackPolicy.
+func (s *SiteConfigSummary) SetFallbackPolicy(val SiteConfigSummaryFallbackPolicy) {
+	s.FallbackPolicy = val
 }
 
 // SetLabel sets the value of Label.
@@ -24021,6 +24650,91 @@ func (s *SiteConfigSummaryConfigValue) init() SiteConfigSummaryConfigValue {
 		*s = m
 	}
 	return m
+}
+
+// 参数回退策略；inherit 表示当前作用域未命中时允许回退到全局默认，strict
+// 表示不回退.
+type SiteConfigSummaryFallbackPolicy string
+
+const (
+	SiteConfigSummaryFallbackPolicyInherit SiteConfigSummaryFallbackPolicy = "inherit"
+	SiteConfigSummaryFallbackPolicyStrict  SiteConfigSummaryFallbackPolicy = "strict"
+)
+
+// AllValues returns all SiteConfigSummaryFallbackPolicy values.
+func (SiteConfigSummaryFallbackPolicy) AllValues() []SiteConfigSummaryFallbackPolicy {
+	return []SiteConfigSummaryFallbackPolicy{
+		SiteConfigSummaryFallbackPolicyInherit,
+		SiteConfigSummaryFallbackPolicyStrict,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSummaryFallbackPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSummaryFallbackPolicyInherit:
+		return []byte(s), nil
+	case SiteConfigSummaryFallbackPolicyStrict:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSummaryFallbackPolicy) UnmarshalText(data []byte) error {
+	switch SiteConfigSummaryFallbackPolicy(data) {
+	case SiteConfigSummaryFallbackPolicyInherit:
+		*s = SiteConfigSummaryFallbackPolicyInherit
+		return nil
+	case SiteConfigSummaryFallbackPolicyStrict:
+		*s = SiteConfigSummaryFallbackPolicyStrict
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// 参数所属作用域类型.
+type SiteConfigSummaryScopeType string
+
+const (
+	SiteConfigSummaryScopeTypeGlobal SiteConfigSummaryScopeType = "global"
+	SiteConfigSummaryScopeTypeApp    SiteConfigSummaryScopeType = "app"
+)
+
+// AllValues returns all SiteConfigSummaryScopeType values.
+func (SiteConfigSummaryScopeType) AllValues() []SiteConfigSummaryScopeType {
+	return []SiteConfigSummaryScopeType{
+		SiteConfigSummaryScopeTypeGlobal,
+		SiteConfigSummaryScopeTypeApp,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConfigSummaryScopeType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConfigSummaryScopeTypeGlobal:
+		return []byte(s), nil
+	case SiteConfigSummaryScopeTypeApp:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConfigSummaryScopeType) UnmarshalText(data []byte) error {
+	switch SiteConfigSummaryScopeType(data) {
+	case SiteConfigSummaryScopeTypeGlobal:
+		*s = SiteConfigSummaryScopeTypeGlobal
+		return nil
+	case SiteConfigSummaryScopeTypeApp:
+		*s = SiteConfigSummaryScopeTypeApp
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type SiteConfigSummaryValueType string

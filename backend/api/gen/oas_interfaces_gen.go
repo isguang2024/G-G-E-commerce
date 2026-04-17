@@ -289,6 +289,10 @@ type LogoutRes interface {
 	logoutRes()
 }
 
+type LookupSiteConfigRes interface {
+	lookupSiteConfigRes()
+}
+
 type PrepareMediaUploadRes interface {
 	prepareMediaUploadRes()
 }

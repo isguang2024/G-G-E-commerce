@@ -397,6 +397,8 @@ paths:
     $ref: ./domains/storage_admin/paths.yaml#/paths/~1upload~1rules~1{ruleId}
   /site-configs/resolve:
     $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1resolve
+  /site-configs/lookup:
+    $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs~1lookup
   /site-configs:
     $ref: ./domains/siteconfig/paths.yaml#/paths/~1site-configs
   /site-configs/{id}:
@@ -567,6 +569,8 @@ components:
       $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigResolvedItem
     SiteConfigResolveResponse:
       $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigResolveResponse
+    SiteConfigLookupResponse:
+      $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigLookupResponse
     SiteConfigSummary:
       $ref: ./domains/siteconfig/schemas.yaml#/components/schemas/SiteConfigSummary
     SiteConfigListResponse:

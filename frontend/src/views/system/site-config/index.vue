@@ -2,26 +2,31 @@
   <div class="site-config-page art-full-height">
     <div class="site-config-stack">
       <AdminWorkspaceHero
-        title="站点配置中心"
-        description="统一管理平台和各应用的站点配置：全局项 (app_key 为空) 作为默认值，应用级项会在 resolve 时覆盖全局；集合 (Set) 把一组 config_key 归组，前端通过 set_codes 批量拉取。保存后会广播失效运行时缓存。"
+        title="参数管理"
+        description="统一管理平台参数与 APP 作用域参数：同一个 config_key 可以在不同作用域重复创建；全局也是独立作用域；不同 APP 可复用相同 key。参数集合可将一组 config_key 编组成批量拉取单元。保存后会广播失效运行时缓存。"
         :metrics="summaryMetrics"
       >
-        <template #eyebrow>
-          <ElTag type="info" effect="plain" round>system.site_config</ElTag>
-        </template>
         <div class="site-config-hero-actions">
           <ElButton @click="refreshAll(true)" v-ripple>刷新</ElButton>
           <ElButton v-if="activeTab === 'configs'" type="primary" @click="openConfigCreate" v-ripple>
-            新增配置项
+            新增参数项
           </ElButton>
           <ElButton v-else type="primary" @click="openSetCreate" v-ripple>新增集合</ElButton>
         </div>
       </AdminWorkspaceHero>
 
       <ElCard class="art-table-card site-config-main" shadow="never">
+        <ElAlert
+          class="site-config-notice"
+          type="info"
+          :closable="false"
+          show-icon
+          title="作用域规则"
+          description="同一个 config_key 可以在不同作用域重复创建；全局本身也是独立作用域；不同 APP 可以复用同一个 key。"
+        />
         <ElTabs v-model="activeTab" class="site-config-tabs">
-          <!-- ═══ 配置项 ═══ -->
-          <ElTabPane label="配置项" name="configs">
+          <!-- ═══ 参数项 ═══ -->
+          <ElTabPane label="参数项" name="configs">
             <div class="site-config-toolbar">
               <div class="site-config-toolbar__group">
                 <ElRadioGroup
@@ -37,7 +42,7 @@
                   v-if="configScopeMode === 'app'"
                   v-model="selectedAppKey"
                   class="site-config-toolbar__app-select"
-                  placeholder="选择或输入 app_key"
+                  placeholder="选择或输入作用域 APP key"
                   allow-create
                   @change="onAppKeyChange"
                 />
@@ -59,12 +64,12 @@
               :loading="store.configsLoading"
               :data="filteredConfigs"
               :columns="configColumns"
-              empty-text="暂无符合条件的配置项"
+              empty-text="暂无符合条件的参数项"
             />
           </ElTabPane>
 
-          <!-- ═══ 配置集合 ═══ -->
-          <ElTabPane label="配置集合" name="sets">
+          <!-- ═══ 参数集合 ═══ -->
+          <ElTabPane label="参数集合" name="sets">
             <div class="site-config-toolbar">
               <div class="site-config-toolbar__group">
                 <ElInput
@@ -83,17 +88,17 @@
               :loading="store.setsLoading"
               :data="filteredSets"
               :columns="setColumns"
-              empty-text="暂无配置集合"
+              empty-text="暂无参数集合"
             />
           </ElTabPane>
         </ElTabs>
       </ElCard>
     </div>
 
-    <!-- 配置项编辑器 -->
+    <!-- 参数项编辑器 -->
     <ElDialog
       v-model="configEditor.open"
-      :title="configEditor.editingId ? '编辑配置项' : '新增配置项'"
+      :title="configEditor.editingId ? '编辑参数项' : '新增参数项'"
       width="720px"
       :close-on-click-modal="false"
       @closed="resetConfigEditor"
@@ -108,9 +113,9 @@
             <ElRadio value="app">指定应用</ElRadio>
           </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem v-if="configEditor.scope === 'app'" label="app_key">
+        <ElFormItem v-if="configEditor.scope === 'app'" label="scope_key">
           <AppKeySelect
-            v-model="configEditor.form.app_key"
+            v-model="configEditor.form.scope_key"
             :disabled="!!configEditor.editingId"
             allow-create
             placeholder="如 admin / shop / mobile"
@@ -132,6 +137,17 @@
             <ElOption label="SVG 文本 svg" value="svg" />
             <ElOption label="JSON" value="json" />
           </ElSelect>
+        </ElFormItem>
+        <ElFormItem v-if="configEditor.scope === 'global' && showFallbackPolicy" label="回退策略">
+          <div class="site-config-form-row">
+            <ElSelect v-model="configEditor.form.fallback_policy" style="width: 200px">
+              <ElOption label="可继承 inherit" value="inherit" />
+              <ElOption label="严格 strict" value="strict" />
+            </ElSelect>
+            <div class="site-config-form-hint">
+              严格参数不会从当前作用域回退到全局默认。
+            </div>
+          </div>
         </ElFormItem>
         <ElFormItem label="值">
           <ElInput
@@ -200,6 +216,11 @@
             placeholder="合法 JSON"
           />
         </ElFormItem>
+        <ElFormItem v-if="configEditor.scope === 'global'">
+          <ElButton link type="primary" @click="showFallbackPolicy = !showFallbackPolicy">
+            {{ showFallbackPolicy ? '隐藏回退策略' : '显示回退策略' }}
+          </ElButton>
+        </ElFormItem>
         <ElFormItem label="展示名">
           <ElInput v-model="configEditor.form.label" placeholder="用于管理页显示" />
         </ElFormItem>
@@ -226,10 +247,10 @@
       </template>
     </ElDialog>
 
-    <!-- 集合编辑器 -->
+    <!-- 参数集合编辑器 -->
     <ElDialog
       v-model="setEditor.open"
-      :title="setEditor.editingId ? '编辑集合' : '新增集合'"
+      :title="setEditor.editingId ? '编辑参数集合' : '新增参数集合'"
       width="560px"
       :close-on-click-modal="false"
       @closed="resetSetEditor"
@@ -264,10 +285,10 @@
       </template>
     </ElDialog>
 
-    <!-- 集合 items 编辑器 -->
+    <!-- 参数集合 items 编辑器 -->
     <ElDialog
       v-model="itemsEditor.open"
-      title="编辑集合成员"
+      title="编辑参数集合成员"
       width="640px"
       :close-on-click-modal="false"
       @closed="resetItemsEditor"
@@ -302,6 +323,7 @@
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue'
   import {
+    ElAlert,
     ElButton,
     ElCard,
     ElDialog,
@@ -326,7 +348,8 @@
   import type { ColumnOption } from '@/types/component'
   import { useSiteConfigStore } from '@/store/modules/site-config'
   import {
-    SITE_CONFIG_ALL_SCOPES,
+    type SiteConfigManageScopeType,
+    type SiteConfigFallbackPolicy,
     type SiteConfigSaveRequest,
     type SiteConfigSetSaveRequest,
     type SiteConfigSetSummary,
@@ -354,21 +377,26 @@
     return Array.from(set).sort()
   })
 
-  function currentScopeQuery(): string {
-    if (configScopeMode.value === 'global') return ''
-    if (configScopeMode.value === 'all') return SITE_CONFIG_ALL_SCOPES
-    return selectedAppKey.value.trim()
+  function currentScopeQuery(): {
+    scopeType: SiteConfigManageScopeType
+    scopeKey?: string
+  } {
+    if (configScopeMode.value === 'all') return { scopeType: 'all' }
+    if (configScopeMode.value === 'app') {
+      return { scopeType: 'app', scopeKey: selectedAppKey.value.trim() }
+    }
+    return { scopeType: 'global' }
   }
 
   async function loadConfigs(force = false) {
     try {
       if (configScopeMode.value === 'app' && !selectedAppKey.value.trim()) {
-        // 作用域指定应用但尚未选择 appKey，清空后台以免误导。
+        // 作用域指定 APP 但尚未选择 scopeKey，清空后台以免误导。
         return
       }
       await store.listConfigs(currentScopeQuery(), force)
     } catch (err: any) {
-      ElMessage.error(err?.message || '加载配置项失败')
+      ElMessage.error(err?.message || '加载参数项失败')
     }
   }
 
@@ -376,7 +404,7 @@
     try {
       await store.listSets(force)
     } catch (err: any) {
-      ElMessage.error(err?.message || '加载配置集合失败')
+      ElMessage.error(err?.message || '加载参数集合失败')
     }
   }
 
@@ -417,22 +445,23 @@
   // ── Hero 指标 ─────────────────────────────────────────────────────────────
   const summaryMetrics = computed(() => {
     const configs = store.configs
-    const globalCount = configs.filter((r) => !r.app_key).length
-    const appCount = configs.filter((r) => !!r.app_key).length
+    const globalCount = configs.filter((r) => r.scope_type === 'global').length
+    const appCount = configs.filter((r) => r.scope_type === 'app').length
     return [
-      { label: '配置项总数', value: configs.length },
-      { label: '全局配置', value: globalCount },
-      { label: '应用级配置', value: appCount },
-      { label: '配置集合', value: store.sets.length }
+      { label: '参数项总数', value: configs.length },
+      { label: '全局作用域', value: globalCount },
+      { label: 'APP 作用域', value: appCount },
+      { label: '参数集合', value: store.sets.length }
     ]
   })
 
   // ── Configs 编辑器 ───────────────────────────────────────────────────────
 
   interface ConfigForm {
-    app_key: string
+    scope_key: string
     config_key: string
     value_type: SiteConfigValueType
+    fallback_policy: SiteConfigFallbackPolicy
     label: string
     description: string
     sort_order: number
@@ -452,15 +481,17 @@
     jsonText: '{}',
     svgText: '',
     form: {
-      app_key: '',
+      scope_key: '',
       config_key: '',
       value_type: 'string' as SiteConfigValueType,
+      fallback_policy: 'inherit' as SiteConfigFallbackPolicy,
       label: '',
       description: '',
       sort_order: 0,
       status: 'normal'
     } as ConfigForm
   })
+  const showFallbackPolicy = ref(false)
 
   function resetConfigEditor() {
     configEditor.submitting = false
@@ -473,10 +504,12 @@
     configEditor.imageUploading = false
     configEditor.jsonText = '{}'
     configEditor.svgText = ''
+    showFallbackPolicy.value = false
     configEditor.form = {
-      app_key: '',
+      scope_key: '',
       config_key: '',
       value_type: 'string',
+      fallback_policy: 'inherit',
       label: '',
       description: '',
       sort_order: 0,
@@ -492,10 +525,12 @@
   function openConfigEdit(row: SiteConfigSummary) {
     resetConfigEditor()
     configEditor.editingId = row.id
-    configEditor.scope = row.app_key ? 'app' : 'global'
-    configEditor.form.app_key = row.app_key || ''
+    configEditor.scope = row.scope_type === 'app' ? 'app' : 'global'
+    configEditor.form.scope_key = row.scope_key || ''
     configEditor.form.config_key = row.config_key
     configEditor.form.value_type = row.value_type
+    configEditor.form.fallback_policy = row.fallback_policy || 'inherit'
+    showFallbackPolicy.value = false
     configEditor.form.label = row.label || ''
     configEditor.form.description = row.description || ''
     configEditor.form.sort_order = row.sort_order ?? 0
@@ -585,17 +620,20 @@
         ElMessage.warning('config_key 必填')
         return
       }
-      if (configEditor.scope === 'app' && !configEditor.form.app_key.trim()) {
-        ElMessage.warning('选择"指定应用"时 app_key 必填')
+      if (configEditor.scope === 'app' && !configEditor.form.scope_key.trim()) {
+        ElMessage.warning('选择"指定应用"时 scope_key 必填')
         return
       }
       const value = buildConfigValue()
       const body: SiteConfigSaveRequest = {
-        app_key:
-          configEditor.scope === 'app' ? configEditor.form.app_key.trim() : '',
+        scope_type: configEditor.scope,
+        scope_key:
+          configEditor.scope === 'app' ? configEditor.form.scope_key.trim() : undefined,
         config_key: key,
         config_value: value,
         value_type: configEditor.form.value_type,
+        fallback_policy:
+          configEditor.scope === 'app' ? 'inherit' : configEditor.form.fallback_policy,
         label: configEditor.form.label || undefined,
         description: configEditor.form.description || undefined,
         sort_order: configEditor.form.sort_order,
@@ -604,14 +642,14 @@
       configEditor.submitting = true
       if (configEditor.editingId) {
         await store.updateConfig(configEditor.editingId, body)
-        ElMessage.success('配置项已更新')
+        ElMessage.success('参数项已更新')
       } else {
         await store.upsertConfig(body)
-        ElMessage.success('配置项已保存')
+        ElMessage.success('参数项已保存')
       }
       configEditor.open = false
     } catch (err: any) {
-      ElMessage.error(err?.message || '保存配置项失败')
+      ElMessage.error(err?.message || '保存参数项失败')
     } finally {
       configEditor.submitting = false
     }
@@ -687,12 +725,12 @@
         h('code', { class: 'site-config-key' }, row.config_key)
     },
     {
-      prop: 'app_key',
+      prop: 'scope_key',
       label: '作用域',
       width: 140,
       formatter: (row: SiteConfigSummary) =>
-        row.app_key
-          ? h(ElTag, { type: 'warning', effect: 'plain', size: 'small' }, () => `app: ${row.app_key}`)
+        row.scope_type === 'app'
+          ? h(ElTag, { type: 'warning', effect: 'plain', size: 'small' }, () => `app: ${row.scope_key}`)
           : h(ElTag, { type: 'info', effect: 'plain', size: 'small' }, () => '全局')
     },
     {
@@ -748,7 +786,7 @@
           ),
           h(
             ElPopconfirm,
-            { title: '确认删除该配置项？', onConfirm: () => removeConfig(row) },
+            { title: '确认删除该参数项？', onConfirm: () => removeConfig(row) },
             {
               reference: () =>
                 h(ElButton, { type: 'danger', link: true }, () => '删除')
@@ -992,6 +1030,23 @@
   .site-config-main {
     flex: 1;
     min-height: 0;
+  }
+
+  .site-config-notice {
+    margin-bottom: 14px;
+  }
+
+  .site-config-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .site-config-form-hint {
+    font-size: 12px;
+    color: var(--art-text-gray-500);
+    line-height: 1.5;
   }
 
   // ── 工具栏 ───────────────────────────────────────────────────────────

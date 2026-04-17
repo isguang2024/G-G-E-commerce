@@ -196,6 +196,7 @@ const (
 	ListVisibleMediaUploadKeysOperation                           OperationName = "ListVisibleMediaUploadKeys"
 	LoginOperation                                                OperationName = "Login"
 	LogoutOperation                                               OperationName = "Logout"
+	LookupSiteConfigOperation                                     OperationName = "LookupSiteConfig"
 	MarkInboxReadOperation                                        OperationName = "MarkInboxRead"
 	MarkInboxReadAllOperation                                     OperationName = "MarkInboxReadAll"
 	PrepareMediaUploadOperation                                   OperationName = "PrepareMediaUpload"

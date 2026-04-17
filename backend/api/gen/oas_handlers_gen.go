@@ -8915,7 +8915,7 @@ func (s *Server) handleDeleteRoleRequest(args [1]string, argsEscaped bool, w htt
 
 // handleDeleteSiteConfigRequest handles deleteSiteConfig operation.
 //
-// 删除站点配置项.
+// 删除参数项.
 //
 // DELETE /site-configs/{id}
 func (s *Server) handleDeleteSiteConfigRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9051,7 +9051,7 @@ func (s *Server) handleDeleteSiteConfigRequest(args [1]string, argsEscaped bool,
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    DeleteSiteConfigOperation,
-			OperationSummary: "删除站点配置项",
+			OperationSummary: "删除参数项",
 			OperationID:      "deleteSiteConfig",
 			Body:             nil,
 			RawBody:          rawBody,
@@ -9102,7 +9102,7 @@ func (s *Server) handleDeleteSiteConfigRequest(args [1]string, argsEscaped bool,
 
 // handleDeleteSiteConfigSetRequest handles deleteSiteConfigSet operation.
 //
-// 删除配置集合.
+// 删除参数集合.
 //
 // DELETE /site-configs/sets/{id}
 func (s *Server) handleDeleteSiteConfigSetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9238,7 +9238,7 @@ func (s *Server) handleDeleteSiteConfigSetRequest(args [1]string, argsEscaped bo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    DeleteSiteConfigSetOperation,
-			OperationSummary: "删除配置集合",
+			OperationSummary: "删除参数集合",
 			OperationID:      "deleteSiteConfigSet",
 			Body:             nil,
 			RawBody:          rawBody,
@@ -32744,7 +32744,7 @@ func (s *Server) handleListRuntimePagesRequest(args [0]string, argsEscaped bool,
 
 // handleListSiteConfigSetsRequest handles listSiteConfigSets operation.
 //
-// 查询站点配置集合.
+// 查询参数集合.
 //
 // GET /site-configs/sets
 func (s *Server) handleListSiteConfigSetsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -32870,7 +32870,7 @@ func (s *Server) handleListSiteConfigSetsRequest(args [0]string, argsEscaped boo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    ListSiteConfigSetsOperation,
-			OperationSummary: "查询站点配置集合",
+			OperationSummary: "查询参数集合",
 			OperationID:      "listSiteConfigSets",
 			Body:             nil,
 			RawBody:          rawBody,
@@ -32916,7 +32916,7 @@ func (s *Server) handleListSiteConfigSetsRequest(args [0]string, argsEscaped boo
 
 // handleListSiteConfigsRequest handles listSiteConfigs operation.
 //
-// 查询站点配置项（管理端）.
+// 查询参数项（管理端）.
 //
 // GET /site-configs
 func (s *Server) handleListSiteConfigsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -33052,15 +33052,19 @@ func (s *Server) handleListSiteConfigsRequest(args [0]string, argsEscaped bool, 
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    ListSiteConfigsOperation,
-			OperationSummary: "查询站点配置项（管理端）",
+			OperationSummary: "查询参数项（管理端）",
 			OperationID:      "listSiteConfigs",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "app_key",
+					Name: "scope_type",
 					In:   "query",
-				}: params.AppKey,
+				}: params.ScopeType,
+				{
+					Name: "scope_key",
+					In:   "query",
+				}: params.ScopeKey,
 			},
 			Raw: r,
 		}
@@ -35372,6 +35376,201 @@ func (s *Server) handleLogoutRequest(args [0]string, argsEscaped bool, w http.Re
 	}
 }
 
+// handleLookupSiteConfigRequest handles lookupSiteConfig operation.
+//
+// 查询单个参数.
+//
+// GET /site-configs/lookup
+func (s *Server) handleLookupSiteConfigRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("lookupSiteConfig"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/site-configs/lookup"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), LookupSiteConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(codeAttr)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: LookupSiteConfigOperation,
+			ID:   "lookupSiteConfig",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityBearerAuth(ctx, LookupSiteConfigOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "BearerAuth",
+					Err:              err,
+				}
+				defer recordError("Security:BearerAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeLookupSiteConfigParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response LookupSiteConfigRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    LookupSiteConfigOperation,
+			OperationSummary: "查询单个参数",
+			OperationID:      "lookupSiteConfig",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "config_key",
+					In:   "query",
+				}: params.ConfigKey,
+				{
+					Name: "scope_type",
+					In:   "query",
+				}: params.ScopeType,
+				{
+					Name: "scope_key",
+					In:   "query",
+				}: params.ScopeKey,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = LookupSiteConfigParams
+			Response = LookupSiteConfigRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackLookupSiteConfigParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.LookupSiteConfig(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.LookupSiteConfig(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeLookupSiteConfigResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleMarkInboxReadRequest handles markInboxRead operation.
 //
 // 标记消息已读.
@@ -37340,7 +37539,7 @@ func (s *Server) handleRemovePermissionActionEndpointRequest(args [2]string, arg
 
 // handleResolveSiteConfigsRequest handles resolveSiteConfigs operation.
 //
-// 批量解析站点配置（全局+应用级合并）.
+// 批量解析参数.
 //
 // GET /site-configs/resolve
 func (s *Server) handleResolveSiteConfigsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -37476,15 +37675,19 @@ func (s *Server) handleResolveSiteConfigsRequest(args [0]string, argsEscaped boo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    ResolveSiteConfigsOperation,
-			OperationSummary: "批量解析站点配置（全局+应用级合并）",
+			OperationSummary: "批量解析参数",
 			OperationID:      "resolveSiteConfigs",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "app_key",
+					Name: "scope_type",
 					In:   "query",
-				}: params.AppKey,
+				}: params.ScopeType,
+				{
+					Name: "scope_key",
+					In:   "query",
+				}: params.ScopeKey,
 				{
 					Name: "keys",
 					In:   "query",
@@ -48075,7 +48278,7 @@ func (s *Server) handleUpdateRoleRequest(args [1]string, argsEscaped bool, w htt
 
 // handleUpdateSiteConfigRequest handles updateSiteConfig operation.
 //
-// 更新站点配置项.
+// 更新参数项.
 //
 // PUT /site-configs/{id}
 func (s *Server) handleUpdateSiteConfigRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -48226,7 +48429,7 @@ func (s *Server) handleUpdateSiteConfigRequest(args [1]string, argsEscaped bool,
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    UpdateSiteConfigOperation,
-			OperationSummary: "更新站点配置项",
+			OperationSummary: "更新参数项",
 			OperationID:      "updateSiteConfig",
 			Body:             request,
 			RawBody:          rawBody,
@@ -48277,7 +48480,7 @@ func (s *Server) handleUpdateSiteConfigRequest(args [1]string, argsEscaped bool,
 
 // handleUpdateSiteConfigSetRequest handles updateSiteConfigSet operation.
 //
-// 更新配置集合.
+// 更新参数集合.
 //
 // PUT /site-configs/sets/{id}
 func (s *Server) handleUpdateSiteConfigSetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -48428,7 +48631,7 @@ func (s *Server) handleUpdateSiteConfigSetRequest(args [1]string, argsEscaped bo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    UpdateSiteConfigSetOperation,
-			OperationSummary: "更新配置集合",
+			OperationSummary: "更新参数集合",
 			OperationID:      "updateSiteConfigSet",
 			Body:             request,
 			RawBody:          rawBody,
@@ -48479,7 +48682,7 @@ func (s *Server) handleUpdateSiteConfigSetRequest(args [1]string, argsEscaped bo
 
 // handleUpdateSiteConfigSetItemsRequest handles updateSiteConfigSetItems operation.
 //
-// 整体替换集合包含的 config_key 列表.
+// 整体替换参数集合包含的 config_key 列表.
 //
 // PUT /site-configs/sets/{id}/items
 func (s *Server) handleUpdateSiteConfigSetItemsRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -48630,7 +48833,7 @@ func (s *Server) handleUpdateSiteConfigSetItemsRequest(args [1]string, argsEscap
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    UpdateSiteConfigSetItemsOperation,
-			OperationSummary: "整体替换集合包含的 config_key 列表",
+			OperationSummary: "整体替换参数集合包含的 config_key 列表",
 			OperationID:      "updateSiteConfigSetItems",
 			Body:             request,
 			RawBody:          rawBody,
@@ -49878,7 +50081,7 @@ func (s *Server) handleUploadMediaRequest(args [0]string, argsEscaped bool, w ht
 
 // handleUpsertSiteConfigRequest handles upsertSiteConfig operation.
 //
-// 新增或更新站点配置项.
+// 新增或更新参数项.
 //
 // POST /site-configs
 func (s *Server) handleUpsertSiteConfigRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -50019,7 +50222,7 @@ func (s *Server) handleUpsertSiteConfigRequest(args [0]string, argsEscaped bool,
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    UpsertSiteConfigOperation,
-			OperationSummary: "新增或更新站点配置项",
+			OperationSummary: "新增或更新参数项",
 			OperationID:      "upsertSiteConfig",
 			Body:             request,
 			RawBody:          rawBody,
@@ -50065,7 +50268,7 @@ func (s *Server) handleUpsertSiteConfigRequest(args [0]string, argsEscaped bool,
 
 // handleUpsertSiteConfigSetRequest handles upsertSiteConfigSet operation.
 //
-// 新增或更新配置集合.
+// 新增或更新参数集合.
 //
 // POST /site-configs/sets
 func (s *Server) handleUpsertSiteConfigSetRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -50206,7 +50409,7 @@ func (s *Server) handleUpsertSiteConfigSetRequest(args [0]string, argsEscaped bo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    UpsertSiteConfigSetOperation,
-			OperationSummary: "新增或更新配置集合",
+			OperationSummary: "新增或更新参数集合",
 			OperationID:      "upsertSiteConfigSet",
 			Body:             request,
 			RawBody:          rawBody,

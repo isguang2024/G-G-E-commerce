@@ -21,22 +21,49 @@ components:
           items: {type: string}
     SiteConfigResolveResponse:
       type: object
-      required: [items, version]
+      required: [items, version, scope_type, scope_key]
       properties:
         items:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/SiteConfigResolvedItem'
+        scope_type:
+          type: string
+          enum: [global, app]
+          description: 当前解析生效的作用域类型
+        scope_key:
+          type: string
+          description: 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key
         version:
           type: string
           description: 请求指纹，用于前端缓存命中校验
+    SiteConfigLookupResponse:
+      type: object
+      required: [config_key, item, scope_type, scope_key]
+      properties:
+        config_key: {type: string}
+        item:
+          $ref: '#/components/schemas/SiteConfigResolvedItem'
+        scope_type:
+          type: string
+          enum: [global, app]
+          description: 当前解析生效的作用域类型
+        scope_key:
+          type: string
+          description: 当前解析生效的作用域 key；全局时为空，APP 时为目标 APP key
     SiteConfigSummary:
       type: object
-      required: [id, tenant_id, app_key, config_key, value_type, status]
+      required: [id, tenant_id, scope_type, scope_key, config_key, value_type, fallback_policy, status]
       properties:
         id: {type: string, format: uuid}
         tenant_id: {type: string}
-        app_key: {type: string, description: 空字符串代表全局配置}
+        scope_type:
+          type: string
+          enum: [global, app]
+          description: 参数所属作用域类型
+        scope_key:
+          type: string
+          description: 参数所属作用域 key；全局时为空，APP 时为目标 APP key
         config_key: {type: string}
         config_value:
           type: object
@@ -44,6 +71,10 @@ components:
         value_type:
           type: string
           enum: [string, number, bool, image, json, svg]
+        fallback_policy:
+          type: string
+          enum: [inherit, strict]
+          description: 参数回退策略；inherit 表示当前作用域未命中时允许回退到全局默认，strict 表示不回退
         label: {type: string}
         description: {type: string}
         sort_order: {type: integer}
@@ -61,11 +92,15 @@ components:
         total: {type: integer}
     SiteConfigSaveRequest:
       type: object
-      required: [config_key]
+      required: [scope_type, config_key]
       properties:
-        app_key:
+        scope_type:
           type: string
-          description: 空字符串代表全局；非空为应用级
+          enum: [global, app]
+          description: 参数要写入的作用域类型
+        scope_key:
+          type: string
+          description: 作用域 key；当 `scope_type=app` 时填写目标 APP key
         config_key: {type: string, maxLength: 150}
         config_value:
           type: object
@@ -73,6 +108,10 @@ components:
         value_type:
           type: string
           enum: [string, number, bool, image, json, svg]
+        fallback_policy:
+          type: string
+          enum: [inherit, strict]
+          description: 参数回退策略；未填写时默认 inherit。APP 作用域参数会强制按 inherit 处理。
         label: {type: string, maxLength: 200}
         description: {type: string, maxLength: 500}
         sort_order: {type: integer}

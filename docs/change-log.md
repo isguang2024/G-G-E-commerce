@@ -1,3 +1,18 @@
+## 2026-04-17 参数管理语义收口与作用域解析增强
+
+### 本次改动
+- 将 `site-config` 这条能力线在用户可见层统一收口为“参数管理”，同步更新 OpenAPI 摘要、后端权限/菜单/模块种子、系统菜单标题以及管理页文案，不再继续使用“配置中心 / 站点配置”作为主语义。
+- 参数管理 API 改为显式 `scope_type / scope_key` 模型：管理端列表与保存改走 `global / app / all` 作用域，运行时解析支持 `context / global / app`，并新增 `GET /site-configs/lookup` 单键解析接口。
+- 这次又补了参数级 `fallback_policy`，默认 `inherit`，`strict` 表示当前作用域未命中时不回退到全局默认；前端管理页、OpenAPI、后端模型与服务逻辑都已同步。
+- 全局参数的回退策略现在默认折叠隐藏，不再占基础表单和列表列位，需要时可在编辑弹层里展开高级项。
+- 后端 `siteconfig` service/repository/cache 已支持按作用域解析与单键读取，前端 API/store/管理页也同步切到新契约，并在页面中明确提示“不同作用域可重复建同 key、全局也是作用域、不同 APP 可复用同 key”。
+- 页面右上角的参数管理标签已经去掉，管理页只保留主标题和作用域说明，不再显示额外徽标。
+- 系统菜单种子仍保留内建 seed key `SiteConfig` 稳定，避免生成第二套内建菜单记录；相关验证已覆盖 `go test`、`pnpm exec vue-tsc --noEmit` 和 `pnpm build`。
+
+### 下次方向
+- 若要让更多后端服务在组装响应时直接消费参数，下一步应从 `siteconfig.Service` 再抽一个只读 `Reader` 窄接口，并补 `GetString / GetBool / GetNumber / GetJSON` 这类 typed helper，避免各业务层手动解析 `MetaJSON`。
+- 可继续在参数管理里补 APP 级默认参数模板、参数用途/敏感级别标记、环境级覆盖与批量导入导出，逐步把它从“参数 CRUD”升级成统一参数提供器，而不是继续在各模块硬编码默认值。
+
 ## 2026-04-17 docs/tmp 状态标签与上传文档入口收口
 
 ### 本次改动
@@ -430,3 +445,16 @@
 ### 下次方向
 - 如果要继续深挖，可再做一轮纯重命名，把后端 service/repository 内部局部变量里的 `spaceKey` 也系统改为 `menuSpaceKey`，进一步减少阅读歧义；这轮先优先回收兼容分支与对外字段。
 - 认证、注册、回跳链路里的 `navigation_space_key` 目前仍是独立协议语义；若后续也要统一命名，需要单独评估登录态回跳和第三方注册落点的兼容成本。
+
+## 2026-04-17 workspace / collaboration 命名与角色建模分析补充
+
+### 本次改动
+- 补做了一轮前后端、OpenAPI、鉴权与权限链路的结构分析，确认 `collaboration_workspace` 不是一个可以全局替换的名字：主实体、主表、主 CRUD 应统一回 `workspace`，只有“当前协作态 / 协作边界 / 协作成员”这类运行时语义才应保留为 `collaboration`，历史桥接字段和旧表应视为待删除兼容层。
+- 角色模型也一起核对了当前实现，现状是“单 `roles` 表 + `collaboration_workspace_id` 作用域列 + `user_roles` / `workspace_role_bindings` 双轨并存”。其中 [backend/internal/modules/system/models/model.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/models/model.go:99) 仍让 `Role`、`UserRole` 直接带 `collaboration_workspace_id`，而 [backend/internal/modules/system/models/workspace.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/models/workspace.go:56) 已经有更接近目标态的 `workspace_role_bindings`。
+- 结论上不建议再新造一张“协作角色主表”。更合适的目标是保留单一 `roles` 定义表：全局角色就是无空间作用域的角色，协作角色就是绑定到某个 `collaboration` 类型 `workspace` 的角色；用户在空间内拿到角色，统一走 `workspace_role_bindings` 这类关联表，而不是继续把作用域塞进 `user_roles.collaboration_workspace_id`。
+- 如果只考虑当前两种作用域，最省改动的落地是把 `roles.collaboration_workspace_id` 收口成 `roles.workspace_id`；如果考虑未来扩展性更强，也可以进一步拆成“`roles` 定义表 + `role_scopes/workspace_role_scopes` 作用域表 + `workspace_role_bindings` 赋权表”，但无论哪条都不建议再分裂出第二套 `collaboration_roles` 主表。
+
+### 下次方向
+- 真正动手时先做 migration 方案，不要先做代码 rename：优先决定 `roles.collaboration_workspace_id` 是直接改 `workspace_id`，还是抽成独立 scope 表；同时清退 `user_roles.collaboration_workspace_id`、`workspaces.collaboration_workspace_id`、JWT `collaboration_workspace_id` 与 `X-Collaboration-Workspace-Id`。
+- OpenAPI 需要按两类重排：协作空间实体治理回 `workspace/workspaces`，当前协作态接口收口到 `collaboration/current/*`；对应前端再把 `collaboration-workspace.ts` / `collaboration-workspace` store 拆回 `workspace.ts` 与 `collaboration.ts` 两条主线。
+- 权限真相和实现也要一并对齐，尤其是 [backend/internal/pkg/permission/evaluator/evaluator.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permission/evaluator/evaluator.go:197) 这条仍然依赖 `workspaces.collaboration_workspace_id + user_roles.collaboration_workspace_id` 的旧链路，否则即便表名改完，运行时依旧会被旧模型锁死。

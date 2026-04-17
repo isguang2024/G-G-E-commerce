@@ -1,6 +1,6 @@
-// 站点品牌信息（name / logo / favicon）
+// 站点品牌参数（name / logo / favicon）
 //
-// 统一封装站点配置的读取：
+// 统一封装参数管理里的品牌参数读取：
 //   - 首次加载：`initSiteBranding()` 在应用启动时调用一次。
 //   - 运行时：组件通过 `useSiteBranding()` 得到 `name/logo/favicon` 的 computed ref。
 //     内部指向 pinia store 中的默认 bucket；store 更新后，ref 自动响应。

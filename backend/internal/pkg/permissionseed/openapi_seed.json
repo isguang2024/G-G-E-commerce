@@ -1886,7 +1886,7 @@
       "method": "get",
       "path": "/site-configs",
       "permission_key": "system.site_config.view",
-      "summary": "查询站点配置项（管理端）",
+      "summary": "查询参数项（管理端）",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1896,17 +1896,27 @@
       "method": "post",
       "path": "/site-configs",
       "permission_key": "system.site_config.manage",
-      "summary": "新增或更新站点配置项",
+      "summary": "新增或更新参数项",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
+    },
+    {
+      "operation_id": "lookupSiteConfig",
+      "method": "get",
+      "path": "/site-configs/lookup",
+      "permission_key": "",
+      "summary": "查询单个参数",
+      "tags": "siteconfig",
+      "api_category": "siteconfig",
+      "access_mode": "authenticated"
     },
     {
       "operation_id": "resolveSiteConfigs",
       "method": "get",
       "path": "/site-configs/resolve",
       "permission_key": "",
-      "summary": "批量解析站点配置（全局+应用级合并）",
+      "summary": "批量解析参数",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "authenticated"
@@ -1916,7 +1926,7 @@
       "method": "get",
       "path": "/site-configs/sets",
       "permission_key": "system.site_config.view",
-      "summary": "查询站点配置集合",
+      "summary": "查询参数集合",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1926,7 +1936,7 @@
       "method": "post",
       "path": "/site-configs/sets",
       "permission_key": "system.site_config.manage",
-      "summary": "新增或更新配置集合",
+      "summary": "新增或更新参数集合",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1936,7 +1946,7 @@
       "method": "delete",
       "path": "/site-configs/sets/{id}",
       "permission_key": "system.site_config.manage",
-      "summary": "删除配置集合",
+      "summary": "删除参数集合",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1946,7 +1956,7 @@
       "method": "put",
       "path": "/site-configs/sets/{id}",
       "permission_key": "system.site_config.manage",
-      "summary": "更新配置集合",
+      "summary": "更新参数集合",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1956,7 +1966,7 @@
       "method": "put",
       "path": "/site-configs/sets/{id}/items",
       "permission_key": "system.site_config.manage",
-      "summary": "整体替换集合包含的 config_key 列表",
+      "summary": "整体替换参数集合包含的 config_key 列表",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1966,7 +1976,7 @@
       "method": "delete",
       "path": "/site-configs/{id}",
       "permission_key": "system.site_config.manage",
-      "summary": "删除站点配置项",
+      "summary": "删除参数项",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"
@@ -1976,7 +1986,7 @@
       "method": "put",
       "path": "/site-configs/{id}",
       "permission_key": "system.site_config.manage",
-      "summary": "更新站点配置项",
+      "summary": "更新参数项",
       "tags": "siteconfig",
       "api_category": "siteconfig",
       "access_mode": "permission"

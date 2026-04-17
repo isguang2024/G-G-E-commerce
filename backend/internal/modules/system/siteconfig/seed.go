@@ -41,16 +41,17 @@ type defaultSetSpec struct {
 }
 
 type defaultConfigSpec struct {
-	Key         string
-	Label       string
-	Description string
-	ValueType   string
-	Value       models.MetaJSON
-	SortOrder   int
-	Sets        []string
+	Key            string
+	Label          string
+	Description    string
+	ValueType      string
+	FallbackPolicy string
+	Value          models.MetaJSON
+	SortOrder      int
+	Sets           []string
 }
 
-// SeedDefaults 写入站点配置的默认集合与全局配置项。幂等：存在则跳过，不覆盖用户已修改值。
+// SeedDefaults 写入参数管理的默认集合与全局参数项。幂等：存在则跳过，不覆盖用户已修改值。
 func SeedDefaults(ctx context.Context, db *gorm.DB, logger *zap.Logger) error {
 	if db == nil {
 		return errors.New("siteconfig seed: db is nil")
@@ -74,67 +75,74 @@ func SeedDefaults(ctx context.Context, db *gorm.DB, logger *zap.Logger) error {
 
 	configs := []defaultConfigSpec{
 		{
-			Key:         SeedKeySiteName,
-			Label:       "站点名称",
-			Description: "管理后台顶部与浏览器标题使用的名称",
-			ValueType:   models.SiteConfigValueTypeString,
-			Value:       models.MetaJSON{"value": "MaBen Admin"},
-			SortOrder:   10,
-			Sets:        []string{SeedSetSiteBasic},
+			Key:            SeedKeySiteName,
+			Label:          "站点名称",
+			Description:    "管理后台顶部与浏览器标题使用的名称",
+			ValueType:      models.SiteConfigValueTypeString,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"value": "MaBen Admin"},
+			SortOrder:      10,
+			Sets:           []string{SeedSetSiteBasic},
 		},
 		{
-			Key:         SeedKeySiteDescription,
-			Label:       "站点描述",
-			Description: "用于登录页 / SEO 描述",
-			ValueType:   models.SiteConfigValueTypeString,
-			Value:       models.MetaJSON{"value": "MaBen Admin 通用管理脚手架"},
-			SortOrder:   20,
-			Sets:        []string{SeedSetSiteBasic},
+			Key:            SeedKeySiteDescription,
+			Label:          "站点描述",
+			Description:    "用于登录页 / SEO 描述",
+			ValueType:      models.SiteConfigValueTypeString,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"value": "MaBen Admin 通用管理脚手架"},
+			SortOrder:      20,
+			Sets:           []string{SeedSetSiteBasic},
 		},
 		{
-			Key:         SeedKeySiteLogo,
-			Label:       "站点 Logo",
-			Description: "侧边栏 / 顶栏显示的 logo，建议正方形 PNG",
-			ValueType:   models.SiteConfigValueTypeImage,
-			Value:       models.MetaJSON{"url": ""},
-			SortOrder:   10,
-			Sets:        []string{SeedSetSiteBranding},
+			Key:            SeedKeySiteLogo,
+			Label:          "站点 Logo",
+			Description:    "侧边栏 / 顶栏显示的 logo，建议正方形 PNG",
+			ValueType:      models.SiteConfigValueTypeImage,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"url": ""},
+			SortOrder:      10,
+			Sets:           []string{SeedSetSiteBranding},
 		},
 		{
-			Key:         SeedKeySiteFavicon,
-			Label:       "浏览器图标 (Favicon)",
-			Description: "浏览器标签页图标，推荐 .ico / 32x32 PNG",
-			ValueType:   models.SiteConfigValueTypeImage,
-			Value:       models.MetaJSON{"url": ""},
-			SortOrder:   20,
-			Sets:        []string{SeedSetSiteBranding},
+			Key:            SeedKeySiteFavicon,
+			Label:          "浏览器图标 (Favicon)",
+			Description:    "浏览器标签页图标，推荐 .ico / 32x32 PNG",
+			ValueType:      models.SiteConfigValueTypeImage,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"url": ""},
+			SortOrder:      20,
+			Sets:           []string{SeedSetSiteBranding},
 		},
 		{
-			Key:         SeedKeySiteCopyright,
-			Label:       "版权文案",
-			Description: "登录页 / 页脚显示的版权声明",
-			ValueType:   models.SiteConfigValueTypeString,
-			Value:       models.MetaJSON{"value": "© 2026 MaBen Admin. All rights reserved."},
-			SortOrder:   10,
-			Sets:        []string{SeedSetSiteFooter},
+			Key:            SeedKeySiteCopyright,
+			Label:          "版权文案",
+			Description:    "登录页 / 页脚显示的版权声明",
+			ValueType:      models.SiteConfigValueTypeString,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"value": "© 2026 MaBen Admin. All rights reserved."},
+			SortOrder:      10,
+			Sets:           []string{SeedSetSiteFooter},
 		},
 		{
-			Key:         SeedKeyPlatformMaintenanceMode,
-			Label:       "维护模式",
-			Description: "开启后，非管理员用户登录将被拒绝",
-			ValueType:   models.SiteConfigValueTypeBool,
-			Value:       models.MetaJSON{"value": false},
-			SortOrder:   10,
-			Sets:        []string{SeedSetPlatformGlobal},
+			Key:            SeedKeyPlatformMaintenanceMode,
+			Label:          "维护模式",
+			Description:    "开启后，非管理员用户登录将被拒绝",
+			ValueType:      models.SiteConfigValueTypeBool,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"value": false},
+			SortOrder:      10,
+			Sets:           []string{SeedSetPlatformGlobal},
 		},
 		{
-			Key:         SeedKeyPlatformRegistrationOpn,
-			Label:       "允许用户注册",
-			Description: "控制前台注册入口是否可用",
-			ValueType:   models.SiteConfigValueTypeBool,
-			Value:       models.MetaJSON{"value": true},
-			SortOrder:   20,
-			Sets:        []string{SeedSetPlatformGlobal},
+			Key:            SeedKeyPlatformRegistrationOpn,
+			Label:          "允许用户注册",
+			Description:    "控制前台注册入口是否可用",
+			ValueType:      models.SiteConfigValueTypeBool,
+			FallbackPolicy: models.SiteConfigFallbackPolicyInherit,
+			Value:          models.MetaJSON{"value": true},
+			SortOrder:      20,
+			Sets:           []string{SeedSetPlatformGlobal},
 		},
 	}
 
@@ -154,7 +162,7 @@ func SeedDefaults(ctx context.Context, db *gorm.DB, logger *zap.Logger) error {
 	}
 
 	if logger != nil {
-		logger.Info("Site config default seeds ensured",
+		logger.Info("Parameter default seeds ensured",
 			zap.Int("sets", len(sets)),
 			zap.Int("configs", len(configs)),
 		)
@@ -221,6 +229,14 @@ func ensureSeedConfig(ctx context.Context, db *gorm.DB, spec defaultConfigSpec) 
 		if existing.ValueType == "" {
 			updates["value_type"] = spec.ValueType
 		}
+		if existing.FallbackPolicy == "" {
+			updates["fallback_policy"] = func() string {
+				if spec.FallbackPolicy != "" {
+					return spec.FallbackPolicy
+				}
+				return models.SiteConfigFallbackPolicyInherit
+			}()
+		}
 		if len(updates) == 1 && existing.IsBuiltin {
 			return nil
 		}
@@ -231,20 +247,24 @@ func ensureSeedConfig(ctx context.Context, db *gorm.DB, spec defaultConfigSpec) 
 	}
 
 	row := &models.SiteConfig{
-		ID:          uuid.New(),
-		TenantID:    defaultSeedTenant,
-		AppKey:      "",
-		ConfigKey:   spec.Key,
-		ConfigValue: spec.Value,
-		ValueType:   spec.ValueType,
-		Label:       spec.Label,
-		Description: spec.Description,
-		SortOrder:   spec.SortOrder,
-		IsBuiltin:   true,
-		Status:      "normal",
+		ID:             uuid.New(),
+		TenantID:       defaultSeedTenant,
+		AppKey:         "",
+		ConfigKey:      spec.Key,
+		ConfigValue:    spec.Value,
+		ValueType:      spec.ValueType,
+		FallbackPolicy: spec.FallbackPolicy,
+		Label:          spec.Label,
+		Description:    spec.Description,
+		SortOrder:      spec.SortOrder,
+		IsBuiltin:      true,
+		Status:         "normal",
 	}
 	if row.ConfigValue == nil {
 		row.ConfigValue = models.MetaJSON{}
+	}
+	if row.FallbackPolicy == "" {
+		row.FallbackPolicy = models.SiteConfigFallbackPolicyInherit
 	}
 	return db.WithContext(ctx).Create(row).Error
 }

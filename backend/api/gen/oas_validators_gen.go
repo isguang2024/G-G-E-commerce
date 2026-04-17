@@ -1530,6 +1530,19 @@ func (s ListLogPoliciesPipeline) Validate() error {
 	}
 }
 
+func (s ListSiteConfigsScopeType) Validate() error {
+	switch s {
+	case "all":
+		return nil
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s ListStorageBucketsStatus) Validate() error {
 	switch s {
 	case "ready":
@@ -2035,6 +2048,19 @@ func (s *LoginResponse) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s LookupSiteConfigScopeType) Validate() error {
+	switch s {
+	case "context":
+		return nil
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *MediaListResponse) Validate() error {
@@ -3584,6 +3610,19 @@ func (s *RegisterRequest) Validate() error {
 	return nil
 }
 
+func (s ResolveSiteConfigsScopeType) Validate() error {
+	switch s {
+	case "context":
+		return nil
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *RoleActionsResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4098,6 +4137,51 @@ func (s *SiteConfigListResponse) Validate() error {
 	return nil
 }
 
+func (s *SiteConfigLookupResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Item.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "item",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.ScopeType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "scope_type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConfigLookupResponseScopeType) Validate() error {
+	switch s {
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteConfigResolveResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4112,6 +4196,17 @@ func (s *SiteConfigResolveResponse) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "items",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.ScopeType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "scope_type",
 			Error: err,
 		})
 	}
@@ -4141,6 +4236,17 @@ func (s SiteConfigResolveResponseItems) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s SiteConfigResolveResponseScopeType) Validate() error {
+	switch s {
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteConfigResolvedItem) Validate() error {
@@ -4227,6 +4333,17 @@ func (s *SiteConfigSaveRequest) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.ScopeType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "scope_type",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := (validate.String{
 			MinLength:     0,
 			MinLengthSet:  false,
@@ -4264,6 +4381,24 @@ func (s *SiteConfigSaveRequest) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "value_type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.FallbackPolicy.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fallback_policy",
 			Error: err,
 		})
 	}
@@ -4349,6 +4484,28 @@ func (s *SiteConfigSaveRequest) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s SiteConfigSaveRequestFallbackPolicy) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "strict":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SiteConfigSaveRequestScopeType) Validate() error {
+	switch s {
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s SiteConfigSaveRequestStatus) Validate() error {
@@ -4591,6 +4748,17 @@ func (s *SiteConfigSummary) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.ScopeType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "scope_type",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := s.ValueType.Validate(); err != nil {
 			return err
 		}
@@ -4601,10 +4769,43 @@ func (s *SiteConfigSummary) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.FallbackPolicy.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fallback_policy",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s SiteConfigSummaryFallbackPolicy) Validate() error {
+	switch s {
+	case "inherit":
+		return nil
+	case "strict":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SiteConfigSummaryScopeType) Validate() error {
+	switch s {
+	case "global":
+		return nil
+	case "app":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s SiteConfigSummaryValueType) Validate() error {

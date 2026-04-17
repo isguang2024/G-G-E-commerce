@@ -1,4 +1,4 @@
-// site-config 类型别名（从 OpenAPI schema 派生）。
+// 参数管理类型别名（从 OpenAPI schema 派生）。
 // 这里只做聚合与重导出，避免前端业务代码直接依赖 components['schemas'] 长路径。
 
 import type { components } from '@/api/v5/schema'
@@ -6,6 +6,7 @@ import type { components } from '@/api/v5/schema'
 export type SiteConfigSummary = components['schemas']['SiteConfigSummary']
 export type SiteConfigListResponse = components['schemas']['SiteConfigListResponse']
 export type SiteConfigSaveRequest = components['schemas']['SiteConfigSaveRequest']
+export type SiteConfigLookupResponse = components['schemas']['SiteConfigLookupResponse']
 
 export type SiteConfigSetSummary = components['schemas']['SiteConfigSetSummary']
 export type SiteConfigSetListResponse = components['schemas']['SiteConfigSetListResponse']
@@ -29,9 +30,19 @@ export type SiteConfigValueType = (typeof SITE_CONFIG_VALUE_TYPES)[number]
 // source 枚举。
 export type SiteConfigSource = 'app' | 'global' | 'default'
 
-// 常量：空字符串代表全局作用域；'__all__' 代表列出所有作用域。
-export const SITE_CONFIG_GLOBAL_APP_KEY = ''
-export const SITE_CONFIG_ALL_SCOPES = '__all__'
+export const SITE_CONFIG_FALLBACK_POLICIES = ['inherit', 'strict'] as const
+export type SiteConfigFallbackPolicy = (typeof SITE_CONFIG_FALLBACK_POLICIES)[number]
+
+export const SITE_CONFIG_SCOPE_TYPES = ['global', 'app'] as const
+export type SiteConfigScopeType = (typeof SITE_CONFIG_SCOPE_TYPES)[number]
+
+export const SITE_CONFIG_RUNTIME_SCOPE_TYPES = ['context', 'global', 'app'] as const
+export type SiteConfigRuntimeScopeType = (typeof SITE_CONFIG_RUNTIME_SCOPE_TYPES)[number]
+
+export const SITE_CONFIG_MANAGE_SCOPE_TYPES = ['all', 'global', 'app'] as const
+export type SiteConfigManageScopeType = (typeof SITE_CONFIG_MANAGE_SCOPE_TYPES)[number]
+
+export const SITE_CONFIG_GLOBAL_SCOPE_KEY = ''
 
 // 常用的值容器：后端统一用 JSON 对象，string 类型约定 value 字段。
 export interface SiteConfigScalarValue {

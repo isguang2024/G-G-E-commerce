@@ -292,13 +292,13 @@ type Handler interface {
 	DeleteRole(ctx context.Context, params DeleteRoleParams) (*MutationResult, error)
 	// DeleteSiteConfig implements deleteSiteConfig operation.
 	//
-	// 删除站点配置项.
+	// 删除参数项.
 	//
 	// DELETE /site-configs/{id}
 	DeleteSiteConfig(ctx context.Context, params DeleteSiteConfigParams) (DeleteSiteConfigRes, error)
 	// DeleteSiteConfigSet implements deleteSiteConfigSet operation.
 	//
-	// 删除配置集合.
+	// 删除参数集合.
 	//
 	// DELETE /site-configs/sets/{id}
 	DeleteSiteConfigSet(ctx context.Context, params DeleteSiteConfigSetParams) (DeleteSiteConfigSetRes, error)
@@ -1095,13 +1095,13 @@ type Handler interface {
 	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*PageListResponse, error)
 	// ListSiteConfigSets implements listSiteConfigSets operation.
 	//
-	// 查询站点配置集合.
+	// 查询参数集合.
 	//
 	// GET /site-configs/sets
 	ListSiteConfigSets(ctx context.Context) (ListSiteConfigSetsRes, error)
 	// ListSiteConfigs implements listSiteConfigs operation.
 	//
-	// 查询站点配置项（管理端）.
+	// 查询参数项（管理端）.
 	//
 	// GET /site-configs
 	ListSiteConfigs(ctx context.Context, params ListSiteConfigsParams) (ListSiteConfigsRes, error)
@@ -1178,6 +1178,12 @@ type Handler interface {
 	//
 	// POST /auth/logout
 	Logout(ctx context.Context) (LogoutRes, error)
+	// LookupSiteConfig implements lookupSiteConfig operation.
+	//
+	// 查询单个参数.
+	//
+	// GET /site-configs/lookup
+	LookupSiteConfig(ctx context.Context, params LookupSiteConfigParams) (LookupSiteConfigRes, error)
 	// MarkInboxRead implements markInboxRead operation.
 	//
 	// 标记消息已读.
@@ -1246,7 +1252,7 @@ type Handler interface {
 	RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (*MutationResult, error)
 	// ResolveSiteConfigs implements resolveSiteConfigs operation.
 	//
-	// 批量解析站点配置（全局+应用级合并）.
+	// 批量解析参数.
 	//
 	// GET /site-configs/resolve
 	ResolveSiteConfigs(ctx context.Context, params ResolveSiteConfigsParams) (ResolveSiteConfigsRes, error)
@@ -1570,19 +1576,19 @@ type Handler interface {
 	UpdateRole(ctx context.Context, req *RoleUpdateRequest, params UpdateRoleParams) (*MutationResult, error)
 	// UpdateSiteConfig implements updateSiteConfig operation.
 	//
-	// 更新站点配置项.
+	// 更新参数项.
 	//
 	// PUT /site-configs/{id}
 	UpdateSiteConfig(ctx context.Context, req *SiteConfigSaveRequest, params UpdateSiteConfigParams) (UpdateSiteConfigRes, error)
 	// UpdateSiteConfigSet implements updateSiteConfigSet operation.
 	//
-	// 更新配置集合.
+	// 更新参数集合.
 	//
 	// PUT /site-configs/sets/{id}
 	UpdateSiteConfigSet(ctx context.Context, req *SiteConfigSetSaveRequest, params UpdateSiteConfigSetParams) (UpdateSiteConfigSetRes, error)
 	// UpdateSiteConfigSetItems implements updateSiteConfigSetItems operation.
 	//
-	// 整体替换集合包含的 config_key 列表.
+	// 整体替换参数集合包含的 config_key 列表.
 	//
 	// PUT /site-configs/sets/{id}/items
 	UpdateSiteConfigSetItems(ctx context.Context, req *SiteConfigSetItemsRequest, params UpdateSiteConfigSetItemsParams) (UpdateSiteConfigSetItemsRes, error)
@@ -1624,13 +1630,13 @@ type Handler interface {
 	UploadMedia(ctx context.Context, req *UploadMediaReq) (UploadMediaRes, error)
 	// UpsertSiteConfig implements upsertSiteConfig operation.
 	//
-	// 新增或更新站点配置项.
+	// 新增或更新参数项.
 	//
 	// POST /site-configs
 	UpsertSiteConfig(ctx context.Context, req *SiteConfigSaveRequest) (UpsertSiteConfigRes, error)
 	// UpsertSiteConfigSet implements upsertSiteConfigSet operation.
 	//
-	// 新增或更新配置集合.
+	// 新增或更新参数集合.
 	//
 	// POST /site-configs/sets
 	UpsertSiteConfigSet(ctx context.Context, req *SiteConfigSetSaveRequest) (UpsertSiteConfigSetRes, error)

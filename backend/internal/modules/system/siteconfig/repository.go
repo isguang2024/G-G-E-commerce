@@ -1,4 +1,4 @@
-﻿package siteconfig
+package siteconfig
 
 import (
 	"context"
@@ -17,7 +17,7 @@ var (
 	ErrSetNotFound    = errors.New("site config set not found")
 )
 
-// Repository 站点配置仓储层。使用"先查后写"模式处理 Upsert，避免 GORM 的 ON CONFLICT 与部分唯一索引冲突。
+// Repository 参数管理仓储层。使用"先查后写"模式处理 Upsert，避免 GORM 的 ON CONFLICT 与部分唯一索引冲突。
 type Repository struct {
 	db *gorm.DB
 }
@@ -28,11 +28,19 @@ func NewRepository(db *gorm.DB) *Repository {
 
 // ---- SiteConfig ----
 
-// ListConfigs 按 tenant + 作用域过滤。appKey 为空字符串时返回全局配置，"__all__" 返回所有配置。
-func (r *Repository) ListConfigs(ctx context.Context, tenantID, appKey string) ([]models.SiteConfig, error) {
+// ListConfigs 按 tenant + 作用域过滤。
+// - global: 仅全局参数
+// - app: 指定 APP 作用域参数
+// - all: 全部作用域参数
+func (r *Repository) ListConfigs(ctx context.Context, tenantID, scopeType, scopeKey string) ([]models.SiteConfig, error) {
 	q := r.db.WithContext(ctx).Where("tenant_id = ?", normalizeTenantID(tenantID))
-	if appKey != "__all__" {
-		q = q.Where("app_key = ?", strings.TrimSpace(appKey))
+	switch normalizeListScopeType(scopeType) {
+	case ScopeTypeAll:
+		// all 不额外加条件
+	case ScopeTypeApp:
+		q = q.Where("app_key = ?", strings.TrimSpace(scopeKey))
+	default:
+		q = q.Where("app_key = ?", "")
 	}
 	var list []models.SiteConfig
 	if err := q.Order("sort_order ASC, config_key ASC").Find(&list).Error; err != nil {
@@ -99,6 +107,9 @@ func (r *Repository) UpsertConfig(ctx context.Context, cfg *models.SiteConfig) e
 	if cfg.ValueType == "" {
 		cfg.ValueType = models.SiteConfigValueTypeString
 	}
+	if cfg.FallbackPolicy == "" {
+		cfg.FallbackPolicy = models.SiteConfigFallbackPolicyInherit
+	}
 	if cfg.Status == "" {
 		cfg.Status = "normal"
 	}
@@ -116,14 +127,15 @@ func (r *Repository) UpsertConfig(ctx context.Context, cfg *models.SiteConfig) e
 	if err == nil {
 		cfg.ID = existing.ID
 		return r.db.WithContext(ctx).Model(&existing).Updates(map[string]interface{}{
-			"config_value": cfg.ConfigValue,
-			"value_type":   cfg.ValueType,
-			"label":        cfg.Label,
-			"description":  cfg.Description,
-			"sort_order":   cfg.SortOrder,
-			"status":       cfg.Status,
-			"updated_at":   time.Now(),
-			"deleted_at":   nil,
+			"config_value":    cfg.ConfigValue,
+			"value_type":      cfg.ValueType,
+			"fallback_policy": cfg.FallbackPolicy,
+			"label":           cfg.Label,
+			"description":     cfg.Description,
+			"sort_order":      cfg.SortOrder,
+			"status":          cfg.Status,
+			"updated_at":      time.Now(),
+			"deleted_at":      nil,
 		}).Error
 	}
 	if cfg.ID == uuid.Nil {
@@ -300,4 +312,3 @@ func (r *Repository) ReplaceSetItems(ctx context.Context, tenantID string, setID
 		return tx.Create(&items).Error
 	})
 }
-

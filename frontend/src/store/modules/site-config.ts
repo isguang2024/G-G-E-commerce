@@ -1,12 +1,12 @@
 /**
- * site-config 前端状态管理
+ * 参数管理前端状态管理
  *
  * 职责：
  *   1. 管理端：configs / sets 列表的加载、增删改，缓存在 store；写入后失效 resolved 缓存。
- *   2. 运行时：按 (appKey, keys/setCodes) 指纹缓存 resolveSiteConfigs 的结果，
+ *   2. 运行时：按 (scopeType, scopeKey, keys/setCodes) 指纹缓存 resolveSiteConfigs 的结果，
  *      后续组件读取 key 时直接从内存拿；resolved 内部按 config_key 建立索引，
  *      UI 组件可通过 `getValue(key)` / `getImage(key)` 等 helper 直接读取。
- *   3. 启动时 `loadInitial(appKey, keys)` 加载站点级基础配置（名称、Logo、favicon），
+ *   3. 启动时 `loadInitial(scopeKey, keys)` 加载默认品牌参数（名称、Logo、favicon），
  *      任一标签页写入后通过 BroadcastChannel 通知其它 tab 失效并自动重新 resolve 默认 bucket。
  *
  * 持久化：
@@ -20,6 +20,7 @@ import { computed, ref, shallowRef } from 'vue'
 import {
   fetchDeleteSiteConfig,
   fetchDeleteSiteConfigSet,
+  fetchLookupSiteConfig,
   fetchListSiteConfigSets,
   fetchListSiteConfigs,
   fetchResolveSiteConfigs,
@@ -36,7 +37,10 @@ import type {
   SiteConfigSetItemsRequest,
   SiteConfigSetSaveRequest,
   SiteConfigSetSummary,
-  SiteConfigSummary
+  SiteConfigSummary,
+  SiteConfigLookupResponse,
+  SiteConfigManageScopeType,
+  SiteConfigRuntimeScopeType
 } from '@/domains/site-config/types'
 import {
   readResolvedBool,
@@ -47,7 +51,8 @@ import {
 import { logger } from '@/utils/logger'
 
 interface ResolvedBucket {
-  appKey: string
+  scopeType: 'global' | 'app'
+  scopeKey: string
   keys: string[]
   setCodes: string[]
   version: string
@@ -80,8 +85,17 @@ function normalizeList(values?: string[]): string[] {
   return out
 }
 
-function bucketKey(appKey: string, keys: string[], setCodes: string[]): string {
-  return `${appKey || '__global__'}::k=${keys.join(',')}::s=${setCodes.join(',')}`
+function bucketKey(
+  scopeType: 'global' | 'app',
+  scopeKey: string,
+  keys: string[],
+  setCodes: string[]
+): string {
+  return `${scopeType}:${scopeKey || '__global__'}::k=${keys.join(',')}::s=${setCodes.join(',')}`
+}
+
+function listScopeKey(scopeType: SiteConfigManageScopeType, scopeKey = ''): string {
+  return `${scopeType}:${scopeKey.trim()}`
 }
 
 export const useSiteConfigStore = defineStore('siteConfigStore', () => {
@@ -137,7 +151,8 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
   // ── 运行时 resolve ─────────────────────────────────────────────────────────
 
   interface ResolveOptions {
-    appKey?: string
+    scopeType?: SiteConfigRuntimeScopeType
+    scopeKey?: string
     keys?: string[]
     setCodes?: string[]
     force?: boolean
@@ -145,39 +160,60 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
   }
 
   async function resolve(opts: ResolveOptions = {}): Promise<ResolvedBucket> {
-    const appKey = opts.appKey || ''
+    const scopeType = opts.scopeType
+    const scopeKey = opts.scopeKey?.trim() || ''
     const keys = normalizeList(opts.keys)
     const setCodes = normalizeList(opts.setCodes)
-    const key = bucketKey(appKey, keys, setCodes)
-    if (!opts.force) {
-      const cached = buckets.value.get(key)
+    const requestedScopeType = scopeType || (scopeKey ? 'app' : 'context')
+    const requestKey = bucketKey(
+      requestedScopeType === 'global' ? 'global' : 'app',
+      requestedScopeType === 'app' ? scopeKey : '__context__',
+      keys,
+      setCodes
+    )
+    if (!opts.force && requestedScopeType !== 'context') {
+      const cached = buckets.value.get(requestKey)
       if (cached) {
-        if (opts.setDefault) defaultBucketKey.value = key
+        if (opts.setDefault) defaultBucketKey.value = requestKey
         return cached
       }
     }
     const resp: SiteConfigResolveResponse = await fetchResolveSiteConfigs({
-      appKey,
+      scopeType,
+      scopeKey,
       keys,
       setCodes
     })
     const bucket: ResolvedBucket = {
-      appKey,
+      scopeType: resp.scope_type,
+      scopeKey: resp.scope_key || '',
       keys,
       setCodes,
       version: resp.version,
       items: resp.items ?? {}
     }
+    const actualKey = bucketKey(bucket.scopeType, bucket.scopeKey, keys, setCodes)
     const next = new Map(buckets.value)
-    next.set(key, bucket)
+    next.set(actualKey, bucket)
     buckets.value = next
-    if (opts.setDefault) defaultBucketKey.value = key
+    if (opts.setDefault) defaultBucketKey.value = actualKey
     return bucket
   }
 
   // 启动时加载（作为默认 bucket）
-  async function loadInitial(appKey: string, keys: string[]): Promise<ResolvedBucket> {
-    return resolve({ appKey, keys, setDefault: true })
+  async function loadInitial(scopeKey: string, keys: string[]): Promise<ResolvedBucket> {
+    return resolve({ scopeType: 'app', scopeKey, keys, setDefault: true })
+  }
+
+  async function lookup(
+    configKey: string,
+    opts: Pick<ResolveOptions, 'scopeType' | 'scopeKey'> = {}
+  ): Promise<SiteConfigLookupResponse> {
+    return fetchLookupSiteConfig({
+      configKey,
+      scopeType: opts.scopeType,
+      scopeKey: opts.scopeKey
+    })
   }
 
   interface InvalidateOptions {
@@ -199,7 +235,8 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
 
     if (options.reloadDefault !== false && prevBucket) {
       void resolve({
-        appKey: prevBucket.appKey,
+        scopeType: prevBucket.scopeType,
+        scopeKey: prevBucket.scopeKey,
         keys: prevBucket.keys,
         setCodes: prevBucket.setCodes,
         force: true,
@@ -247,20 +284,28 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
 
   // ── 管理端 CRUD：Configs ──────────────────────────────────────────────────
 
-  async function listConfigs(appKey?: string, force = false) {
+  interface ListConfigsOptions {
+    scopeType?: SiteConfigManageScopeType
+    scopeKey?: string
+  }
+
+  async function listConfigs(options: ListConfigsOptions = {}, force = false) {
+    const scopeType = options.scopeType || 'global'
+    const scopeKey = options.scopeKey?.trim() || ''
+    const currentScope = listScopeKey(scopeType, scopeKey)
     if (
       !force &&
       configs.value.length > 0 &&
-      configsScope.value === appKey &&
+      configsScope.value === currentScope &&
       !configsLoading.value
     ) {
       return configs.value
     }
     configsLoading.value = true
     try {
-      const resp = await fetchListSiteConfigs(appKey)
+      const resp = await fetchListSiteConfigs({ scopeType, scopeKey })
       configs.value = resp.records ?? []
-      configsScope.value = appKey
+      configsScope.value = currentScope
       return configs.value
     } finally {
       configsLoading.value = false
@@ -269,7 +314,7 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
 
   async function upsertConfig(body: SiteConfigSaveRequest): Promise<SiteConfigSummary> {
     const saved = await fetchUpsertSiteConfig(body)
-    await listConfigs(configsScope.value, true)
+    await listConfigs(parseListScopeCacheKey(configsScope.value), true)
     invalidateResolved()
     return saved
   }
@@ -279,7 +324,7 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
     body: SiteConfigSaveRequest
   ): Promise<SiteConfigSummary> {
     const saved = await fetchUpdateSiteConfig(id, body)
-    await listConfigs(configsScope.value, true)
+    await listConfigs(parseListScopeCacheKey(configsScope.value), true)
     invalidateResolved()
     return saved
   }
@@ -360,6 +405,7 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
     defaultBucketKey,
     currentDefaultBucket,
     resolve,
+    lookup,
     loadInitial,
     invalidateResolved,
     resetRuntime,
@@ -370,3 +416,16 @@ export const useSiteConfigStore = defineStore('siteConfigStore', () => {
     getImage
   }
 })
+
+function parseListScopeCacheKey(cacheKey?: string): {
+  scopeType?: SiteConfigManageScopeType
+  scopeKey?: string
+} {
+  if (!cacheKey) return { scopeType: 'global' }
+  const [scopeType, ...rest] = cacheKey.split(':')
+  const scopeKey = rest.join(':')
+  if (scopeType === 'all' || scopeType === 'app' || scopeType === 'global') {
+    return { scopeType, scopeKey }
+  }
+  return { scopeType: 'global' }
+}

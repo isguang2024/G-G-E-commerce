@@ -1,8 +1,9 @@
-﻿package siteconfig
+package siteconfig
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/maben/backend/internal/config"
 	"github.com/maben/backend/internal/modules/system/models"
+	"github.com/maben/backend/internal/pkg/appctx"
+	pkgLogger "github.com/maben/backend/internal/pkg/logger"
 )
 
 // 值来源
@@ -17,14 +20,21 @@ const (
 	ResolveSourceApp     = "app"
 	ResolveSourceGlobal  = "global"
 	ResolveSourceDefault = "default"
+
+	ScopeTypeContext = "context"
+	ScopeTypeGlobal  = "global"
+	ScopeTypeApp     = "app"
+	ScopeTypeAll     = "all"
 )
 
-// Service 站点配置服务接口。
+// Service 参数管理服务接口。
 type Service interface {
-	// Resolve 按 keys/set_codes 批量解析（全局 + 应用级合并）。
+	// Resolve 按 keys/set_codes 批量解析（支持 context/global/app 作用域）。
 	Resolve(ctx context.Context, req ResolveRequest) (*ResolveResult, error)
-	// ListConfigs 列配置项。appKey 空字符串表示仅全局；"__all__" 表示所有作用域。
-	ListConfigs(ctx context.Context, tenantID, appKey string) ([]models.SiteConfig, error)
+	// Lookup 按作用域解析单个参数。
+	Lookup(ctx context.Context, req LookupRequest) (*LookupResult, error)
+	// ListConfigs 列参数项。
+	ListConfigs(ctx context.Context, tenantID string, req ListRequest) ([]models.SiteConfig, error)
 	GetConfig(ctx context.Context, tenantID string, id uuid.UUID) (*models.SiteConfig, error)
 	UpsertConfig(ctx context.Context, cfg *models.SiteConfig) error
 	DeleteConfig(ctx context.Context, tenantID string, id uuid.UUID) error
@@ -41,15 +51,39 @@ type Service interface {
 
 // ResolveRequest 批量解析入参。
 type ResolveRequest struct {
-	AppKey   string
-	Keys     []string
-	SetCodes []string
+	ScopeType string
+	ScopeKey  string
+	Keys      []string
+	SetCodes  []string
 }
 
 // ResolveResult 批量解析结果。
 type ResolveResult struct {
-	Items   map[string]ResolvedItem `json:"items"`
-	Version string                  `json:"version"`
+	Items     map[string]ResolvedItem `json:"items"`
+	Version   string                  `json:"version"`
+	ScopeType string                  `json:"scope_type"`
+	ScopeKey  string                  `json:"scope_key"`
+}
+
+// LookupRequest 单键解析入参。
+type LookupRequest struct {
+	ScopeType string
+	ScopeKey  string
+	ConfigKey string
+}
+
+// LookupResult 单键解析结果。
+type LookupResult struct {
+	ConfigKey string       `json:"config_key"`
+	Item      ResolvedItem `json:"item"`
+	ScopeType string       `json:"scope_type"`
+	ScopeKey  string       `json:"scope_key"`
+}
+
+// ListRequest 管理端参数查询入参。
+type ListRequest struct {
+	ScopeType string
+	ScopeKey  string
 }
 
 // ResolvedItem 单个 key 的解析结果。
@@ -103,11 +137,14 @@ func (s *service) Cache() *resolvedConfigCache { return s.cache }
 
 func (s *service) Resolve(ctx context.Context, req ResolveRequest) (*ResolveResult, error) {
 	tenantID := tenantFromCtx(ctx)
-	appKey := strings.TrimSpace(req.AppKey)
+	scopeType, scopeKey, appKey, err := resolveRuntimeScope(ctx, req.ScopeType, req.ScopeKey)
+	if err != nil {
+		return nil, err
+	}
 	keys := compactStrings(req.Keys)
 	setCodes := compactStrings(req.SetCodes)
 
-	cacheKey := siteConfigResolvedCache(tenantID, appKey, keys, setCodes)
+	cacheKey := siteConfigResolvedCache(tenantID, scopeType, scopeKey, keys, setCodes)
 	if s.cache != nil {
 		var cached ResolveResult
 		if s.cache.Get(ctx, cacheKey, &cached) {
@@ -184,7 +221,12 @@ func (s *service) Resolve(ctx context.Context, req ResolveRequest) (*ResolveResu
 				}
 			}
 			if picked == nil {
-				if cfg, ok := global[k]; ok {
+				if appKey == "" {
+					if cfg, ok := global[k]; ok {
+						picked = cfg
+						source = ResolveSourceGlobal
+					}
+				} else if cfg, ok := global[k]; ok && canFallbackToGlobal(cfg) {
 					picked = cfg
 					source = ResolveSourceGlobal
 				}
@@ -216,13 +258,45 @@ func (s *service) Resolve(ctx context.Context, req ResolveRequest) (*ResolveResu
 	}
 
 	result := &ResolveResult{
-		Items:   items,
-		Version: fingerprintResolveInput(keys, setCodes),
+		Items:     items,
+		Version:   fingerprintResolveInput(keys, setCodes),
+		ScopeType: scopeType,
+		ScopeKey:  scopeKey,
 	}
 	if s.cache != nil {
 		s.cache.Set(ctx, cacheKey, result)
 	}
 	return result, nil
+}
+
+func (s *service) Lookup(ctx context.Context, req LookupRequest) (*LookupResult, error) {
+	configKey := strings.TrimSpace(req.ConfigKey)
+	if configKey == "" {
+		return nil, errors.New("config_key is required")
+	}
+	resolved, err := s.Resolve(ctx, ResolveRequest{
+		ScopeType: req.ScopeType,
+		ScopeKey:  req.ScopeKey,
+		Keys:      []string{configKey},
+	})
+	if err != nil {
+		return nil, err
+	}
+	item, ok := resolved.Items[configKey]
+	if !ok {
+		item = ResolvedItem{
+			Value:     models.MetaJSON{},
+			Source:    ResolveSourceDefault,
+			ValueType: models.SiteConfigValueTypeString,
+			Sets:      []string{},
+		}
+	}
+	return &LookupResult{
+		ConfigKey: configKey,
+		Item:      item,
+		ScopeType: resolved.ScopeType,
+		ScopeKey:  resolved.ScopeKey,
+	}, nil
 }
 
 // loadSetCodes 按 set_ids 查 set_code。
@@ -246,8 +320,12 @@ func (s *service) loadSetCodes(ctx context.Context, tenantID string, ids []uuid.
 
 // ---- Configs CRUD ----
 
-func (s *service) ListConfigs(ctx context.Context, tenantID, appKey string) ([]models.SiteConfig, error) {
-	return s.repo.ListConfigs(ctx, tenantOr(ctx, tenantID), appKey)
+func (s *service) ListConfigs(ctx context.Context, tenantID string, req ListRequest) ([]models.SiteConfig, error) {
+	scopeType, scopeKey, err := normalizeListScope(req.ScopeType, req.ScopeKey)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.ListConfigs(ctx, tenantOr(ctx, tenantID), scopeType, scopeKey)
 }
 
 func (s *service) GetConfig(ctx context.Context, tenantID string, id uuid.UUID) (*models.SiteConfig, error) {
@@ -277,8 +355,9 @@ func (s *service) DeleteConfig(ctx context.Context, tenantID string, id uuid.UUI
 }
 
 // invalidateOnConfigWrite：
-// - 写应用级 (app_key=X, config_key=K)：失效 per-key `:{tenant}:X:K` + resolved 前缀 `:{tenant}:X:`
-// - 写全局 (app_key='', config_key=K)：失效 per-key `:{tenant}:_global:K` + **所有 app 的 resolved**（因为所有 app 都会回退到全局）
+//   - 写应用级 (app_key=X, config_key=K)：失效 per-key `:{tenant}:X:K` + resolved 前缀 `:{tenant}:X:`
+//   - 写全局 (app_key=”, config_key=K)：失效 per-key `:{tenant}:_global:K` + **所有 app 的 resolved**
+//     （可继承参数可能从全局读取；保守起见继续清空所有 app 的缓存）
 func (s *service) invalidateOnConfigWrite(ctx context.Context, tenantID, appKey, configKey string) {
 	if s.cache == nil {
 		return
@@ -401,10 +480,73 @@ func appendUnique(list []string, item string) []string {
 	return append(list, item)
 }
 
-// tenantFromCtx 从 context 取 tenant（暂用 default）。
+func normalizeListScope(scopeType, scopeKey string) (string, string, error) {
+	switch normalizeListScopeType(scopeType) {
+	case ScopeTypeAll:
+		return ScopeTypeAll, "", nil
+	case ScopeTypeApp:
+		target := appctx.NormalizeExplicitAppKey(scopeKey)
+		if target == "" {
+			return "", "", errors.New("scope_key is required when scope_type=app")
+		}
+		return ScopeTypeApp, appctx.NormalizeAppKey(target), nil
+	default:
+		return ScopeTypeGlobal, "", nil
+	}
+}
+
+func normalizeListScopeType(scopeType string) string {
+	switch strings.TrimSpace(strings.ToLower(scopeType)) {
+	case ScopeTypeAll:
+		return ScopeTypeAll
+	case ScopeTypeApp:
+		return ScopeTypeApp
+	default:
+		return ScopeTypeGlobal
+	}
+}
+
+func canFallbackToGlobal(cfg *models.SiteConfig) bool {
+	if cfg == nil {
+		return false
+	}
+	return cfg.FallbackPolicyOrDefault() == models.SiteConfigFallbackPolicyInherit
+}
+
+func resolveRuntimeScope(ctx context.Context, scopeType, scopeKey string) (resolvedScopeType, resolvedScopeKey, appKey string, err error) {
+	targetScopeType := strings.TrimSpace(strings.ToLower(scopeType))
+	targetScopeKey := appctx.NormalizeExplicitAppKey(scopeKey)
+	switch targetScopeType {
+	case "":
+		if targetScopeKey != "" {
+			targetScopeType = ScopeTypeApp
+		} else {
+			targetScopeType = ScopeTypeContext
+		}
+	case ScopeTypeContext, ScopeTypeGlobal, ScopeTypeApp:
+		// valid
+	default:
+		return "", "", "", fmt.Errorf("invalid scope_type: %s", scopeType)
+	}
+
+	switch targetScopeType {
+	case ScopeTypeGlobal:
+		return ScopeTypeGlobal, "", "", nil
+	case ScopeTypeApp:
+		if targetScopeKey == "" {
+			return "", "", "", errors.New("scope_key is required when scope_type=app")
+		}
+		appKey = appctx.NormalizeAppKey(targetScopeKey)
+		return ScopeTypeApp, appKey, appKey, nil
+	default:
+		appKey = appctx.NormalizeAppKey(pkgLogger.AppFromContext(ctx))
+		return ScopeTypeApp, appKey, appKey, nil
+	}
+}
+
+// tenantFromCtx 从 context 取 tenant。
 func tenantFromCtx(ctx context.Context) string {
-	// 项目当前 tenant 固定为 default；预留扩展点。
-	return "default"
+	return pkgLogger.TenantFromContext(ctx)
 }
 
 func tenantOr(ctx context.Context, fallback string) string {
@@ -413,4 +555,3 @@ func tenantOr(ctx context.Context, fallback string) string {
 	}
 	return tenantFromCtx(ctx)
 }
-

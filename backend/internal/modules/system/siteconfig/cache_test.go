@@ -93,7 +93,7 @@ func TestResolvedConfigCacheKeyInvalidationBroadcast(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	key := siteConfigResolvedCache("default", "admin", []string{"site.name"}, nil)
+	key := siteConfigResolvedCache("default", ScopeTypeApp, "admin", []string{"site.name"}, nil)
 
 	cacheA.Set(ctx, key, sampleResolveResult())
 
@@ -117,8 +117,8 @@ func TestResolvedConfigCachePrefixInvalidationBroadcast(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	keyA := siteConfigResolvedCache("default", "admin", []string{"site.name"}, nil)
-	keyB := siteConfigResolvedCache("default", "admin", []string{"site.logo"}, nil)
+	keyA := siteConfigResolvedCache("default", ScopeTypeApp, "admin", []string{"site.name"}, nil)
+	keyB := siteConfigResolvedCache("default", ScopeTypeApp, "admin", []string{"site.logo"}, nil)
 	prefix := siteConfigResolvedPrefix("default")
 
 	cacheA.Set(ctx, keyA, sampleResolveResult())

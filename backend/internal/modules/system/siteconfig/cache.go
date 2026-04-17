@@ -318,9 +318,9 @@ func siteConfigKeyCache(tenantID, appKey, configKey string) string {
 	return fmt.Sprintf("siteconfig:cfg:%s:%s:%s", normalizeTenantID(tenantID), normalizeAppKey(appKey), configKey)
 }
 
-func siteConfigResolvedCache(tenantID, appKey string, keys, setCodes []string) string {
+func siteConfigResolvedCache(tenantID, scopeType, scopeKey string, keys, setCodes []string) string {
 	hash := fingerprintResolveInput(keys, setCodes)
-	return fmt.Sprintf("siteconfig:resolved:%s:%s:%s", normalizeTenantID(tenantID), normalizeAppKey(appKey), hash)
+	return fmt.Sprintf("siteconfig:resolved:%s:%s:%s:%s", normalizeTenantID(tenantID), normalizeListScopeType(scopeType), normalizeResolvedScopeKey(scopeType, scopeKey), hash)
 }
 
 func siteConfigSetsCache(tenantID string) string {
@@ -349,6 +349,13 @@ func fingerprintResolveInput(keys, setCodes []string) string {
 	_, _ = h.Write([]byte("|"))
 	_, _ = h.Write([]byte(strings.Join(sortedSets, ",")))
 	return hex.EncodeToString(h.Sum(nil))[:16]
+}
+
+func normalizeResolvedScopeKey(scopeType, scopeKey string) string {
+	if normalizeListScopeType(scopeType) == ScopeTypeApp {
+		return normalizeAppKey(scopeKey)
+	}
+	return globalAppKeyPlaceholder
 }
 
 func compactStrings(items []string) []string {

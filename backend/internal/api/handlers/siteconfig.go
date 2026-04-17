@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"context"
@@ -20,9 +20,10 @@ const siteConfigTenantFallback = "default"
 
 func (h *siteConfigAPIHandler) ResolveSiteConfigs(ctx context.Context, params gen.ResolveSiteConfigsParams) (gen.ResolveSiteConfigsRes, error) {
 	req := siteconfig.ResolveRequest{
-		AppKey:   optString(params.AppKey),
-		Keys:     splitCSV(optString(params.Keys)),
-		SetCodes: splitCSV(optString(params.SetCodes)),
+		ScopeType: optResolveScopeType(params.ScopeType),
+		ScopeKey:  optString(params.ScopeKey),
+		Keys:      splitCSV(optString(params.Keys)),
+		SetCodes:  splitCSV(optString(params.SetCodes)),
 	}
 	result, err := h.siteConfigSvc.Resolve(ctx, req)
 	if err != nil {
@@ -40,16 +41,46 @@ func (h *siteConfigAPIHandler) ResolveSiteConfigs(ctx context.Context, params ge
 		}
 	}
 	return &gen.SiteConfigResolveResponse{
-		Items:   items,
-		Version: result.Version,
+		Items:     items,
+		Version:   result.Version,
+		ScopeType: gen.SiteConfigResolveResponseScopeType(result.ScopeType),
+		ScopeKey:  result.ScopeKey,
+	}, nil
+}
+
+// ─── LookupSiteConfig ───────────────────────────────────────────────────────
+
+func (h *siteConfigAPIHandler) LookupSiteConfig(ctx context.Context, params gen.LookupSiteConfigParams) (gen.LookupSiteConfigRes, error) {
+	result, err := h.siteConfigSvc.Lookup(ctx, siteconfig.LookupRequest{
+		ScopeType: optLookupScopeType(params.ScopeType),
+		ScopeKey:  optString(params.ScopeKey),
+		ConfigKey: params.ConfigKey,
+	})
+	if err != nil {
+		badRequest := gen.LookupSiteConfigBadRequest(gen.Error{Code: 400, Message: err.Error()})
+		return &badRequest, nil
+	}
+	item := gen.SiteConfigResolvedItem{
+		Value:     gen.SiteConfigResolvedItemValue(metaToJxRaw(result.Item.Value)),
+		Source:    gen.SiteConfigResolvedItemSource(result.Item.Source),
+		ValueType: gen.SiteConfigResolvedItemValueType(valueTypeOrDefault(result.Item.ValueType)),
+		Sets:      ensureStringSlice(result.Item.Sets),
+	}
+	return &gen.SiteConfigLookupResponse{
+		ConfigKey: params.ConfigKey,
+		Item:      item,
+		ScopeType: gen.SiteConfigLookupResponseScopeType(result.ScopeType),
+		ScopeKey:  result.ScopeKey,
 	}, nil
 }
 
 // ─── ListSiteConfigs ─────────────────────────────────────────────────────────
 
 func (h *siteConfigAPIHandler) ListSiteConfigs(ctx context.Context, params gen.ListSiteConfigsParams) (gen.ListSiteConfigsRes, error) {
-	appKey := optString(params.AppKey)
-	list, err := h.siteConfigSvc.ListConfigs(ctx, siteConfigTenantFallback, appKey)
+	list, err := h.siteConfigSvc.ListConfigs(ctx, siteConfigTenantFallback, siteconfig.ListRequest{
+		ScopeType: optListScopeType(params.ScopeType),
+		ScopeKey:  optString(params.ScopeKey),
+	})
 	if err != nil {
 		h.logger.Error("list site configs", zap.Error(err))
 		return &gen.Error{Code: 500, Message: "查询失败"}, nil
@@ -96,8 +127,10 @@ func (h *siteConfigAPIHandler) UpdateSiteConfig(ctx context.Context, req *gen.Si
 		h.logger.Error("get site config", zap.Error(err))
 		return &gen.Error{Code: 404, Message: "查询失败"}, nil
 	}
-	// PUT 以 id 为主：保留既有的 app_key / config_key；只更新可变字段。
-	req.AppKey = gen.NewOptString(existing.AppKey)
+	// PUT 以 id 为主：保留既有的作用域 / config_key；只更新可变字段。
+	scopeType, scopeKey := scopeFromAppKey(existing.AppKey)
+	req.ScopeType = gen.SiteConfigSaveRequestScopeType(scopeType)
+	req.ScopeKey = gen.NewOptString(scopeKey)
 	req.ConfigKey = existing.ConfigKey
 	cfg, err := buildSiteConfigFromRequest(req, existing)
 	if err != nil {
@@ -232,13 +265,16 @@ func (h *siteConfigAPIHandler) UpdateSiteConfigSetItems(ctx context.Context, req
 // ─── Mapping helpers ─────────────────────────────────────────────────────────
 
 func mapSiteConfigSummary(cfg models.SiteConfig) gen.SiteConfigSummary {
+	scopeType, scopeKey := scopeFromAppKey(cfg.AppKey)
 	summary := gen.SiteConfigSummary{
-		ID:        cfg.ID,
-		TenantID:  cfg.TenantID,
-		AppKey:    cfg.AppKey,
-		ConfigKey: cfg.ConfigKey,
-		ValueType: gen.SiteConfigSummaryValueType(valueTypeOrDefault(cfg.ValueType)),
-		Status:    statusOrDefault(cfg.Status),
+		ID:             cfg.ID,
+		TenantID:       cfg.TenantID,
+		ScopeType:      gen.SiteConfigSummaryScopeType(scopeType),
+		ScopeKey:       scopeKey,
+		ConfigKey:      cfg.ConfigKey,
+		ValueType:      gen.SiteConfigSummaryValueType(valueTypeOrDefault(cfg.ValueType)),
+		FallbackPolicy: gen.SiteConfigSummaryFallbackPolicy(fallbackPolicyOrDefault(cfg.FallbackPolicy)),
+		Status:         statusOrDefault(cfg.Status),
 	}
 	if raw := metaToJxRaw(cfg.ConfigValue); raw != nil {
 		summary.ConfigValue = gen.NewOptSiteConfigSummaryConfigValue(gen.SiteConfigSummaryConfigValue(raw))
@@ -296,9 +332,13 @@ func buildSiteConfigFromRequest(req *gen.SiteConfigSaveRequest, existing *models
 	if configKey == "" {
 		return nil, errors.New("config_key is required")
 	}
+	appKey, err := appKeyFromSaveScope(string(req.ScopeType), optString(req.ScopeKey))
+	if err != nil {
+		return nil, err
+	}
 	cfg := &models.SiteConfig{
 		TenantID:  siteConfigTenantFallback,
-		AppKey:    strings.TrimSpace(optString(req.AppKey)),
+		AppKey:    appKey,
 		ConfigKey: configKey,
 	}
 	if existing != nil {
@@ -321,6 +361,16 @@ func buildSiteConfigFromRequest(req *gen.SiteConfigSaveRequest, existing *models
 		cfg.ValueType = existing.ValueType
 	} else {
 		cfg.ValueType = models.SiteConfigValueTypeString
+	}
+	if v, ok := req.FallbackPolicy.Get(); ok {
+		cfg.FallbackPolicy = fallbackPolicyOrDefault(string(v))
+	} else if existing != nil {
+		cfg.FallbackPolicy = fallbackPolicyOrDefault(existing.FallbackPolicy)
+	} else {
+		cfg.FallbackPolicy = models.SiteConfigFallbackPolicyInherit
+	}
+	if cfg.AppKey != "" {
+		cfg.FallbackPolicy = models.SiteConfigFallbackPolicyInherit
 	}
 	// label
 	if v, ok := req.Label.Get(); ok {
@@ -349,6 +399,49 @@ func buildSiteConfigFromRequest(req *gen.SiteConfigSaveRequest, existing *models
 		cfg.Status = "normal"
 	}
 	return cfg, nil
+}
+
+func scopeFromAppKey(appKey string) (string, string) {
+	if strings.TrimSpace(appKey) == "" {
+		return siteconfig.ScopeTypeGlobal, ""
+	}
+	return siteconfig.ScopeTypeApp, strings.TrimSpace(appKey)
+}
+
+func appKeyFromSaveScope(scopeType, scopeKey string) (string, error) {
+	switch strings.TrimSpace(strings.ToLower(scopeType)) {
+	case "", siteconfig.ScopeTypeGlobal:
+		return "", nil
+	case siteconfig.ScopeTypeApp:
+		target := strings.TrimSpace(scopeKey)
+		if target == "" {
+			return "", errors.New("scope_key is required when scope_type=app")
+		}
+		return target, nil
+	default:
+		return "", errors.New("invalid scope_type")
+	}
+}
+
+func optResolveScopeType(value gen.OptResolveSiteConfigsScopeType) string {
+	if v, ok := value.Get(); ok {
+		return string(v)
+	}
+	return ""
+}
+
+func optLookupScopeType(value gen.OptLookupSiteConfigScopeType) string {
+	if v, ok := value.Get(); ok {
+		return string(v)
+	}
+	return ""
+}
+
+func optListScopeType(value gen.OptListSiteConfigsScopeType) string {
+	if v, ok := value.Get(); ok {
+		return string(v)
+	}
+	return ""
 }
 
 // buildSiteConfigSetFromRequest 构造 models.SiteConfigSet。existing 非 nil 时保留其 id。
@@ -445,10 +538,18 @@ func valueTypeOrDefault(v string) string {
 	return v
 }
 
+func fallbackPolicyOrDefault(value string) string {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case models.SiteConfigFallbackPolicyStrict:
+		return models.SiteConfigFallbackPolicyStrict
+	default:
+		return models.SiteConfigFallbackPolicyInherit
+	}
+}
+
 func statusOrDefault(v string) string {
 	if v == "" {
 		return "normal"
 	}
 	return v
 }
-

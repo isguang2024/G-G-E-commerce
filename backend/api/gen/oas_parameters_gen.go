@@ -12664,18 +12664,30 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 
 // ListSiteConfigsParams is parameters of listSiteConfigs operation.
 type ListSiteConfigsParams struct {
-	// 应用 key；留空仅返回全局；`__all__` 返回所有作用域.
-	AppKey OptString `json:",omitempty,omitzero"`
+	// 管理端查询范围；`global` 仅返回全局参数，`app` 返回指定 APP
+	// 作用域参数，`all` 返回全部作用域.
+	ScopeType OptListSiteConfigsScopeType `json:",omitempty,omitzero"`
+	// 作用域 key；当 `scope_type=app` 时填写目标 APP key.
+	ScopeKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListSiteConfigsParams(packed middleware.Parameters) (params ListSiteConfigsParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "app_key",
+			Name: "scope_type",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.AppKey = v.(OptString)
+			params.ScopeType = v.(OptListSiteConfigsScopeType)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "scope_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ScopeKey = v.(OptString)
 		}
 	}
 	return params
@@ -12683,17 +12695,17 @@ func unpackListSiteConfigsParams(packed middleware.Parameters) (params ListSiteC
 
 func decodeListSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListSiteConfigsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode query: app_key.
+	// Decode query: scope_type.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "app_key",
+			Name:    "scope_type",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotAppKeyVal string
+				var paramsDotScopeTypeVal ListSiteConfigsScopeType
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -12705,12 +12717,68 @@ func decodeListSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Reque
 						return err
 					}
 
-					paramsDotAppKeyVal = c
+					paramsDotScopeTypeVal = ListSiteConfigsScopeType(c)
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.AppKey.SetTo(paramsDotAppKeyVal)
+				params.ScopeType.SetTo(paramsDotScopeTypeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.ScopeType.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "scope_type",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: scope_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotScopeKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotScopeKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ScopeKey.SetTo(paramsDotScopeKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -12719,7 +12787,7 @@ func decodeListSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "app_key",
+			Name: "scope_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -14677,6 +14745,184 @@ func decodeListUsersParams(args [0]string, argsEscaped bool, r *http.Request) (p
 	return params, nil
 }
 
+// LookupSiteConfigParams is parameters of lookupSiteConfig operation.
+type LookupSiteConfigParams struct {
+	// 参数 key.
+	ConfigKey string
+	// 查询作用域；`context` 使用当前请求上下文 APP，`global` 只取全局参数，`app`
+	// 读取指定 APP 作用域.
+	ScopeType OptLookupSiteConfigScopeType `json:",omitempty,omitzero"`
+	// 作用域 key；当 `scope_type=app` 时填写目标 APP key.
+	ScopeKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackLookupSiteConfigParams(packed middleware.Parameters) (params LookupSiteConfigParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "config_key",
+			In:   "query",
+		}
+		params.ConfigKey = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "scope_type",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ScopeType = v.(OptLookupSiteConfigScopeType)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "scope_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ScopeKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeLookupSiteConfigParams(args [0]string, argsEscaped bool, r *http.Request) (params LookupSiteConfigParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: config_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "config_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.ConfigKey = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "config_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: scope_type.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "scope_type",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotScopeTypeVal LookupSiteConfigScopeType
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotScopeTypeVal = LookupSiteConfigScopeType(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ScopeType.SetTo(paramsDotScopeTypeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.ScopeType.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "scope_type",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: scope_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotScopeKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotScopeKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ScopeKey.SetTo(paramsDotScopeKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "scope_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // MarkInboxReadParams is parameters of markInboxRead operation.
 type MarkInboxReadParams struct {
 	DeliveryId uuid.UUID
@@ -15220,8 +15466,11 @@ func decodeRemovePermissionActionEndpointParams(args [2]string, argsEscaped bool
 
 // ResolveSiteConfigsParams is parameters of resolveSiteConfigs operation.
 type ResolveSiteConfigsParams struct {
-	// 应用 key；留空仅解析全局配置.
-	AppKey OptString `json:",omitempty,omitzero"`
+	// 解析作用域；`context` 使用当前请求上下文 APP，`global` 只取全局参数，`app`
+	// 读取指定 APP 作用域.
+	ScopeType OptResolveSiteConfigsScopeType `json:",omitempty,omitzero"`
+	// 作用域 key；当 `scope_type=app` 时填写目标 APP key.
+	ScopeKey OptString `json:",omitempty,omitzero"`
 	// 逗号分隔的 config_key 列表.
 	Keys OptString `json:",omitempty,omitzero"`
 	// 逗号分隔的集合编码列表；集合内的 key 会自动展开到查询.
@@ -15231,11 +15480,20 @@ type ResolveSiteConfigsParams struct {
 func unpackResolveSiteConfigsParams(packed middleware.Parameters) (params ResolveSiteConfigsParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "app_key",
+			Name: "scope_type",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.AppKey = v.(OptString)
+			params.ScopeType = v.(OptResolveSiteConfigsScopeType)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "scope_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ScopeKey = v.(OptString)
 		}
 	}
 	{
@@ -15261,17 +15519,17 @@ func unpackResolveSiteConfigsParams(packed middleware.Parameters) (params Resolv
 
 func decodeResolveSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Request) (params ResolveSiteConfigsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode query: app_key.
+	// Decode query: scope_type.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "app_key",
+			Name:    "scope_type",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotAppKeyVal string
+				var paramsDotScopeTypeVal ResolveSiteConfigsScopeType
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -15283,12 +15541,68 @@ func decodeResolveSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Re
 						return err
 					}
 
-					paramsDotAppKeyVal = c
+					paramsDotScopeTypeVal = ResolveSiteConfigsScopeType(c)
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.AppKey.SetTo(paramsDotAppKeyVal)
+				params.ScopeType.SetTo(paramsDotScopeTypeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.ScopeType.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "scope_type",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: scope_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotScopeKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotScopeKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ScopeKey.SetTo(paramsDotScopeKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -15297,7 +15611,7 @@ func decodeResolveSiteConfigsParams(args [0]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "app_key",
+			Name: "scope_key",
 			In:   "query",
 			Err:  err,
 		}

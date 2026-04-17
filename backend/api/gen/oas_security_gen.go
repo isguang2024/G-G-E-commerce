@@ -217,6 +217,7 @@ var operationRolesBearerAuth = map[string][]string{
 	ListUsersOperation:                                            []string{},
 	ListVisibleMediaUploadKeysOperation:                           []string{},
 	LogoutOperation:                                               []string{},
+	LookupSiteConfigOperation:                                     []string{},
 	MarkInboxReadOperation:                                        []string{},
 	MarkInboxReadAllOperation:                                     []string{},
 	PrepareMediaUploadOperation:                                   []string{},

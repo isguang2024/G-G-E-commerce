@@ -312,13 +312,13 @@ type Invoker interface {
 	DeleteRole(ctx context.Context, params DeleteRoleParams) (*MutationResult, error)
 	// DeleteSiteConfig invokes deleteSiteConfig operation.
 	//
-	// 删除站点配置项.
+	// 删除参数项.
 	//
 	// DELETE /site-configs/{id}
 	DeleteSiteConfig(ctx context.Context, params DeleteSiteConfigParams) (DeleteSiteConfigRes, error)
 	// DeleteSiteConfigSet invokes deleteSiteConfigSet operation.
 	//
-	// 删除配置集合.
+	// 删除参数集合.
 	//
 	// DELETE /site-configs/sets/{id}
 	DeleteSiteConfigSet(ctx context.Context, params DeleteSiteConfigSetParams) (DeleteSiteConfigSetRes, error)
@@ -1115,13 +1115,13 @@ type Invoker interface {
 	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*PageListResponse, error)
 	// ListSiteConfigSets invokes listSiteConfigSets operation.
 	//
-	// 查询站点配置集合.
+	// 查询参数集合.
 	//
 	// GET /site-configs/sets
 	ListSiteConfigSets(ctx context.Context) (ListSiteConfigSetsRes, error)
 	// ListSiteConfigs invokes listSiteConfigs operation.
 	//
-	// 查询站点配置项（管理端）.
+	// 查询参数项（管理端）.
 	//
 	// GET /site-configs
 	ListSiteConfigs(ctx context.Context, params ListSiteConfigsParams) (ListSiteConfigsRes, error)
@@ -1198,6 +1198,12 @@ type Invoker interface {
 	//
 	// POST /auth/logout
 	Logout(ctx context.Context) (LogoutRes, error)
+	// LookupSiteConfig invokes lookupSiteConfig operation.
+	//
+	// 查询单个参数.
+	//
+	// GET /site-configs/lookup
+	LookupSiteConfig(ctx context.Context, params LookupSiteConfigParams) (LookupSiteConfigRes, error)
 	// MarkInboxRead invokes markInboxRead operation.
 	//
 	// 标记消息已读.
@@ -1266,7 +1272,7 @@ type Invoker interface {
 	RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (*MutationResult, error)
 	// ResolveSiteConfigs invokes resolveSiteConfigs operation.
 	//
-	// 批量解析站点配置（全局+应用级合并）.
+	// 批量解析参数.
 	//
 	// GET /site-configs/resolve
 	ResolveSiteConfigs(ctx context.Context, params ResolveSiteConfigsParams) (ResolveSiteConfigsRes, error)
@@ -1590,19 +1596,19 @@ type Invoker interface {
 	UpdateRole(ctx context.Context, request *RoleUpdateRequest, params UpdateRoleParams) (*MutationResult, error)
 	// UpdateSiteConfig invokes updateSiteConfig operation.
 	//
-	// 更新站点配置项.
+	// 更新参数项.
 	//
 	// PUT /site-configs/{id}
 	UpdateSiteConfig(ctx context.Context, request *SiteConfigSaveRequest, params UpdateSiteConfigParams) (UpdateSiteConfigRes, error)
 	// UpdateSiteConfigSet invokes updateSiteConfigSet operation.
 	//
-	// 更新配置集合.
+	// 更新参数集合.
 	//
 	// PUT /site-configs/sets/{id}
 	UpdateSiteConfigSet(ctx context.Context, request *SiteConfigSetSaveRequest, params UpdateSiteConfigSetParams) (UpdateSiteConfigSetRes, error)
 	// UpdateSiteConfigSetItems invokes updateSiteConfigSetItems operation.
 	//
-	// 整体替换集合包含的 config_key 列表.
+	// 整体替换参数集合包含的 config_key 列表.
 	//
 	// PUT /site-configs/sets/{id}/items
 	UpdateSiteConfigSetItems(ctx context.Context, request *SiteConfigSetItemsRequest, params UpdateSiteConfigSetItemsParams) (UpdateSiteConfigSetItemsRes, error)
@@ -1644,13 +1650,13 @@ type Invoker interface {
 	UploadMedia(ctx context.Context, request *UploadMediaReq) (UploadMediaRes, error)
 	// UpsertSiteConfig invokes upsertSiteConfig operation.
 	//
-	// 新增或更新站点配置项.
+	// 新增或更新参数项.
 	//
 	// POST /site-configs
 	UpsertSiteConfig(ctx context.Context, request *SiteConfigSaveRequest) (UpsertSiteConfigRes, error)
 	// UpsertSiteConfigSet invokes upsertSiteConfigSet operation.
 	//
-	// 新增或更新配置集合.
+	// 新增或更新参数集合.
 	//
 	// POST /site-configs/sets
 	UpsertSiteConfigSet(ctx context.Context, request *SiteConfigSetSaveRequest) (UpsertSiteConfigSetRes, error)
@@ -7298,7 +7304,7 @@ func (c *Client) sendDeleteRole(ctx context.Context, params DeleteRoleParams) (r
 
 // DeleteSiteConfig invokes deleteSiteConfig operation.
 //
-// 删除站点配置项.
+// 删除参数项.
 //
 // DELETE /site-configs/{id}
 func (c *Client) DeleteSiteConfig(ctx context.Context, params DeleteSiteConfigParams) (DeleteSiteConfigRes, error) {
@@ -7423,7 +7429,7 @@ func (c *Client) sendDeleteSiteConfig(ctx context.Context, params DeleteSiteConf
 
 // DeleteSiteConfigSet invokes deleteSiteConfigSet operation.
 //
-// 删除配置集合.
+// 删除参数集合.
 //
 // DELETE /site-configs/sets/{id}
 func (c *Client) DeleteSiteConfigSet(ctx context.Context, params DeleteSiteConfigSetParams) (DeleteSiteConfigSetRes, error) {
@@ -24423,7 +24429,7 @@ func (c *Client) sendListRuntimePages(ctx context.Context, params ListRuntimePag
 
 // ListSiteConfigSets invokes listSiteConfigSets operation.
 //
-// 查询站点配置集合.
+// 查询参数集合.
 //
 // GET /site-configs/sets
 func (c *Client) ListSiteConfigSets(ctx context.Context) (ListSiteConfigSetsRes, error) {
@@ -24530,7 +24536,7 @@ func (c *Client) sendListSiteConfigSets(ctx context.Context) (res ListSiteConfig
 
 // ListSiteConfigs invokes listSiteConfigs operation.
 //
-// 查询站点配置项（管理端）.
+// 查询参数项（管理端）.
 //
 // GET /site-configs
 func (c *Client) ListSiteConfigs(ctx context.Context, params ListSiteConfigsParams) (ListSiteConfigsRes, error) {
@@ -24582,15 +24588,32 @@ func (c *Client) sendListSiteConfigs(ctx context.Context, params ListSiteConfigs
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
 	{
-		// Encode "app_key" parameter.
+		// Encode "scope_type" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "app_key",
+			Name:    "scope_type",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.AppKey.Get(); ok {
+			if val, ok := params.ScopeType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "scope_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ScopeKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -26520,6 +26543,165 @@ func (c *Client) sendLogout(ctx context.Context) (res LogoutRes, err error) {
 	return result, nil
 }
 
+// LookupSiteConfig invokes lookupSiteConfig operation.
+//
+// 查询单个参数.
+//
+// GET /site-configs/lookup
+func (c *Client) LookupSiteConfig(ctx context.Context, params LookupSiteConfigParams) (LookupSiteConfigRes, error) {
+	res, err := c.sendLookupSiteConfig(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendLookupSiteConfig(ctx context.Context, params LookupSiteConfigParams) (res LookupSiteConfigRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("lookupSiteConfig"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/site-configs/lookup"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, LookupSiteConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/site-configs/lookup"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "config_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "config_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.ConfigKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "scope_type" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "scope_type",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ScopeType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "scope_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ScopeKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, LookupSiteConfigOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeLookupSiteConfigResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // MarkInboxRead invokes markInboxRead operation.
 //
 // 标记消息已读.
@@ -27812,7 +27994,7 @@ func (c *Client) sendRemovePermissionActionEndpoint(ctx context.Context, params 
 
 // ResolveSiteConfigs invokes resolveSiteConfigs operation.
 //
-// 批量解析站点配置（全局+应用级合并）.
+// 批量解析参数.
 //
 // GET /site-configs/resolve
 func (c *Client) ResolveSiteConfigs(ctx context.Context, params ResolveSiteConfigsParams) (ResolveSiteConfigsRes, error) {
@@ -27864,15 +28046,32 @@ func (c *Client) sendResolveSiteConfigs(ctx context.Context, params ResolveSiteC
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
 	{
-		// Encode "app_key" parameter.
+		// Encode "scope_type" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "app_key",
+			Name:    "scope_type",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.AppKey.Get(); ok {
+			if val, ok := params.ScopeType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "scope_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "scope_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ScopeKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -34788,7 +34987,7 @@ func (c *Client) sendUpdateRole(ctx context.Context, request *RoleUpdateRequest,
 
 // UpdateSiteConfig invokes updateSiteConfig operation.
 //
-// 更新站点配置项.
+// 更新参数项.
 //
 // PUT /site-configs/{id}
 func (c *Client) UpdateSiteConfig(ctx context.Context, request *SiteConfigSaveRequest, params UpdateSiteConfigParams) (UpdateSiteConfigRes, error) {
@@ -34916,7 +35115,7 @@ func (c *Client) sendUpdateSiteConfig(ctx context.Context, request *SiteConfigSa
 
 // UpdateSiteConfigSet invokes updateSiteConfigSet operation.
 //
-// 更新配置集合.
+// 更新参数集合.
 //
 // PUT /site-configs/sets/{id}
 func (c *Client) UpdateSiteConfigSet(ctx context.Context, request *SiteConfigSetSaveRequest, params UpdateSiteConfigSetParams) (UpdateSiteConfigSetRes, error) {
@@ -35044,7 +35243,7 @@ func (c *Client) sendUpdateSiteConfigSet(ctx context.Context, request *SiteConfi
 
 // UpdateSiteConfigSetItems invokes updateSiteConfigSetItems operation.
 //
-// 整体替换集合包含的 config_key 列表.
+// 整体替换参数集合包含的 config_key 列表.
 //
 // PUT /site-configs/sets/{id}/items
 func (c *Client) UpdateSiteConfigSetItems(ctx context.Context, request *SiteConfigSetItemsRequest, params UpdateSiteConfigSetItemsParams) (UpdateSiteConfigSetItemsRes, error) {
@@ -35923,7 +36122,7 @@ func (c *Client) sendUploadMedia(ctx context.Context, request *UploadMediaReq) (
 
 // UpsertSiteConfig invokes upsertSiteConfig operation.
 //
-// 新增或更新站点配置项.
+// 新增或更新参数项.
 //
 // POST /site-configs
 func (c *Client) UpsertSiteConfig(ctx context.Context, request *SiteConfigSaveRequest) (UpsertSiteConfigRes, error) {
@@ -36033,7 +36232,7 @@ func (c *Client) sendUpsertSiteConfig(ctx context.Context, request *SiteConfigSa
 
 // UpsertSiteConfigSet invokes upsertSiteConfigSet operation.
 //
-// 新增或更新配置集合.
+// 新增或更新参数集合.
 //
 // POST /site-configs/sets
 func (c *Client) UpsertSiteConfigSet(ctx context.Context, request *SiteConfigSetSaveRequest) (UpsertSiteConfigSetRes, error) {

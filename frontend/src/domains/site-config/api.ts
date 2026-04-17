@@ -1,4 +1,4 @@
-// site-config 管理面 API 客户端封装。
+// 参数管理 API 客户端封装。
 //
 // 契约来自 backend/api/openapi/domains/siteconfig，经 openapi-typescript 生成到
 // @/api/v5/schema。封装目标：
@@ -9,19 +9,23 @@
 import { v5Client, unwrap } from '@/domains/governance/api/_shared'
 import type {
   SiteConfigListResponse,
+  SiteConfigLookupResponse,
   SiteConfigResolveResponse,
   SiteConfigSaveRequest,
   SiteConfigSetItemsRequest,
   SiteConfigSetListResponse,
   SiteConfigSetSaveRequest,
   SiteConfigSetSummary,
-  SiteConfigSummary
+  SiteConfigSummary,
+  SiteConfigManageScopeType,
+  SiteConfigRuntimeScopeType
 } from './types'
 
 // ── Resolve ─────────────────────────────────────────────────────────────────
 
 export interface ResolveSiteConfigsParams {
-  appKey?: string
+  scopeType?: SiteConfigRuntimeScopeType
+  scopeKey?: string
   keys?: string[]
   setCodes?: string[]
 }
@@ -36,7 +40,8 @@ export async function fetchResolveSiteConfigs(
   params: ResolveSiteConfigsParams = {}
 ): Promise<SiteConfigResolveResponse> {
   const query: Record<string, string> = {}
-  if (params.appKey && params.appKey.length > 0) query.app_key = params.appKey
+  if (params.scopeType) query.scope_type = params.scopeType
+  if (params.scopeKey && params.scopeKey.length > 0) query.scope_key = params.scopeKey
   const keys = joinCSV(params.keys)
   if (keys) query.keys = keys
   const setCodes = joinCSV(params.setCodes)
@@ -48,21 +53,45 @@ export async function fetchResolveSiteConfigs(
   )
 }
 
-// ── Configs ─────────────────────────────────────────────────────────────────
+export interface LookupSiteConfigParams {
+  configKey: string
+  scopeType?: SiteConfigRuntimeScopeType
+  scopeKey?: string
+}
 
-/**
- * appKey:
- *   - undefined: 省略查询，后端默认仅返回全局
- *   - '': 显式全局
- *   - '__all__': 所有作用域
- *   - 其它: 指定 app_key
- */
+export async function fetchLookupSiteConfig(
+  params: LookupSiteConfigParams
+): Promise<SiteConfigLookupResponse> {
+  const query: {
+    config_key: string
+    scope_type?: SiteConfigRuntimeScopeType
+    scope_key?: string
+  } = { config_key: params.configKey }
+  if (params.scopeType) query.scope_type = params.scopeType
+  if (params.scopeKey && params.scopeKey.length > 0) query.scope_key = params.scopeKey
+  return unwrap(
+    v5Client.GET('/site-configs/lookup', {
+      params: { query }
+    })
+  )
+}
+
+// ── 参数项 ──────────────────────────────────────────────────────────────────
+
+export interface ListSiteConfigsParams {
+  scopeType?: SiteConfigManageScopeType
+  scopeKey?: string
+}
+
 export async function fetchListSiteConfigs(
-  appKey?: string
+  params: ListSiteConfigsParams = {}
 ): Promise<SiteConfigListResponse> {
+  const query: Record<string, string> = {}
+  if (params.scopeType) query.scope_type = params.scopeType
+  if (params.scopeKey && params.scopeKey.length > 0) query.scope_key = params.scopeKey
   return unwrap(
     v5Client.GET('/site-configs', {
-      params: { query: appKey === undefined ? {} : { app_key: appKey } }
+      params: { query }
     })
   )
 }
@@ -89,7 +118,7 @@ export async function fetchDeleteSiteConfig(id: string): Promise<void> {
   if (error) throw error
 }
 
-// ── Sets ────────────────────────────────────────────────────────────────────
+// ── 参数集合 ────────────────────────────────────────────────────────────────
 
 export async function fetchListSiteConfigSets(): Promise<SiteConfigSetListResponse> {
   return unwrap(v5Client.GET('/site-configs/sets'))

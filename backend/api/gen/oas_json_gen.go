@@ -22819,6 +22819,82 @@ func (s *LoginUnauthorized) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes LookupSiteConfigBadRequest as json.
+func (s *LookupSiteConfigBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes LookupSiteConfigBadRequest from json.
+func (s *LookupSiteConfigBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LookupSiteConfigBadRequest to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = LookupSiteConfigBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LookupSiteConfigBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LookupSiteConfigBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LookupSiteConfigUnauthorized as json.
+func (s *LookupSiteConfigUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*Error)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes LookupSiteConfigUnauthorized from json.
+func (s *LookupSiteConfigUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LookupSiteConfigUnauthorized to nil")
+	}
+	var unwrapped Error
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = LookupSiteConfigUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LookupSiteConfigUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LookupSiteConfigUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *MediaCompleteUploadRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -33618,6 +33694,39 @@ func (s OptSiteConfigSaveRequestConfigValue) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptSiteConfigSaveRequestConfigValue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigSaveRequestFallbackPolicy as json.
+func (o OptSiteConfigSaveRequestFallbackPolicy) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteConfigSaveRequestFallbackPolicy from json.
+func (o *OptSiteConfigSaveRequestFallbackPolicy) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteConfigSaveRequestFallbackPolicy to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteConfigSaveRequestFallbackPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteConfigSaveRequestFallbackPolicy) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -51051,6 +51160,189 @@ func (s *SiteConfigListResponse) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteConfigLookupResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConfigLookupResponse) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("config_key")
+		e.Str(s.ConfigKey)
+	}
+	{
+		e.FieldStart("item")
+		s.Item.Encode(e)
+	}
+	{
+		e.FieldStart("scope_type")
+		s.ScopeType.Encode(e)
+	}
+	{
+		e.FieldStart("scope_key")
+		e.Str(s.ScopeKey)
+	}
+}
+
+var jsonFieldsNameOfSiteConfigLookupResponse = [4]string{
+	0: "config_key",
+	1: "item",
+	2: "scope_type",
+	3: "scope_key",
+}
+
+// Decode decodes SiteConfigLookupResponse from json.
+func (s *SiteConfigLookupResponse) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigLookupResponse to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "config_key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.ConfigKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"config_key\"")
+			}
+		case "item":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Item.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"item\"")
+			}
+		case "scope_type":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.ScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_type\"")
+			}
+		case "scope_key":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.ScopeKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_key\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConfigLookupResponse")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConfigLookupResponse) {
+					name = jsonFieldsNameOfSiteConfigLookupResponse[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfigLookupResponse) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigLookupResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigLookupResponseScopeType as json.
+func (s SiteConfigLookupResponseScopeType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigLookupResponseScopeType from json.
+func (s *SiteConfigLookupResponseScopeType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigLookupResponseScopeType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigLookupResponseScopeType(v) {
+	case SiteConfigLookupResponseScopeTypeGlobal:
+		*s = SiteConfigLookupResponseScopeTypeGlobal
+	case SiteConfigLookupResponseScopeTypeApp:
+		*s = SiteConfigLookupResponseScopeTypeApp
+	default:
+		*s = SiteConfigLookupResponseScopeType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigLookupResponseScopeType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigLookupResponseScopeType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteConfigResolveResponse) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -51064,14 +51356,24 @@ func (s *SiteConfigResolveResponse) encodeFields(e *jx.Encoder) {
 		s.Items.Encode(e)
 	}
 	{
+		e.FieldStart("scope_type")
+		s.ScopeType.Encode(e)
+	}
+	{
+		e.FieldStart("scope_key")
+		e.Str(s.ScopeKey)
+	}
+	{
 		e.FieldStart("version")
 		e.Str(s.Version)
 	}
 }
 
-var jsonFieldsNameOfSiteConfigResolveResponse = [2]string{
+var jsonFieldsNameOfSiteConfigResolveResponse = [4]string{
 	0: "items",
-	1: "version",
+	1: "scope_type",
+	2: "scope_key",
+	3: "version",
 }
 
 // Decode decodes SiteConfigResolveResponse from json.
@@ -51093,8 +51395,30 @@ func (s *SiteConfigResolveResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"items\"")
 			}
-		case "version":
+		case "scope_type":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.ScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_type\"")
+			}
+		case "scope_key":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.ScopeKey = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_key\"")
+			}
+		case "version":
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.Version = string(v)
@@ -51115,7 +51439,7 @@ func (s *SiteConfigResolveResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -51211,6 +51535,46 @@ func (s SiteConfigResolveResponseItems) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConfigResolveResponseItems) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigResolveResponseScopeType as json.
+func (s SiteConfigResolveResponseScopeType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigResolveResponseScopeType from json.
+func (s *SiteConfigResolveResponseScopeType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigResolveResponseScopeType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigResolveResponseScopeType(v) {
+	case SiteConfigResolveResponseScopeTypeGlobal:
+		*s = SiteConfigResolveResponseScopeTypeGlobal
+	case SiteConfigResolveResponseScopeTypeApp:
+		*s = SiteConfigResolveResponseScopeTypeApp
+	default:
+		*s = SiteConfigResolveResponseScopeType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigResolveResponseScopeType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigResolveResponseScopeType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -51526,9 +51890,13 @@ func (s *SiteConfigSaveRequest) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteConfigSaveRequest) encodeFields(e *jx.Encoder) {
 	{
-		if s.AppKey.Set {
-			e.FieldStart("app_key")
-			s.AppKey.Encode(e)
+		e.FieldStart("scope_type")
+		s.ScopeType.Encode(e)
+	}
+	{
+		if s.ScopeKey.Set {
+			e.FieldStart("scope_key")
+			s.ScopeKey.Encode(e)
 		}
 	}
 	{
@@ -51545,6 +51913,12 @@ func (s *SiteConfigSaveRequest) encodeFields(e *jx.Encoder) {
 		if s.ValueType.Set {
 			e.FieldStart("value_type")
 			s.ValueType.Encode(e)
+		}
+	}
+	{
+		if s.FallbackPolicy.Set {
+			e.FieldStart("fallback_policy")
+			s.FallbackPolicy.Encode(e)
 		}
 	}
 	{
@@ -51573,15 +51947,17 @@ func (s *SiteConfigSaveRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteConfigSaveRequest = [8]string{
-	0: "app_key",
-	1: "config_key",
-	2: "config_value",
-	3: "value_type",
-	4: "label",
-	5: "description",
-	6: "sort_order",
-	7: "status",
+var jsonFieldsNameOfSiteConfigSaveRequest = [10]string{
+	0: "scope_type",
+	1: "scope_key",
+	2: "config_key",
+	3: "config_value",
+	4: "value_type",
+	5: "fallback_policy",
+	6: "label",
+	7: "description",
+	8: "sort_order",
+	9: "status",
 }
 
 // Decode decodes SiteConfigSaveRequest from json.
@@ -51589,22 +51965,32 @@ func (s *SiteConfigSaveRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteConfigSaveRequest to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "app_key":
+		case "scope_type":
+			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.AppKey.Reset()
-				if err := s.AppKey.Decode(d); err != nil {
+				if err := s.ScopeType.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"app_key\"")
+				return errors.Wrap(err, "decode field \"scope_type\"")
+			}
+		case "scope_key":
+			if err := func() error {
+				s.ScopeKey.Reset()
+				if err := s.ScopeKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_key\"")
 			}
 		case "config_key":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.ConfigKey = string(v)
@@ -51634,6 +52020,16 @@ func (s *SiteConfigSaveRequest) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"value_type\"")
+			}
+		case "fallback_policy":
+			if err := func() error {
+				s.FallbackPolicy.Reset()
+				if err := s.FallbackPolicy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallback_policy\"")
 			}
 		case "label":
 			if err := func() error {
@@ -51684,8 +52080,9 @@ func (s *SiteConfigSaveRequest) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000010,
+	for i, mask := range [2]uint8{
+		0b00000101,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -51785,6 +52182,86 @@ func (s SiteConfigSaveRequestConfigValue) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConfigSaveRequestConfigValue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigSaveRequestFallbackPolicy as json.
+func (s SiteConfigSaveRequestFallbackPolicy) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigSaveRequestFallbackPolicy from json.
+func (s *SiteConfigSaveRequestFallbackPolicy) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigSaveRequestFallbackPolicy to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigSaveRequestFallbackPolicy(v) {
+	case SiteConfigSaveRequestFallbackPolicyInherit:
+		*s = SiteConfigSaveRequestFallbackPolicyInherit
+	case SiteConfigSaveRequestFallbackPolicyStrict:
+		*s = SiteConfigSaveRequestFallbackPolicyStrict
+	default:
+		*s = SiteConfigSaveRequestFallbackPolicy(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigSaveRequestFallbackPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigSaveRequestFallbackPolicy) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigSaveRequestScopeType as json.
+func (s SiteConfigSaveRequestScopeType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigSaveRequestScopeType from json.
+func (s *SiteConfigSaveRequestScopeType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigSaveRequestScopeType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigSaveRequestScopeType(v) {
+	case SiteConfigSaveRequestScopeTypeGlobal:
+		*s = SiteConfigSaveRequestScopeTypeGlobal
+	case SiteConfigSaveRequestScopeTypeApp:
+		*s = SiteConfigSaveRequestScopeTypeApp
+	default:
+		*s = SiteConfigSaveRequestScopeType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigSaveRequestScopeType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigSaveRequestScopeType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -52609,8 +53086,12 @@ func (s *SiteConfigSummary) encodeFields(e *jx.Encoder) {
 		e.Str(s.TenantID)
 	}
 	{
-		e.FieldStart("app_key")
-		e.Str(s.AppKey)
+		e.FieldStart("scope_type")
+		s.ScopeType.Encode(e)
+	}
+	{
+		e.FieldStart("scope_key")
+		e.Str(s.ScopeKey)
 	}
 	{
 		e.FieldStart("config_key")
@@ -52625,6 +53106,10 @@ func (s *SiteConfigSummary) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("value_type")
 		s.ValueType.Encode(e)
+	}
+	{
+		e.FieldStart("fallback_policy")
+		s.FallbackPolicy.Encode(e)
 	}
 	{
 		if s.Label.Set {
@@ -52668,20 +53153,22 @@ func (s *SiteConfigSummary) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteConfigSummary = [13]string{
+var jsonFieldsNameOfSiteConfigSummary = [15]string{
 	0:  "id",
 	1:  "tenant_id",
-	2:  "app_key",
-	3:  "config_key",
-	4:  "config_value",
-	5:  "value_type",
-	6:  "label",
-	7:  "description",
-	8:  "sort_order",
-	9:  "is_builtin",
-	10: "status",
-	11: "created_at",
-	12: "updated_at",
+	2:  "scope_type",
+	3:  "scope_key",
+	4:  "config_key",
+	5:  "config_value",
+	6:  "value_type",
+	7:  "fallback_policy",
+	8:  "label",
+	9:  "description",
+	10: "sort_order",
+	11: "is_builtin",
+	12: "status",
+	13: "created_at",
+	14: "updated_at",
 }
 
 // Decode decodes SiteConfigSummary from json.
@@ -52717,20 +53204,30 @@ func (s *SiteConfigSummary) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"tenant_id\"")
 			}
-		case "app_key":
+		case "scope_type":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
+				if err := s.ScopeType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"scope_type\"")
+			}
+		case "scope_key":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
 				v, err := d.Str()
-				s.AppKey = string(v)
+				s.ScopeKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"app_key\"")
+				return errors.Wrap(err, "decode field \"scope_key\"")
 			}
 		case "config_key":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.ConfigKey = string(v)
@@ -52752,7 +53249,7 @@ func (s *SiteConfigSummary) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"config_value\"")
 			}
 		case "value_type":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.ValueType.Decode(d); err != nil {
 					return err
@@ -52760,6 +53257,16 @@ func (s *SiteConfigSummary) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"value_type\"")
+			}
+		case "fallback_policy":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				if err := s.FallbackPolicy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fallback_policy\"")
 			}
 		case "label":
 			if err := func() error {
@@ -52802,7 +53309,7 @@ func (s *SiteConfigSummary) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"is_builtin\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -52843,8 +53350,8 @@ func (s *SiteConfigSummary) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b00101111,
-		0b00000100,
+		0b11011111,
+		0b00010000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -52944,6 +53451,86 @@ func (s SiteConfigSummaryConfigValue) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConfigSummaryConfigValue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigSummaryFallbackPolicy as json.
+func (s SiteConfigSummaryFallbackPolicy) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigSummaryFallbackPolicy from json.
+func (s *SiteConfigSummaryFallbackPolicy) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigSummaryFallbackPolicy to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigSummaryFallbackPolicy(v) {
+	case SiteConfigSummaryFallbackPolicyInherit:
+		*s = SiteConfigSummaryFallbackPolicyInherit
+	case SiteConfigSummaryFallbackPolicyStrict:
+		*s = SiteConfigSummaryFallbackPolicyStrict
+	default:
+		*s = SiteConfigSummaryFallbackPolicy(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigSummaryFallbackPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigSummaryFallbackPolicy) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfigSummaryScopeType as json.
+func (s SiteConfigSummaryScopeType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteConfigSummaryScopeType from json.
+func (s *SiteConfigSummaryScopeType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfigSummaryScopeType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteConfigSummaryScopeType(v) {
+	case SiteConfigSummaryScopeTypeGlobal:
+		*s = SiteConfigSummaryScopeTypeGlobal
+	case SiteConfigSummaryScopeTypeApp:
+		*s = SiteConfigSummaryScopeTypeApp
+	default:
+		*s = SiteConfigSummaryScopeType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteConfigSummaryScopeType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfigSummaryScopeType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
