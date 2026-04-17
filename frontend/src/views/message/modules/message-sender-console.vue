@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-sender-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-sender-hero__actions">
@@ -174,11 +174,11 @@
 
   const {
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     formatTime
   } = useMessageWorkspace(props.scope)
 
@@ -230,9 +230,9 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureCollaborationWorkspaceContext()
+      ensureAuthWorkspaceContext()
       const result = await fetchGetMessageSenderList({
-        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+        skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
       })
       list.value = result.records || []
       pagination.current = 1
@@ -278,11 +278,11 @@
     try {
       if (drawerEditingId.value) {
         await fetchUpdateMessageSender(drawerEditingId.value, drawerModel.value, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageSender(drawerModel.value, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       }
       drawerVisible.value = false
@@ -454,4 +454,5 @@
     }
   }
 </style>
+
 

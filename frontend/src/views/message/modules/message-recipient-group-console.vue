@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-group-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-group-hero__actions">
@@ -319,12 +319,12 @@
 
   const {
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationId,
     currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     formatTime
   } = useMessageWorkspace(props.scope)
 
@@ -490,7 +490,7 @@
 
   const loadDispatchHelpers = async () => {
     const data = await fetchGetMessageDispatchOptions({
-      skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+      skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
     })
     userOptions.value = data.users || []
     collaborationWorkspaceOptions.value = data.collaboration_workspaces || []
@@ -502,10 +502,10 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureCollaborationWorkspaceContext()
+      ensureAuthWorkspaceContext()
       await loadDispatchHelpers()
       const result = await fetchGetMessageRecipientGroupList({
-        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+        skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
       })
       list.value = result.records || []
       pagination.current = 1
@@ -623,11 +623,11 @@
       }
       if (drawerEditingId.value) {
         await fetchUpdateMessageRecipientGroup(drawerEditingId.value, payload, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageRecipientGroup(payload, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       }
       drawerVisible.value = false
@@ -843,4 +843,5 @@
     }
   }
 </style>
+
 

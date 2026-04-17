@@ -1,4 +1,4 @@
-/**
+﻿/**
  * user-permission-test-drawer 视图脚本：所有 reactive state、computed、watch、handler 集中在此。
  *
  * 抽离自 user-permission-test-drawer.vue，.vue 文件保留 defineProps/defineEmits 等编译宏与
@@ -11,7 +11,7 @@ import type { CascaderProps } from 'element-plus'
 import {
   fetchGetUserPermissionDiagnosis,
   fetchGetUserPermissionMenus,
-  fetchGetUserCollaborationWorkspaces,
+  fetchGetUserWorkspaces,
   fetchRefreshUserPermissionSnapshot
 } from '@/domains/governance/api'
 import {
@@ -51,10 +51,10 @@ export function useUserPermissionTestDrawer(
   const refreshing = ref(false)
   const contextType = ref<'personal' | 'collaboration'>('personal')
   const activeTab = ref<'permission' | 'menus' | 'roles'>('permission')
-  const selectedCollaborationWorkspaceId = ref('')
+  const selectedWorkspaceId = ref('')
   const permissionKey = ref('')
   const diagnosisData = ref<Api.SystemManage.UserPermissionDiagnosisResponse>()
-  const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const workspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const permissionMenus = ref<Api.SystemManage.UserPermissionMenuNode[]>([])
   const menuKeyword = ref('')
   const showHiddenMenus = ref(true)
@@ -79,10 +79,10 @@ export function useUserPermissionTestDrawer(
     () => props.userData?.nickName || props.userData?.userName || props.userData?.id || ''
   )
 
-  const selectedCollaborationWorkspaceName = computed(
+  const selectedWorkspaceName = computed(
     () =>
-      collaborationWorkspaceOptions.value.find(
-        (item) => item.id === selectedCollaborationWorkspaceId.value
+      workspaceOptions.value.find(
+        (item) => item.id === selectedWorkspaceId.value
       )?.name || ''
   )
 
@@ -168,39 +168,39 @@ export function useUserPermissionTestDrawer(
     return roleRows.value.slice(start, start + rolePagination.value.size)
   })
 
-  async function loadCollaborationWorkspaces() {
+  async function loadWorkspaces() {
     const userId = props.userData?.id
     if (!userId) {
-      collaborationWorkspaceOptions.value = []
+      workspaceOptions.value = []
       return
     }
     try {
-      collaborationWorkspaceOptions.value = await fetchGetUserCollaborationWorkspaces(userId)
+      workspaceOptions.value = await fetchGetUserWorkspaces(userId)
       if (
         contextType.value === 'collaboration' &&
-        selectedCollaborationWorkspaceId.value &&
-        !collaborationWorkspaceOptions.value.some(
-          (item) => item.id === selectedCollaborationWorkspaceId.value
+        selectedWorkspaceId.value &&
+        !workspaceOptions.value.some(
+          (item) => item.id === selectedWorkspaceId.value
         )
       ) {
-        selectedCollaborationWorkspaceId.value = ''
+        selectedWorkspaceId.value = ''
       }
       if (
         contextType.value === 'collaboration' &&
-        !selectedCollaborationWorkspaceId.value &&
-        collaborationWorkspaceOptions.value.length === 1
+        !selectedWorkspaceId.value &&
+        workspaceOptions.value.length === 1
       ) {
-        selectedCollaborationWorkspaceId.value = collaborationWorkspaceOptions.value[0].id
+        selectedWorkspaceId.value = workspaceOptions.value[0].id
       }
     } catch {
-      collaborationWorkspaceOptions.value = []
+      workspaceOptions.value = []
     }
   }
 
   async function loadDiagnosis() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedWorkspaceId.value) {
       diagnosisData.value = undefined
       permissionMenus.value = []
       return
@@ -208,7 +208,7 @@ export function useUserPermissionTestDrawer(
     loading.value = true
     try {
       const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
+        contextType.value === 'collaboration' ? selectedWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(userId, {
           collaborationWorkspaceId,
@@ -232,7 +232,7 @@ export function useUserPermissionTestDrawer(
 
   async function initialize() {
     activeTab.value = 'permission'
-    await loadCollaborationWorkspaces()
+    await loadWorkspaces()
     await loadDiagnosis()
   }
 
@@ -241,14 +241,14 @@ export function useUserPermissionTestDrawer(
       ElMessage.warning('请输入权限键')
       return
     }
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedWorkspaceId.value) {
       ElMessage.warning('请选择协作空间')
       return
     }
     testing.value = true
     try {
       const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
+        contextType.value === 'collaboration' ? selectedWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(props.userData?.id || '', {
           collaborationWorkspaceId,
@@ -269,14 +269,14 @@ export function useUserPermissionTestDrawer(
   async function handleRefresh() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedWorkspaceId.value) {
       ElMessage.warning('请选择协作空间')
       return
     }
     refreshing.value = true
     try {
       const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
+        contextType.value === 'collaboration' ? selectedWorkspaceId.value : undefined
       await fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId)
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(userId, {
@@ -307,13 +307,13 @@ export function useUserPermissionTestDrawer(
   watch(contextType, async (value) => {
     if (!visible.value) return
     if (value === 'personal') {
-      selectedCollaborationWorkspaceId.value = ''
+      selectedWorkspaceId.value = ''
       if (activeTab.value === 'roles') activeTab.value = 'permission'
     }
     await loadDiagnosis()
   })
 
-  watch(selectedCollaborationWorkspaceId, async () => {
+  watch(selectedWorkspaceId, async () => {
     if (!visible.value || contextType.value !== 'collaboration') return
     await loadDiagnosis()
   })
@@ -338,10 +338,10 @@ export function useUserPermissionTestDrawer(
     refreshing,
     contextType,
     activeTab,
-    selectedCollaborationWorkspaceId,
+    selectedWorkspaceId,
     permissionKey,
     diagnosisData,
-    collaborationWorkspaceOptions,
+    workspaceOptions,
     menuKeyword,
     showHiddenMenus,
     showIframeMenus,
@@ -352,7 +352,7 @@ export function useUserPermissionTestDrawer(
     menuPanelRef,
     menuCascaderProps,
     userTitle,
-    selectedCollaborationWorkspaceName,
+    selectedWorkspaceName,
     filteredMenuOptions,
     summaryItems,
     roleRows,
@@ -367,3 +367,4 @@ export function useUserPermissionTestDrawer(
     getBoundaryStateTagType
   }
 }
+

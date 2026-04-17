@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-manage-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-manage-hero__actions">
@@ -180,16 +180,16 @@
 
             <div class="message-manage-target-layout">
               <ElFormItem
-                v-if="showTargetCollaborationWorkspaces"
-                :label="targetCollaborationWorkspacesLabel"
-                prop="targetCollaborationWorkspaceIds"
-                :error="fieldErrors.targetCollaborationWorkspaceIds"
+                v-if="showTargetWorkspaces"
+                :label="targetWorkspacesLabel"
+                prop="targetWorkspaceIds"
+                :error="fieldErrors.targetWorkspaceIds"
                 :data-testid="'send-error'"
-                :data-field="'targetCollaborationWorkspaceIds'"
+                :data-field="'targetWorkspaceIds'"
               >
                 <ElSelect
                   v-if="!isCollaborationScope"
-                  v-model="form.targetCollaborationWorkspaceIds"
+                  v-model="form.targetWorkspaceIds"
                   multiple
                   filterable
                   collapse-tags
@@ -603,12 +603,12 @@
   const {
     collaborationStore,
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationId,
     currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     plainTextFromHtml
   } = useMessageWorkspace(props.scope)
 
@@ -692,14 +692,14 @@
       action_target: string
       biz_type: string
       expired_at: string
-      targetCollaborationWorkspaceIds: string[]
+      targetWorkspaceIds: string[]
     }
   >({
     sender_id: '',
     template_id: '',
     message_type: 'notice',
     audience_type: 'all_users',
-    targetCollaborationWorkspaceIds: [],
+    targetWorkspaceIds: [],
     target_user_ids: [],
     target_group_ids: [],
     title: '',
@@ -712,14 +712,14 @@
     expired_at: ''
   })
 
-  const effectiveCollaborationWorkspaceName = computed(
+  const effectiveWorkspaceName = computed(
     () => options.current_collaboration_workspace_name || currentCollaborationName.value
   )
 
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息发送' : '消息发送'))
   const pageDescription = computed(() =>
     isCollaborationScope.value
-      ? `以 ${currentWorkspaceLabel.value} 视角给 ${effectiveCollaborationWorkspaceName.value} 发送通知、消息和待办，模板与发送记录都从这里进入。`
+      ? `以 ${currentWorkspaceLabel.value} 视角给 ${effectiveWorkspaceName.value} 发送通知、消息和待办，模板与发送记录都从这里进入。`
       : '统一给所有用户、协作空间管理员或指定协作空间成员发送站内通知、消息和待办，模板与发送记录都从这里进入。'
   )
 
@@ -790,7 +790,7 @@
 
   const senderScopeText = computed(() => {
     if (isCollaborationScope.value) {
-      return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveCollaborationWorkspaceName.value}。`
+      return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveWorkspaceName.value}。`
     }
     return '当前以全局身份发送，可按所有用户、协作空间管理员或指定协作空间成员分发。'
   })
@@ -799,7 +799,7 @@
     isCollaborationScope.value ? '协作空间发信' : '全局发信'
   )
 
-  const showTargetCollaborationWorkspaces = computed(() => form.audience_type !== 'all_users')
+  const showTargetWorkspaces = computed(() => form.audience_type !== 'all_users')
   const showTargetUsers = computed(() => form.audience_type === 'specified_users')
   const showRecipientGroups = computed(() =>
     ['recipient_group', 'role', 'feature_package'].includes(form.audience_type)
@@ -841,8 +841,8 @@
       ]
     }
 
-    if (showTargetCollaborationWorkspaces.value) {
-      rules.targetCollaborationWorkspaceIds = [
+    if (showTargetWorkspaces.value) {
+      rules.targetWorkspaceIds = [
         {
           required: true,
           validator: (_rule, value, callback) => {
@@ -906,7 +906,7 @@
 
     return rules
   })
-  const targetCollaborationWorkspacesLabel = computed(() =>
+  const targetWorkspacesLabel = computed(() =>
     isCollaborationScope.value ? '目标协作空间' : '目标协作空间'
   )
   const targetUsersLabel = computed(() =>
@@ -944,11 +944,11 @@
       return names.join('、') || '待选择含功能包规则的接收组'
     }
     if (isCollaborationScope.value) {
-      return effectiveCollaborationWorkspaceName.value
+      return effectiveWorkspaceName.value
     }
-    if (!form.targetCollaborationWorkspaceIds?.length) return '待选择协作空间'
+    if (!form.targetWorkspaceIds?.length) return '待选择协作空间'
     const names = options.collaboration_workspaces
-      .filter((item) => form.targetCollaborationWorkspaceIds?.includes(item.id))
+      .filter((item) => form.targetWorkspaceIds?.includes(item.id))
       .map((item) => item.name)
     return names.join('、') || '待选择协作空间'
   })
@@ -960,7 +960,7 @@
     {
       label: isCollaborationScope.value ? '当前协作空间' : '目标协作空间',
       value: isCollaborationScope.value
-        ? effectiveCollaborationWorkspaceName.value
+        ? effectiveWorkspaceName.value
         : options.collaboration_workspaces.length
     }
   ])
@@ -999,7 +999,7 @@
       options.default_audience_type ||
       (isCollaborationScope.value ? 'collaboration_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
-    form.targetCollaborationWorkspaceIds =
+    form.targetWorkspaceIds =
       isCollaborationScope.value && options.current_collaboration_workspace_id
         ? [options.current_collaboration_workspace_id]
         : []
@@ -1030,7 +1030,7 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureCollaborationWorkspaceContext()
+      ensureAuthWorkspaceContext()
       if (isCollaborationScope.value) {
         await collaborationStore.loadMyCollaborations({
           preferredCollaborationId: currentCollaborationId.value || undefined
@@ -1038,7 +1038,7 @@
       }
       Object.assign(options, createDefaultDispatchOptions())
       const data = await fetchGetMessageDispatchOptions({
-        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+        skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
       })
       Object.assign(options, normalizeDispatchOptions(data))
       if (
@@ -1064,18 +1064,18 @@
   const handleAudienceChange = () => {
     clearFieldErrors()
     formRef.value?.clearValidate([
-      'targetCollaborationWorkspaceIds',
+      'targetWorkspaceIds',
       'target_user_ids',
       'target_group_ids'
     ])
     if (form.audience_type === 'all_users') {
-      form.targetCollaborationWorkspaceIds = []
+      form.targetWorkspaceIds = []
       form.target_user_ids = []
       form.target_group_ids = []
       return
     }
     if (form.audience_type === 'specified_users') {
-      form.targetCollaborationWorkspaceIds = []
+      form.targetWorkspaceIds = []
       form.target_group_ids = []
       return
     }
@@ -1084,12 +1084,12 @@
       form.audience_type === 'role' ||
       form.audience_type === 'feature_package'
     ) {
-      form.targetCollaborationWorkspaceIds = []
+      form.targetWorkspaceIds = []
       form.target_user_ids = []
       return
     }
     if (isCollaborationScope.value && options.current_collaboration_workspace_id) {
-      form.targetCollaborationWorkspaceIds = [options.current_collaboration_workspace_id]
+      form.targetWorkspaceIds = [options.current_collaboration_workspace_id]
     }
     form.target_user_ids = []
     form.target_group_ids = []
@@ -1128,17 +1128,17 @@
           action_type: 'none',
           action_target: '',
           target_collaboration_workspace_ids:
-            showTargetCollaborationWorkspaces.value &&
+            showTargetWorkspaces.value &&
             !showTargetUsers.value &&
             !showRecipientGroups.value
-              ? form.targetCollaborationWorkspaceIds
+              ? form.targetWorkspaceIds
               : [],
           target_user_ids: showTargetUsers.value ? form.target_user_ids : [],
           target_group_ids: showRecipientGroups.value ? form.target_group_ids : [],
           dry_run: dryRunAvailable.value && dryRunEnabled.value ? true : undefined
         },
         {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         }
       )
       const dispatchStatus = result.dispatch_status || ''
@@ -1177,7 +1177,7 @@
         form.expired_at = ''
         form.template_id = ''
         if (!isCollaborationScope.value) {
-          form.targetCollaborationWorkspaceIds = []
+          form.targetWorkspaceIds = []
         }
         form.target_user_ids = []
         form.target_group_ids = []
@@ -1617,4 +1617,6 @@
     color: #b45309;
   }
 </style>
+
+
 

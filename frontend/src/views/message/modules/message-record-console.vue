@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-record-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-record-hero__actions">
@@ -271,9 +271,9 @@
   const menuSpaceStore = useMenuSpaceStore()
   const {
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationName,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     plainTextFromHtml,
     formatTime
   } = useMessageWorkspace(props.scope)
@@ -438,7 +438,7 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureCollaborationWorkspaceContext()
+      ensureAuthWorkspaceContext()
       const result = await fetchGetDispatchRecordList(
         {
           keyword: filters.keyword || undefined,
@@ -447,7 +447,7 @@
           current: pagination.current,
           size: pagination.size
         },
-        { skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value }
+        { skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value }
       )
       list.value = result.records || []
       pagination.total = result.total || 0
@@ -482,7 +482,7 @@
     }
     try {
       activeRecord.value = await fetchGetDispatchRecordDetail(row.id, {
-        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+        skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
       })
     } catch {
       detailError.value = '发送详情暂时不可用，稍后重试。'
@@ -723,4 +723,5 @@
     }
   }
 </style>
+
 

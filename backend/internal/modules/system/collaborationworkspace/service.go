@@ -1,4 +1,4 @@
-package collaborationworkspace
+﻿package collaborationworkspace
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useCollaborationStore } from '@/store/modules/collaboration'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
@@ -7,7 +7,7 @@ export function useMessageWorkspace(scope: 'global' | 'collaboration') {
   const workspaceStore = useWorkspaceStore()
 
   const isCollaborationScope = computed(() => scope === 'collaboration')
-  const skipCollaborationWorkspaceHeader = computed(() => !isCollaborationScope.value)
+  const skipAuthWorkspaceHeader = computed(() => !isCollaborationScope.value)
   const currentCollaborationId = computed(
     () => collaborationStore.currentCollaborationId || ''
   )
@@ -24,13 +24,13 @@ export function useMessageWorkspace(scope: 'global' | 'collaboration') {
     workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人空间'
   )
 
-  const ensureCollaborationWorkspaceContext = () => {
+  const ensureAuthWorkspaceContext = () => {
     if (!isCollaborationScope.value) return
     if (collaborationStore.currentCollaborationId) return
-    const fallbackCollaborationWorkspaceId =
+    const fallbackWorkspaceId =
       collaborationStore.collaborationList[0]?.id || ''
-    if (fallbackCollaborationWorkspaceId) {
-      collaborationStore.enterCollaborationContext(fallbackCollaborationWorkspaceId)
+    if (fallbackWorkspaceId) {
+      collaborationStore.enterCollaborationContext(fallbackWorkspaceId)
     }
   }
 
@@ -65,14 +65,16 @@ export function useMessageWorkspace(scope: 'global' | 'collaboration') {
     collaborationStore,
     workspaceStore,
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationId,
     currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     formatTime,
     plainTextFromHtml
   }
 }
+
+
 

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-template-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-template-hero__actions">
@@ -298,11 +298,11 @@
 
   const {
     isCollaborationScope,
-    skipCollaborationWorkspaceHeader,
+    skipAuthWorkspaceHeader,
     currentCollaborationName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureCollaborationWorkspaceContext,
+    ensureAuthWorkspaceContext,
     plainTextFromHtml,
     formatTime
   } = useMessageWorkspace(props.scope)
@@ -404,14 +404,14 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureCollaborationWorkspaceContext()
+      ensureAuthWorkspaceContext()
       const result = await fetchGetMessageTemplateList(
         {
           keyword: filters.keyword || undefined,
           current: pagination.current,
           size: pagination.size
         },
-        { skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value }
+        { skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value }
       )
       list.value = result.records || []
       pagination.total = result.total || 0
@@ -466,11 +466,11 @@
     try {
       if (drawerEditingId.value) {
         await fetchUpdateMessageTemplate(drawerEditingId.value, drawerModel.value, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageTemplate(drawerModel.value, {
-          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
+          skipAuthWorkspaceHeader: skipAuthWorkspaceHeader.value
         })
       }
       drawerVisible.value = false
@@ -739,4 +739,5 @@
     }
   }
 </style>
+
 

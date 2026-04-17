@@ -20,14 +20,14 @@
 
         <ElSelect
           v-if="contextType === 'collaboration'"
-          v-model="selectedCollaborationWorkspaceId"
+          v-model="selectedWorkspaceId"
           filterable
           clearable
           class="toolbar-select toolbar-select--collaborationWorkspace"
           placeholder="请选择协作空间"
         >
           <ElOption
-            v-for="collaborationWorkspace in collaborationWorkspaceOptions"
+            v-for="collaborationWorkspace in workspaceOptions"
             :key="collaborationWorkspace.id"
             :label="collaborationWorkspace.name"
             :value="collaborationWorkspace.id"
@@ -59,7 +59,7 @@
                   <span class="kv-value">{{
                     contextType === 'personal'
                       ? '个人空间'
-                      : selectedCollaborationWorkspaceName || '未选择协作空间'
+                      : selectedWorkspaceName || '未选择协作空间'
                   }}</span>
                 </div>
                 <div class="kv-item">
@@ -499,10 +499,10 @@
     refreshing,
     contextType,
     activeTab,
-    selectedCollaborationWorkspaceId,
+    selectedWorkspaceId,
     permissionKey,
     diagnosisData,
-    collaborationWorkspaceOptions,
+    workspaceOptions,
     menuKeyword,
     showHiddenMenus,
     showIframeMenus,
@@ -513,7 +513,7 @@
     menuPanelRef,
     menuCascaderProps,
     userTitle,
-    selectedCollaborationWorkspaceName,
+    selectedWorkspaceName,
     filteredMenuOptions,
     summaryItems,
     roleRows,
@@ -762,3 +762,4 @@
     }
   }
 </style>
+

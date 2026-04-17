@@ -1,9 +1,8 @@
-import { v5Client, unwrap, type V5Query, type V5RequestBody } from '@/domains/governance/api/_shared'
+﻿import { v5Client, unwrap, type V5Query, type V5RequestBody } from '@/domains/governance/api/_shared'
 import type { components } from '@/api/v5/schema'
 
 interface MessageRequestOptions {
   skipAuthWorkspaceHeader?: boolean
-  skipCollaborationWorkspaceHeader?: boolean
 }
 
 type V5InboxItem = components['schemas']['InboxItem']
@@ -479,3 +478,4 @@ export async function fetchUpdateMessageRecipientGroup(
   )
   return normalizeMessageRecipientGroupItem(res)
 }
+

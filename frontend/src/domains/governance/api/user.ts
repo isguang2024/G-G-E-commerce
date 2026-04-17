@@ -1,11 +1,11 @@
-import {
+﻿import {
   v5Client,
   unwrap,
   normalizeUserSummary,
   normalizeFeaturePackage,
   normalizeUserPermissionDiagnosisResponse,
   normalizeUserPermissionMenuTree,
-  normalizeUserCollaborationWorkspaceItem,
+  normalizeUserWorkspaceItem,
   type V5Query,
   type V5RequestBody
 } from './_shared'
@@ -165,13 +165,13 @@ export async function fetchSetUserMenus(userId: string, menuIds: string[], appKe
   if (error) throw error
 }
 
-export async function fetchGetUserCollaborationWorkspaces(userId: string) {
+export async function fetchGetUserWorkspaces(userId: string) {
   const res = await unwrap(
     v5Client.GET('/users/{id}/collaborations', {
       params: { path: { id: userId } }
     })
   )
-  return (res.records || []).map((item) => normalizeUserCollaborationWorkspaceItem(item))
+  return (res.records || []).map((item) => normalizeUserWorkspaceItem(item))
 }
 
 /** 获取用户权限诊断 */
@@ -219,3 +219,4 @@ export async function fetchGetUserPermissionMenus(
   void collaborationWorkspaceId
   return (res.menu_tree || []).map((item) => normalizeUserPermissionMenuTree(item))
 }
+
