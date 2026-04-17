@@ -32,7 +32,7 @@ interface ResolvedPageConfig {
   customParent: string
   breadcrumbChain: Array<{ title: string; path?: string }>
   effectiveAccessMode: 'public' | 'jwt' | 'permission'
-  spaceKey?: string
+  menuSpaceKey?: string
   spaceType?: string
   hostKey?: string
   requiredAction?: string
@@ -72,7 +72,7 @@ export class ManagedPageProcessor {
     const spaceStore = useMenuSpaceStore()
     spaceStore.syncRuntimeHost()
     const currentSpaceKey = spaceStore.currentSpaceKey
-    const defaultSpaceKey = spaceStore.defaultSpaceKey
+    const defaultMenuSpaceKey = spaceStore.defaultMenuSpaceKey
     const pageMap = new Map<string, RuntimePageItem>()
     pages.forEach((item) => {
       const pageKey = this.normalizeValue(item.pageKey)
@@ -151,7 +151,7 @@ export class ManagedPageProcessor {
       const resolvedSpaceKey = resolvePageSpaceKey(pageKey)
       if (
         !options.trustBackend &&
-        !isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)
+        !isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultMenuSpaceKey)
       ) {
         resolving.delete(normalizedKey)
         resolvedCache.set(normalizedKey, { ...this.createDefaultResolvedConfig(), allowed: false })
@@ -172,7 +172,7 @@ export class ManagedPageProcessor {
         activePath,
         customParent,
         breadcrumbChain,
-        spaceKey: resolvedSpaceKey,
+        menuSpaceKey: resolvedSpaceKey,
         spaceType: this.normalizeValue(page.spaceType),
         hostKey: this.normalizeValue(page.hostKey)
       }
@@ -184,37 +184,39 @@ export class ManagedPageProcessor {
     const resolvePageSpaceKey = (pageKey: string): string => {
       const normalizedKey = this.normalizeValue(pageKey)
       if (!normalizedKey) {
-        return currentSpaceKey || defaultSpaceKey
+        return currentSpaceKey || defaultMenuSpaceKey
       }
       const cached = spaceCache.get(normalizedKey)
       if (cached !== undefined) {
         return cached
       }
       if (spaceResolving.has(normalizedKey)) {
-        return currentSpaceKey || defaultSpaceKey
+        return currentSpaceKey || defaultMenuSpaceKey
       }
 
       const page = pageMap.get(normalizedKey)
       if (!page) {
-        return currentSpaceKey || defaultSpaceKey
+        return currentSpaceKey || defaultMenuSpaceKey
       }
 
       spaceResolving.add(normalizedKey)
       const visibilityScope = this.normalizeValue(page.visibilityScope || page.spaceScope)
-      const rawSpaceKeys = Array.isArray(page.spaceKeys) ? page.spaceKeys : []
+      const rawSpaceKeys = Array.isArray((page as any).menuSpaceKeys)
+        ? (page as any).menuSpaceKeys
+        : []
       const resolvedSpaceKeys = rawSpaceKeys
         .map((item: unknown) => normalizeMenuSpaceKey(`${item || ''}`))
         .filter(Boolean)
 
       let resolved = ''
       if (visibilityScope === 'app') {
-        resolved = currentSpaceKey || defaultSpaceKey
+        resolved = currentSpaceKey || defaultMenuSpaceKey
       } else if (visibilityScope === 'spaces') {
         resolved =
           resolvedSpaceKeys.find((item: string) => item === currentSpaceKey) ||
           resolvedSpaceKeys[0] ||
           currentSpaceKey ||
-          defaultSpaceKey
+          defaultMenuSpaceKey
       } else {
         const parentPageKey = this.normalizeValue(page.parentPageKey)
         if (parentPageKey) {
@@ -225,13 +227,13 @@ export class ManagedPageProcessor {
           if (parentMenuId) {
             const parentMenu = indexedMenus.byId.get(parentMenuId)
             resolved = this.normalizeValue(
-              parentMenu?.spaceKey || parentMenu?.meta?.spaceKey || parentMenu?.meta?.space_key
+              parentMenu?.menuSpaceKey || parentMenu?.meta?.menuSpaceKey
             )
           }
         }
       }
       if (!resolved) {
-        resolved = currentSpaceKey || defaultSpaceKey
+        resolved = currentSpaceKey || defaultMenuSpaceKey
       }
       spaceResolving.delete(normalizedKey)
       spaceCache.set(normalizedKey, resolved)
@@ -336,8 +338,8 @@ export class ManagedPageProcessor {
       appKey: this.normalizeValue(page.appKey)
     }
 
-    if (resolved.spaceKey) {
-      meta.spaceKey = resolved.spaceKey
+    if (resolved.menuSpaceKey) {
+      meta.menuSpaceKey = resolved.menuSpaceKey
     }
     if (resolved.spaceType) {
       meta.spaceType = resolved.spaceType

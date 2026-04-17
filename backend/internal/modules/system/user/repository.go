@@ -1,4 +1,4 @@
-﻿package user
+package user
 
 import (
 	"errors"
@@ -601,9 +601,9 @@ func (r *menuRepository) loadPlacedMenus(appKey, spaceKey string) ([]Menu, error
 	if normalizedAppKey != "" {
 		query = query.Where("app_key = ?", normalizedAppKey)
 	}
-	normalizedSpaceKey := strings.TrimSpace(spaceKey)
-	if normalizedSpaceKey != "" {
-		query = query.Where("space_key = ?", normalizedSpaceKey)
+	normalizedMenuSpaceKey := strings.TrimSpace(spaceKey)
+	if normalizedMenuSpaceKey != "" {
+		query = query.Where("menu_space_key = ?", normalizedMenuSpaceKey)
 	}
 
 	var placements []SpaceMenuPlacement
@@ -678,27 +678,27 @@ func (r *menuRepository) loadDefaultSpaceByApp(appKeys []string) (map[string]str
 	}
 	result := make(map[string]string, len(apps))
 	for _, app := range apps {
-		defaultSpaceKey := strings.TrimSpace(app.DefaultSpaceKey)
-		if defaultSpaceKey == "" {
-			defaultSpaceKey = models.DefaultMenuSpaceKey
+		defaultMenuSpaceKey := strings.TrimSpace(app.DefaultMenuSpaceKey)
+		if defaultMenuSpaceKey == "" {
+			defaultMenuSpaceKey = models.DefaultMenuSpaceKey
 		}
-		result[app.AppKey] = defaultSpaceKey
+		result[app.AppKey] = defaultMenuSpaceKey
 	}
 	return result, nil
 }
 
-func pickPreferredPlacement(placements []SpaceMenuPlacement, defaultSpaceKey string) *SpaceMenuPlacement {
+func pickPreferredPlacement(placements []SpaceMenuPlacement, defaultMenuSpaceKey string) *SpaceMenuPlacement {
 	if len(placements) == 0 {
 		return nil
 	}
-	defaultSpaceKey = strings.TrimSpace(defaultSpaceKey)
-	if defaultSpaceKey == "" {
-		defaultSpaceKey = models.DefaultMenuSpaceKey
+	defaultMenuSpaceKey = strings.TrimSpace(defaultMenuSpaceKey)
+	if defaultMenuSpaceKey == "" {
+		defaultMenuSpaceKey = models.DefaultMenuSpaceKey
 	}
 	best := placements[0]
-	bestScore := preferredPlacementScore(best, defaultSpaceKey)
+	bestScore := preferredPlacementScore(best, defaultMenuSpaceKey)
 	for _, placement := range placements[1:] {
-		score := preferredPlacementScore(placement, defaultSpaceKey)
+		score := preferredPlacementScore(placement, defaultMenuSpaceKey)
 		if score < bestScore {
 			best = placement
 			bestScore = score
@@ -711,9 +711,9 @@ func pickPreferredPlacement(placements []SpaceMenuPlacement, defaultSpaceKey str
 	return &best
 }
 
-func preferredPlacementScore(placement SpaceMenuPlacement, defaultSpaceKey string) int {
-	switch strings.TrimSpace(placement.SpaceKey) {
-	case defaultSpaceKey:
+func preferredPlacementScore(placement SpaceMenuPlacement, defaultMenuSpaceKey string) int {
+	switch strings.TrimSpace(placement.MenuSpaceKey) {
+	case defaultMenuSpaceKey:
 		return 0
 	case models.DefaultMenuSpaceKey:
 		return 1
@@ -747,7 +747,7 @@ func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPl
 	if icon := strings.TrimSpace(placement.IconOverride); icon != "" {
 		menu.Icon = icon
 	}
-	menu.SpaceKey = placement.SpaceKey
+	menu.MenuSpaceKey = placement.MenuSpaceKey
 	menu.SortOrder = placement.SortOrder
 	menu.Hidden = placement.Hidden
 	if placement.MetaOverride != nil {
@@ -826,16 +826,16 @@ func (r *menuRepository) Create(menu *Menu) error {
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 	updates := map[string]interface{}{
-		"space_key":  menu.SpaceKey,
-		"kind":       menu.Kind,
-		"path":       menu.Path,
-		"name":       menu.Name,
-		"component":  menu.Component,
-		"title":      menu.Title,
-		"icon":       menu.Icon,
-		"sort_order": menu.SortOrder,
-		"meta":       menu.Meta,
-		"hidden":     menu.Hidden,
+		"menu_space_key": menu.MenuSpaceKey,
+		"kind":           menu.Kind,
+		"path":           menu.Path,
+		"name":           menu.Name,
+		"component":      menu.Component,
+		"title":          menu.Title,
+		"icon":           menu.Icon,
+		"sort_order":     menu.SortOrder,
+		"meta":           menu.Meta,
+		"hidden":         menu.Hidden,
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		baseQuery := tx.Model(&Menu{}).Where("id = ?", menu.ID)
@@ -3016,4 +3016,3 @@ func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissio
 	return r.db.Unscoped().Where("permission_key = ? AND endpoint_code = ?", permissionKey, endpointCode).
 		Delete(&APIEndpointPermissionBinding{}).Error
 }
-

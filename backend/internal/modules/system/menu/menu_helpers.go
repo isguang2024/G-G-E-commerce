@@ -1,4 +1,4 @@
-﻿package menu
+package menu
 
 import (
 	"strings"
@@ -39,15 +39,15 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 	}
 
 	node := gin.H{
-		"id":         m.ID.String(),
-		"app_key":    m.AppKey,
-		"space_key":  m.SpaceKey,
-		"kind":       m.Kind,
-		"path":       m.Path,
-		"name":       m.Name,
-		"component":  m.Component,
-		"meta":       meta,
-		"sort_order": m.SortOrder,
+		"id":             m.ID.String(),
+		"app_key":        m.AppKey,
+		"menu_space_key": m.MenuSpaceKey,
+		"kind":           m.Kind,
+		"path":           m.Path,
+		"name":           m.Name,
+		"component":      m.Component,
+		"meta":           meta,
+		"sort_order":     m.SortOrder,
 	}
 	if m.ParentID != nil {
 		node["parent_id"] = m.ParentID.String()
@@ -105,4 +105,3 @@ func filterStringArray(value any) []string {
 	}
 	return result
 }
-

@@ -118,7 +118,7 @@ export type FastEnterQuickLink = FastEnterBaseItem
 
 // 菜单空间定义
 export interface MenuSpaceDefinition {
-  spaceKey: string
+  menuSpaceKey: string
   spaceName: string
   spaceType?: 'personal' | 'collaboration' | 'shared' | string
   description?: string
@@ -130,7 +130,7 @@ export interface MenuSpaceDefinition {
 // 菜单空间 Host 绑定
 export interface MenuSpaceHostBinding {
   host: string
-  spaceKey: string
+  menuSpaceKey: string
   enabled?: boolean
   isPrimary?: boolean
   scheme?: 'http' | 'https' | string
@@ -144,7 +144,7 @@ export interface MenuSpaceHostBinding {
 
 // 菜单空间配置
 export interface MenuSpaceConfig {
-  defaultSpaceKey: string
+  defaultMenuSpaceKey: string
   spaces: MenuSpaceDefinition[]
   hostBindings: MenuSpaceHostBinding[]
 }

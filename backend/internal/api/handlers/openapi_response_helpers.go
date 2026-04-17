@@ -1,14 +1,14 @@
-﻿package handlers
+package handlers
 
 import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/maben/backend/api/gen"
 	"github.com/maben/backend/internal/modules/system/models"
 	permissionpkg "github.com/maben/backend/internal/modules/system/permission"
 	"github.com/maben/backend/internal/modules/system/user"
-	"github.com/google/uuid"
 )
 
 func permissionKeySegments(permissionKey string) (string, string) {
@@ -121,22 +121,22 @@ func permissionActionItemFromPermissionKey(item user.PermissionKey) gen.Permissi
 		featureKind = "system"
 	}
 	out := gen.PermissionActionItem{
-		ID:                   item.ID,
-		ResourceCode:         resourceCode,
-		ActionCode:           actionCode,
-		ModuleCode:           moduleCode,
-		PermissionKey:        item.PermissionKey,
-		FeatureKind:          featureKind,
-		DataPolicy:           item.DataPolicy,
-		Name:                 item.Name,
-		Description:          gen.NewOptString(item.Description),
-		DataPermissionCode:   item.AppKey,
-		DataPermissionName:   item.ContextType,
-		Status:               item.Status,
-		SortOrder:            int64(item.SortOrder),
-		IsBuiltin:            item.IsBuiltin,
-		CreatedAt:            item.CreatedAt,
-		UpdatedAt:            item.UpdatedAt,
+		ID:                 item.ID,
+		ResourceCode:       resourceCode,
+		ActionCode:         actionCode,
+		ModuleCode:         moduleCode,
+		PermissionKey:      item.PermissionKey,
+		FeatureKind:        featureKind,
+		DataPolicy:         item.DataPolicy,
+		Name:               item.Name,
+		Description:        gen.NewOptString(item.Description),
+		DataPermissionCode: item.AppKey,
+		DataPermissionName: item.ContextType,
+		Status:             item.Status,
+		SortOrder:          int64(item.SortOrder),
+		IsBuiltin:          item.IsBuiltin,
+		CreatedAt:          item.CreatedAt,
+		UpdatedAt:          item.UpdatedAt,
 	}
 	if item.ModuleGroupID != nil {
 		out.ModuleGroupID = gen.NewOptNilUUID(*item.ModuleGroupID)
@@ -340,16 +340,16 @@ func riskAuditItemsFromModels(items []user.RiskOperationAudit) []gen.RiskAuditIt
 
 func collaborationWorkspaceRoleItemFromModel(item user.Role) gen.CollaborationWorkspaceRoleItem {
 	out := gen.CollaborationWorkspaceRoleItem{
-		ID:                       item.ID,
-		Code:                     item.Code,
-		Name:                     item.Name,
-		Description:              item.Description,
-		Status:                   item.Status,
-		IsSystem:                 item.IsSystem,
-		IsGlobal:                 item.CollaborationWorkspaceID == nil,
-		SortOrder:                gen.NewOptInt64(int64(item.SortOrder)),
-		CreatedAt:                item.CreatedAt,
-		UpdatedAt:                gen.NewOptDateTime(item.UpdatedAt),
+		ID:          item.ID,
+		Code:        item.Code,
+		Name:        item.Name,
+		Description: item.Description,
+		Status:      item.Status,
+		IsSystem:    item.IsSystem,
+		IsGlobal:    item.CollaborationWorkspaceID == nil,
+		SortOrder:   gen.NewOptInt64(int64(item.SortOrder)),
+		CreatedAt:   item.CreatedAt,
+		UpdatedAt:   gen.NewOptDateTime(item.UpdatedAt),
 	}
 	if item.CollaborationWorkspaceID != nil {
 		out.CollaborationWorkspaceID = gen.NewNilUUID(*item.CollaborationWorkspaceID)
@@ -583,17 +583,17 @@ func featurePackageMenuItemsFromModels(items []user.Menu) []gen.FeaturePackageMe
 	for i := range items {
 		item := items[i]
 		node := gen.FeaturePackageMenuItem{
-			ID:        item.ID,
-			AppKey:    item.AppKey,
-			SpaceKey:  item.SpaceKey,
-			Kind:      item.Kind,
-			Path:      optStringValue(item.Path),
-			Name:      item.Name,
-			Component: optStringValue(item.Component),
-			Title:     item.Title,
-			Icon:      optStringValue(item.Icon),
-			SortOrder: item.SortOrder,
-			Hidden:    item.Hidden,
+			ID:           item.ID,
+			AppKey:       item.AppKey,
+			MenuSpaceKey: item.MenuSpaceKey,
+			Kind:         item.Kind,
+			Path:         optStringValue(item.Path),
+			Name:         item.Name,
+			Component:    optStringValue(item.Component),
+			Title:        item.Title,
+			Icon:         optStringValue(item.Icon),
+			SortOrder:    item.SortOrder,
+			Hidden:       item.Hidden,
 		}
 		if item.ParentID != nil {
 			node.ParentID = gen.NewOptNilUUID(*item.ParentID)
@@ -602,4 +602,3 @@ func featurePackageMenuItemsFromModels(items []user.Menu) []gen.FeaturePackageMe
 	}
 	return out
 }
-

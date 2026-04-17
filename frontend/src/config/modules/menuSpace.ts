@@ -1,10 +1,10 @@
 import type { MenuSpaceConfig } from '@/types/config'
 
 const menuSpaceConfig: MenuSpaceConfig = {
-  defaultSpaceKey: 'default',
+  defaultMenuSpaceKey: 'default',
   spaces: [
     {
-      spaceKey: 'default',
+      menuSpaceKey: 'default',
       spaceName: '默认菜单空间',
       spaceType: 'default',
       description: '未配置 Host 时的默认菜单空间',

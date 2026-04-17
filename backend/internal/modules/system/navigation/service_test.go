@@ -1,4 +1,4 @@
-﻿package navigation
+package navigation
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 	collaborationWorkspaceID := uuid.New()
 
 	accessCtx := &pagepkg.CompiledAccessContext{
-		SpaceKey:      "ops",
+		MenuSpaceKey:  "ops",
 		Authenticated: true,
 		ActionKeys: map[string]struct{}{
 			"collaboration_workspace.read": {},
@@ -33,9 +33,9 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 		},
 	}
 
-	var receivedSpaceKey string
+	var receivedMenuSpaceKey string
 	var receivedMenuIDs []uuid.UUID
-	var listRuntimeSpaceKey string
+	var listRuntimeMenuSpaceKey string
 	compiler := NewService(
 		nil,
 		&stubAppService{},
@@ -48,27 +48,27 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 					t.Fatalf("GetTree appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
 				receivedMenuIDs = append([]uuid.UUID(nil), allowedMenuIDs...)
-				receivedSpaceKey = spaceKey
+				receivedMenuSpaceKey = spaceKey
 				return []*user.Menu{
 					{
-						ID:       rootID,
-						SpaceKey: "ops",
-						Kind:     models.MenuKindDirectory,
-						Path:     "collaboration",
-						Name:     "TeamRoot",
-						Title:    "协作空间管理",
-						Meta:     models.MetaJSON{"isEnable": true},
+						ID:           rootID,
+						MenuSpaceKey: "ops",
+						Kind:         models.MenuKindDirectory,
+						Path:         "collaboration",
+						Name:         "TeamRoot",
+						Title:        "协作空间管理",
+						Meta:         models.MetaJSON{"isEnable": true},
 						Children: []*user.Menu{
 							{
-								ID:        entryID,
-								ParentID:  &rootID,
-								SpaceKey:  "ops",
-								Kind:      models.MenuKindEntry,
-								Path:      "all",
-								Name:      "TeamAll",
-								Title:     "所有协作空间",
-								Component: "/collaboration-workspace/workspaces",
-								Meta:      models.MetaJSON{"accessMode": "permission", "isEnable": true},
+								ID:           entryID,
+								ParentID:     &rootID,
+								MenuSpaceKey: "ops",
+								Kind:         models.MenuKindEntry,
+								Path:         "all",
+								Name:         "TeamAll",
+								Title:        "所有协作空间",
+								Component:    "/collaboration-workspace/workspaces",
+								Meta:         models.MetaJSON{"accessMode": "permission", "isEnable": true},
 							},
 						},
 					},
@@ -95,7 +95,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				if appKey != models.DefaultAppKey {
 					t.Fatalf("ListRuntimeWithAccess appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
-				listRuntimeSpaceKey = spaceKey
+				listRuntimeMenuSpaceKey = spaceKey
 				if ctx != accessCtx {
 					t.Fatalf("ListRuntimeWithAccess received unexpected access context pointer")
 				}
@@ -117,15 +117,15 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 			},
 		},
 		&stubSpaceService{
-			getCurrentFn: func(appKey string, host string, requestedSpaceKey string, gotUserID *uuid.UUID, gotCollaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+			getCurrentFn: func(appKey string, host string, requestedMenuSpaceKey string, gotUserID *uuid.UUID, gotCollaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
 				if appKey != models.DefaultAppKey {
 					t.Fatalf("GetCurrent appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
 				if host != " ops.example.com " {
 					t.Fatalf("GetCurrent host = %q, want original request host", host)
 				}
-				if requestedSpaceKey != " ops " {
-					t.Fatalf("GetCurrent requestedSpaceKey = %q, want original request space", requestedSpaceKey)
+				if requestedMenuSpaceKey != " ops " {
+					t.Fatalf("GetCurrent requestedMenuSpaceKey = %q, want original request space", requestedMenuSpaceKey)
 				}
 				if gotUserID == nil || *gotUserID != userID {
 					t.Fatalf("GetCurrent userID = %v, want %s", gotUserID, userID)
@@ -136,8 +136,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				return &spacepkg.CurrentResponse{
 					Space: spacepkg.SpaceRecord{
 						MenuSpace: models.MenuSpace{
-							SpaceKey: "ops",
-							Name:     "运营空间",
+							MenuSpaceKey: "ops",
+							Name:         "运营空间",
 						},
 					},
 					ResolvedBy:    "explicit",
@@ -153,27 +153,27 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 		t.Fatalf("Compile() error = %v", err)
 	}
 
-	if receivedSpaceKey != "ops" {
-		t.Fatalf("GetTree spaceKey = %q, want ops", receivedSpaceKey)
+	if receivedMenuSpaceKey != "ops" {
+		t.Fatalf("GetTree spaceKey = %q, want ops", receivedMenuSpaceKey)
 	}
-	if listRuntimeSpaceKey != "ops" {
-		t.Fatalf("ListRuntimeWithAccess spaceKey = %q, want ops", listRuntimeSpaceKey)
+	if listRuntimeMenuSpaceKey != "ops" {
+		t.Fatalf("ListRuntimeWithAccess spaceKey = %q, want ops", listRuntimeMenuSpaceKey)
 	}
 	if !sameUUIDSet(receivedMenuIDs, accessCtx.VisibleMenuIDList()) {
 		t.Fatalf("GetTree allowedMenuIDs = %v, want %v", receivedMenuIDs, accessCtx.VisibleMenuIDList())
 	}
 
-	if manifest.CurrentSpace == nil || manifest.CurrentSpace.Space.SpaceKey != "ops" {
+	if manifest.CurrentSpace == nil || manifest.CurrentSpace.Space.MenuSpaceKey != "ops" {
 		t.Fatalf("manifest.CurrentSpace = %#v, want ops space", manifest.CurrentSpace)
 	}
-	if got := manifest.Context["space_key"]; got != "ops" {
-		t.Fatalf("context.space_key = %#v, want ops", got)
+	if got := manifest.Context["menu_space_key"]; got != "ops" {
+		t.Fatalf("context.menu_space_key = %#v, want ops", got)
 	}
 	if got := manifest.Context["request_host"]; got != "ops.example.com" {
 		t.Fatalf("context.request_host = %#v, want trimmed host", got)
 	}
-	if got := manifest.Context["requested_space_key"]; got != "ops" {
-		t.Fatalf("context.requested_space_key = %#v, want trimmed space key", got)
+	if got := manifest.Context["requested_menu_space_key"]; got != "ops" {
+		t.Fatalf("context.requested_menu_space_key = %#v, want trimmed space key", got)
 	}
 	if got := manifest.Context["visible_menu_count"]; got != 2 {
 		t.Fatalf("context.visible_menu_count = %#v, want 2", got)
@@ -275,11 +275,11 @@ func (s *stubPageService) ListOptions(appKey, spaceKey string) ([]models.UIPage,
 	return nil, fmt.Errorf("unexpected ListOptions call")
 }
 
-func (s *stubPageService) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]pagepkg.Record, error) {
+func (s *stubPageService) ListRuntime(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]pagepkg.Record, error) {
 	return nil, fmt.Errorf("unexpected ListRuntime call")
 }
 
-func (s *stubPageService) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]pagepkg.Record, error) {
+func (s *stubPageService) ListRuntimePublic(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]pagepkg.Record, error) {
 	return nil, fmt.Errorf("unexpected ListRuntimePublic call")
 }
 
@@ -334,21 +334,21 @@ func (s *stubPageService) ListMenuOptions(appKey, spaceKey string) ([]pagepkg.Me
 }
 
 type stubSpaceService struct {
-	getCurrentFn func(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error)
+	getCurrentFn func(appKey string, host string, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error)
 }
 
 type stubAppService struct{}
 
 func (s *stubAppService) ListApps() ([]apppkg.AppRecord, error) {
 	return []apppkg.AppRecord{{
-		App: models.App{AppKey: models.DefaultAppKey, Name: models.DefaultAppName, DefaultSpaceKey: models.DefaultMenuSpaceKey},
+		App: models.App{AppKey: models.DefaultAppKey, Name: models.DefaultAppName, DefaultMenuSpaceKey: models.DefaultMenuSpaceKey},
 	}}, nil
 }
 
 func (s *stubAppService) GetCurrent(host, requestedAppKey string) (*apppkg.CurrentResponse, error) {
 	return &apppkg.CurrentResponse{
 		App: apppkg.AppRecord{
-			App: models.App{AppKey: apppkg.NormalizeAppKey(requestedAppKey), Name: models.DefaultAppName, DefaultSpaceKey: models.DefaultMenuSpaceKey},
+			App: models.App{AppKey: apppkg.NormalizeAppKey(requestedAppKey), Name: models.DefaultAppName, DefaultMenuSpaceKey: models.DefaultMenuSpaceKey},
 		},
 		ResolvedBy:  "explicit",
 		RequestHost: host,
@@ -398,11 +398,11 @@ func (s *stubSpaceService) ListSpaces(appKey string) ([]spacepkg.SpaceRecord, er
 	return nil, fmt.Errorf("unexpected ListSpaces call")
 }
 
-func (s *stubSpaceService) GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+func (s *stubSpaceService) GetCurrent(appKey string, host string, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
 	if s.getCurrentFn == nil {
 		return nil, fmt.Errorf("unexpected GetCurrent call")
 	}
-	return s.getCurrentFn(appKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
+	return s.getCurrentFn(appKey, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 }
 
 func (s *stubSpaceService) ListHostBindings(appKey string) ([]spacepkg.HostBindingRecord, error) {
@@ -425,7 +425,7 @@ func (s *stubSpaceService) SaveHostBinding(appKey string, req *spacepkg.SaveHost
 	return nil, fmt.Errorf("unexpected SaveHostBinding call")
 }
 
-func (s *stubSpaceService) InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*spacepkg.InitializeResult, error) {
+func (s *stubSpaceService) InitializeFromDefault(appKey string, targetMenuSpaceKey string, force bool, actorUserID *uuid.UUID) (*spacepkg.InitializeResult, error) {
 	return nil, fmt.Errorf("unexpected InitializeFromDefault call")
 }
 
@@ -434,4 +434,3 @@ var (
 	_ pagepkg.Service     = (*stubPageService)(nil)
 	_ spacepkg.Service    = (*stubSpaceService)(nil)
 )
-

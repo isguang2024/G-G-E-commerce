@@ -1206,7 +1206,7 @@ func (UnimplementedHandler) IngestTelemetryLogs(ctx context.Context, req *Teleme
 //
 // 从默认空间初始化菜单空间.
 //
-// POST /system/menu-spaces/{spaceKey}/initialize-default
+// POST /system/menu-spaces/{menuSpaceKey}/initialize-default
 func (UnimplementedHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (r *SystemMenuSpaceInitializeResult, _ error) {
 	return r, ht.ErrNotImplemented
 }

@@ -1,4 +1,4 @@
-﻿package permissionseed
+package permissionseed
 
 import (
 	"errors"
@@ -12,19 +12,19 @@ import (
 // 注册体系常量。这些值会被 register/resolver 与 register/service 直接引用，
 // 务必保持与 DB seed 一致。
 const (
-	AccountPortalAppKey            = "account-portal"
-	AccountPortalDefaultSpaceKey   = "public"
-	DemoAppKey                     = "demo-app"
-	DemoAppDefaultSpaceKey         = "demo"
-	DemoAppHomePath                = "/demo/lab"
-	SelfServiceMenuSpaceKey        = "self-service"
-	SelfServiceFeaturePackageKey   = "self_service.basic"
-	SelfServiceRoleCode            = "personal.self_user"
-	DefaultRegisterEntryCode       = "default"
-	DefaultRegisterEntryPathPrefix = "/account/auth/register"
-	DefaultLoginPageTemplateKey    = "default"
-	SelfServiceHomePath            = "/self/user-center"
-	AccountPortalHomePath          = "/account/auth/login"
+	AccountPortalAppKey              = "account-portal"
+	AccountPortalDefaultMenuSpaceKey = "public"
+	DemoAppKey                       = "demo-app"
+	DemoAppDefaultMenuSpaceKey       = "demo"
+	DemoAppHomePath                  = "/demo/lab"
+	SelfServiceMenuSpaceKey          = "self-service"
+	SelfServiceFeaturePackageKey     = "self_service.basic"
+	SelfServiceRoleCode              = "personal.self_user"
+	DefaultRegisterEntryCode         = "default"
+	DefaultRegisterEntryPathPrefix   = "/account/auth/register"
+	DefaultLoginPageTemplateKey      = "default"
+	SelfServiceHomePath              = "/self/user-center"
+	AccountPortalHomePath            = "/account/auth/login"
 )
 
 // EnsureRegisterSystemSeeds 写入注册体系第一期所需的全部默认数据：
@@ -178,36 +178,36 @@ func ensureAccountPortalPublicPages(db *gorm.DB) error {
 
 func ensureAccountPortalApp(db *gorm.DB) error {
 	desired := systemmodels.App{
-		AppKey:           AccountPortalAppKey,
-		Name:             "认证中心",
-		Description:      "公开注册 / 登录 / 邮箱验证 / 找回密码 / 邀请接受 入口承载 App",
-		SpaceMode:        "single",
-		DefaultSpaceKey:  AccountPortalDefaultSpaceKey,
-		AuthMode:         "inherit_host",
-		FrontendEntryURL: "/account/auth/login",
-		BackendEntryURL:  "",
-		HealthCheckURL:   "/health",
-		Status:           "normal",
-		IsDefault:        false,
-		Capabilities:     systemmodels.DefaultAccountPortalCapabilities(),
-		Meta:             systemmodels.MetaJSON{},
+		AppKey:              AccountPortalAppKey,
+		Name:                "认证中心",
+		Description:         "公开注册 / 登录 / 邮箱验证 / 找回密码 / 邀请接受 入口承载 App",
+		SpaceMode:           "single",
+		DefaultMenuSpaceKey: AccountPortalDefaultMenuSpaceKey,
+		AuthMode:            "inherit_host",
+		FrontendEntryURL:    "/account/auth/login",
+		BackendEntryURL:     "",
+		HealthCheckURL:      "/health",
+		Status:              "normal",
+		IsDefault:           false,
+		Capabilities:        systemmodels.DefaultAccountPortalCapabilities(),
+		Meta:                systemmodels.MetaJSON{},
 	}
 	var existing systemmodels.App
 	err := db.Where("app_key = ?", AccountPortalAppKey).First(&existing).Error
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":               desired.Name,
-			"description":        desired.Description,
-			"space_mode":         desired.SpaceMode,
-			"default_space_key":  desired.DefaultSpaceKey,
-			"auth_mode":          desired.AuthMode,
-			"frontend_entry_url": desired.FrontendEntryURL,
-			"backend_entry_url":  desired.BackendEntryURL,
-			"health_check_url":   desired.HealthCheckURL,
-			"capabilities":       desired.Capabilities,
-			"status":             desired.Status,
-			"meta":               desired.Meta,
+			"name":                   desired.Name,
+			"description":            desired.Description,
+			"space_mode":             desired.SpaceMode,
+			"default_menu_space_key": desired.DefaultMenuSpaceKey,
+			"auth_mode":              desired.AuthMode,
+			"frontend_entry_url":     desired.FrontendEntryURL,
+			"backend_entry_url":      desired.BackendEntryURL,
+			"health_check_url":       desired.HealthCheckURL,
+			"capabilities":           desired.Capabilities,
+			"status":                 desired.Status,
+			"meta":                   desired.Meta,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -218,17 +218,17 @@ func ensureAccountPortalApp(db *gorm.DB) error {
 
 func ensureDemoApp(db *gorm.DB) error {
 	desired := systemmodels.App{
-		AppKey:           DemoAppKey,
-		Name:             "Demo App",
-		Description:      "Phase A path_prefix 多 APP 验证应用",
-		SpaceMode:        "single",
-		DefaultSpaceKey:  DemoAppDefaultSpaceKey,
-		AuthMode:         "shared_cookie",
-		FrontendEntryURL: DemoAppHomePath,
-		BackendEntryURL:  "",
-		HealthCheckURL:   "/health",
-		Status:           "normal",
-		IsDefault:        false,
+		AppKey:              DemoAppKey,
+		Name:                "Demo App",
+		Description:         "Phase A path_prefix 多 APP 验证应用",
+		SpaceMode:           "single",
+		DefaultMenuSpaceKey: DemoAppDefaultMenuSpaceKey,
+		AuthMode:            "shared_cookie",
+		FrontendEntryURL:    DemoAppHomePath,
+		BackendEntryURL:     "",
+		HealthCheckURL:      "/health",
+		Status:              "normal",
+		IsDefault:           false,
 		Capabilities: systemmodels.MetaJSON{
 			"auth": systemmodels.MetaJSON{
 				"is_auth_center": false,
@@ -242,17 +242,17 @@ func ensureDemoApp(db *gorm.DB) error {
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":               desired.Name,
-			"description":        desired.Description,
-			"space_mode":         desired.SpaceMode,
-			"default_space_key":  desired.DefaultSpaceKey,
-			"auth_mode":          desired.AuthMode,
-			"frontend_entry_url": desired.FrontendEntryURL,
-			"backend_entry_url":  desired.BackendEntryURL,
-			"health_check_url":   desired.HealthCheckURL,
-			"capabilities":       desired.Capabilities,
-			"status":             desired.Status,
-			"meta":               desired.Meta,
+			"name":                   desired.Name,
+			"description":            desired.Description,
+			"space_mode":             desired.SpaceMode,
+			"default_menu_space_key": desired.DefaultMenuSpaceKey,
+			"auth_mode":              desired.AuthMode,
+			"frontend_entry_url":     desired.FrontendEntryURL,
+			"backend_entry_url":      desired.BackendEntryURL,
+			"health_check_url":       desired.HealthCheckURL,
+			"capabilities":           desired.Capabilities,
+			"status":                 desired.Status,
+			"meta":                   desired.Meta,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -265,7 +265,7 @@ func ensureRegisterMenuSpaces(db *gorm.DB) error {
 	specs := []systemmodels.MenuSpace{
 		{
 			AppKey:          AccountPortalAppKey,
-			SpaceKey:        AccountPortalDefaultSpaceKey,
+			MenuSpaceKey:    AccountPortalDefaultMenuSpaceKey,
 			Name:            "公开入口",
 			Description:     "account-portal 公开页（注册 / 登录 / 找回密码 / 邀请接受）",
 			DefaultHomePath: AccountPortalHomePath,
@@ -275,7 +275,7 @@ func ensureRegisterMenuSpaces(db *gorm.DB) error {
 		},
 		{
 			AppKey:          DemoAppKey,
-			SpaceKey:        DemoAppDefaultSpaceKey,
+			MenuSpaceKey:    DemoAppDefaultMenuSpaceKey,
 			Name:            "Demo 空间",
 			Description:     "Phase A path_prefix 多 APP 验证空间",
 			DefaultHomePath: DemoAppHomePath,
@@ -285,7 +285,7 @@ func ensureRegisterMenuSpaces(db *gorm.DB) error {
 		},
 		{
 			AppKey:          systemmodels.DefaultAppKey,
-			SpaceKey:        SelfServiceMenuSpaceKey,
+			MenuSpaceKey:    SelfServiceMenuSpaceKey,
 			Name:            "自助中心",
 			Description:     "自注册用户登录后承载空间，与治理 default 空间隔离",
 			DefaultHomePath: SelfServiceHomePath,
@@ -297,7 +297,7 @@ func ensureRegisterMenuSpaces(db *gorm.DB) error {
 	for i := range specs {
 		spec := specs[i]
 		var existing systemmodels.MenuSpace
-		err := db.Where("app_key = ? AND space_key = ?", spec.AppKey, spec.SpaceKey).First(&existing).Error
+		err := db.Where("app_key = ? AND menu_space_key = ?", spec.AppKey, spec.MenuSpaceKey).First(&existing).Error
 		switch {
 		case err == nil:
 			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
@@ -323,41 +323,41 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 	// account-portal 路径绑定（本地 / 单域名部署）
 	bindings := []systemmodels.AppHostBinding{
 		{
-			AppKey:          AccountPortalAppKey,
-			MatchType:       systemmodels.EntryMatchPathPrefix,
-			Host:            "",
-			PathPattern:     "/account",
-			Priority:        100,
-			Description:     "account-portal 路径前缀（本地 / 单域名部署）",
-			DefaultSpaceKey: AccountPortalDefaultSpaceKey,
-			Status:          "normal",
-			IsPrimary:       true,
-			Meta:            systemmodels.MetaJSON{},
+			AppKey:              AccountPortalAppKey,
+			MatchType:           systemmodels.EntryMatchPathPrefix,
+			Host:                "",
+			PathPattern:         "/account",
+			Priority:            100,
+			Description:         "account-portal 路径前缀（本地 / 单域名部署）",
+			DefaultMenuSpaceKey: AccountPortalDefaultMenuSpaceKey,
+			Status:              "normal",
+			IsPrimary:           true,
+			Meta:                systemmodels.MetaJSON{},
 		},
 		{
-			AppKey:          AccountPortalAppKey,
-			MatchType:       systemmodels.EntryMatchHostExact,
-			Host:            "account.example.com",
-			PathPattern:     "",
-			Priority:        200,
-			Description:     "account-portal 子域名示例（生产环境运维启用）",
-			DefaultSpaceKey: AccountPortalDefaultSpaceKey,
-			Status:          "disabled",
-			Meta:            systemmodels.MetaJSON{},
+			AppKey:              AccountPortalAppKey,
+			MatchType:           systemmodels.EntryMatchHostExact,
+			Host:                "account.example.com",
+			PathPattern:         "",
+			Priority:            200,
+			Description:         "account-portal 子域名示例（生产环境运维启用）",
+			DefaultMenuSpaceKey: AccountPortalDefaultMenuSpaceKey,
+			Status:              "disabled",
+			Meta:                systemmodels.MetaJSON{},
 		},
 	}
 	// platform-admin self-service 路径绑定（Level 2 菜单空间入口）
 	spaceBindings := []systemmodels.MenuSpaceEntryBinding{
 		{
-			AppKey:      systemmodels.DefaultAppKey,
-			SpaceKey:    SelfServiceMenuSpaceKey,
-			MatchType:   systemmodels.EntryMatchPathPrefix,
-			Host:        "",
-			PathPattern: "/self",
-			Priority:    100,
-			Description: "platform-admin 自助空间路径前缀",
-			Status:      "normal",
-			Meta:        systemmodels.MetaJSON{},
+			AppKey:       systemmodels.DefaultAppKey,
+			MenuSpaceKey: SelfServiceMenuSpaceKey,
+			MatchType:    systemmodels.EntryMatchPathPrefix,
+			Host:         "",
+			PathPattern:  "/self",
+			Priority:     100,
+			Description:  "platform-admin 自助空间路径前缀",
+			Status:       "normal",
+			Meta:         systemmodels.MetaJSON{},
 		},
 	}
 	for i := range bindings {
@@ -368,12 +368,12 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 		switch {
 		case err == nil:
 			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
-				"priority":          spec.Priority,
-				"description":       spec.Description,
-				"default_space_key": spec.DefaultSpaceKey,
-				"status":            spec.Status,
-				"is_primary":        spec.IsPrimary,
-				"meta":              spec.Meta,
+				"priority":               spec.Priority,
+				"description":            spec.Description,
+				"default_menu_space_key": spec.DefaultMenuSpaceKey,
+				"status":                 spec.Status,
+				"is_primary":             spec.IsPrimary,
+				"meta":                   spec.Meta,
 			}).Error; updateErr != nil {
 				return updateErr
 			}
@@ -388,8 +388,8 @@ func ensureRegisterAppHostBindings(db *gorm.DB) error {
 	for i := range spaceBindings {
 		spec := spaceBindings[i]
 		var existing systemmodels.MenuSpaceEntryBinding
-		err := db.Where("app_key = ? AND space_key = ? AND match_type = ? AND host = ? AND path_pattern = ?",
-			spec.AppKey, spec.SpaceKey, spec.MatchType, spec.Host, spec.PathPattern).First(&existing).Error
+		err := db.Where("app_key = ? AND menu_space_key = ? AND match_type = ? AND host = ? AND path_pattern = ?",
+			spec.AppKey, spec.MenuSpaceKey, spec.MatchType, spec.Host, spec.PathPattern).First(&existing).Error
 		switch {
 		case err == nil:
 			if updateErr := db.Model(&existing).Updates(map[string]interface{}{
@@ -540,21 +540,21 @@ func ensureDefaultRegisterEntry(db *gorm.DB) error {
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"app_key":                      desired.AppKey,
-			"name":                         desired.Name,
-			"description":                  desired.Description,
-			"path_prefix":                  desired.PathPrefix,
-			"register_source":              desired.RegisterSource,
-			"login_page_key":               desired.LoginPageKey,
-			"status":                       desired.Status,
-			"target_app_key":               desired.TargetAppKey,
-			"target_navigation_space_key":  desired.TargetNavigationSpaceKey,
-			"target_home_path":             desired.TargetHomePath,
-			"role_codes":                   desired.RoleCodes,
-			"feature_package_keys":         desired.FeaturePackageKeys,
-			"is_system_reserved":           desired.IsSystemReserved,
-			"sort_order":                   desired.SortOrder,
-			"remark":                       desired.Remark,
+			"app_key":                     desired.AppKey,
+			"name":                        desired.Name,
+			"description":                 desired.Description,
+			"path_prefix":                 desired.PathPrefix,
+			"register_source":             desired.RegisterSource,
+			"login_page_key":              desired.LoginPageKey,
+			"status":                      desired.Status,
+			"target_app_key":              desired.TargetAppKey,
+			"target_navigation_space_key": desired.TargetNavigationSpaceKey,
+			"target_home_path":            desired.TargetHomePath,
+			"role_codes":                  desired.RoleCodes,
+			"feature_package_keys":        desired.FeaturePackageKeys,
+			"is_system_reserved":          desired.IsSystemReserved,
+			"sort_order":                  desired.SortOrder,
+			"remark":                      desired.Remark,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&desired).Error
@@ -764,4 +764,3 @@ func ensureDemoAppPages(db *gorm.DB) error {
 		return err
 	}
 }
-

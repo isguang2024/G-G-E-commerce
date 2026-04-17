@@ -14,6 +14,30 @@ export function normalizeMenuSpaceKey(value?: unknown): string {
   return `${value ?? ''}`.trim()
 }
 
+export function resolveMenuSpaceQueryKey(query?: Record<string, unknown>): string {
+  if (!query || typeof query !== 'object') {
+    return ''
+  }
+  return normalizeMenuSpaceKey(query.menu_space_key ?? query.menuSpaceKey)
+}
+
+export function buildMenuSpaceQuery(menuSpaceKey?: string): Record<string, string> {
+  const normalized = normalizeMenuSpaceKey(menuSpaceKey)
+  if (!normalized) {
+    return {}
+  }
+  return {
+    menu_space_key: normalized
+  }
+}
+
+export function resolveMenuSpaceDefaultKey(
+  config: MenuSpaceConfig | undefined,
+  fallback = DEFAULT_MENU_SPACE_KEY
+): string {
+  return normalizeMenuSpaceKey(config?.defaultMenuSpaceKey) || fallback
+}
+
 export function normalizeMenuHost(host?: string): string {
   const target = normalizeMenuSpaceKey(host).toLowerCase()
   if (!target) {
@@ -110,16 +134,16 @@ export function shouldUseFullMenuSpaceNavigation(
   }
   void currentPathname
   // 同 host + 同协议下，routePrefix 差异不再强制整页刷新。
-  // 当前运行时已通过 router + space_key 恢复菜单空间，继续用 SPA 跳转可以避免 A→B 切换时整页重载。
+  // 当前运行时已通过 router + menu_space_key 恢复菜单空间，继续用 SPA 跳转可以避免 A→B 切换时整页重载。
   return false
 }
 
 export function createFallbackMenuSpaceConfig(): MenuSpaceConfig {
   return {
-    defaultSpaceKey: DEFAULT_MENU_SPACE_KEY,
+    defaultMenuSpaceKey: DEFAULT_MENU_SPACE_KEY,
     spaces: [
       {
-        spaceKey: DEFAULT_MENU_SPACE_KEY,
+        menuSpaceKey: DEFAULT_MENU_SPACE_KEY,
         spaceName: '默认菜单空间',
         spaceType: 'default',
         enabled: true,
@@ -147,8 +171,8 @@ export function resolveMenuSpaceKeyByHost(
     }
     return normalizeMenuHost(binding.host) === normalizedHost
   })
-  if (matched?.spaceKey) {
-    return normalizeMenuSpaceKey(matched.spaceKey) || fallbackKey
+  if (matched?.menuSpaceKey) {
+    return normalizeMenuSpaceKey(matched.menuSpaceKey) || fallbackKey
   }
 
   return fallbackKey
@@ -163,7 +187,7 @@ export function resolveMenuSpaceDefinition(
     return undefined
   }
   return (config.spaces || []).find(
-    (item) => normalizeMenuSpaceKey(item.spaceKey) === normalizedKey
+    (item) => normalizeMenuSpaceKey(item.menuSpaceKey) === normalizedKey
   )
 }
 
@@ -180,7 +204,7 @@ export function resolveMenuSpaceHostBinding(
   const bindings = (config.hostBindings || []).filter((item) => {
     if (!item) return false
     if (item.enabled === false) return false
-    return normalizeMenuSpaceKey(item.spaceKey) === normalizedSpaceKey
+    return normalizeMenuSpaceKey(item.menuSpaceKey) === normalizedSpaceKey
   })
   return (
     bindings.find((item) => normalizeMenuHost(item.host) === normalizedPreferredHost) ||
@@ -211,13 +235,15 @@ export function buildMenuSpaceTargetUrl(
 export function isMenuSpaceVisible(
   targetSpaceKey: string,
   currentSpaceKey: string,
-  defaultSpaceKey = DEFAULT_MENU_SPACE_KEY
+  defaultMenuSpaceKey = DEFAULT_MENU_SPACE_KEY
 ): boolean {
-  const target = normalizeMenuSpaceKey(targetSpaceKey) || normalizeMenuSpaceKey(defaultSpaceKey)
-  const current = normalizeMenuSpaceKey(currentSpaceKey) || normalizeMenuSpaceKey(defaultSpaceKey)
+  const target =
+    normalizeMenuSpaceKey(targetSpaceKey) || normalizeMenuSpaceKey(defaultMenuSpaceKey)
+  const current =
+    normalizeMenuSpaceKey(currentSpaceKey) || normalizeMenuSpaceKey(defaultMenuSpaceKey)
 
   if (!target) {
-    return current === normalizeMenuSpaceKey(defaultSpaceKey)
+    return current === normalizeMenuSpaceKey(defaultMenuSpaceKey)
   }
   if (target === SHARED_MENU_SPACE_KEY) {
     return true

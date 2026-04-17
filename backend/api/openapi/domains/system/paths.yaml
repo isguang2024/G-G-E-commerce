@@ -271,7 +271,7 @@ paths:
           in: query
           schema:
             type: string
-        - name: space_key
+        - name: menu_space_key
           in: query
           schema:
             type: string
@@ -362,7 +362,7 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas.yaml#/components/schemas/SystemMenuSpaceItem"
-  /system/menu-spaces/{spaceKey}/initialize-default:
+  /system/menu-spaces/{menuSpaceKey}/initialize-default:
     post:
       operationId: initializeMenuSpaceFromDefault
       summary: 从默认空间初始化菜单空间
@@ -371,7 +371,7 @@ paths:
       x-permission-key: system.menu.manage
       x-access-mode: permission
       parameters:
-        - name: spaceKey
+        - name: menuSpaceKey
           in: path
           required: true
           schema:

@@ -834,7 +834,7 @@ type Invoker interface {
 	//
 	// 从默认空间初始化菜单空间.
 	//
-	// POST /system/menu-spaces/{spaceKey}/initialize-default
+	// POST /system/menu-spaces/{menuSpaceKey}/initialize-default
 	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error)
 	// ListApiEndpointCategories invokes listApiEndpointCategories operation.
 	//
@@ -11346,15 +11346,15 @@ func (c *Client) sendGetCurrentMenuSpace(ctx context.Context, params GetCurrentM
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -13605,15 +13605,15 @@ func (c *Client) sendGetMenuTree(ctx context.Context, params GetMenuTreeParams) 
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -13982,15 +13982,15 @@ func (c *Client) sendGetNavigation(ctx context.Context, params GetNavigationPara
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -14656,15 +14656,15 @@ func (c *Client) sendGetPageAccessTrace(ctx context.Context, params GetPageAcces
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -17793,7 +17793,7 @@ func (c *Client) sendIngestTelemetryLogs(ctx context.Context, request *Telemetry
 //
 // 从默认空间初始化菜单空间.
 //
-// POST /system/menu-spaces/{spaceKey}/initialize-default
+// POST /system/menu-spaces/{menuSpaceKey}/initialize-default
 func (c *Client) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error) {
 	res, err := c.sendInitializeMenuSpaceFromDefault(ctx, params)
 	return res, err
@@ -17803,7 +17803,7 @@ func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params 
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("initializeMenuSpaceFromDefault"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/system/menu-spaces/{spaceKey}/initialize-default"),
+		semconv.URLTemplateKey.String("/system/menu-spaces/{menuSpaceKey}/initialize-default"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -17839,14 +17839,14 @@ func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params 
 	var pathParts [3]string
 	pathParts[0] = "/system/menu-spaces/"
 	{
-		// Encode "spaceKey" parameter.
+		// Encode "menuSpaceKey" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "spaceKey",
+			Param:   "menuSpaceKey",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			return e.EncodeValue(conv.StringToString(params.SpaceKey))
+			return e.EncodeValue(conv.StringToString(params.MenuSpaceKey))
 		}(); err != nil {
 			return res, errors.Wrap(err, "encode path")
 		}
@@ -22302,15 +22302,15 @@ func (c *Client) sendListPageMenuOptions(ctx context.Context, params ListPageMen
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -22444,15 +22444,15 @@ func (c *Client) sendListPageOptions(ctx context.Context, params ListPageOptions
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -22637,15 +22637,15 @@ func (c *Client) sendListPages(ctx context.Context, params ListPagesParams) (res
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -23625,15 +23625,15 @@ func (c *Client) sendListPublicRuntimePages(ctx context.Context, params ListPubl
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -24347,15 +24347,15 @@ func (c *Client) sendListRuntimePages(ctx context.Context, params ListRuntimePag
 		}
 	}
 	{
-		// Encode "space_key" parameter.
+		// Encode "menu_space_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.SpaceKey.Get(); ok {
+			if val, ok := params.MenuSpaceKey.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil

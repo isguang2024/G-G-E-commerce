@@ -12,7 +12,7 @@ import (
 // 读取顺序约定：
 //   - request_id：优先来自请求入口 RequestID 中间件写入的 gin.Context "request_id"
 //     键（与客户端透传/服务端生成保持一致），否则退回客户端原始头部；
-//   - app_key / space_key / tenant_id：由 AppContext 中间件注入；
+//   - app_key / menu_space_key / tenant_id：由 AppContext 中间件注入；
 //   - auth_mode：由 DynamicAppSecurity 中间件注入。
 //
 // 本中间件只负责打 access log，不写审计表；审计由 audit.Recorder 单独负责。
@@ -38,7 +38,7 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 			zap.String("ip", c.ClientIP()),
 			zap.String("request_id", requestID),
 			zap.String("app_key", c.GetString("app_key")),
-			zap.String("space_key", c.GetString("space_key")),
+			zap.String("menu_space_key", c.GetString("menu_space_key")),
 			zap.String("app_resolved_by", c.GetString("app_resolved_by")),
 			zap.String("tenant_id", c.GetString("tenant_id")),
 			zap.String("auth_mode", c.GetString("app_auth_mode")),

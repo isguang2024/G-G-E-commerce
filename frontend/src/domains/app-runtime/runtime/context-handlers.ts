@@ -7,7 +7,7 @@ export interface SwitchAppPayload {
   authMode?: string | null
   capabilities?: Record<string, unknown> | null
   meta?: Record<string, unknown> | null
-  defaultSpaceKey?: string | null
+  defaultMenuSpaceKey?: string | null
 }
 
 type AppContextRuntimeHandlers = {

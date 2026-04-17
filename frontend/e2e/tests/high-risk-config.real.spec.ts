@@ -119,7 +119,7 @@ test.describe('高风险配置页观测基线 - el-form rules + field-error', ()
     expect(filterApiAborts(abortEvents)).toEqual([])
   })
 
-  test('A4 /system/menu-space 打开新建后 space_key/name 触发 field-error', async ({ page }) => {
+  test('A4 /system/menu-space 打开新建后 menu_space_key/name 触发 field-error', async ({ page }) => {
     const abortEvents = collectAbortEvents(page)
     await login(page)
 

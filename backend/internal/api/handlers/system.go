@@ -1,4 +1,4 @@
-﻿// system.go — Phase 4 ogen handlers for the system app/space domain.
+// system.go — Phase 4 ogen handlers for the system app/space domain.
 // Hooks into the already-injected appSvc and spaceSvc.
 package handlers
 
@@ -33,21 +33,21 @@ func (h *systemAPIHandler) SaveApp(ctx context.Context, req *gen.SystemAppSaveRe
 		req = &gen.SystemAppSaveRequest{}
 	}
 	body := appmod.SaveAppRequest{
-		AppKey:           req.AppKey,
-		Name:             req.Name,
-		Description:      optString(req.Description),
-		SpaceMode:        optString(req.SpaceMode),
-		DefaultSpaceKey:  optString(req.DefaultSpaceKey),
-		AuthMode:         optString(req.AuthMode),
-		FrontendEntryURL: optString(req.FrontendEntryURL),
-		BackendEntryURL:  optString(req.BackendEntryURL),
-		HealthCheckURL:   optString(req.HealthCheckURL),
-		ManifestURL:      optString(req.ManifestURL),
-		RuntimeVersion:   optString(req.RuntimeVersion),
-		Capabilities:     optSystemAppCapabilitiesToMap(req.Capabilities),
-		Status:           optString(req.Status),
-		IsDefault:        optBool(req.IsDefault),
-		Meta:             optSystemMetaToMap(req.Meta),
+		AppKey:              req.AppKey,
+		Name:                req.Name,
+		Description:         optString(req.Description),
+		SpaceMode:           optString(req.SpaceMode),
+		DefaultMenuSpaceKey: optString(req.DefaultMenuSpaceKey),
+		AuthMode:            optString(req.AuthMode),
+		FrontendEntryURL:    optString(req.FrontendEntryURL),
+		BackendEntryURL:     optString(req.BackendEntryURL),
+		HealthCheckURL:      optString(req.HealthCheckURL),
+		ManifestURL:         optString(req.ManifestURL),
+		RuntimeVersion:      optString(req.RuntimeVersion),
+		Capabilities:        optSystemAppCapabilitiesToMap(req.Capabilities),
+		Status:              optString(req.Status),
+		IsDefault:           optBool(req.IsDefault),
+		Meta:                optSystemMetaToMap(req.Meta),
 	}
 	record, err := h.appSvc.SaveApp(&body)
 	if err != nil {
@@ -93,17 +93,17 @@ func (h *systemAPIHandler) SaveAppHostBinding(ctx context.Context, req *gen.Syst
 		req = &gen.SystemAppHostBindingSaveRequest{}
 	}
 	body := appmod.SaveHostBindingRequest{
-		ID:              optString(req.ID),
-		AppKey:          req.AppKey,
-		MatchType:       optString(req.MatchType),
-		Host:            req.Host,
-		PathPattern:     optString(req.PathPattern),
-		Priority:        optInt(req.Priority, 0),
-		Description:     optString(req.Description),
-		IsPrimary:       optBool(req.IsPrimary),
-		DefaultSpaceKey: optString(req.DefaultSpaceKey),
-		Status:          optString(req.Status),
-		Meta:            optSystemMetaToMap(req.Meta),
+		ID:                  optString(req.ID),
+		AppKey:              req.AppKey,
+		MatchType:           optString(req.MatchType),
+		Host:                req.Host,
+		PathPattern:         optString(req.PathPattern),
+		Priority:            optInt(req.Priority, 0),
+		Description:         optString(req.Description),
+		IsPrimary:           optBool(req.IsPrimary),
+		DefaultMenuSpaceKey: optString(req.DefaultMenuSpaceKey),
+		Status:              optString(req.Status),
+		Meta:                optSystemMetaToMap(req.Meta),
 	}
 	record, err := h.appSvc.SaveHostBinding(body.AppKey, &body)
 	if err != nil {
@@ -161,17 +161,17 @@ func (h *systemAPIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req *g
 		req = &gen.SystemMenuSpaceEntryBindingSaveRequest{}
 	}
 	body := appmod.SaveMenuSpaceEntryBindingRequest{
-		ID:          optString(req.ID),
-		AppKey:      req.AppKey,
-		SpaceKey:    req.SpaceKey,
-		MatchType:   optString(req.MatchType),
-		Host:        req.Host,
-		PathPattern: optString(req.PathPattern),
-		Priority:    optInt(req.Priority, 0),
-		Description: optString(req.Description),
-		IsPrimary:   optBool(req.IsPrimary),
-		Status:      optString(req.Status),
-		Meta:        optSystemMetaToMap(req.Meta),
+		ID:           optString(req.ID),
+		AppKey:       req.AppKey,
+		MenuSpaceKey: req.MenuSpaceKey,
+		MatchType:    optString(req.MatchType),
+		Host:         req.Host,
+		PathPattern:  optString(req.PathPattern),
+		Priority:     optInt(req.Priority, 0),
+		Description:  optString(req.Description),
+		IsPrimary:    optBool(req.IsPrimary),
+		Status:       optString(req.Status),
+		Meta:         optSystemMetaToMap(req.Meta),
 	}
 	record, err := h.appSvc.SaveMenuSpaceEntryBinding(body.AppKey, &body)
 	if err != nil {
@@ -235,7 +235,7 @@ func (h *systemAPIHandler) SaveMenuSpace(ctx context.Context, req *gen.SystemMen
 	}
 	body := spacemod.SaveSpaceRequest{
 		AppKey:           req.AppKey,
-		SpaceKey:         req.SpaceKey,
+		MenuSpaceKey:     req.MenuSpaceKey,
 		Name:             req.Name,
 		Description:      optString(req.Description),
 		DefaultHomePath:  optString(req.DefaultHomePath),
@@ -262,7 +262,7 @@ func (h *systemAPIHandler) GetCurrentMenuSpace(ctx context.Context, params gen.G
 	resp, err := h.spaceSvc.GetCurrent(
 		optString(params.AppKey),
 		requestHostFromCtx(ctx),
-		optString(params.SpaceKey),
+		optString(params.MenuSpaceKey),
 		userID,
 		cwID,
 	)
@@ -299,7 +299,7 @@ func (h *systemAPIHandler) InitializeMenuSpaceFromDefault(ctx context.Context, p
 	if uid, ok := userIDFromContext(ctx); ok {
 		actor = &uid
 	}
-	result, err := h.spaceSvc.InitializeFromDefault("", params.SpaceKey, false, actor)
+	result, err := h.spaceSvc.InitializeFromDefault("", params.MenuSpaceKey, false, actor)
 	if err != nil {
 		h.logger.Error("initialize menu space failed", zap.Error(err))
 		return nil, err
@@ -324,13 +324,13 @@ func (h *systemAPIHandler) SaveMenuSpaceHostBinding(ctx context.Context, req *ge
 		req = &gen.SystemMenuSpaceHostBindingSaveRequest{}
 	}
 	body := spacemod.SaveHostBindingRequest{
-		AppKey:      req.AppKey,
-		Host:        req.Host,
-		SpaceKey:    req.SpaceKey,
-		Description: optString(req.Description),
-		IsDefault:   optBool(req.IsDefault),
-		Status:      optString(req.Status),
-		Meta:        optSystemMetaToMap(req.Meta),
+		AppKey:       req.AppKey,
+		Host:         req.Host,
+		MenuSpaceKey: req.MenuSpaceKey,
+		Description:  optString(req.Description),
+		IsDefault:    optBool(req.IsDefault),
+		Status:       optString(req.Status),
+		Meta:         optSystemMetaToMap(req.Meta),
 	}
 	record, err := h.spaceSvc.SaveHostBinding(body.AppKey, &body)
 	if err != nil {
@@ -488,4 +488,3 @@ func systemMenuSpaceHostBindingItemsFromModels(items []spacemod.HostBindingRecor
 	}
 	return out
 }
-

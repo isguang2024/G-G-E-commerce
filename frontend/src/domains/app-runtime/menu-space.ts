@@ -15,6 +15,7 @@ import {
   normalizeMenuHost,
   normalizeMenuSpaceKey,
   SHARED_MENU_SPACE_KEY,
+  resolveMenuSpaceDefaultKey,
   resolveMenuSpaceHostBinding,
   resolveMenuSpaceDefinition,
   resolveMenuSpaceKeyByHost,
@@ -35,9 +36,9 @@ function buildRuntimeMenuSpaceConfig(
   fallbackConfig: MenuSpaceConfig = createFallbackMenuSpaceConfig()
 ): MenuSpaceConfig {
   const normalizedSpaces = (spaces || [])
-    .filter((item) => `${item.spaceKey || ''}`.trim())
+    .filter((item) => `${item.menuSpaceKey || ''}`.trim())
     .map((item) => ({
-      spaceKey: item.spaceKey,
+      menuSpaceKey: item.menuSpaceKey,
       spaceName: item.name,
       spaceType: `${item.meta?.spaceType || item.meta?.space_type || 'default'}`,
       description: item.description || '',
@@ -47,10 +48,10 @@ function buildRuntimeMenuSpaceConfig(
     }))
 
   const normalizedHostBindings = (hostBindings || [])
-    .filter((item) => `${item.host || ''}`.trim() && `${item.spaceKey || ''}`.trim())
+    .filter((item) => `${item.host || ''}`.trim() && `${item.menuSpaceKey || ''}`.trim())
     .map((item) => ({
       host: item.host,
-      spaceKey: item.spaceKey,
+      menuSpaceKey: item.menuSpaceKey,
       enabled: item.status !== 'disabled',
       isPrimary: Boolean(item.meta?.isPrimary || item.meta?.is_primary),
       scheme: `${item.scheme || item.meta?.scheme || ''}`,
@@ -66,19 +67,20 @@ function buildRuntimeMenuSpaceConfig(
     return fallbackConfig || createFallbackMenuSpaceConfig()
   }
 
-  const defaultSpace =
-    normalizedSpaces.find((item) => item.isDefault) ||
-    normalizedSpaces.find(
-      (item) => normalizeMenuSpaceKey(item.spaceKey) === DEFAULT_MENU_SPACE_KEY
-    ) ||
-    normalizedSpaces[0]
+    const defaultSpace =
+      normalizedSpaces.find((item) => item.isDefault) ||
+      normalizedSpaces.find(
+        (item) => normalizeMenuSpaceKey(item.menuSpaceKey) === DEFAULT_MENU_SPACE_KEY
+      ) ||
+      normalizedSpaces[0]
 
-  return {
-    defaultSpaceKey: normalizeMenuSpaceKey(defaultSpace?.spaceKey) || DEFAULT_MENU_SPACE_KEY,
-    spaces: normalizedSpaces,
-    hostBindings: normalizedHostBindings
+    return {
+      defaultMenuSpaceKey:
+        normalizeMenuSpaceKey(defaultSpace?.menuSpaceKey) || DEFAULT_MENU_SPACE_KEY,
+      spaces: normalizedSpaces,
+      hostBindings: normalizedHostBindings
+    }
   }
-}
 
 function appendSpaceKeyToTargetPath(targetPath: string, spaceKey: string): string {
   const normalizedPath = `${targetPath || ''}`.trim() || '/'
@@ -89,7 +91,7 @@ function appendSpaceKeyToTargetPath(targetPath: string, spaceKey: string): strin
 
   try {
     const url = new URL(normalizedPath, 'http://gge.local')
-    url.searchParams.set('space_key', normalizedSpaceKey)
+    url.searchParams.set('menu_space_key', normalizedSpaceKey)
     return `${url.pathname}${url.search}${url.hash}`
   } catch {
     return normalizedPath
@@ -123,6 +125,9 @@ export const useMenuSpaceStore = defineStore(
       }
       return menuSpaceConfigMap.value[appKey] || createFallbackMenuSpaceConfig()
     })
+    const resolvedDefaultMenuSpaceKey = computed(() =>
+      resolveMenuSpaceDefaultKey(currentMenuSpaceConfig.value, DEFAULT_MENU_SPACE_KEY)
+    )
     const currentOverrideSpaceKey = computed(() => {
       const appKey = currentAppKey.value
       if (!appKey) {
@@ -133,11 +138,6 @@ export const useMenuSpaceStore = defineStore(
     const loading = computed(() => Boolean(loadingAppKeys.value[currentAppKey.value]))
     const loaded = computed(() => Boolean(loadedAppKeys.value[currentAppKey.value]))
 
-    const defaultSpaceKey = computed(() => {
-      const key = normalizeMenuSpaceKey(currentMenuSpaceConfig.value.defaultSpaceKey)
-      return key || DEFAULT_MENU_SPACE_KEY
-    })
-
     const currentSpaceKey = computed(() => {
       const forcedKey = currentOverrideSpaceKey.value
       if (forcedKey) {
@@ -146,14 +146,17 @@ export const useMenuSpaceStore = defineStore(
       return resolveMenuSpaceKeyByHost(
         currentHost.value,
         currentMenuSpaceConfig.value,
-        defaultSpaceKey.value
+        resolvedDefaultMenuSpaceKey.value
       )
     })
 
     const currentSpace = computed(
       () =>
         resolveMenuSpaceDefinition(currentSpaceKey.value, currentMenuSpaceConfig.value) ||
-        resolveMenuSpaceDefinition(defaultSpaceKey.value, currentMenuSpaceConfig.value) ||
+        resolveMenuSpaceDefinition(
+          resolvedDefaultMenuSpaceKey.value,
+          currentMenuSpaceConfig.value
+        ) ||
         currentMenuSpaceConfig.value.spaces[0] ||
         null
     )
@@ -165,7 +168,9 @@ export const useMenuSpaceStore = defineStore(
       )
     )
 
-    const isDefaultSpace = computed(() => currentSpaceKey.value === defaultSpaceKey.value)
+    const isDefaultSpace = computed(
+      () => currentSpaceKey.value === resolvedDefaultMenuSpaceKey.value
+    )
 
     const setMenuSpaceConfig = (config: MenuSpaceConfig, appKey = currentAppKey.value) => {
       const normalizedAppKey = normalizeManagedAppKey(appKey)
@@ -268,11 +273,11 @@ export const useMenuSpaceStore = defineStore(
       const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(
         currentHost.value,
         currentMenuSpaceConfig.value,
-        defaultSpaceKey.value
+        resolvedDefaultMenuSpaceKey.value
       )
       try {
         const response = await fetchGetCurrentMenuSpace(requestedSpaceKey || undefined, appKey)
-        const resolvedSpaceKey = normalizeMenuSpaceKey(response?.space?.spaceKey)
+        const resolvedSpaceKey = normalizeMenuSpaceKey(response?.space?.menuSpaceKey)
         if (!resolvedSpaceKey) {
           clearOverrideSpaceKey(appKey)
           return null
@@ -332,7 +337,7 @@ export const useMenuSpaceStore = defineStore(
         }
       }
       const defaultSpaceDefinition = resolveMenuSpaceDefinition(
-        defaultSpaceKey.value,
+        resolvedDefaultMenuSpaceKey.value,
         currentMenuSpaceConfig.value
       )
       const defaultSpaceLandingPath = `${defaultSpaceDefinition?.defaultLandingRoute || ''}`.trim()
@@ -391,7 +396,7 @@ export const useMenuSpaceStore = defineStore(
       const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(
         typeof window !== 'undefined' ? window.location.host : runtimeHost.value,
         currentMenuSpaceConfig.value,
-        defaultSpaceKey.value
+        resolvedDefaultMenuSpaceKey.value
       )
       const routerTarget =
         normalizedTargetSpaceKey && normalizedTargetSpaceKey !== hostResolvedSpaceKey
@@ -445,8 +450,8 @@ export const useMenuSpaceStore = defineStore(
       loaded,
       currentHost,
       currentSpaceKey,
+      defaultMenuSpaceKey: resolvedDefaultMenuSpaceKey,
       currentSpace,
-      defaultSpaceKey,
       hasMultiSpace,
       hasHostBinding,
       isDefaultSpace,

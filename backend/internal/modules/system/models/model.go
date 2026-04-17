@@ -128,18 +128,18 @@ func (RoleAppScope) TableName() string {
 }
 
 type Menu struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ParentID  *uuid.UUID `gorm:"type:uuid" json:"parent_id"`
-	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	SpaceKey  string     `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
-	Kind      string     `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
-	Path      string     `gorm:"type:varchar(255)" json:"path"`
-	Name      string     `gorm:"type:varchar(100)" json:"name"`
-	Component string     `gorm:"type:varchar(255)" json:"component"`
-	Title     string     `gorm:"type:varchar(100)" json:"title"`
-	Icon      string     `gorm:"type:varchar(100)" json:"icon"`
-	SortOrder int        `gorm:"default:0" json:"sort_order"`
-	Hidden    bool       `gorm:"default:false" json:"hidden"`
+	ID           uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ParentID     *uuid.UUID `gorm:"type:uuid" json:"parent_id"`
+	AppKey       string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	MenuSpaceKey string     `gorm:"type:varchar(100);not null;default:'default';index" json:"menu_space_key"`
+	Kind         string     `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
+	Path         string     `gorm:"type:varchar(255)" json:"path"`
+	Name         string     `gorm:"type:varchar(100)" json:"name"`
+	Component    string     `gorm:"type:varchar(255)" json:"component"`
+	Title        string     `gorm:"type:varchar(100)" json:"title"`
+	Icon         string     `gorm:"type:varchar(100)" json:"icon"`
+	SortOrder    int        `gorm:"default:0" json:"sort_order"`
+	Hidden       bool       `gorm:"default:false" json:"hidden"`
 
 	Meta      MetaJSON       `gorm:"type:jsonb" json:"meta"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -164,7 +164,7 @@ type UIPage struct {
 	RouteName         string         `gorm:"type:varchar(150);not null" json:"route_name"`
 	RoutePath         string         `gorm:"type:varchar(255);not null" json:"route_path"`
 	Component         string         `gorm:"type:varchar(255);not null" json:"component"`
-	SpaceKey          string         `gorm:"type:varchar(100);not null;default:'';index" json:"space_key,omitempty"`
+	MenuSpaceKey      string         `gorm:"type:varchar(100);not null;default:'';index" json:"menu_space_key,omitempty"`
 	PageType          string         `gorm:"type:varchar(20);not null;default:'inner'" json:"page_type"`
 	VisibilityScope   string         `gorm:"type:varchar(20);not null;default:'inherit'" json:"visibility_scope"`
 	Source            string         `gorm:"type:varchar(20);not null;default:'manual'" json:"source"`

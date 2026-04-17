@@ -1,4 +1,4 @@
-﻿package space
+package space
 
 import (
 	"errors"
@@ -16,9 +16,7 @@ import (
 
 const (
 	DefaultMenuSpaceKey          = models.DefaultMenuSpaceKey
-	requestSpaceKeyQuery         = "space_key"
-	requestSpaceKeyHeader        = "X-Space-Key"
-	requestSpaceAltHeader        = "X-Menu-Space"
+	requestMenuSpaceKeyQuery     = "menu_space_key"
 	requestForwardedHostHeader   = "X-Forwarded-Host"
 	requestRealHostHeader        = "X-Real-Host"
 	spaceAccessModeAll           = "all"
@@ -34,7 +32,7 @@ type SpaceAccessProfile struct {
 	AllowedRoleCodes []string `json:"allowed_role_codes"`
 }
 
-func NormalizeSpaceKey(value string) string {
+func NormalizeMenuSpaceKey(value string) string {
 	target := strings.ToLower(strings.TrimSpace(value))
 	if target == "" {
 		return DefaultMenuSpaceKey
@@ -112,51 +110,46 @@ func RequestHost(c *gin.Context) string {
 	return NormalizeHost(c.Request.Host)
 }
 
-func RequestSpaceKey(c *gin.Context) string {
+func RequestMenuSpaceKey(c *gin.Context) string {
 	if c == nil {
 		return ""
 	}
-	if value := strings.TrimSpace(c.Query(requestSpaceKeyQuery)); value != "" {
-		return NormalizeSpaceKey(value)
-	}
-	for _, header := range []string{requestSpaceKeyHeader, requestSpaceAltHeader} {
-		if value := strings.TrimSpace(c.GetHeader(header)); value != "" {
-			return NormalizeSpaceKey(value)
-		}
+	if value := strings.TrimSpace(c.Query(requestMenuSpaceKeyQuery)); value != "" {
+		return NormalizeMenuSpaceKey(value)
 	}
 	return ""
 }
 
-func ResolveSpaceKey(db *gorm.DB, c *gin.Context) string {
+func ResolveMenuSpaceKey(db *gorm.DB, c *gin.Context) string {
 	if db == nil {
 		return DefaultMenuSpaceKey
 	}
 	appKey := currentContextAppKey(c)
 	userID := currentContextUserID(c)
 	collaborationWorkspaceID := currentContextCollaborationWorkspaceID(c)
-	key, _, err := ResolveCurrentSpaceKey(db, appKey, RequestHost(c), RequestSpaceKey(c), userID, collaborationWorkspaceID)
+	key, _, err := ResolveCurrentMenuSpaceKey(db, appKey, RequestHost(c), RequestMenuSpaceKey(c), userID, collaborationWorkspaceID)
 	if err == nil && strings.TrimSpace(key) != "" {
 		return key
 	}
 	return DefaultMenuSpaceKey
 }
 
-func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (string, string, error) {
+func ResolveCurrentMenuSpaceKey(db *gorm.DB, appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (string, string, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
-	defaultSpaceKey, err := loadAppDefaultSpaceKey(db, normalizedAppKey)
+	defaultMenuSpaceKey, err := loadAppDefaultMenuSpaceKey(db, normalizedAppKey)
 	if err != nil {
 		return DefaultMenuSpaceKey, "", err
 	}
-	if defaultSpaceKey == "" {
-		defaultSpaceKey = DefaultMenuSpaceKey
+	if defaultMenuSpaceKey == "" {
+		defaultMenuSpaceKey = DefaultMenuSpaceKey
 	}
 
 	if IsSingleSpaceMode(db, normalizedAppKey) {
-		explicit := NormalizeSpaceKey(requestedSpaceKey)
-		if explicit != "" && explicit != defaultSpaceKey {
+		explicit := NormalizeMenuSpaceKey(requestedMenuSpaceKey)
+		if explicit != "" && explicit != defaultMenuSpaceKey {
 			ok, existsErr := spaceExists(db, normalizedAppKey, explicit)
 			if existsErr != nil {
-				return defaultSpaceKey, "", existsErr
+				return defaultMenuSpaceKey, "", existsErr
 			}
 			if ok {
 				allowed, accessErr := CanAccessSpace(
@@ -167,20 +160,20 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 					explicit,
 				)
 				if accessErr != nil {
-					return defaultSpaceKey, "", accessErr
+					return defaultMenuSpaceKey, "", accessErr
 				}
 				if allowed {
 					return explicit, "single_mode_explicit", nil
 				}
 			}
 		}
-		return defaultSpaceKey, "single_mode_default", nil
+		return defaultMenuSpaceKey, "single_mode_default", nil
 	}
 
-	if explicit := NormalizeSpaceKey(requestedSpaceKey); explicit != "" {
+	if explicit := NormalizeMenuSpaceKey(requestedMenuSpaceKey); explicit != "" {
 		ok, existsErr := spaceExists(db, normalizedAppKey, explicit)
 		if existsErr != nil {
-			return defaultSpaceKey, "", existsErr
+			return defaultMenuSpaceKey, "", existsErr
 		}
 		if ok {
 			allowed, accessErr := CanAccessSpace(
@@ -191,7 +184,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 				explicit,
 			)
 			if accessErr != nil {
-				return defaultSpaceKey, "", accessErr
+				return defaultMenuSpaceKey, "", accessErr
 			}
 			if allowed {
 				return explicit, "explicit", nil
@@ -199,9 +192,9 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		}
 	}
 
-	resolvedByHost, source, hostErr := ResolveSpaceKeyByHost(db, normalizedAppKey, host)
+	resolvedByHost, source, hostErr := ResolveMenuSpaceKeyByHost(db, normalizedAppKey, host)
 	if hostErr != nil {
-		return defaultSpaceKey, "", hostErr
+		return defaultMenuSpaceKey, "", hostErr
 	}
 	if strings.TrimSpace(resolvedByHost) != "" {
 		allowed, accessErr := CanAccessSpace(
@@ -212,7 +205,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 			resolvedByHost,
 		)
 		if accessErr != nil {
-			return defaultSpaceKey, "", accessErr
+			return defaultMenuSpaceKey, "", accessErr
 		}
 		if allowed {
 			return resolvedByHost, source, nil
@@ -224,12 +217,12 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		userID,
 		collaborationWorkspaceID,
 		normalizedAppKey,
-		defaultSpaceKey,
+		defaultMenuSpaceKey,
 	); accessErr == nil && allowed {
-		return defaultSpaceKey, "app_default", nil
+		return defaultMenuSpaceKey, "app_default", nil
 	}
 
-	return defaultSpaceKey, "fallback_default", nil
+	return defaultMenuSpaceKey, "fallback_default", nil
 }
 
 func currentContextUserID(c *gin.Context) *uuid.UUID {
@@ -291,15 +284,15 @@ func CanAccessSpace(
 	spaceKey string,
 ) (bool, error) {
 	if db == nil {
-		return NormalizeSpaceKey(spaceKey) == DefaultMenuSpaceKey, nil
+		return NormalizeMenuSpaceKey(spaceKey) == DefaultMenuSpaceKey, nil
 	}
 	normalizedAppKey := normalizeAppKey(appKey)
 	var record models.MenuSpace
-	if err := db.Select("space_key", "status", "meta").
+	if err := db.Select("menu_space_key", "status", "meta").
 		Where(
-			"app_key = ? AND space_key = ? AND deleted_at IS NULL",
+			"app_key = ? AND menu_space_key = ? AND deleted_at IS NULL",
 			normalizedAppKey,
-			NormalizeSpaceKey(spaceKey),
+			NormalizeMenuSpaceKey(spaceKey),
 		).
 		First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -429,7 +422,7 @@ func normalizeMetaStringList(values ...interface{}) []string {
 	return result
 }
 
-func ResolveSpaceKeyByHost(db *gorm.DB, appKey, host string) (string, string, error) {
+func ResolveMenuSpaceKeyByHost(db *gorm.DB, appKey, host string) (string, string, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if IsSingleSpaceMode(db, normalizedAppKey) {
 		return DefaultMenuSpaceKey, "single_mode_default", nil
@@ -441,7 +434,7 @@ func ResolveSpaceKeyByHost(db *gorm.DB, appKey, host string) (string, string, er
 	if normalizedHost != "" {
 		var appBinding models.AppHostBinding
 		if err := db.Where("host = ? AND status = ? AND deleted_at IS NULL", normalizedHost, "normal").First(&appBinding).Error; err == nil {
-			key := NormalizeSpaceKey(appBinding.DefaultSpaceKey)
+			key := NormalizeMenuSpaceKey(appBinding.DefaultMenuSpaceKey)
 			if normalizeAppKey(appBinding.AppKey) == normalizedAppKey {
 				ok, err := spaceExists(db, normalizedAppKey, key)
 				if err == nil && ok {
@@ -453,46 +446,46 @@ func ResolveSpaceKeyByHost(db *gorm.DB, appKey, host string) (string, string, er
 		}
 
 	}
-	defaultSpaceKey, err := loadAppDefaultSpaceKey(db, normalizedAppKey)
+	defaultMenuSpaceKey, err := loadAppDefaultMenuSpaceKey(db, normalizedAppKey)
 	if err != nil {
 		return DefaultMenuSpaceKey, "", err
 	}
-	if defaultSpaceKey == "" {
-		defaultSpaceKey = DefaultMenuSpaceKey
+	if defaultMenuSpaceKey == "" {
+		defaultMenuSpaceKey = DefaultMenuSpaceKey
 	}
-	ok, err := spaceExists(db, normalizedAppKey, defaultSpaceKey)
+	ok, err := spaceExists(db, normalizedAppKey, defaultMenuSpaceKey)
 	if err != nil {
-		return defaultSpaceKey, "", err
+		return defaultMenuSpaceKey, "", err
 	}
 	if ok {
-		return defaultSpaceKey, "app_default", nil
+		return defaultMenuSpaceKey, "app_default", nil
 	}
-	return defaultSpaceKey, "fallback_default", nil
+	return defaultMenuSpaceKey, "fallback_default", nil
 }
 
 func spaceExists(db *gorm.DB, appKey, spaceKey string) (bool, error) {
 	var count int64
 	if err := db.Model(&models.MenuSpace{}).
-		Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", normalizeAppKey(appKey), NormalizeSpaceKey(spaceKey)).
+		Where("app_key = ? AND menu_space_key = ? AND deleted_at IS NULL", normalizeAppKey(appKey), NormalizeMenuSpaceKey(spaceKey)).
 		Count(&count).Error; err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func loadAppDefaultSpaceKey(db *gorm.DB, appKey string) (string, error) {
+func loadAppDefaultMenuSpaceKey(db *gorm.DB, appKey string) (string, error) {
 	if db == nil {
 		return DefaultMenuSpaceKey, nil
 	}
 	var app models.App
-	err := db.Select("default_space_key").Where("app_key = ? AND deleted_at IS NULL", normalizeAppKey(appKey)).First(&app).Error
+	err := db.Select("default_menu_space_key").Where("app_key = ? AND deleted_at IS NULL", normalizeAppKey(appKey)).First(&app).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return DefaultMenuSpaceKey, nil
 	}
 	if err != nil {
 		return DefaultMenuSpaceKey, err
 	}
-	return NormalizeSpaceKey(app.DefaultSpaceKey), nil
+	return NormalizeMenuSpaceKey(app.DefaultMenuSpaceKey), nil
 }
 
 func normalizeAppKey(value string) string {
@@ -509,4 +502,3 @@ func currentContextAppKey(c *gin.Context) string {
 	}
 	return normalizeAppKey(c.GetString("app_key"))
 }
-

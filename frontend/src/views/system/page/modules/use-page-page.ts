@@ -320,7 +320,7 @@ export function usePagePage() {
           current: 1,
           size: 1000,
           appKey: targetAppKey.value,
-          spaceKey: scopeSpaceKey
+          menuSpaceKey: scopeSpaceKey
         }),
         fetchGetPageMenuOptions(scopeSpaceKey, targetAppKey.value)
       ])
@@ -510,7 +510,7 @@ export function usePagePage() {
     const link = `${row.link || ''}`.trim()
     if (link) return link
     const resolvedPath = getResolvedRoutePath(row)
-    const targetSpaceKey = `${row.spaceKeys?.[0] || menuSpaceStore.currentSpaceKey || ''}`.trim()
+    const targetSpaceKey = `${(row as any).menuSpaceKeys?.[0] || menuSpaceStore.currentSpaceKey || ''}`.trim()
     const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(resolvedPath, targetSpaceKey)
     if (nextTarget.mode === 'location') {
       return nextTarget.target

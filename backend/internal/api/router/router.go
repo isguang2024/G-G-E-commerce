@@ -40,7 +40,7 @@ import (
 //     必须是 #1，因为后续 Logger / Recovery / 审计都依赖这个字段做 join key。
 //  2. Logger：access log，读 request_id + app/space/auth 标签，链路级打点。
 //  3. Recovery：兜底 panic，出错也能带上 request_id 写进日志便于回溯。
-//  4. AppContext → DynamicAppSecurity：解析 app_key / space_key / auth_mode。
+//  4. AppContext → DynamicAppSecurity：解析 app_key / menu_space_key / auth_mode。
 func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecorder audit.Recorder, telemetryIngester telemetry.Ingester) *gin.Engine {
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -182,7 +182,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB, auditRecor
 //                      (gin runs all Use() handlers before routing).
 //  3. Recovery       — panic-safety net; after Logger so a panic still gets
 //                      a request_id-tagged line written.
-//  4. AppContext     — resolves app_key/space_key from Host + path, stores
+//  4. AppContext     — resolves app_key/menu_space_key from Host + path, stores
 //                      them on gin.Context for both DynamicAppSecurity and
 //                      downstream handlers.
 //  5. DynamicAppSecurity — consumes AppContext output to pick auth_mode,

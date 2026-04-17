@@ -1,4 +1,4 @@
-﻿// page.go: ogen handler implementations for /pages/* and runtime/sync.
+// page.go: ogen handler implementations for /pages/* and runtime/sync.
 package handlers
 
 import (
@@ -17,12 +17,12 @@ import (
 
 func (h *pageAPIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.PageListResponse, error) {
 	req := &page.ListRequest{
-		Current:  optInt(params.Current, 1),
-		Size:     optInt(params.Size, 20),
-		Keyword:  optString(params.Keyword),
-		AppKey:   params.AppKey,
-		SpaceKey: optString(params.SpaceKey),
-		Status:   optString(params.Status),
+		Current:      optInt(params.Current, 1),
+		Size:         optInt(params.Size, 20),
+		Keyword:      optString(params.Keyword),
+		AppKey:       params.AppKey,
+		MenuSpaceKey: optString(params.MenuSpaceKey),
+		Status:       optString(params.Status),
 	}
 	list, total, err := h.pageSvc.List(req)
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *pageAPIHandler) ListPages(ctx context.Context, params gen.ListPagesPara
 }
 
 func (h *pageAPIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.PageListResponse, error) {
-	pages, err := h.pageSvc.ListOptions(params.AppKey, optString(params.SpaceKey))
+	pages, err := h.pageSvc.ListOptions(params.AppKey, optString(params.MenuSpaceKey))
 	if err != nil {
 		h.logger.Error("list page options failed", zap.Error(err))
 		return nil, err
@@ -46,7 +46,7 @@ func (h *pageAPIHandler) ListPageOptions(ctx context.Context, params gen.ListPag
 }
 
 func (h *pageAPIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.PageMenuOptionsResponse, error) {
-	list, err := h.pageSvc.ListMenuOptions(params.AppKey, optString(params.SpaceKey))
+	list, err := h.pageSvc.ListMenuOptions(params.AppKey, optString(params.MenuSpaceKey))
 	if err != nil {
 		h.logger.Error("list page menu options failed", zap.Error(err))
 		return nil, err
@@ -63,7 +63,7 @@ func (h *pageAPIHandler) ListRuntimePages(ctx context.Context, params gen.ListRu
 	list, err := h.pageSvc.ListRuntime(
 		optString(params.AppKey),
 		requestHostFromCtx(ctx),
-		optString(params.SpaceKey),
+		optString(params.MenuSpaceKey),
 		userID,
 		cwID,
 	)
@@ -78,7 +78,7 @@ func (h *pageAPIHandler) ListPublicRuntimePages(ctx context.Context, params gen.
 	list, err := h.pageSvc.ListRuntimePublic(
 		optString(params.AppKey),
 		requestHostFromCtx(ctx),
-		optString(params.SpaceKey),
+		optString(params.MenuSpaceKey),
 		nil,
 		nil,
 	)
@@ -313,7 +313,7 @@ func pageSaveRequestFromGen(req *gen.PageSaveRequest, appKey string) *page.SaveR
 		RouteName:       req.RouteName,
 		RoutePath:       req.RoutePath,
 		Component:       req.Component,
-		SpaceKeys:       req.SpaceKeys,
+		MenuSpaceKeys:   req.MenuSpaceKeys,
 		PageType:        optString(req.PageType),
 		VisibilityScope: optString(req.VisibilityScope),
 		Source:          optString(req.Source),
@@ -361,8 +361,8 @@ func pageSaveResultFromModel(record *page.Record) gen.PageSaveResult {
 		RouteName:         record.RouteName,
 		RoutePath:         record.RoutePath,
 		Component:         record.Component,
-		SpaceKey:          record.SpaceKey,
-		SpaceKeys:         pageSaveResultSpaceKeys(record.Meta),
+		MenuSpaceKey:      record.MenuSpaceKey,
+		MenuSpaceKeys:     pageSaveResultMenuSpaceKeys(record.Meta),
 		PageType:          record.PageType,
 		VisibilityScope:   record.VisibilityScope,
 		Source:            record.Source,
@@ -409,8 +409,8 @@ func pageListItemFromModel(record *page.Record) gen.PageListItem {
 		RouteName:         gen.NewOptString(record.RouteName),
 		RoutePath:         record.RoutePath,
 		Component:         gen.NewOptString(record.Component),
-		SpaceKey:          gen.NewOptString(record.SpaceKey),
-		SpaceKeys:         pageSaveResultSpaceKeys(record.Meta),
+		MenuSpaceKey:      gen.NewOptString(record.MenuSpaceKey),
+		MenuSpaceKeys:     pageSaveResultMenuSpaceKeys(record.Meta),
 		PageType:          gen.NewOptString(record.PageType),
 		VisibilityScope:   gen.NewOptString(record.VisibilityScope),
 		Source:            gen.NewOptString(record.Source),
@@ -453,10 +453,10 @@ func pageMetaFromMap(meta map[string]interface{}) gen.PageMeta {
 	if len(meta) == 0 {
 		return out
 	}
-	if values := pageSaveResultSpaceKeys(meta); len(values) > 0 {
-		out.SpaceKeys = values
+	if values := pageSaveResultMenuSpaceKeys(meta); len(values) > 0 {
+		out.MenuSpaceKeys = values
 	}
-	if value, ok := meta["spaceScope"].(string); ok && value != "" {
+	if value, ok := meta["menuSpaceScope"].(string); ok && value != "" {
 		out.SpaceScope = gen.NewOptString(value)
 	}
 	if value, ok := meta["visibilityScope"].(string); ok && value != "" {
@@ -552,11 +552,11 @@ func pageRemoteBindingSaveFromGen(binding gen.PageRemoteBinding) *page.RemoteBin
 
 func pageMetaToMap(meta gen.PageMeta) map[string]interface{} {
 	out := map[string]interface{}{}
-	if len(meta.SpaceKeys) > 0 {
-		out["spaceKeys"] = meta.SpaceKeys
+	if len(meta.MenuSpaceKeys) > 0 {
+		out["menuSpaceKeys"] = meta.MenuSpaceKeys
 	}
 	if meta.SpaceScope.Set {
-		out["spaceScope"] = meta.SpaceScope.Value
+		out["menuSpaceScope"] = meta.SpaceScope.Value
 	}
 	if meta.VisibilityScope.Set {
 		out["visibilityScope"] = meta.VisibilityScope.Value
@@ -600,11 +600,11 @@ func pageMetaToMap(meta gen.PageMeta) map[string]interface{} {
 	return out
 }
 
-func pageSaveResultSpaceKeys(meta map[string]interface{}) []string {
+func pageSaveResultMenuSpaceKeys(meta map[string]interface{}) []string {
 	if len(meta) == 0 {
 		return nil
 	}
-	raw, ok := meta["spaceKeys"]
+	raw, ok := meta["menuSpaceKeys"]
 	if !ok {
 		return nil
 	}
@@ -629,4 +629,3 @@ func pageSaveResultSpaceKeys(meta map[string]interface{}) []string {
 		return nil
 	}
 }
-

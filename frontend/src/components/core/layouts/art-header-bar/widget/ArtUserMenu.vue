@@ -117,7 +117,7 @@
       if (routeRecord) {
         return menuSpaceStore.resolveSpaceNavigationTarget(
           candidate,
-          `${routeRecord.meta?.spaceKey || ''}`.trim() || undefined
+          `${routeRecord.meta?.menuSpaceKey || ''}`.trim() || undefined
         )
       }
     }
@@ -128,7 +128,7 @@
         const routeRecord = findRegisteredRouteByPath(router, resolvedByName.path)
         return menuSpaceStore.resolveSpaceNavigationTarget(
           resolvedByName.path,
-          `${routeRecord?.meta?.spaceKey || ''}`.trim() || undefined
+          `${routeRecord?.meta?.menuSpaceKey || ''}`.trim() || undefined
         )
       }
     }
@@ -142,7 +142,7 @@
     if (routeRecord) {
       return menuSpaceStore.resolveSpaceNavigationTarget(
         candidatePath,
-        `${routeRecord.meta?.spaceKey || ''}`.trim() || undefined
+        `${routeRecord.meta?.menuSpaceKey || ''}`.trim() || undefined
       )
     }
     if (router.hasRoute('UserCenter')) {
@@ -151,7 +151,7 @@
         const resolvedRecord = findRegisteredRouteByPath(router, resolvedByName.path)
         return menuSpaceStore.resolveSpaceNavigationTarget(
           resolvedByName.path,
-          `${resolvedRecord?.meta?.spaceKey || ''}`.trim() || undefined
+          `${resolvedRecord?.meta?.menuSpaceKey || ''}`.trim() || undefined
         )
       }
     }

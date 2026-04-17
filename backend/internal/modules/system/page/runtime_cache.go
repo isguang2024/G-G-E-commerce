@@ -1,4 +1,4 @@
-﻿package page
+package page
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ type runtimePageCacheStore struct {
 }
 
 type CompiledAccessContext struct {
-	SpaceKey       string
+	MenuSpaceKey   string
 	Authenticated  bool
 	SuperAdmin     bool
 	ActionKeys     map[string]struct{}
@@ -56,43 +56,43 @@ func InvalidateRuntimeCache() {
 	globalRuntimePageCache.invalidate()
 }
 
-func (s *service) loadRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), false, host, requestedSpaceKey, userID, collaborationWorkspaceID)
+func (s *service) loadRuntimeRecords(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), false, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 }
 
-func (s *service) loadPublicRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), true, host, requestedSpaceKey, userID, collaborationWorkspaceID)
+func (s *service) loadPublicRuntimeRecords(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), true, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 }
 
 func (s *service) buildCompiledAccessContextForSpace(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error) {
-	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
-	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), resolvedSpaceKey)
+	resolvedMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	return s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, collaborationWorkspaceID, menuMap, resolvedSpaceKey)
+	return s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, collaborationWorkspaceID, menuMap, resolvedMenuSpaceKey)
 }
 
 func (s *service) loadRuntimeRecordsWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
-	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
-	snapshot, err := globalRuntimePageCache.getSnapshot(s, normalizeAppKey(appKey), resolvedSpaceKey)
+	resolvedMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
+	snapshot, err := globalRuntimePageCache.getSnapshot(s, normalizeAppKey(appKey), resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
 	if accessCtx == nil {
 		return []Record{}, nil
 	}
-	filtered, err := filterRuntimeRecordsWithAccess(snapshot.all, snapshot.menuMap, accessCtx, resolvedSpaceKey)
+	filtered, err := filterRuntimeRecordsWithAccess(snapshot.all, snapshot.menuMap, accessCtx, resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
 	return mergeRuntimeRecordsByOrder(snapshot.all, filtered, snapshot.public), nil
 }
 
-func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
 	now := time.Now()
-	resolvedSpaceKey := resolveSpaceKeyForRuntime(s, appKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
-	cacheKey := runtimePageCacheKey(appKey, resolvedSpaceKey)
+	resolvedMenuSpaceKey := resolveMenuSpaceKeyForRuntime(s, appKey, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
+	cacheKey := runtimePageCacheKey(appKey, resolvedMenuSpaceKey)
 
 	c.mu.RLock()
 	snapshot := c.snapshots[cacheKey]
@@ -105,7 +105,7 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedMenuSpaceKey)
 		if err != nil {
 			return nil, err
 		}
@@ -128,18 +128,18 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedMenuSpaceKey)
 		if err != nil {
 			return nil, err
 		}
 		return mergeRuntimeRecordsByOrder(records, filtered, snapshot.public), nil
 	}
 
-	all, menuMap, err := s.buildRuntimeRecords(appKey, resolvedSpaceKey)
+	all, menuMap, err := s.buildRuntimeRecords(appKey, resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	publicRecords := buildPublicRuntimeRecords(all, menuMap, resolvedSpaceKey)
+	publicRecords := buildPublicRuntimeRecords(all, menuMap, resolvedMenuSpaceKey)
 	c.snapshots[cacheKey] = &runtimePageCacheSnapshot{
 		all:       cloneRuntimeRecords(all),
 		public:    cloneRuntimeRecords(publicRecords),
@@ -150,7 +150,7 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 	if publicOnly {
 		return cloneRuntimeRecords(publicRecords), nil
 	}
-	filtered, err := filterRuntimeRecordsForContext(s, appKey, all, menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
+	filtered, err := filterRuntimeRecordsForContext(s, appKey, all, menuMap, userID, collaborationWorkspaceID, resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +158,8 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 }
 
 func (c *runtimePageCacheStore) getSnapshot(s *service, appKey string, spaceKey string) (*runtimePageCacheSnapshot, error) {
-	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
-	cacheKey := runtimePageCacheKey(appKey, resolvedSpaceKey)
+	resolvedMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
+	cacheKey := runtimePageCacheKey(appKey, resolvedMenuSpaceKey)
 	now := time.Now()
 
 	c.mu.RLock()
@@ -181,11 +181,11 @@ func (c *runtimePageCacheStore) getSnapshot(s *service, appKey string, spaceKey 
 		return snapshot, nil
 	}
 
-	all, menuMap, err := s.buildRuntimeRecords(appKey, resolvedSpaceKey)
+	all, menuMap, err := s.buildRuntimeRecords(appKey, resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	publicRecords := buildPublicRuntimeRecords(all, menuMap, resolvedSpaceKey)
+	publicRecords := buildPublicRuntimeRecords(all, menuMap, resolvedMenuSpaceKey)
 	snapshot = &runtimePageCacheSnapshot{
 		all:       cloneRuntimeRecords(all),
 		public:    cloneRuntimeRecords(publicRecords),
@@ -259,7 +259,7 @@ func buildPublicRuntimeRecords(
 	if len(all) == 0 {
 		return []Record{}
 	}
-	if normalized := normalizeSpaceKey(spaceKey); normalized != "" {
+	if normalized := normalizeMenuSpaceKey(spaceKey); normalized != "" {
 		all = filterRecordsBySpace(all, normalized)
 	}
 
@@ -393,7 +393,7 @@ func filterRuntimeRecordsWithAccess(
 	if len(all) == 0 {
 		return []Record{}, nil
 	}
-	records := filterRecordsBySpace(all, normalizeSpaceKey(spaceKey))
+	records := filterRecordsBySpace(all, normalizeMenuSpaceKey(spaceKey))
 	if len(records) == 0 {
 		return []Record{}, nil
 	}
@@ -532,7 +532,7 @@ func (s *service) buildRuntimeAccessContext(
 	spaceKey string,
 ) (*runtimeAccessContext, error) {
 	ctx := &runtimeAccessContext{
-		SpaceKey:       normalizeSpaceKey(spaceKey),
+		MenuSpaceKey:   normalizeMenuSpaceKey(spaceKey),
 		ActionKeys:     make(map[string]struct{}),
 		VisibleMenuIDs: make(map[uuid.UUID]struct{}),
 	}
@@ -557,7 +557,7 @@ func (s *service) buildRuntimeAccessContext(
 	ctx.SuperAdmin = currentUser.IsSuperAdmin
 	if currentUser.IsSuperAdmin {
 		for id, node := range menuMap {
-			if normalizeSpaceKey(node.Menu.SpaceKey) != normalizeSpaceKey(spaceKey) {
+			if normalizeMenuSpaceKey(node.Menu.MenuSpaceKey) != normalizeMenuSpaceKey(spaceKey) {
 				continue
 			}
 			if !isRuntimeMenuEnabled(node.Menu.Meta) {
@@ -778,13 +778,13 @@ func buildVisibleRuntimeMenuIndex(
 ) (map[uuid.UUID]runtimeMenuNode, map[string]runtimeMenuNode) {
 	byID := make(map[uuid.UUID]runtimeMenuNode, len(visibleMenuIDs))
 	byPath := make(map[string]runtimeMenuNode, len(visibleMenuIDs))
-	targetSpaceKey := normalizeSpaceKey(spaceKey)
+	targetMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
 	for id := range visibleMenuIDs {
 		node, ok := menuMap[id]
 		if !ok {
 			continue
 		}
-		if normalizeSpaceKey(node.Menu.SpaceKey) != targetSpaceKey {
+		if normalizeMenuSpaceKey(node.Menu.MenuSpaceKey) != targetMenuSpaceKey {
 			continue
 		}
 		if !isRuntimeMenuEnabled(node.Menu.Meta) {
@@ -866,10 +866,10 @@ func finalizeRuntimeVisibleMenuIDs(
 	spaceKey string,
 	menuIDs []uuid.UUID,
 ) []uuid.UUID {
-	targetSpaceKey := normalizeSpaceKey(spaceKey)
+	targetMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
 	enabledSet := make(map[uuid.UUID]struct{}, len(menuMap))
 	for id, node := range menuMap {
-		if normalizeSpaceKey(node.Menu.SpaceKey) != targetSpaceKey {
+		if normalizeMenuSpaceKey(node.Menu.MenuSpaceKey) != targetMenuSpaceKey {
 			continue
 		}
 		if !isRuntimeMenuEnabled(node.Menu.Meta) {
@@ -894,10 +894,10 @@ func finalizeRuntimeVisibleMenuIDs(
 }
 
 func collectRuntimePublicMenuIDs(menuMap map[uuid.UUID]runtimeMenuNode, spaceKey string) []uuid.UUID {
-	targetSpaceKey := normalizeSpaceKey(spaceKey)
+	targetMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
 	result := make([]uuid.UUID, 0, len(menuMap))
 	for id, node := range menuMap {
-		if normalizeSpaceKey(node.Menu.SpaceKey) != targetSpaceKey {
+		if normalizeMenuSpaceKey(node.Menu.MenuSpaceKey) != targetMenuSpaceKey {
 			continue
 		}
 		if !isRuntimeMenuEnabled(node.Menu.Meta) {
@@ -1031,7 +1031,7 @@ func filterRecordsBySpace(records []Record, spaceKey string) []Record {
 	return result
 }
 
-func normalizeSpaceKey(value string) string {
+func normalizeMenuSpaceKey(value string) string {
 	target := strings.ToLower(strings.TrimSpace(value))
 	if target == "" {
 		return spaceutil.DefaultMenuSpaceKey
@@ -1039,9 +1039,9 @@ func normalizeSpaceKey(value string) string {
 	return target
 }
 
-func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) string {
+func resolveMenuSpaceKeyForRuntime(s *service, appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) string {
 	if spaceutil.IsSingleSpaceMode(s.db, normalizeAppKey(appKey)) {
-		explicit := normalizeSpaceKey(requestedSpaceKey)
+		explicit := normalizeMenuSpaceKey(requestedMenuSpaceKey)
 		if explicit != "" && explicit != spaceutil.DefaultMenuSpaceKey && s != nil && s.db != nil {
 			if allowed, accessErr := spaceutil.CanAccessSpace(
 				s.db,
@@ -1056,13 +1056,13 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 		return spaceutil.DefaultMenuSpaceKey
 	}
 	if s == nil || s.db == nil {
-		return normalizeSpaceKey(requestedSpaceKey)
+		return normalizeMenuSpaceKey(requestedMenuSpaceKey)
 	}
-	resolved, _, err := spaceutil.ResolveSpaceKeyByHost(s.db, normalizeAppKey(appKey), host)
+	resolved, _, err := spaceutil.ResolveMenuSpaceKeyByHost(s.db, normalizeAppKey(appKey), host)
 	if err != nil {
-		return normalizeSpaceKey(requestedSpaceKey)
+		return normalizeMenuSpaceKey(requestedMenuSpaceKey)
 	}
-	trimmed := strings.TrimSpace(requestedSpaceKey)
+	trimmed := strings.TrimSpace(requestedMenuSpaceKey)
 	if trimmed == "" {
 		if allowed, accessErr := spaceutil.CanAccessSpace(
 			s.db,
@@ -1075,10 +1075,10 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 		}
 		return spaceutil.DefaultMenuSpaceKey
 	}
-	if explicit := normalizeSpaceKey(trimmed); explicit == spaceutil.DefaultMenuSpaceKey {
+	if explicit := normalizeMenuSpaceKey(trimmed); explicit == spaceutil.DefaultMenuSpaceKey {
 		return explicit
 	}
-	if explicit := normalizeSpaceKey(trimmed); explicit != spaceutil.DefaultMenuSpaceKey {
+	if explicit := normalizeMenuSpaceKey(trimmed); explicit != spaceutil.DefaultMenuSpaceKey {
 		if allowed, accessErr := spaceutil.CanAccessSpace(
 			s.db,
 			userID,
@@ -1112,7 +1112,7 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 }
 
 func runtimePageCacheKey(appKey, spaceKey string) string {
-	return normalizeAppKey(appKey) + "::" + normalizeSpaceKey(spaceKey)
+	return normalizeAppKey(appKey) + "::" + normalizeMenuSpaceKey(spaceKey)
 }
 
 func resolveMenuAccessMode(
@@ -1142,4 +1142,3 @@ func resolveMenuAccessMode(
 		return "permission"
 	}
 }
-

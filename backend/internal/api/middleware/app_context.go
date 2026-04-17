@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"strings"
@@ -46,21 +46,21 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 
 		// 优先尝试 Level 2 入口绑定（path 感知）
 		spaceKey, spaceResolvedBy := "", ""
-		if entrySpaceKey, entryResolvedBy, entryErr := apppkg.ResolveMenuSpaceEntry(db, appKey, host, path); entryErr == nil && strings.TrimSpace(entrySpaceKey) != "" && entryResolvedBy == "entry_binding" {
+		if entryMenuSpaceKey, entryResolvedBy, entryErr := apppkg.ResolveMenuSpaceEntry(db, appKey, host, path); entryErr == nil && strings.TrimSpace(entryMenuSpaceKey) != "" && entryResolvedBy == "entry_binding" {
 			// P1: 校验用户是否有权访问该空间，无权则继续走常规解析（回退默认空间）。
-			allowed, _ := spacepkg.CanAccessSpace(db, userID, collaborationWorkspaceID, appKey, entrySpaceKey)
+			allowed, _ := spacepkg.CanAccessSpace(db, userID, collaborationWorkspaceID, appKey, entryMenuSpaceKey)
 			if allowed {
-				spaceKey = entrySpaceKey
+				spaceKey = entryMenuSpaceKey
 				spaceResolvedBy = entryResolvedBy
 			}
 		}
 		if spaceKey == "" {
 			var resolveErr error
-			spaceKey, spaceResolvedBy, resolveErr = spacepkg.ResolveCurrentSpaceKey(
+			spaceKey, spaceResolvedBy, resolveErr = spacepkg.ResolveCurrentMenuSpaceKey(
 				db,
 				appKey,
 				host,
-				spacepkg.RequestSpaceKey(c),
+				spacepkg.RequestMenuSpaceKey(c),
 				userID,
 				collaborationWorkspaceID,
 			)
@@ -76,7 +76,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		if appBinding != nil {
 			c.Set("app_entry_binding", appBinding)
 		}
-		c.Set("space_key", spaceKey)
+		c.Set("menu_space_key", spaceKey)
 		c.Set("resolved_by", spaceResolvedBy)
 		if collaborationWorkspaceID != nil {
 			c.Set("collaboration_workspace_id", collaborationWorkspaceID.String())
@@ -112,4 +112,3 @@ func headerUUID(value string) *uuid.UUID {
 	}
 	return &parsed
 }
-

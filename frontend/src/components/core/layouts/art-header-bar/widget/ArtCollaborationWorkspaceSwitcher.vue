@@ -101,7 +101,7 @@
       const resolvedRoute = findRegisteredRouteByPath(router, landingPath)
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
         landingPath,
-        `${resolvedRoute?.meta?.spaceKey || ''}`.trim() || undefined
+        `${resolvedRoute?.meta?.menuSpaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
         await router.push(nextTarget.target)

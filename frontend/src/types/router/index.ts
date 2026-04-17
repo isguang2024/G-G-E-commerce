@@ -52,7 +52,7 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   /** 角色权限 */
   roles?: string[]
   /** 菜单空间标识 */
-  spaceKey?: string
+  menuSpaceKey?: string
   /** 菜单空间类型 */
   spaceType?: string
   /** Host 标识 */
@@ -101,7 +101,7 @@ export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children'
   sort_order?: number
   parent_id?: number | string
   is_system?: boolean
-  spaceKey?: string
+  menuSpaceKey?: string
   spaceType?: string
   hostKey?: string
 }

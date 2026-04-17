@@ -34,6 +34,8 @@ function resolveAppDefinition() {
 function resolveSpaceDefinition() {
   return {
     space_key: 'default',
+    menu_space_key: 'default',
+    menuSpaceKey: 'default',
     name: '默认空间',
     status: 'normal',
     is_default: true,
@@ -59,7 +61,9 @@ function resolveNavigationManifest() {
     },
     context: {
       app_key: 'platform-admin',
-      space_key: 'default'
+      space_key: 'default',
+      menu_space_key: 'default',
+      menuSpaceKey: 'default'
     },
     menu_tree: [
       {

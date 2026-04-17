@@ -58,7 +58,11 @@ import { loadingService } from '@/utils/ui'
 import { fetchGetCurrentApp, fetchGetRuntimeNavigation } from '@/domains/governance/api'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
-import { normalizeMenuSpaceKey } from '@/domains/navigation/utils/menu-space'
+import {
+  buildMenuSpaceQuery,
+  normalizeMenuSpaceKey,
+  resolveMenuSpaceQueryKey
+} from '@/domains/navigation/utils/menu-space'
 import {
   ensureAuthenticatedRoutes,
   ensurePublicRuntimeRoutes,
@@ -142,7 +146,9 @@ async function handleRouteGuard(
     if (matchedPublicRoute && !alreadyMatchedPublicRoute) {
       next({
         path: to.path,
-        query: to.query,
+        query: {
+          ...to.query
+        },
         hash: to.hash,
         replace: true
       })
@@ -185,7 +191,9 @@ async function handleRouteGuard(
         // 已由并发的初始化完成注册，重新解析当前目标路径
         next({
           path: to.path,
-          query: to.query,
+          query: {
+            ...to.query
+          },
           hash: to.hash,
           replace: true
         })
@@ -197,7 +205,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 3.1 已登录场景支持通过 URL 显式切换菜单空间（如 /system/menu?space_key=ops）
+  // 3.1 已登录场景支持通过 URL 显式切换菜单空间。
   if (userStore.isLogin && preferredSpaceKey) {
     const menuSpaceStore = useMenuSpaceStore()
     if (normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey) !== preferredSpaceKey) {
@@ -208,7 +216,10 @@ async function handleRouteGuard(
       }
       next({
         path: to.path,
-        query: to.query,
+        query: {
+          ...to.query,
+          ...buildMenuSpaceQuery(preferredSpaceKey)
+        },
         hash: to.hash,
         replace: true
       })
@@ -301,7 +312,7 @@ async function resolveLoginRedirectPolicy(
 
   if (shouldUseCentralizedLogin && targetAppKey && typeof window !== 'undefined') {
     const redirectUri = new URL(RoutesAlias.AuthCallback, window.location.origin).toString()
-    const spaceKey = preferredSpaceKey || binding?.spaceKey || ''
+    const menuSpaceKey = preferredSpaceKey || binding?.menuSpaceKey || ''
 
     // participate 模式：先尝试 silent SSO（利用已有的中心 token 静默签发 callback）
     if (ssoMode === 'participate') {
@@ -309,7 +320,7 @@ async function resolveLoginRedirectPolicy(
         targetAppKey,
         to.fullPath,
         redirectUri,
-        spaceKey,
+        menuSpaceKey,
         loginPageKey
       )
       persistCentralizedAuthAttempt(attempt)
@@ -319,7 +330,7 @@ async function resolveLoginRedirectPolicy(
         state: attempt.state,
         nonce: attempt.nonce,
         targetPath: to.fullPath,
-        navigationSpaceKey: spaceKey,
+        navigationSpaceKey: menuSpaceKey,
         loginPageKey
       })
       if (silentResult?.callback?.redirect_to) {
@@ -335,7 +346,7 @@ async function resolveLoginRedirectPolicy(
       targetAppKey,
       to.fullPath,
       redirectUri,
-      spaceKey,
+      menuSpaceKey,
       loginPageKey
     )
     persistCentralizedAuthAttempt(attempt)
@@ -345,7 +356,7 @@ async function resolveLoginRedirectPolicy(
         targetAppKey,
         targetPath: to.fullPath,
         redirectUri,
-        navigationSpaceKey: spaceKey,
+        navigationSpaceKey: menuSpaceKey,
         state: attempt.state,
         nonce: attempt.nonce,
         loginPageKey: attempt.loginPageKey,
@@ -630,7 +641,7 @@ function resolvePreferredSpaceKeyFromRoute(to: RouteLocationNormalized): string 
   if (!to) {
     return ''
   }
-  return normalizeMenuSpaceKey(to.query?.space_key || to.query?.spaceKey)
+  return resolveMenuSpaceQueryKey(to.query as Record<string, unknown>)
 }
 
 async function tryRefreshMissingDynamicRoute(

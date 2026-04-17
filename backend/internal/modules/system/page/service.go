@@ -1,4 +1,4 @@
-﻿package page
+package page
 
 import (
 	"errors"
@@ -34,7 +34,7 @@ type ListRequest struct {
 	Size         int
 	Keyword      string
 	AppKey       string `form:"app_key"`
-	SpaceKey     string `form:"space_key"`
+	MenuSpaceKey string `form:"menu_space_key"`
 	PageType     string
 	ModuleKey    string
 	ParentMenuID string
@@ -50,7 +50,7 @@ type SaveRequest struct {
 	RouteName         string                 `json:"route_name"`
 	RoutePath         string                 `json:"route_path"`
 	Component         string                 `json:"component"`
-	SpaceKeys         []string               `json:"space_keys"`
+	MenuSpaceKeys     []string               `json:"menu_space_keys"`
 	PageType          string                 `json:"page_type"`
 	VisibilityScope   string                 `json:"visibility_scope"`
 	Source            string                 `json:"source"`
@@ -142,7 +142,7 @@ type AccessTraceRequest struct {
 	UserID                   string `form:"user_id"`
 	CollaborationWorkspaceID string `form:"collaboration_workspace_id"`
 	PageKey                  string `form:"page_key"`
-	SpaceKey                 string `form:"space_key"`
+	MenuSpaceKey             string `form:"menu_space_key"`
 	PageKeys                 string `form:"page_keys"`
 	RoutePath                string `form:"route_path"`
 }
@@ -186,7 +186,7 @@ type AccessTracePageItem struct {
 type AccessTraceResult struct {
 	UserID                   string                `json:"user_id"`
 	CollaborationWorkspaceID string                `json:"collaboration_workspace_id,omitempty"`
-	SpaceKey                 string                `json:"space_key"`
+	MenuSpaceKey             string                `json:"menu_space_key"`
 	Authenticated            bool                  `json:"authenticated"`
 	SuperAdmin               bool                  `json:"super_admin"`
 	ActionKeyCount           int                   `json:"action_key_count"`
@@ -199,8 +199,8 @@ type AccessTraceResult struct {
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
 	ListOptions(appKey, spaceKey string) ([]models.UIPage, error)
-	ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
-	ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
+	ListRuntime(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
+	ListRuntimePublic(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
 	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error)
 	GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error)
 	ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error)
@@ -267,7 +267,7 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	menuMap, err := s.loadMenuMap(appKey, req.SpaceKey)
+	menuMap, err := s.loadMenuMap(appKey, req.MenuSpaceKey)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -279,7 +279,7 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	records = s.applyManagedPageModel(records, req.SpaceKey, menuMap, pageMap, bindingMap)
+	records = s.applyManagedPageModel(records, req.MenuSpaceKey, menuMap, pageMap, bindingMap)
 	total := int64(len(records))
 	current, size := normalizePageAndSize(req)
 	start := (current - 1) * size
@@ -307,7 +307,7 @@ func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) 
 			"route_name",
 			"route_path",
 			"component",
-			"space_key",
+			"menu_space_key",
 			"page_type",
 			"visibility_scope",
 			"module_key",
@@ -366,13 +366,13 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		}
 		collaborationWorkspaceID = &parsed
 	}
-	spaceKey := normalizeSpaceKey(req.SpaceKey)
+	spaceKey := normalizeMenuSpaceKey(req.MenuSpaceKey)
 	if spaceKey == "" {
-		resolvedSpaceKey, _, resolveErr := spaceutil.ResolveCurrentSpaceKey(s.db, appKey, "", "", nil, nil)
+		resolvedMenuSpaceKey, _, resolveErr := spaceutil.ResolveCurrentMenuSpaceKey(s.db, appKey, "", "", nil, nil)
 		if resolveErr != nil {
 			return nil, resolveErr
 		}
-		spaceKey = normalizeSpaceKey(resolvedSpaceKey)
+		spaceKey = normalizeMenuSpaceKey(resolvedMenuSpaceKey)
 		if spaceKey == "" {
 			spaceKey = spaceutil.DefaultMenuSpaceKey
 		}
@@ -420,7 +420,7 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 
 	result := &AccessTraceResult{
 		UserID:         userID.String(),
-		SpaceKey:       spaceKey,
+		MenuSpaceKey:   spaceKey,
 		Authenticated:  accessCtx.Authenticated,
 		SuperAdmin:     accessCtx.SuperAdmin,
 		ActionKeyCount: len(accessCtx.ActionKeys),
@@ -642,7 +642,7 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 		if err := tx.Create(item).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, item.AppKey, item.ID, req.SpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, item.AppKey, item.ID, req.MenuSpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -683,7 +683,7 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 		if err := tx.Model(&existing).Updates(pageToUpdateMap(item)).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, existing.AppKey, existing.ID, req.SpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, existing.AppKey, existing.ID, req.MenuSpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -729,7 +729,7 @@ func (s *service) Delete(id uuid.UUID, appKey string) error {
 }
 
 func (s *service) ListMenuOptions(appKey, spaceKey string) ([]MenuOption, error) {
-	menus, err := s.menuRepo.ListByAppAndSpace(normalizeAppKey(appKey), normalizeSpaceKey(spaceKey))
+	menus, err := s.menuRepo.ListByAppAndSpace(normalizeAppKey(appKey), normalizeMenuSpaceKey(spaceKey))
 	if err != nil {
 		return nil, err
 	}
@@ -978,7 +978,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		RouteName:         routeName,
 		RoutePath:         routePath,
 		Component:         component,
-		SpaceKey:          "",
+		MenuSpaceKey:      "",
 		PageType:          pageType,
 		VisibilityScope:   normalizePageVisibilityScopeForSave(pageType, req.VisibilityScope, parentMenuID, parentPageKey),
 		Source:            source,
@@ -1125,7 +1125,7 @@ func pageToUpdateMap(item *models.UIPage) map[string]interface{} {
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
-		"space_key":          "",
+		"menu_space_key":     "",
 		"page_type":          item.PageType,
 		"visibility_scope":   item.VisibilityScope,
 		"source":             item.Source,
@@ -1193,7 +1193,7 @@ func (s *service) hydrateManagedRecord(record *Record) error {
 	if record == nil {
 		return nil
 	}
-	menuMap, err := s.loadMenuMap(record.AppKey, firstResolvedPageSpaceKey(record.UIPage))
+	menuMap, err := s.loadMenuMap(record.AppKey, firstResolvedPageMenuSpaceKey(record.UIPage))
 	if err != nil {
 		return err
 	}
@@ -1205,8 +1205,8 @@ func (s *service) hydrateManagedRecord(record *Record) error {
 	if err != nil {
 		return err
 	}
-	resolvedSpaceKeys := resolvePageSpaceKeys(record.UIPage, pageMap, menuMap, bindingMap, map[string]struct{}{})
-	applyResolvedPageSpace(&record.UIPage, resolvedSpaceKeys)
+	resolvedMenuSpaceKeys := resolvePageMenuSpaceKeys(record.UIPage, pageMap, menuMap, bindingMap, map[string]struct{}{})
+	applyResolvedPageSpace(&record.UIPage, resolvedMenuSpaceKeys)
 	record.ActiveMenuPath = s.resolveActiveMenuPath(
 		&record.UIPage,
 		menuMap,
@@ -1220,7 +1220,7 @@ func syncPageSpaceBindings(
 	tx *gorm.DB,
 	appKey string,
 	pageID uuid.UUID,
-	spaceKeys []string,
+	menuSpaceKeys []string,
 	pageType string,
 	visibilityScope string,
 	parentMenuID *uuid.UUID,
@@ -1232,17 +1232,17 @@ func syncPageSpaceBindings(
 	if err := tx.Where("app_key = ? AND page_id = ?", normalizeAppKey(appKey), pageID).Delete(&models.PageSpaceBinding{}).Error; err != nil {
 		return err
 	}
-	bindingKeys := normalizeStandalonePageBindingKeys(spaceKeys, pageType, visibilityScope, parentMenuID, parentPageKey)
+	bindingKeys := normalizeStandalonePageBindingKeys(menuSpaceKeys, pageType, visibilityScope, parentMenuID, parentPageKey)
 	if len(bindingKeys) == 0 {
 		return nil
 	}
 	rows := make([]models.PageSpaceBinding, 0, len(bindingKeys))
 	for _, key := range bindingKeys {
 		rows = append(rows, models.PageSpaceBinding{
-			ID:       uuid.New(),
-			AppKey:   normalizeAppKey(appKey),
-			PageID:   pageID,
-			SpaceKey: key,
+			ID:           uuid.New(),
+			AppKey:       normalizeAppKey(appKey),
+			PageID:       pageID,
+			MenuSpaceKey: key,
 		})
 	}
 	return tx.Create(&rows).Error
@@ -1274,13 +1274,13 @@ func (s *service) loadPageMap(appKey string) (map[string]models.UIPage, error) {
 
 func (s *service) loadMenuMap(appKey string, spaceKey string) (map[uuid.UUID]runtimeMenuNode, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
-	normalizedSpaceKey := normalizeSpaceKey(spaceKey)
+	normalizedMenuSpaceKey := normalizeMenuSpaceKey(spaceKey)
 	if strings.TrimSpace(spaceKey) == "" {
-		if resolvedSpaceKey, _, err := spaceutil.ResolveSpaceKeyByHost(s.db, normalizedAppKey, ""); err == nil {
-			normalizedSpaceKey = normalizeSpaceKey(resolvedSpaceKey)
+		if resolvedMenuSpaceKey, _, err := spaceutil.ResolveMenuSpaceKeyByHost(s.db, normalizedAppKey, ""); err == nil {
+			normalizedMenuSpaceKey = normalizeMenuSpaceKey(resolvedMenuSpaceKey)
 		}
 	}
-	menus, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedSpaceKey)
+	menus, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1359,8 +1359,8 @@ func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string, a
 // normalisation helpers
 // ---------------------------------------------------------------------------
 
-func firstResolvedPageSpaceKey(item models.UIPage) string {
-	keys := readPageSpaceKeys(item)
+func firstResolvedPageMenuSpaceKey(item models.UIPage) string {
+	keys := readPageMenuSpaceKeys(item)
 	if len(keys) > 0 {
 		return keys[0]
 	}
@@ -1475,7 +1475,7 @@ func normalizeStandalonePageBindingKeys(values []string, pageType string, visibi
 	}
 	candidates := make([]string, 0, len(values))
 	for _, item := range values {
-		if target := normalizeSpaceKey(item); target != "" {
+		if target := normalizeMenuSpaceKey(item); target != "" {
 			candidates = append(candidates, target)
 		}
 	}
@@ -1519,4 +1519,3 @@ func normalizeRoutePath(path string) string {
 	}
 	return normalized
 }
-

@@ -1,11 +1,11 @@
-﻿// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
+// extras.go — Phase 4 ogen quick-win handlers for already-migrated domains
 // (feature package, permission, menu, page).
 package handlers
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
@@ -247,8 +247,8 @@ func (h *extrasAPIHandler) GetPageAccessTrace(ctx context.Context, params gen.Ge
 	if params.CollaborationWorkspaceID.Set {
 		req.CollaborationWorkspaceID = params.CollaborationWorkspaceID.Value.String()
 	}
-	if params.SpaceKey.Set {
-		req.SpaceKey = params.SpaceKey.Value
+	if params.MenuSpaceKey.Set {
+		req.MenuSpaceKey = params.MenuSpaceKey.Value
 	}
 	if params.PageKey.Set {
 		req.PageKey = params.PageKey.Value
@@ -270,4 +270,3 @@ func (h *extrasAPIHandler) GetPageAccessTrace(ctx context.Context, params gen.Ge
 	}
 	return &out, nil
 }
-

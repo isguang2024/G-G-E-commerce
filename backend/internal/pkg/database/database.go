@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"context"
@@ -368,13 +368,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	menuSpaceCodeIndexName := "idx_menu_spaces_space_key"
+	menuSpaceCodeIndexName := "idx_menu_spaces_menu_space_key"
 	if err := DB.Exec("DROP INDEX IF EXISTS " + menuSpaceCodeIndexName).Error; err != nil {
 		return err
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceCodeIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + menuSpaceCodeIndexName + " ON menu_spaces (app_key, space_key) WHERE deleted_at IS NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + menuSpaceCodeIndexName + " ON menu_spaces (app_key, menu_space_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -385,7 +385,7 @@ func createUniqueIndexes() error {
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", pageSpaceBindingIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + pageSpaceBindingIndexName + " ON page_space_bindings (app_key, page_id, space_key) WHERE deleted_at IS NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + pageSpaceBindingIndexName + " ON page_space_bindings (app_key, page_id, menu_space_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -398,18 +398,18 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	menuSpaceBindingSpaceIndexName := "idx_menu_space_host_bindings_space_key"
+	menuSpaceBindingSpaceIndexName := "idx_menu_space_host_bindings_menu_space_key"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceBindingSpaceIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + menuSpaceBindingSpaceIndexName + " ON menu_space_host_bindings (space_key)").Error; err != nil {
+		if err := DB.Exec("CREATE INDEX " + menuSpaceBindingSpaceIndexName + " ON menu_space_host_bindings (menu_space_key)").Error; err != nil {
 			return err
 		}
 	}
 
-	menuSpaceTableIndexName := "idx_menus_space_key"
+	menuSpaceTableIndexName := "idx_menus_menu_space_key"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceTableIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + menuSpaceTableIndexName + " ON menus (app_key, space_key)").Error; err != nil {
+		if err := DB.Exec("CREATE INDEX " + menuSpaceTableIndexName + " ON menus (app_key, menu_space_key)").Error; err != nil {
 			return err
 		}
 	}
@@ -431,7 +431,7 @@ func createUniqueIndexes() error {
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", spaceMenuPlacementIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + spaceMenuPlacementIndexName + " ON space_menu_placements (app_key, space_key, menu_key) WHERE deleted_at IS NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + spaceMenuPlacementIndexName + " ON space_menu_placements (app_key, menu_space_key, menu_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -439,15 +439,15 @@ func createUniqueIndexes() error {
 	spaceMenuPlacementParentIndexName := "idx_space_menu_placements_parent"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", spaceMenuPlacementParentIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + spaceMenuPlacementParentIndexName + " ON space_menu_placements (app_key, space_key, parent_menu_key, sort_order)").Error; err != nil {
+		if err := DB.Exec("CREATE INDEX " + spaceMenuPlacementParentIndexName + " ON space_menu_placements (app_key, menu_space_key, parent_menu_key, sort_order)").Error; err != nil {
 			return err
 		}
 	}
 
-	uiPageSpaceIndexName := "idx_ui_pages_space_key"
+	uiPageSpaceIndexName := "idx_ui_pages_menu_space_key"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageSpaceIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + uiPageSpaceIndexName + " ON ui_pages (space_key)").Error; err != nil {
+		if err := DB.Exec("CREATE INDEX " + uiPageSpaceIndexName + " ON ui_pages (menu_space_key)").Error; err != nil {
 			return err
 		}
 	}
@@ -756,19 +756,19 @@ func ensureAppBootstrap() error {
 	}
 
 	defaultApp := models.App{
-		AppKey:           models.DefaultAppKey,
-		Name:             models.DefaultAppName,
-		Description:      "当前内置管理员后台应用",
-		SpaceMode:        "single",
-		DefaultSpaceKey:  models.DefaultMenuSpaceKey,
-		AuthMode:         "inherit_host",
-		FrontendEntryURL: "/",
-		BackendEntryURL:  "",
-		HealthCheckURL:   "/health",
-		Status:           "normal",
-		IsDefault:        true,
-		Capabilities:     models.DefaultPlatformAdminCapabilities(),
-		Meta:             models.MetaJSON{},
+		AppKey:              models.DefaultAppKey,
+		Name:                models.DefaultAppName,
+		Description:         "当前内置管理员后台应用",
+		SpaceMode:           "single",
+		DefaultMenuSpaceKey: models.DefaultMenuSpaceKey,
+		AuthMode:            "inherit_host",
+		FrontendEntryURL:    "/",
+		BackendEntryURL:     "",
+		HealthCheckURL:      "/health",
+		Status:              "normal",
+		IsDefault:           true,
+		Capabilities:        models.DefaultPlatformAdminCapabilities(),
+		Meta:                models.MetaJSON{},
 	}
 
 	var existing models.App
@@ -776,17 +776,17 @@ func ensureAppBootstrap() error {
 	switch {
 	case err == nil:
 		if updateErr := DB.Model(&existing).Updates(map[string]interface{}{
-			"name":               defaultApp.Name,
-			"description":        defaultApp.Description,
-			"space_mode":         defaultApp.SpaceMode,
-			"default_space_key":  defaultApp.DefaultSpaceKey,
-			"auth_mode":          defaultApp.AuthMode,
-			"frontend_entry_url": defaultApp.FrontendEntryURL,
-			"backend_entry_url":  defaultApp.BackendEntryURL,
-			"health_check_url":   defaultApp.HealthCheckURL,
-			"capabilities":       defaultApp.Capabilities,
-			"status":             "normal",
-			"is_default":         true,
+			"name":                   defaultApp.Name,
+			"description":            defaultApp.Description,
+			"space_mode":             defaultApp.SpaceMode,
+			"default_menu_space_key": defaultApp.DefaultMenuSpaceKey,
+			"auth_mode":              defaultApp.AuthMode,
+			"frontend_entry_url":     defaultApp.FrontendEntryURL,
+			"backend_entry_url":      defaultApp.BackendEntryURL,
+			"health_check_url":       defaultApp.HealthCheckURL,
+			"capabilities":           defaultApp.Capabilities,
+			"status":                 "normal",
+			"is_default":             true,
 		}).Error; updateErr != nil {
 			return updateErr
 		}
@@ -813,25 +813,25 @@ func ensureLocalEntryBindings() error {
 	}
 	seeds := []models.AppHostBinding{
 		{
-			AppKey:          models.DefaultAppKey,
-			MatchType:       models.EntryMatchHostSuffix,
-			Host:            "localhost",
-			Description:     "本地开发：localhost 及子域默认进入后台管理",
-			DefaultSpaceKey: models.DefaultMenuSpaceKey,
-			Status:          "normal",
-			IsPrimary:       true,
-			Priority:        100,
-			Meta:            models.MetaJSON{},
+			AppKey:              models.DefaultAppKey,
+			MatchType:           models.EntryMatchHostSuffix,
+			Host:                "localhost",
+			Description:         "本地开发：localhost 及子域默认进入后台管理",
+			DefaultMenuSpaceKey: models.DefaultMenuSpaceKey,
+			Status:              "normal",
+			IsPrimary:           true,
+			Priority:            100,
+			Meta:                models.MetaJSON{},
 		},
 		{
-			AppKey:          models.DefaultAppKey,
-			MatchType:       models.EntryMatchHostExact,
-			Host:            "127.0.0.1",
-			Description:     "本地开发：127.0.0.1 默认进入后台管理",
-			DefaultSpaceKey: models.DefaultMenuSpaceKey,
-			Status:          "normal",
-			Priority:        100,
-			Meta:            models.MetaJSON{},
+			AppKey:              models.DefaultAppKey,
+			MatchType:           models.EntryMatchHostExact,
+			Host:                "127.0.0.1",
+			Description:         "本地开发：127.0.0.1 默认进入后台管理",
+			DefaultMenuSpaceKey: models.DefaultMenuSpaceKey,
+			Status:              "normal",
+			Priority:            100,
+			Meta:                models.MetaJSON{},
 		},
 	}
 	for _, seed := range seeds {
@@ -886,4 +886,3 @@ func ensureAPIEndpointAppColumns(db *gorm.DB) error {
 	}
 	return nil
 }
-

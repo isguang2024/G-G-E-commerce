@@ -88,9 +88,9 @@
                   <ElOption label="全部空间" value="" />
                   <ElOption
                     v-for="item in menuSpaces"
-                    :key="item.spaceKey"
+                    :key="item.menuSpaceKey"
                     :label="item.isDefault ? `${item.name}（默认）` : item.name"
-                    :value="item.spaceKey"
+                    :value="item.menuSpaceKey"
                   />
                 </ElSelect>
               </div>

@@ -113,7 +113,7 @@
 
         <ElRow v-if="showSpaceBindingField" :gutter="14">
           <ElCol :span="12">
-            <ElFormItem label="开放空间" prop="spaceKeys">
+            <ElFormItem label="开放空间" prop="menuSpaceKeys">
               <template #label>
                 <PageFieldLabel
                   label="开放空间"
@@ -121,7 +121,7 @@
                 />
               </template>
               <ElSelect
-                v-model="form.spaceKeys"
+                v-model="form.menuSpaceKeys"
                 multiple
                 collapse-tags
                 collapse-tags-tooltip

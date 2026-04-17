@@ -1,4 +1,4 @@
-﻿package navigation
+package navigation
 
 import (
 	"fmt"
@@ -19,19 +19,17 @@ import (
 )
 
 type Manifest struct {
-	CurrentApp      *apppkg.CurrentResponse   `json:"current_app"`
-	CurrentSpace    *spacepkg.CurrentResponse `json:"current_space"`
-	Context         gin.H                     `json:"context"`
-	MenuTree        []gin.H                   `json:"menu_tree"`
-	EntryRoutes     []gin.H                   `json:"entry_routes"`
-	ManagedPages    []gin.H                   `json:"managed_pages"`
-	VersionStamp    string                    `json:"version_stamp"`
-	LegacyMenusTree []gin.H                   `json:"legacy_menus_tree,omitempty"`
-	LegacyPages     []gin.H                   `json:"legacy_managed_pages,omitempty"`
+	CurrentApp   *apppkg.CurrentResponse   `json:"current_app"`
+	CurrentSpace *spacepkg.CurrentResponse `json:"current_menu_space"`
+	Context      gin.H                     `json:"context"`
+	MenuTree     []gin.H                   `json:"menu_tree"`
+	EntryRoutes  []gin.H                   `json:"entry_routes"`
+	ManagedPages []gin.H                   `json:"managed_pages"`
+	VersionStamp string                    `json:"version_stamp"`
 }
 
 type Compiler interface {
-	Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error)
+	Compile(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error)
 }
 
 type menuTreeProvider interface {
@@ -44,7 +42,7 @@ type managedPageProvider interface {
 }
 
 type currentSpaceProvider interface {
-	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error)
+	GetCurrent(appKey string, host string, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error)
 }
 
 type service struct {
@@ -65,7 +63,7 @@ func NewService(db *gorm.DB, appService apppkg.Service, menuService menupkg.Menu
 	}
 }
 
-func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error) {
+func (s *service) Compile(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error) {
 	normalizedAppKey := apppkg.NormalizeAppKey(appKey)
 	var currentApp *apppkg.CurrentResponse
 	var err error
@@ -75,26 +73,26 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 			return nil, err
 		}
 	}
-	current, err := s.spaceSvc.GetCurrent(normalizedAppKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
+	current, err := s.spaceSvc.GetCurrent(normalizedAppKey, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
-	resolvedSpaceKey := models.DefaultMenuSpaceKey
+	resolvedMenuSpaceKey := models.DefaultMenuSpaceKey
 	if current != nil {
-		resolvedSpaceKey = spacepkg.NormalizeSpaceKey(current.Space.SpaceKey)
+		resolvedMenuSpaceKey = spacepkg.NormalizeMenuSpaceKey(current.Space.MenuSpaceKey)
 	}
 
-	accessCtx, err := s.pageService.ResolveCompiledAccessContext(normalizedAppKey, resolvedSpaceKey, userID, collaborationWorkspaceID)
+	accessCtx, err := s.pageService.ResolveCompiledAccessContext(normalizedAppKey, resolvedMenuSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
 
 	visibleMenuIDs := accessCtx.VisibleMenuIDList()
-	menuTree, err := s.menuService.GetTree(false, visibleMenuIDs, normalizedAppKey, resolvedSpaceKey)
+	menuTree, err := s.menuService.GetTree(false, visibleMenuIDs, normalizedAppKey, resolvedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	managedPages, err := s.pageService.ListRuntimeWithAccess(normalizedAppKey, resolvedSpaceKey, accessCtx)
+	managedPages, err := s.pageService.ListRuntimeWithAccess(normalizedAppKey, resolvedMenuSpaceKey, accessCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,21 +101,21 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 		CurrentApp:   currentApp,
 		CurrentSpace: current,
 		Context: gin.H{
-			"app_key":             normalizedAppKey,
-			"space_key":           resolvedSpaceKey,
-			"request_host":        strings.TrimSpace(host),
-			"requested_space_key": strings.TrimSpace(requestedSpaceKey),
-			"authenticated":       accessCtx != nil && accessCtx.Authenticated,
-			"super_admin":         accessCtx != nil && accessCtx.SuperAdmin,
-			"visible_menu_count":  len(visibleMenuIDs),
-			"managed_page_count":  len(managedPages),
-			"action_key_count":    accessContextActionKeyCount(accessCtx),
+			"app_key":                  normalizedAppKey,
+			"menu_space_key":           resolvedMenuSpaceKey,
+			"request_host":             strings.TrimSpace(host),
+			"requested_menu_space_key": strings.TrimSpace(requestedMenuSpaceKey),
+			"authenticated":            accessCtx != nil && accessCtx.Authenticated,
+			"super_admin":              accessCtx != nil && accessCtx.SuperAdmin,
+			"visible_menu_count":       len(visibleMenuIDs),
+			"managed_page_count":       len(managedPages),
+			"action_key_count":         accessContextActionKeyCount(accessCtx),
 		},
 		// MenuTree / ManagedPages 都来自同一份已编译访问上下文，前端不需要再重复做显隐裁剪。
 		MenuTree:     menupkg.BuildRuntimeTreeMaps(menuTree),
 		EntryRoutes:  extractEntryRouteMaps(menuTree),
 		ManagedPages: pagepkg.BuildRuntimePageMaps(managedPages),
-		VersionStamp: s.buildVersionStamp(normalizedAppKey, resolvedSpaceKey, len(menuTree), len(managedPages)),
+		VersionStamp: s.buildVersionStamp(normalizedAppKey, resolvedMenuSpaceKey, len(menuTree), len(managedPages)),
 	}
 	if userID != nil {
 		manifest.Context["user_id"] = userID.String()
@@ -180,11 +178,11 @@ func (s *service) buildVersionStamp(appKey, spaceKey string, menuCount, managedP
 
 	loadMax(&models.App{}, "app_key = ?", appKey)
 	loadMax(&models.MenuDefinition{}, "app_key = ?", appKey)
-	loadMax(&models.SpaceMenuPlacement{}, "app_key = ? AND space_key = ?", appKey, spaceKey)
+	loadMax(&models.SpaceMenuPlacement{}, "app_key = ? AND menu_space_key = ?", appKey, spaceKey)
 	loadMax(&models.UIPage{}, "app_key = ?", appKey)
 	loadMax(&models.PageSpaceBinding{}, "app_key = ?", appKey)
-	loadMax(&models.MenuSpace{}, "app_key = ? AND space_key = ?", appKey, spaceKey)
-	loadMax(&models.AppHostBinding{}, "app_key = ? AND default_space_key = ?", appKey, spaceKey)
+	loadMax(&models.MenuSpace{}, "app_key = ? AND menu_space_key = ?", appKey, spaceKey)
+	loadMax(&models.AppHostBinding{}, "app_key = ? AND default_menu_space_key = ?", appKey, spaceKey)
 
 	sort.Slice(candidates, func(i, j int) bool {
 		return candidates[i].After(candidates[j])
@@ -194,4 +192,3 @@ func (s *service) buildVersionStamp(appKey, spaceKey string, menuCount, managedP
 	}
 	return fmt.Sprintf("%s:%s:%d:%d:%d", appKey, spaceKey, menuCount, managedPageCount, candidates[0].Unix())
 }
-

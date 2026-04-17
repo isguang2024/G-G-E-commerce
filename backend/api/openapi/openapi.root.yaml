@@ -299,8 +299,8 @@ paths:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-mode
   /system/menu-spaces:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces
-  /system/menu-spaces/{spaceKey}/initialize-default:
-    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces~1{spaceKey}~1initialize-default
+  /system/menu-spaces/{menuSpaceKey}/initialize-default:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces~1{menuSpaceKey}~1initialize-default
   /system/menu-space-host-bindings:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-host-bindings
   /messages/inbox/summary:

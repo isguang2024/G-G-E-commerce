@@ -1,4 +1,4 @@
-﻿// menu.go: ogen handler implementations for /menus/*.
+// menu.go: ogen handler implementations for /menus/*.
 package handlers
 
 import (
@@ -16,7 +16,7 @@ import (
 
 func (h *menuAPIHandler) GetMenuTree(ctx context.Context, params gen.GetMenuTreeParams) (*gen.MenuTreeResponse, error) {
 	all := optString(params.All) == "true" || optString(params.All) == "1"
-	nodes, err := h.menuSvc.GetTree(all, nil, optString(params.AppKey), optString(params.SpaceKey))
+	nodes, err := h.menuSvc.GetTree(all, nil, optString(params.AppKey), optString(params.MenuSpaceKey))
 	if err != nil {
 		h.logger.Error("get menu tree failed", zap.Error(err))
 		return nil, err
@@ -34,16 +34,16 @@ func (h *menuAPIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveReques
 		parentID = &s
 	}
 	dtoReq := &dto.MenuCreateRequest{
-		AppKey:    optString(req.AppKey),
-		ParentID:  parentID,
-		SpaceKey:  optString(req.SpaceKey),
-		Kind:      req.Kind,
-		Path:      optString(req.Path),
-		Component: optString(req.Component),
-		Name:      req.Name,
-		Title:     req.Name,
-		Icon:      optString(req.Icon),
-		SortOrder: optInt(req.SortOrder, 0),
+		AppKey:       optString(req.AppKey),
+		ParentID:     parentID,
+		MenuSpaceKey: optString(req.MenuSpaceKey),
+		Kind:         req.Kind,
+		Path:         optString(req.Path),
+		Component:    optString(req.Component),
+		Name:         req.Name,
+		Title:        req.Name,
+		Icon:         optString(req.Icon),
+		SortOrder:    optInt(req.SortOrder, 0),
 	}
 	created, err := h.menuSvc.Create(dtoReq)
 	if err != nil {
@@ -54,9 +54,9 @@ func (h *menuAPIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveReques
 			Outcome:      audit.OutcomeError,
 			ErrorCode:    errorCodeOf(err),
 			Metadata: map[string]any{
-				"app_key":   dtoReq.AppKey,
-				"space_key": dtoReq.SpaceKey,
-				"name":      dtoReq.Name,
+				"app_key":        dtoReq.AppKey,
+				"menu_space_key": dtoReq.MenuSpaceKey,
+				"name":           dtoReq.Name,
 			},
 		})
 		return nil, err
@@ -90,16 +90,16 @@ func (h *menuAPIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveReques
 		}
 	}
 	dtoReq := &dto.MenuUpdateRequest{
-		AppKey:    optString(req.AppKey),
-		ParentID:  parentID,
-		SpaceKey:  optString(req.SpaceKey),
-		Kind:      req.Kind,
-		Path:      optString(req.Path),
-		Component: optString(req.Component),
-		Name:      req.Name,
-		Title:     req.Name,
-		Icon:      optString(req.Icon),
-		SortOrder: optInt(req.SortOrder, 0),
+		AppKey:       optString(req.AppKey),
+		ParentID:     parentID,
+		MenuSpaceKey: optString(req.MenuSpaceKey),
+		Kind:         req.Kind,
+		Path:         optString(req.Path),
+		Component:    optString(req.Component),
+		Name:         req.Name,
+		Title:        req.Name,
+		Icon:         optString(req.Icon),
+		SortOrder:    optInt(req.SortOrder, 0),
 	}
 	if err := h.menuSvc.Update(params.ID, dtoReq); err != nil {
 		h.logger.Error("update menu failed", zap.Error(err))
@@ -156,16 +156,16 @@ func menuTreeItemsFromModels(nodes []*user.Menu) []gen.MenuTreeItem {
 
 func menuTreeItemFromModel(node *user.Menu) gen.MenuTreeItem {
 	item := gen.MenuTreeItem{
-		ID:        node.ID,
-		AppKey:    node.AppKey,
-		SpaceKey:  node.SpaceKey,
-		Kind:      node.Kind,
-		Path:      node.Path,
-		Name:      node.Name,
-		Component: node.Component,
-		Meta:      menuTreeMetaFromModel(node),
-		SortOrder: node.SortOrder,
-		Children:  menuTreeItemsFromModels(node.Children),
+		ID:           node.ID,
+		AppKey:       node.AppKey,
+		MenuSpaceKey: node.MenuSpaceKey,
+		Kind:         node.Kind,
+		Path:         node.Path,
+		Name:         node.Name,
+		Component:    node.Component,
+		Meta:         menuTreeMetaFromModel(node),
+		SortOrder:    node.SortOrder,
+		Children:     menuTreeItemsFromModels(node.Children),
 	}
 	if node.ParentID != nil {
 		item.ParentID = gen.OptNilUUID{
@@ -262,5 +262,3 @@ func filterStringArray(value any) []string {
 	}
 	return result
 }
-
-

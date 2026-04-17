@@ -3,7 +3,7 @@ import type { Router } from 'vue-router'
 type SpaceNavigationResolver = {
   resolveSpaceNavigationTarget: (
     targetPath: string,
-    spaceKey?: string
+    menuSpaceKey?: string
   ) => { mode: 'router' | 'location'; target: string }
 }
 
@@ -45,7 +45,7 @@ export async function handleRichTextLinkNavigation(
   options: {
     router: Router
     spaceResolver: SpaceNavigationResolver
-    spaceKey?: string
+    menuSpaceKey?: string
   }
 ) {
   const anchor = (event.target as HTMLElement | null)?.closest('a')
@@ -67,7 +67,7 @@ export async function handleRichTextLinkNavigation(
 
   const nextTarget = options.spaceResolver.resolveSpaceNavigationTarget(
     internalPath,
-    options.spaceKey
+    options.menuSpaceKey
   )
   event.preventDefault()
 

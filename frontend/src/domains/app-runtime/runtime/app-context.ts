@@ -21,7 +21,7 @@ export interface SwitchAppPayload {
   authMode?: string | null
   capabilities?: Record<string, unknown> | null
   meta?: Record<string, unknown> | null
-  defaultSpaceKey?: string | null
+  defaultMenuSpaceKey?: string | null
 }
 
 function normalizeInternalPath(value?: string | null) {
@@ -50,7 +50,7 @@ function resolveAppEntryTarget(targetApp: SwitchAppPayload) {
       return {
         entryTarget: candidate,
         targetPath: candidate,
-        spaceKey: undefined
+        menuSpaceKey: undefined
       }
     }
 
@@ -59,7 +59,7 @@ function resolveAppEntryTarget(targetApp: SwitchAppPayload) {
       return {
         entryTarget: candidate,
         targetPath: candidate,
-        spaceKey: `${resolvedRoute.meta?.spaceKey || ''}`.trim() || undefined
+        menuSpaceKey: `${resolvedRoute.meta?.menuSpaceKey || ''}`.trim() || undefined
       }
     }
   }
@@ -70,7 +70,7 @@ function resolveAppEntryTarget(targetApp: SwitchAppPayload) {
   return {
     entryTarget: fallbackPath,
     targetPath: fallbackPath,
-    spaceKey: undefined
+    menuSpaceKey: undefined
   }
 }
 
@@ -141,20 +141,20 @@ export async function switchApp(targetApp: SwitchAppPayload): Promise<void> {
   menuSpaceStore.clearActiveSpaceKey()
 
   await menuSpaceStore.refreshRuntimeConfig(true)
-  const preferredSpaceKey = `${targetApp.defaultSpaceKey || ''}`.trim()
+  const preferredSpaceKey = `${targetApp.defaultMenuSpaceKey || ''}`.trim()
   if (preferredSpaceKey) {
     menuSpaceStore.setActiveSpaceKey(preferredSpaceKey)
   }
   await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
   await refreshUserMenus()
 
-  const { entryTarget, targetPath, spaceKey } = resolveAppEntryTarget(targetApp)
+  const { entryTarget, targetPath, menuSpaceKey } = resolveAppEntryTarget(targetApp)
   if (/^https?:\/\//i.test(entryTarget)) {
     window.location.assign(entryTarget)
     return
   }
 
-  const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(targetPath, spaceKey)
+  const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(targetPath, menuSpaceKey)
   if (nextTarget.mode === 'router') {
     await router.replace(nextTarget.target)
     return

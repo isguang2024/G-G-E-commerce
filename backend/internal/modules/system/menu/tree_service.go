@@ -1,4 +1,4 @@
-﻿package menu
+package menu
 
 import (
 	"strings"
@@ -12,11 +12,11 @@ import (
 // to the provided allowedMenuIDs (plus any jwt/public menus).
 func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error) {
 	normalizedAppKey := normalizeMenuAppKey(appKey)
-	normalizedSpaceKey := strings.TrimSpace(spaceKey)
-	if normalizedSpaceKey != "" {
-		normalizedSpaceKey = normalizeMenuSpaceKey(normalizedSpaceKey)
+	normalizedMenuSpaceKey := strings.TrimSpace(spaceKey)
+	if normalizedMenuSpaceKey != "" {
+		normalizedMenuSpaceKey = normalizeMenuSpaceKey(normalizedMenuSpaceKey)
 	}
-	flat, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedSpaceKey)
+	flat, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedMenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -93,4 +93,3 @@ func (s *menuService) filterTreeByMenuIDs(nodes []*user.Menu, visible map[uuid.U
 	}
 	return out
 }
-

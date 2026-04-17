@@ -59,7 +59,7 @@
             </ElFormItem>
           </ElCol>
           <ElCol v-if="form.visibilityScope === 'spaces'" :span="12">
-            <ElFormItem label="开放空间" prop="spaceKeys">
+            <ElFormItem label="开放空间" prop="menuSpaceKeys">
               <template #label>
                 <PageFieldLabel
                   label="开放空间"
@@ -67,7 +67,7 @@
                 />
               </template>
               <ElSelect
-                v-model="form.spaceKeys"
+                v-model="form.menuSpaceKeys"
                 multiple
                 collapse-tags
                 collapse-tags-tooltip
@@ -184,7 +184,7 @@
     pageKey: '',
     name: '',
     visibilityScope: 'app',
-    spaceKeys: [] as string[],
+    menuSpaceKeys: [] as string[],
     sortOrder: 0,
     status: 'normal'
   })
@@ -201,20 +201,24 @@
   const menuSpaceOptions = computed(() =>
     (props.menuSpaces || []).map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: item.menuSpaceKey
     }))
   )
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
+      const menuSpaceKeys = Array.isArray((props.pageData as any).menuSpaceKeys)
+        ? (props.pageData as any).menuSpaceKeys
+        : Array.isArray(props.pageData.menuSpaceKeys)
+          ? props.pageData.menuSpaceKeys
+          : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
         name: props.pageData.name || '',
         visibilityScope:
           `${props.pageData.visibilityScope || props.pageData.spaceScope || ''}`.trim() || 'app',
-        spaceKeys: spaceKeys,
+        menuSpaceKeys: menuSpaceKeys,
         sortOrder: props.pageData.sortOrder ?? 0,
         status: props.pageData.status || 'normal'
       })
@@ -228,7 +232,7 @@
       visibilityScope:
         `${props.defaultData?.visibilityScope || props.defaultData?.spaceScope || ''}`.trim() ||
         'app',
-      spaceKeys: props.defaultData?.spaceKeys || [],
+      menuSpaceKeys: (props.defaultData as any)?.menuSpaceKeys || [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       status: props.defaultData?.status || 'normal'
     })
@@ -238,7 +242,7 @@
     () => form.visibilityScope,
     (value) => {
       if (value !== 'spaces') {
-        form.spaceKeys = []
+        form.menuSpaceKeys = []
       }
     }
   )
@@ -297,7 +301,7 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
         visibility_scope: visibilityScope,
-        space_keys: visibilityScope === 'spaces' ? form.spaceKeys : [],
+        menu_space_keys: visibilityScope === 'spaces' ? form.menuSpaceKeys : [],
         sort_order: form.sortOrder,
         parent_menu_id: '',
         parent_page_key: '',

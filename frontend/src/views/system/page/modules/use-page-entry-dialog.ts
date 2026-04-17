@@ -85,7 +85,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
     pageType: 'standalone',
     visibilityScope: 'app' as 'inherit' | 'app' | 'spaces',
     moduleKey: '',
-    spaceKeys: [] as string[],
+    menuSpaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
     parentPageKey: '',
@@ -117,7 +117,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   const menuSpaceOptions = computed(() =>
     (props.menuSpaces || []).map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: item.menuSpaceKey
     }))
   )
   const showMountSection = computed(() => form.pageType === 'inner')
@@ -127,12 +127,12 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   const showSpaceBindingField = computed(
     () => showVisibilityScopeField.value && form.visibilityScope === 'spaces'
   )
-  const resolveSpaceBindingKeys = () => {
+  const resolveMenuSpaceBindingKeys = () => {
     if (!showSpaceBindingField.value) return []
-    return form.spaceKeys.map((item) => `${item || ''}`.trim()).filter(Boolean)
+    return form.menuSpaceKeys.map((item) => `${item || ''}`.trim()).filter(Boolean)
   }
   const resolveSpaceScopeKey = () => {
-    const values = resolveSpaceBindingKeys()
+    const values = resolveMenuSpaceBindingKeys()
     return values[0] || ''
   }
   const menuCascaderProps = {
@@ -541,7 +541,11 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   function initForm() {
     mountSpaceKey.value = ''
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
+      const menuSpaceKeys = Array.isArray((props.pageData as any).menuSpaceKeys)
+        ? (props.pageData as any).menuSpaceKeys
+        : Array.isArray(props.pageData.menuSpaceKeys)
+          ? props.pageData.menuSpaceKeys
+          : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -562,7 +566,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
               ? 'inherit'
               : 'app',
         moduleKey: props.pageData.moduleKey || '',
-        spaceKeys: spaceKeys,
+        menuSpaceKeys: menuSpaceKeys,
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -621,7 +625,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
               ? 'app'
               : 'inherit',
       moduleKey: props.defaultData?.moduleKey || '',
-      spaceKeys: props.defaultData?.spaceKeys || [],
+      menuSpaceKeys: (props.defaultData as any)?.menuSpaceKeys || [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -824,7 +828,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   )
 
   watch(
-    () => form.spaceKeys,
+    () => form.menuSpaceKeys,
     async () => {
       if (!visible.value || isInitializing.value) return
       form.parentMenuId = ''
@@ -879,7 +883,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
             ? `${props.pageData?.source || 'manual'}`
             : `${props.defaultData?.source || 'manual'}`,
         module_key: form.moduleKey.trim(),
-        space_keys: visibilityScope === 'spaces' ? resolveSpaceBindingKeys() : [],
+        menu_space_keys: visibilityScope === 'spaces' ? resolveMenuSpaceBindingKeys() : [],
         sort_order: form.sortOrder,
         parent_menu_id:
           form.pageType !== 'inner' || mountMode.value !== 'menu'

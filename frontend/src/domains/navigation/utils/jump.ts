@@ -24,7 +24,7 @@ export const openExternalLink = (link: string) => {
 }
 
 const resolveRouteSpaceKey = (item: AppRouteRecord): string | undefined => {
-  const target = `${item.spaceKey || item.meta?.spaceKey || ''}`.trim()
+  const target = `${(item as any).menuSpaceKey || item.meta?.menuSpaceKey || ''}`.trim()
   return target || undefined
 }
 

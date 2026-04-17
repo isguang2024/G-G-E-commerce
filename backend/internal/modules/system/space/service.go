@@ -1,4 +1,4 @@
-﻿package space
+package space
 
 import (
 	"errors"
@@ -29,17 +29,17 @@ type SpaceRecord struct {
 }
 
 type HostBindingRecord struct {
-	ID          uuid.UUID       `json:"id"`
-	AppKey      string          `json:"app_key"`
-	Host        string          `json:"host"`
-	SpaceKey    string          `json:"space_key"`
-	SpaceName   string          `json:"space_name"`
-	Description string          `json:"description"`
-	IsDefault   bool            `json:"is_default"`
-	Status      string          `json:"status"`
-	Meta        models.MetaJSON `json:"meta"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
+	ID           uuid.UUID       `json:"id"`
+	AppKey       string          `json:"app_key"`
+	Host         string          `json:"host"`
+	MenuSpaceKey string          `json:"menu_space_key"`
+	SpaceName    string          `json:"space_name"`
+	Description  string          `json:"description"`
+	IsDefault    bool            `json:"is_default"`
+	Status       string          `json:"status"`
+	Meta         models.MetaJSON `json:"meta"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
 type CurrentResponse struct {
@@ -51,8 +51,8 @@ type CurrentResponse struct {
 }
 
 type InitializeResult struct {
-	SourceSpaceKey     string `json:"source_space_key"`
-	TargetSpaceKey     string `json:"target_space_key"`
+	SourceMenuSpaceKey string `json:"source_menu_space_key"`
+	TargetMenuSpaceKey string `json:"target_menu_space_key"`
 	ForceReinitialized bool   `json:"force_reinitialized"`
 	ClearedMenuCount   int    `json:"cleared_menu_count"`
 	// ClearedPageCount / CreatedPageCount 仅表示独立页暴露绑定数量，兼容旧接口命名保留。
@@ -65,7 +65,7 @@ type InitializeResult struct {
 
 type SaveSpaceRequest struct {
 	AppKey           string                 `json:"app_key"`
-	SpaceKey         string                 `json:"space_key"`
+	MenuSpaceKey     string                 `json:"menu_space_key"`
 	Name             string                 `json:"name"`
 	Description      string                 `json:"description"`
 	DefaultHomePath  string                 `json:"default_home_path"`
@@ -77,13 +77,13 @@ type SaveSpaceRequest struct {
 }
 
 type SaveHostBindingRequest struct {
-	AppKey      string                 `json:"app_key"`
-	Host        string                 `json:"host"`
-	SpaceKey    string                 `json:"space_key"`
-	Description string                 `json:"description"`
-	IsDefault   bool                   `json:"is_default"`
-	Status      string                 `json:"status"`
-	Meta        map[string]interface{} `json:"meta"`
+	AppKey       string                 `json:"app_key"`
+	Host         string                 `json:"host"`
+	MenuSpaceKey string                 `json:"menu_space_key"`
+	Description  string                 `json:"description"`
+	IsDefault    bool                   `json:"is_default"`
+	Status       string                 `json:"status"`
+	Meta         map[string]interface{} `json:"meta"`
 }
 
 const (
@@ -101,13 +101,13 @@ const (
 
 type Service interface {
 	ListSpaces(appKey string) ([]SpaceRecord, error)
-	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error)
+	GetCurrent(appKey string, host string, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error)
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
 	GetMode(appKey string) (string, error)
 	SaveMode(appKey, mode string) (string, error)
 	SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord, error)
 	SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error)
-	InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error)
+	InitializeFromDefault(appKey string, targetMenuSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error)
 }
 
 type service struct {
@@ -127,7 +127,7 @@ func EnsureDefaultMenuSpace(db *gorm.DB, appKey string) error {
 	normalizedAppKey := normalizeAppKey(appKey)
 	defaultSpace := models.MenuSpace{
 		AppKey:          normalizedAppKey,
-		SpaceKey:        DefaultMenuSpaceKey,
+		MenuSpaceKey:    DefaultMenuSpaceKey,
 		Name:            "默认菜单空间",
 		Description:     "兼容当前单域单菜单运行模式",
 		DefaultHomePath: "/dashboard/console",
@@ -136,14 +136,14 @@ func EnsureDefaultMenuSpace(db *gorm.DB, appKey string) error {
 		Meta:            models.MetaJSON{},
 	}
 	var existing models.MenuSpace
-	err := db.Where("app_key = ? AND space_key = ?", normalizedAppKey, DefaultMenuSpaceKey).First(&existing).Error
+	err := db.Where("app_key = ? AND menu_space_key = ?", normalizedAppKey, DefaultMenuSpaceKey).First(&existing).Error
 	if err == nil {
 		updates := map[string]interface{}{
 			"app_key":    normalizedAppKey,
 			"is_default": true,
 			"status":     "normal",
 		}
-		return db.Model(&models.MenuSpace{}).Where("app_key = ? AND space_key = ?", normalizedAppKey, DefaultMenuSpaceKey).Updates(updates).Error
+		return db.Model(&models.MenuSpace{}).Where("app_key = ? AND menu_space_key = ?", normalizedAppKey, DefaultMenuSpaceKey).Updates(updates).Error
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
@@ -174,12 +174,12 @@ func (s *service) ListSpaces(appKey string) ([]SpaceRecord, error) {
 	}
 	grouped := make(map[string][]string, len(spaces))
 	for _, binding := range bindings {
-		key := NormalizeSpaceKey(binding.DefaultSpaceKey)
+		key := NormalizeMenuSpaceKey(binding.DefaultMenuSpaceKey)
 		grouped[key] = append(grouped[key], binding.Host)
 	}
 	records := make([]SpaceRecord, 0, len(spaces))
 	for _, item := range spaces {
-		key := NormalizeSpaceKey(item.SpaceKey)
+		key := NormalizeMenuSpaceKey(item.MenuSpaceKey)
 		hosts := append([]string(nil), grouped[key]...)
 		sort.Strings(hosts)
 		record := SpaceRecord{
@@ -196,12 +196,12 @@ func (s *service) ListSpaces(appKey string) ([]SpaceRecord, error) {
 	return records, nil
 }
 
-func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error) {
+func (s *service) GetCurrent(appKey string, host string, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if err := EnsureDefaultMenuSpace(s.db, normalizedAppKey); err != nil {
 		return nil, err
 	}
-	resolvedKey, resolvedBy, err := ResolveCurrentSpaceKey(s.db, normalizedAppKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
+	resolvedKey, resolvedBy, err := ResolveCurrentMenuSpaceKey(s.db, normalizedAppKey, host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey strin
 	}
 
 	var bindingRecord *HostBindingRecord
-	if resolvedBy == "app_host_binding" || resolvedBy == "legacy_space_host_binding" {
+	if resolvedBy == "app_host_binding" {
 		bindingRecord, _ = s.getHostBindingRecord(normalizedAppKey, host)
 	}
 
@@ -262,17 +262,17 @@ func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
 	records := make([]HostBindingRecord, 0, len(bindings))
 	for _, item := range bindings {
 		records = append(records, HostBindingRecord{
-			ID:          item.ID,
-			AppKey:      normalizedAppKey,
-			Host:        item.Host,
-			SpaceKey:    NormalizeSpaceKey(item.DefaultSpaceKey),
-			SpaceName:   spaceMap[NormalizeSpaceKey(item.DefaultSpaceKey)],
-			Description: item.Description,
-			IsDefault:   item.IsPrimary,
-			Status:      item.Status,
-			Meta:        item.Meta,
-			CreatedAt:   item.CreatedAt,
-			UpdatedAt:   item.UpdatedAt,
+			ID:           item.ID,
+			AppKey:       normalizedAppKey,
+			Host:         item.Host,
+			MenuSpaceKey: NormalizeMenuSpaceKey(item.DefaultMenuSpaceKey),
+			SpaceName:    spaceMap[NormalizeMenuSpaceKey(item.DefaultMenuSpaceKey)],
+			Description:  item.Description,
+			IsDefault:    item.IsPrimary,
+			Status:       item.Status,
+			Meta:         item.Meta,
+			CreatedAt:    item.CreatedAt,
+			UpdatedAt:    item.UpdatedAt,
 		})
 	}
 	return records, nil
@@ -289,7 +289,7 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	if requestAppKey := normalizeAppKey(strings.TrimSpace(req.AppKey)); requestAppKey != "" && requestAppKey != normalizedAppKey {
 		return nil, fmt.Errorf("app_key 不匹配")
 	}
-	key := NormalizeSpaceKey(req.SpaceKey)
+	key := NormalizeMenuSpaceKey(req.MenuSpaceKey)
 	if key == "" {
 		key = DefaultMenuSpaceKey
 	}
@@ -333,7 +333,7 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 
 	record := models.MenuSpace{
 		AppKey:          normalizedAppKey,
-		SpaceKey:        key,
+		MenuSpaceKey:    key,
 		Name:            name,
 		Description:     description,
 		DefaultHomePath: defaultHomePath,
@@ -345,13 +345,13 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		if record.IsDefault {
 			if err := tx.Model(&models.MenuSpace{}).
-				Where("app_key = ? AND space_key <> ?", normalizedAppKey, record.SpaceKey).
+				Where("app_key = ? AND menu_space_key <> ?", normalizedAppKey, record.MenuSpaceKey).
 				Update("is_default", false).Error; err != nil {
 				return err
 			}
 		}
 		if err := tx.Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "app_key"}, {Name: "space_key"}},
+			Columns: []clause.Column{{Name: "app_key"}, {Name: "menu_space_key"}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"name",
 				"description",
@@ -367,7 +367,7 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 		if record.IsDefault {
 			return tx.Model(&models.App{}).
 				Where("app_key = ?", normalizedAppKey).
-				Update("default_space_key", record.SpaceKey).Error
+				Update("default_menu_space_key", record.MenuSpaceKey).Error
 		}
 		return nil
 	}); err != nil {
@@ -392,7 +392,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	if host == "" {
 		return nil, fmt.Errorf("host is required")
 	}
-	spaceKey := NormalizeSpaceKey(req.SpaceKey)
+	spaceKey := NormalizeMenuSpaceKey(req.MenuSpaceKey)
 	if spaceKey == "" {
 		spaceKey = DefaultMenuSpaceKey
 	}
@@ -404,7 +404,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 		return nil, fmt.Errorf("menu space not found: %s", spaceKey)
 	}
 	var targetSpace models.MenuSpace
-	if err := s.db.Select("app_key", "space_key", "status").Where("app_key = ? AND space_key = ?", normalizedAppKey, spaceKey).First(&targetSpace).Error; err != nil {
+	if err := s.db.Select("app_key", "menu_space_key", "status").Where("app_key = ? AND menu_space_key = ?", normalizedAppKey, spaceKey).First(&targetSpace).Error; err != nil {
 		return nil, err
 	}
 	status := normalizeSpaceStatus(req.Status)
@@ -449,13 +449,13 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 	meta["cookie_domain"] = cookieDomain
 	binding := models.AppHostBinding{
-		AppKey:          normalizedAppKey,
-		Host:            host,
-		Description:     strings.TrimSpace(req.Description),
-		IsPrimary:       req.IsDefault,
-		DefaultSpaceKey: spaceKey,
-		Status:          status,
-		Meta:            meta,
+		AppKey:              normalizedAppKey,
+		Host:                host,
+		Description:         strings.TrimSpace(req.Description),
+		IsPrimary:           req.IsDefault,
+		DefaultMenuSpaceKey: spaceKey,
+		Status:              status,
+		Meta:                meta,
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -470,7 +470,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 			Columns: []clause.Column{{Name: "host"}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"app_key",
-				"default_space_key",
+				"default_menu_space_key",
 				"description",
 				"is_primary",
 				"status",
@@ -483,7 +483,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 		if binding.IsPrimary {
 			return tx.Model(&models.App{}).
 				Where("app_key = ?", normalizedAppKey).
-				Update("default_space_key", binding.DefaultSpaceKey).Error
+				Update("default_menu_space_key", binding.DefaultMenuSpaceKey).Error
 		}
 		return nil
 	}); err != nil {
@@ -493,12 +493,12 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	return s.getHostBindingRecord(normalizedAppKey, host)
 }
 
-func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error) {
+func (s *service) InitializeFromDefault(appKey string, targetMenuSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if normalizedAppKey == "" {
 		return nil, fmt.Errorf("app_key 不能为空")
 	}
-	targetKey := NormalizeSpaceKey(targetSpaceKey)
+	targetKey := NormalizeMenuSpaceKey(targetMenuSpaceKey)
 	if targetKey == "" {
 		return nil, fmt.Errorf("target space is required")
 	}
@@ -513,16 +513,16 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 		return nil, fmt.Errorf("menu space not found: %s", targetKey)
 	}
 
-	sourceSpaceKey, err := loadAppDefaultSpaceKey(s.db, normalizedAppKey)
+	sourceMenuSpaceKey, err := loadAppDefaultMenuSpaceKey(s.db, normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	if sourceSpaceKey == "" {
-		sourceSpaceKey = DefaultMenuSpaceKey
+	if sourceMenuSpaceKey == "" {
+		sourceMenuSpaceKey = DefaultMenuSpaceKey
 	}
 	result := &InitializeResult{
-		SourceSpaceKey:     sourceSpaceKey,
-		TargetSpaceKey:     targetKey,
+		SourceMenuSpaceKey: sourceMenuSpaceKey,
+		TargetMenuSpaceKey: targetKey,
 		ForceReinitialized: force,
 	}
 
@@ -530,7 +530,7 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 		var existingMenuCount int64
 		if err := tx.Model(&models.SpaceMenuPlacement{}).
 			Where("app_key = ?", normalizedAppKey).
-			Where("space_key = ?", targetKey).
+			Where("menu_space_key = ?", targetKey).
 			Count(&existingMenuCount).Error; err != nil {
 			return err
 		}
@@ -541,7 +541,7 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 		if force {
 			if existingMenuCount > 0 {
 				result.ClearedMenuCount = int(existingMenuCount)
-				if err := tx.Where("app_key = ? AND space_key = ?", normalizedAppKey, targetKey).
+				if err := tx.Where("app_key = ? AND menu_space_key = ?", normalizedAppKey, targetKey).
 					Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
 					return err
 				}
@@ -550,7 +550,7 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 
 		var sourcePlacements []models.SpaceMenuPlacement
 		if err := tx.Where("app_key = ?", normalizedAppKey).
-			Where("space_key = ?", sourceSpaceKey).
+			Where("menu_space_key = ?", sourceMenuSpaceKey).
 			Order("sort_order ASC, created_at ASC").
 			Find(&sourcePlacements).Error; err != nil {
 			return err
@@ -561,7 +561,7 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 			clonedPlacements = append(clonedPlacements, models.SpaceMenuPlacement{
 				ID:            uuid.New(),
 				AppKey:        normalizedAppKey,
-				SpaceKey:      targetKey,
+				MenuSpaceKey:  targetKey,
 				MenuKey:       item.MenuKey,
 				ParentMenuKey: item.ParentMenuKey,
 				SortOrder:     item.SortOrder,
@@ -596,7 +596,7 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 	}
 	if actorUserID != nil {
 		if err := s.notifySpaceOperation(*actorUserID, result); err != nil && s.logger != nil {
-			s.logger.Warn("Notify menu space operation failed", zap.String("space_key", targetKey), zap.Error(err))
+			s.logger.Warn("Notify menu space operation failed", zap.String("menu_space_key", targetKey), zap.Error(err))
 		}
 	}
 	return result, nil
@@ -605,14 +605,14 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 func (s *service) getSpaceRecord(appKey, spaceKey string) (*SpaceRecord, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	var item models.MenuSpace
-	if err := s.db.Where("app_key = ? AND space_key = ?", normalizedAppKey, NormalizeSpaceKey(spaceKey)).First(&item).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND menu_space_key = ?", normalizedAppKey, NormalizeMenuSpaceKey(spaceKey)).First(&item).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("menu space not found: %s", spaceKey)
 		}
 		return nil, err
 	}
 	var bindings []models.AppHostBinding
-	if err := s.db.Where("app_key = ? AND default_space_key = ? AND deleted_at IS NULL", normalizedAppKey, item.SpaceKey).Order("created_at ASC").Find(&bindings).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND default_menu_space_key = ? AND deleted_at IS NULL", normalizedAppKey, item.MenuSpaceKey).Order("created_at ASC").Find(&bindings).Error; err != nil {
 		return nil, err
 	}
 	hosts := make([]string, 0, len(bindings))
@@ -632,8 +632,8 @@ func (s *service) getSpaceRecord(appKey, spaceKey string) (*SpaceRecord, error) 
 		MenuSpace:        item,
 		HostCount:        len(hosts),
 		Hosts:            hosts,
-		MenuCount:        menuCountMap[NormalizeSpaceKey(item.SpaceKey)],
-		PageCount:        pageCountMap[NormalizeSpaceKey(item.SpaceKey)],
+		MenuCount:        menuCountMap[NormalizeMenuSpaceKey(item.MenuSpaceKey)],
+		PageCount:        pageCountMap[NormalizeMenuSpaceKey(item.MenuSpaceKey)],
 		AccessMode:       ExtractSpaceAccessProfile(item.Meta).Mode,
 		AllowedRoleCodes: ExtractSpaceAccessProfile(item.Meta).AllowedRoleCodes,
 	}, nil
@@ -644,23 +644,23 @@ func (s *service) getHostBindingRecord(appKey, host string) (*HostBindingRecord,
 	normalizedHost := NormalizeHost(host)
 	var binding models.AppHostBinding
 	if err := s.db.Where("app_key = ? AND host = ? AND deleted_at IS NULL", normalizedAppKey, normalizedHost).First(&binding).Error; err == nil {
-		spaceRecord, _ := s.getSpaceRecord(normalizedAppKey, binding.DefaultSpaceKey)
+		spaceRecord, _ := s.getSpaceRecord(normalizedAppKey, binding.DefaultMenuSpaceKey)
 		spaceName := ""
 		if spaceRecord != nil {
 			spaceName = spaceRecord.Name
 		}
 		return &HostBindingRecord{
-			ID:          binding.ID,
-			AppKey:      normalizedAppKey,
-			Host:        binding.Host,
-			SpaceKey:    NormalizeSpaceKey(binding.DefaultSpaceKey),
-			SpaceName:   spaceName,
-			Description: binding.Description,
-			IsDefault:   binding.IsPrimary,
-			Status:      binding.Status,
-			Meta:        binding.Meta,
-			CreatedAt:   binding.CreatedAt,
-			UpdatedAt:   binding.UpdatedAt,
+			ID:           binding.ID,
+			AppKey:       normalizedAppKey,
+			Host:         binding.Host,
+			MenuSpaceKey: NormalizeMenuSpaceKey(binding.DefaultMenuSpaceKey),
+			SpaceName:    spaceName,
+			Description:  binding.Description,
+			IsDefault:    binding.IsPrimary,
+			Status:       binding.Status,
+			Meta:         binding.Meta,
+			CreatedAt:    binding.CreatedAt,
+			UpdatedAt:    binding.UpdatedAt,
 		}, nil
 	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -673,94 +673,94 @@ func (s *service) getHostBindingRecord(appKey, host string) (*HostBindingRecord,
 		}
 		return nil, err
 	}
-	spaceRecord, err := s.getSpaceRecord(normalizedAppKey, legacy.SpaceKey)
+	spaceRecord, err := s.getSpaceRecord(normalizedAppKey, legacy.MenuSpaceKey)
 	if err != nil {
 		return nil, err
 	}
 	return &HostBindingRecord{
-		ID:          legacy.ID,
-		AppKey:      normalizedAppKey,
-		Host:        legacy.Host,
-		SpaceKey:    NormalizeSpaceKey(legacy.SpaceKey),
-		SpaceName:   spaceRecord.Name,
-		Description: legacy.Description,
-		IsDefault:   legacy.IsDefault,
-		Status:      legacy.Status,
-		Meta:        legacy.Meta,
-		CreatedAt:   legacy.CreatedAt,
-		UpdatedAt:   legacy.UpdatedAt,
+		ID:           legacy.ID,
+		AppKey:       normalizedAppKey,
+		Host:         legacy.Host,
+		MenuSpaceKey: NormalizeMenuSpaceKey(legacy.MenuSpaceKey),
+		SpaceName:    spaceRecord.Name,
+		Description:  legacy.Description,
+		IsDefault:    legacy.IsDefault,
+		Status:       legacy.Status,
+		Meta:         legacy.Meta,
+		CreatedAt:    legacy.CreatedAt,
+		UpdatedAt:    legacy.UpdatedAt,
 	}, nil
 }
 
 func (s *service) loadSpaceNameMap(appKey string) (map[string]string, error) {
 	var spaces []models.MenuSpace
-	if err := s.db.Select("space_key", "name").Where("app_key = ?", normalizeAppKey(appKey)).Find(&spaces).Error; err != nil {
+	if err := s.db.Select("menu_space_key", "name").Where("app_key = ?", normalizeAppKey(appKey)).Find(&spaces).Error; err != nil {
 		return nil, err
 	}
 	result := make(map[string]string, len(spaces))
 	for _, item := range spaces {
-		result[NormalizeSpaceKey(item.SpaceKey)] = item.Name
+		result[NormalizeMenuSpaceKey(item.MenuSpaceKey)] = item.Name
 	}
 	return result, nil
 }
 
 func (s *service) loadMenuCountMap(appKey string) (map[string]int, error) {
 	type aggregate struct {
-		SpaceKey string
-		Total    int
+		MenuSpaceKey string
+		Total        int
 	}
 	var rows []aggregate
 	if err := s.db.Model(&models.SpaceMenuPlacement{}).
-		Select("space_key, COUNT(*) AS total").
+		Select("menu_space_key, COUNT(*) AS total").
 		Where("app_key = ?", normalizeAppKey(appKey)).
 		Where("deleted_at IS NULL").
-		Group("space_key").
+		Group("menu_space_key").
 		Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	result := make(map[string]int, len(rows))
 	for _, item := range rows {
-		result[NormalizeSpaceKey(item.SpaceKey)] = item.Total
+		result[NormalizeMenuSpaceKey(item.MenuSpaceKey)] = item.Total
 	}
 	return result, nil
 }
 
 func (s *service) loadPageCountMap(appKey string) (map[string]int, error) {
 	type aggregate struct {
-		SpaceKey string
-		Total    int
+		MenuSpaceKey string
+		Total        int
 	}
 	result := make(map[string]int)
 
 	var bindingRows []aggregate
 	if err := s.db.Model(&models.PageSpaceBinding{}).
-		Select("space_key, COUNT(*) AS total").
+		Select("menu_space_key, COUNT(*) AS total").
 		Where("app_key = ?", normalizeAppKey(appKey)).
 		Where("deleted_at IS NULL").
-		Group("space_key").
+		Group("menu_space_key").
 		Scan(&bindingRows).Error; err != nil {
 		return nil, err
 	}
 	for _, item := range bindingRows {
-		result[NormalizeSpaceKey(item.SpaceKey)] += item.Total
+		result[NormalizeMenuSpaceKey(item.MenuSpaceKey)] += item.Total
 	}
 
 	var legacyRows []aggregate
 	if err := s.db.Model(&models.UIPage{}).
-		Select("space_key, COUNT(*) AS total").
+		Select("menu_space_key, COUNT(*) AS total").
 		Where("app_key = ?", normalizeAppKey(appKey)).
 		Where("deleted_at IS NULL").
 		Where("parent_menu_id IS NULL").
 		Where("COALESCE(NULLIF(TRIM(parent_page_key), ''), '') = ''").
-		Where("COALESCE(NULLIF(TRIM(space_key), ''), '') <> ''").
-		Where("LOWER(TRIM(space_key)) <> ?", DefaultMenuSpaceKey).
+		Where("COALESCE(NULLIF(TRIM(menu_space_key), ''), '') <> ''").
+		Where("LOWER(TRIM(menu_space_key)) <> ?", DefaultMenuSpaceKey).
 		Where("NOT EXISTS (SELECT 1 FROM page_space_bindings WHERE page_space_bindings.page_id = ui_pages.id AND page_space_bindings.deleted_at IS NULL)").
-		Group("space_key").
+		Group("menu_space_key").
 		Scan(&legacyRows).Error; err != nil {
 		return nil, err
 	}
 	for _, item := range legacyRows {
-		result[NormalizeSpaceKey(item.SpaceKey)] += item.Total
+		result[NormalizeMenuSpaceKey(item.MenuSpaceKey)] += item.Total
 	}
 	return result, nil
 }
@@ -770,10 +770,10 @@ func (s *service) notifySpaceOperation(actorUserID uuid.UUID, result *Initialize
 		return nil
 	}
 	var space models.MenuSpace
-	if err := s.db.Select("app_key").Where("space_key = ?", result.TargetSpaceKey).Order("is_default DESC, updated_at DESC").First(&space).Error; err != nil {
+	if err := s.db.Select("app_key").Where("menu_space_key = ?", result.TargetMenuSpaceKey).Order("is_default DESC, updated_at DESC").First(&space).Error; err != nil {
 		return err
 	}
-	spaceRecord, err := s.getSpaceRecord(space.AppKey, result.TargetSpaceKey)
+	spaceRecord, err := s.getSpaceRecord(space.AppKey, result.TargetMenuSpaceKey)
 	if err != nil {
 		return err
 	}
@@ -781,7 +781,7 @@ func (s *service) notifySpaceOperation(actorUserID uuid.UUID, result *Initialize
 	actionText := "初始化"
 	summary := fmt.Sprintf("菜单空间“%s”已从默认空间完成初始化。", spaceRecord.Name)
 	contentLines := []string{
-		fmt.Sprintf("操作空间：%s（%s）", spaceRecord.Name, spaceRecord.SpaceKey),
+		fmt.Sprintf("操作空间：%s（%s）", spaceRecord.Name, spaceRecord.MenuSpaceKey),
 		fmt.Sprintf("操作人：%s", operatorName),
 		fmt.Sprintf("新建菜单：%d", result.CreatedMenuCount),
 		fmt.Sprintf("新建独立页暴露：%d", result.CreatedPageCount),
@@ -817,7 +817,7 @@ func (s *service) notifySpaceOperation(actorUserID uuid.UUID, result *Initialize
 		Status:             "published",
 		PublishedAt:        &now,
 		Meta: models.MetaJSON{
-			"space_key":                       result.TargetSpaceKey,
+			"menu_space_key":                  result.TargetMenuSpaceKey,
 			"space_name":                      spaceRecord.Name,
 			"operation_type":                  map[bool]string{true: "reinitialize", false: "initialize"}[result.ForceReinitialized],
 			"operator_user_id":                actorUserID.String(),
@@ -1009,4 +1009,3 @@ func firstNonEmptyString(values ...string) string {
 	}
 	return ""
 }
-

@@ -2318,7 +2318,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/menu-spaces/{spaceKey}/initialize-default": {
+    "/system/menu-spaces/{menuSpaceKey}/initialize-default": {
         parameters: {
             query?: never;
             header?: never;
@@ -3612,7 +3612,7 @@ export interface components {
         NavigationManifest: {
             version_stamp: string;
             current_app?: components["schemas"]["SystemCurrentAppResponse"];
-            current_space?: components["schemas"]["SystemCurrentMenuSpaceResponse"];
+            current_menu_space?: components["schemas"]["SystemCurrentMenuSpaceResponse"];
             context?: components["schemas"]["NavigationContext"];
             menu_tree: components["schemas"]["MenuTreeItem"][];
             entry_routes: components["schemas"]["MenuTreeItem"][];
@@ -3634,7 +3634,7 @@ export interface components {
             route_path?: string;
             app_keys?: string[];
             app_key?: string;
-            space_key?: string;
+            menu_space_key?: string;
             sort_order?: number;
             status?: string;
             permission_keys?: string[];
@@ -3645,7 +3645,7 @@ export interface components {
             route_name: string;
             route_path: string;
             component: string;
-            space_keys?: string[];
+            menu_space_keys?: string[];
             page_type?: string;
             visibility_scope?: string;
             source?: string;
@@ -5166,7 +5166,7 @@ export interface components {
             app_key: string;
             name: string;
             description: string;
-            default_space_key: string;
+            default_menu_space_key: string;
             space_mode: string;
             auth_mode?: string;
             frontend_entry_url?: string;
@@ -5209,7 +5209,7 @@ export interface components {
             priority: number;
             description: string;
             is_primary: boolean;
-            default_space_key: string;
+            default_menu_space_key: string;
             status: string;
             meta: components["schemas"]["SystemMeta"];
             /** Format: date-time */
@@ -5227,7 +5227,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             name: string;
             description: string;
             default_home_path: string;
@@ -5253,7 +5253,7 @@ export interface components {
             id: string;
             app_key: string;
             host: string;
-            space_key: string;
+            menu_space_key: string;
             space_name: string;
             description: string;
             is_default: boolean;
@@ -5273,9 +5273,9 @@ export interface components {
         };
         NavigationContext: {
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             request_host: string;
-            requested_space_key: string;
+            requested_menu_space_key: string;
             authenticated: boolean;
             super_admin: boolean;
             visible_menu_count: number;
@@ -5307,7 +5307,7 @@ export interface components {
             /** Format: uuid */
             parent_id?: string | null;
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             kind: string;
             path: string;
             name: string;
@@ -5320,11 +5320,11 @@ export interface components {
             children?: components["schemas"]["MenuTreeItem"][];
         };
         PageSpaceBindingItem: {
-            space_key: string;
+            menu_space_key: string;
             source?: string;
         };
         PageMeta: {
-            spaceKeys?: string[];
+            menuSpaceKeys?: string[];
             spaceScope?: string;
             visibilityScope?: string;
             link?: string;
@@ -5360,8 +5360,8 @@ export interface components {
             route_name?: string;
             route_path: string;
             component?: string;
-            space_key?: string;
-            space_keys?: string[];
+            menu_space_key?: string;
+            menu_space_keys?: string[];
             page_space_bindings?: components["schemas"]["PageSpaceBindingItem"][];
             space_scope?: string;
             page_type?: string;
@@ -5449,7 +5449,7 @@ export interface components {
         PageAccessTraceResponse: {
             user_id: string;
             collaboration_workspace_id?: string;
-            space_key: string;
+            menu_space_key: string;
             authenticated: boolean;
             super_admin: boolean;
             action_key_count: number;
@@ -5485,8 +5485,8 @@ export interface components {
             route_name: string;
             route_path: string;
             component: string;
-            space_key: string;
-            space_keys?: string[];
+            menu_space_key: string;
+            menu_space_keys?: string[];
             page_type: string;
             visibility_scope: string;
             source: string;
@@ -5591,7 +5591,7 @@ export interface components {
             /** Format: uuid */
             parent_id?: string | null;
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             kind: string;
             path?: string;
             name: string;
@@ -5648,7 +5648,7 @@ export interface components {
             name: string;
             description?: string;
             space_mode?: string;
-            default_space_key?: string;
+            default_menu_space_key?: string;
             auth_mode?: string;
             frontend_entry_url?: string;
             backend_entry_url?: string;
@@ -5713,7 +5713,7 @@ export interface components {
             priority?: number;
             description?: string;
             is_primary?: boolean;
-            default_space_key?: string;
+            default_menu_space_key?: string;
             status?: string;
             meta?: components["schemas"]["SystemMeta"];
         };
@@ -5722,7 +5722,7 @@ export interface components {
             id: string;
             app_key: string;
             app_name: string;
-            space_key: string;
+            menu_space_key: string;
             space_name: string;
             match_type: string;
             host: string;
@@ -5746,7 +5746,7 @@ export interface components {
         SystemMenuSpaceEntryBindingSaveRequest: {
             id?: string;
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             match_type?: string;
             host: string;
             path_pattern?: string;
@@ -5770,7 +5770,7 @@ export interface components {
         };
         SystemMenuSpaceSaveRequest: {
             app_key: string;
-            space_key: string;
+            menu_space_key: string;
             name: string;
             description?: string;
             default_home_path?: string;
@@ -5781,8 +5781,8 @@ export interface components {
             meta?: components["schemas"]["SystemMeta"];
         };
         SystemMenuSpaceInitializeResult: {
-            source_space_key: string;
-            target_space_key: string;
+            source_menu_space_key: string;
+            target_menu_space_key: string;
             force_reinitialized: boolean;
             /** Format: int64 */
             cleared_menu_count: number;
@@ -5805,7 +5805,7 @@ export interface components {
         SystemMenuSpaceHostBindingSaveRequest: {
             app_key: string;
             host: string;
-            space_key: string;
+            menu_space_key: string;
             description?: string;
             is_default?: boolean;
             status?: string;
@@ -10338,7 +10338,7 @@ export interface operations {
         parameters: {
             query?: {
                 app_key?: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10362,7 +10362,7 @@ export interface operations {
             query?: {
                 all?: string;
                 app_key?: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10479,7 +10479,7 @@ export interface operations {
         parameters: {
             query?: {
                 app_key?: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10502,7 +10502,7 @@ export interface operations {
         parameters: {
             query?: {
                 app_key?: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10525,7 +10525,7 @@ export interface operations {
         parameters: {
             query: {
                 app_key: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10548,7 +10548,7 @@ export interface operations {
         parameters: {
             query: {
                 app_key: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -10576,7 +10576,7 @@ export interface operations {
                 /** @description 协作空间 ID；为空表示个人空间链路 */
                 collaboration_workspace_id?: string;
                 /** @description 菜单空间 key；为空自动解析默认空间 */
-                space_key?: string;
+                menu_space_key?: string;
                 /** @description 单个页面 key，留空则返回运行时可见全部页面 */
                 page_key?: string;
                 /** @description 多页面 key 逗号分隔 */
@@ -10652,7 +10652,7 @@ export interface operations {
                 current?: number;
                 size?: number;
                 keyword?: string;
-                space_key?: string;
+                menu_space_key?: string;
                 status?: string;
             };
             header?: never;
@@ -11620,7 +11620,7 @@ export interface operations {
         parameters: {
             query?: {
                 app_key?: string;
-                space_key?: string;
+                menu_space_key?: string;
             };
             header?: never;
             path?: never;
@@ -11736,7 +11736,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                spaceKey: string;
+                menuSpaceKey: string;
             };
             cookie?: never;
         };

@@ -13903,8 +13903,8 @@ func (s *FeaturePackageMenuItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("kind")
@@ -13950,7 +13950,7 @@ var jsonFieldsNameOfFeaturePackageMenuItem = [12]string{
 	0:  "id",
 	1:  "parent_id",
 	2:  "app_key",
-	3:  "space_key",
+	3:  "menu_space_key",
 	4:  "kind",
 	5:  "path",
 	6:  "name",
@@ -14004,17 +14004,17 @@ func (s *FeaturePackageMenuItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "kind":
 			requiredBitSet[0] |= 1 << 4
@@ -25255,9 +25255,9 @@ func (s *MenuSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.SpaceKey.Set {
-			e.FieldStart("space_key")
-			s.SpaceKey.Encode(e)
+		if s.MenuSpaceKey.Set {
+			e.FieldStart("menu_space_key")
+			s.MenuSpaceKey.Encode(e)
 		}
 	}
 	{
@@ -25296,7 +25296,7 @@ var jsonFieldsNameOfMenuSaveRequest = [15]string{
 	8:  "route_path",
 	9:  "app_keys",
 	10: "app_key",
-	11: "space_key",
+	11: "menu_space_key",
 	12: "sort_order",
 	13: "status",
 	14: "permission_keys",
@@ -25434,15 +25434,15 @@ func (s *MenuSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			if err := func() error {
-				s.SpaceKey.Reset()
-				if err := s.SpaceKey.Decode(d); err != nil {
+				s.MenuSpaceKey.Reset()
+				if err := s.MenuSpaceKey.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "sort_order":
 			if err := func() error {
@@ -25689,8 +25689,8 @@ func (s *MenuTreeItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("kind")
@@ -25750,7 +25750,7 @@ var jsonFieldsNameOfMenuTreeItem = [14]string{
 	0:  "id",
 	1:  "parent_id",
 	2:  "app_key",
-	3:  "space_key",
+	3:  "menu_space_key",
 	4:  "kind",
 	5:  "path",
 	6:  "name",
@@ -25806,17 +25806,17 @@ func (s *MenuTreeItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "kind":
 			requiredBitSet[0] |= 1 << 4
@@ -30880,16 +30880,16 @@ func (s *NavigationContext) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("request_host")
 		e.Str(s.RequestHost)
 	}
 	{
-		e.FieldStart("requested_space_key")
-		e.Str(s.RequestedSpaceKey)
+		e.FieldStart("requested_menu_space_key")
+		e.Str(s.RequestedMenuSpaceKey)
 	}
 	{
 		e.FieldStart("authenticated")
@@ -30927,9 +30927,9 @@ func (s *NavigationContext) encodeFields(e *jx.Encoder) {
 
 var jsonFieldsNameOfNavigationContext = [11]string{
 	0:  "app_key",
-	1:  "space_key",
+	1:  "menu_space_key",
 	2:  "request_host",
-	3:  "requested_space_key",
+	3:  "requested_menu_space_key",
 	4:  "authenticated",
 	5:  "super_admin",
 	6:  "visible_menu_count",
@@ -30960,17 +30960,17 @@ func (s *NavigationContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "request_host":
 			requiredBitSet[0] |= 1 << 2
@@ -30984,17 +30984,17 @@ func (s *NavigationContext) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"request_host\"")
 			}
-		case "requested_space_key":
+		case "requested_menu_space_key":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.RequestedSpaceKey = string(v)
+				s.RequestedMenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"requested_space_key\"")
+				return errors.Wrap(err, "decode field \"requested_menu_space_key\"")
 			}
 		case "authenticated":
 			requiredBitSet[0] |= 1 << 4
@@ -31153,9 +31153,9 @@ func (s *NavigationManifest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.CurrentSpace.Set {
-			e.FieldStart("current_space")
-			s.CurrentSpace.Encode(e)
+		if s.CurrentMenuSpace.Set {
+			e.FieldStart("current_menu_space")
+			s.CurrentMenuSpace.Encode(e)
 		}
 	}
 	{
@@ -31193,7 +31193,7 @@ func (s *NavigationManifest) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfNavigationManifest = [7]string{
 	0: "version_stamp",
 	1: "current_app",
-	2: "current_space",
+	2: "current_menu_space",
 	3: "context",
 	4: "menu_tree",
 	5: "entry_routes",
@@ -31231,15 +31231,15 @@ func (s *NavigationManifest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"current_app\"")
 			}
-		case "current_space":
+		case "current_menu_space":
 			if err := func() error {
-				s.CurrentSpace.Reset()
-				if err := s.CurrentSpace.Decode(d); err != nil {
+				s.CurrentMenuSpace.Reset()
+				if err := s.CurrentMenuSpace.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"current_space\"")
+				return errors.Wrap(err, "decode field \"current_menu_space\"")
 			}
 		case "context":
 			if err := func() error {
@@ -35713,8 +35713,8 @@ func (s *PageAccessTraceResponse) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("authenticated")
@@ -35765,7 +35765,7 @@ func (s *PageAccessTraceResponse) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfPageAccessTraceResponse = [10]string{
 	0: "user_id",
 	1: "collaboration_workspace_id",
-	2: "space_key",
+	2: "menu_space_key",
 	3: "authenticated",
 	4: "super_admin",
 	5: "action_key_count",
@@ -35806,17 +35806,17 @@ func (s *PageAccessTraceResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"collaboration_workspace_id\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "authenticated":
 			requiredBitSet[0] |= 1 << 3
@@ -36448,16 +36448,16 @@ func (s *PageListItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.SpaceKey.Set {
-			e.FieldStart("space_key")
-			s.SpaceKey.Encode(e)
+		if s.MenuSpaceKey.Set {
+			e.FieldStart("menu_space_key")
+			s.MenuSpaceKey.Encode(e)
 		}
 	}
 	{
-		if s.SpaceKeys != nil {
-			e.FieldStart("space_keys")
+		if s.MenuSpaceKeys != nil {
+			e.FieldStart("menu_space_keys")
 			e.ArrStart()
-			for _, elem := range s.SpaceKeys {
+			for _, elem := range s.MenuSpaceKeys {
 				e.Str(elem)
 			}
 			e.ArrEnd()
@@ -36627,8 +36627,8 @@ var jsonFieldsNameOfPageListItem = [34]string{
 	4:  "route_name",
 	5:  "route_path",
 	6:  "component",
-	7:  "space_key",
-	8:  "space_keys",
+	7:  "menu_space_key",
+	8:  "menu_space_keys",
 	9:  "page_space_bindings",
 	10: "space_scope",
 	11: "page_type",
@@ -36741,19 +36741,19 @@ func (s *PageListItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"component\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			if err := func() error {
-				s.SpaceKey.Reset()
-				if err := s.SpaceKey.Decode(d); err != nil {
+				s.MenuSpaceKey.Reset()
+				if err := s.MenuSpaceKey.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
-		case "space_keys":
+		case "menu_space_keys":
 			if err := func() error {
-				s.SpaceKeys = make([]string, 0)
+				s.MenuSpaceKeys = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem string
 					v, err := d.Str()
@@ -36761,14 +36761,14 @@ func (s *PageListItem) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.SpaceKeys = append(s.SpaceKeys, elem)
+					s.MenuSpaceKeys = append(s.MenuSpaceKeys, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_keys\"")
+				return errors.Wrap(err, "decode field \"menu_space_keys\"")
 			}
 		case "page_space_bindings":
 			if err := func() error {
@@ -37517,10 +37517,10 @@ func (s *PageMeta) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *PageMeta) encodeFields(e *jx.Encoder) {
 	{
-		if s.SpaceKeys != nil {
-			e.FieldStart("spaceKeys")
+		if s.MenuSpaceKeys != nil {
+			e.FieldStart("menuSpaceKeys")
 			e.ArrStart()
-			for _, elem := range s.SpaceKeys {
+			for _, elem := range s.MenuSpaceKeys {
 				e.Str(elem)
 			}
 			e.ArrEnd()
@@ -37615,7 +37615,7 @@ func (s *PageMeta) encodeFields(e *jx.Encoder) {
 }
 
 var jsonFieldsNameOfPageMeta = [14]string{
-	0:  "spaceKeys",
+	0:  "menuSpaceKeys",
 	1:  "spaceScope",
 	2:  "visibilityScope",
 	3:  "link",
@@ -37639,9 +37639,9 @@ func (s *PageMeta) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "spaceKeys":
+		case "menuSpaceKeys":
 			if err := func() error {
-				s.SpaceKeys = make([]string, 0)
+				s.MenuSpaceKeys = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem string
 					v, err := d.Str()
@@ -37649,14 +37649,14 @@ func (s *PageMeta) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.SpaceKeys = append(s.SpaceKeys, elem)
+					s.MenuSpaceKeys = append(s.MenuSpaceKeys, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"spaceKeys\"")
+				return errors.Wrap(err, "decode field \"menuSpaceKeys\"")
 			}
 		case "spaceScope":
 			if err := func() error {
@@ -38076,10 +38076,10 @@ func (s *PageSaveRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.Component)
 	}
 	{
-		if s.SpaceKeys != nil {
-			e.FieldStart("space_keys")
+		if s.MenuSpaceKeys != nil {
+			e.FieldStart("menu_space_keys")
 			e.ArrStart()
-			for _, elem := range s.SpaceKeys {
+			for _, elem := range s.MenuSpaceKeys {
 				e.Str(elem)
 			}
 			e.ArrEnd()
@@ -38201,7 +38201,7 @@ var jsonFieldsNameOfPageSaveRequest = [24]string{
 	2:  "route_name",
 	3:  "route_path",
 	4:  "component",
-	5:  "space_keys",
+	5:  "menu_space_keys",
 	6:  "page_type",
 	7:  "visibility_scope",
 	8:  "source",
@@ -38291,9 +38291,9 @@ func (s *PageSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"component\"")
 			}
-		case "space_keys":
+		case "menu_space_keys":
 			if err := func() error {
-				s.SpaceKeys = make([]string, 0)
+				s.MenuSpaceKeys = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem string
 					v, err := d.Str()
@@ -38301,14 +38301,14 @@ func (s *PageSaveRequest) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.SpaceKeys = append(s.SpaceKeys, elem)
+					s.MenuSpaceKeys = append(s.MenuSpaceKeys, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_keys\"")
+				return errors.Wrap(err, "decode field \"menu_space_keys\"")
 			}
 		case "page_type":
 			if err := func() error {
@@ -38586,14 +38586,14 @@ func (s *PageSaveResult) encodeFields(e *jx.Encoder) {
 		e.Str(s.Component)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
-		if s.SpaceKeys != nil {
-			e.FieldStart("space_keys")
+		if s.MenuSpaceKeys != nil {
+			e.FieldStart("menu_space_keys")
 			e.ArrStart()
-			for _, elem := range s.SpaceKeys {
+			for _, elem := range s.MenuSpaceKeys {
 				e.Str(elem)
 			}
 			e.ArrEnd()
@@ -38705,8 +38705,8 @@ var jsonFieldsNameOfPageSaveResult = [31]string{
 	4:  "route_name",
 	5:  "route_path",
 	6:  "component",
-	7:  "space_key",
-	8:  "space_keys",
+	7:  "menu_space_key",
+	8:  "menu_space_keys",
 	9:  "page_type",
 	10: "visibility_scope",
 	11: "source",
@@ -38824,21 +38824,21 @@ func (s *PageSaveResult) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"component\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
-		case "space_keys":
+		case "menu_space_keys":
 			if err := func() error {
-				s.SpaceKeys = make([]string, 0)
+				s.MenuSpaceKeys = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
 					var elem string
 					v, err := d.Str()
@@ -38846,14 +38846,14 @@ func (s *PageSaveResult) Decode(d *jx.Decoder) error {
 					if err != nil {
 						return err
 					}
-					s.SpaceKeys = append(s.SpaceKeys, elem)
+					s.MenuSpaceKeys = append(s.MenuSpaceKeys, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_keys\"")
+				return errors.Wrap(err, "decode field \"menu_space_keys\"")
 			}
 		case "page_type":
 			requiredBitSet[1] |= 1 << 1
@@ -39178,8 +39178,8 @@ func (s *PageSpaceBindingItem) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *PageSpaceBindingItem) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		if s.Source.Set {
@@ -39190,7 +39190,7 @@ func (s *PageSpaceBindingItem) encodeFields(e *jx.Encoder) {
 }
 
 var jsonFieldsNameOfPageSpaceBindingItem = [2]string{
-	0: "space_key",
+	0: "menu_space_key",
 	1: "source",
 }
 
@@ -39203,17 +39203,17 @@ func (s *PageSpaceBindingItem) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "source":
 			if err := func() error {
@@ -56012,8 +56012,8 @@ func (s *SystemAppHostBindingItem) encodeFields(e *jx.Encoder) {
 		e.Bool(s.IsPrimary)
 	}
 	{
-		e.FieldStart("default_space_key")
-		e.Str(s.DefaultSpaceKey)
+		e.FieldStart("default_menu_space_key")
+		e.Str(s.DefaultMenuSpaceKey)
 	}
 	{
 		e.FieldStart("status")
@@ -56043,7 +56043,7 @@ var jsonFieldsNameOfSystemAppHostBindingItem = [14]string{
 	6:  "priority",
 	7:  "description",
 	8:  "is_primary",
-	9:  "default_space_key",
+	9:  "default_menu_space_key",
 	10: "status",
 	11: "meta",
 	12: "created_at",
@@ -56167,17 +56167,17 @@ func (s *SystemAppHostBindingItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"is_primary\"")
 			}
-		case "default_space_key":
+		case "default_menu_space_key":
 			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
-				s.DefaultSpaceKey = string(v)
+				s.DefaultMenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_space_key\"")
+				return errors.Wrap(err, "decode field \"default_menu_space_key\"")
 			}
 		case "status":
 			requiredBitSet[1] |= 1 << 2
@@ -56459,9 +56459,9 @@ func (s *SystemAppHostBindingSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.DefaultSpaceKey.Set {
-			e.FieldStart("default_space_key")
-			s.DefaultSpaceKey.Encode(e)
+		if s.DefaultMenuSpaceKey.Set {
+			e.FieldStart("default_menu_space_key")
+			s.DefaultMenuSpaceKey.Encode(e)
 		}
 	}
 	{
@@ -56487,7 +56487,7 @@ var jsonFieldsNameOfSystemAppHostBindingSaveRequest = [11]string{
 	5:  "priority",
 	6:  "description",
 	7:  "is_primary",
-	8:  "default_space_key",
+	8:  "default_menu_space_key",
 	9:  "status",
 	10: "meta",
 }
@@ -56585,15 +56585,15 @@ func (s *SystemAppHostBindingSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"is_primary\"")
 			}
-		case "default_space_key":
+		case "default_menu_space_key":
 			if err := func() error {
-				s.DefaultSpaceKey.Reset()
-				if err := s.DefaultSpaceKey.Decode(d); err != nil {
+				s.DefaultMenuSpaceKey.Reset()
+				if err := s.DefaultMenuSpaceKey.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_space_key\"")
+				return errors.Wrap(err, "decode field \"default_menu_space_key\"")
 			}
 		case "status":
 			if err := func() error {
@@ -56698,8 +56698,8 @@ func (s *SystemAppItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.Description)
 	}
 	{
-		e.FieldStart("default_space_key")
-		e.Str(s.DefaultSpaceKey)
+		e.FieldStart("default_menu_space_key")
+		e.Str(s.DefaultMenuSpaceKey)
 	}
 	{
 		e.FieldStart("space_mode")
@@ -56822,7 +56822,7 @@ var jsonFieldsNameOfSystemAppItem = [27]string{
 	1:  "app_key",
 	2:  "name",
 	3:  "description",
-	4:  "default_space_key",
+	4:  "default_menu_space_key",
 	5:  "space_mode",
 	6:  "auth_mode",
 	7:  "frontend_entry_url",
@@ -56904,17 +56904,17 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
-		case "default_space_key":
+		case "default_menu_space_key":
 			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
-				s.DefaultSpaceKey = string(v)
+				s.DefaultMenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_space_key\"")
+				return errors.Wrap(err, "decode field \"default_menu_space_key\"")
 			}
 		case "space_mode":
 			requiredBitSet[0] |= 1 << 5
@@ -58152,9 +58152,9 @@ func (s *SystemAppSaveRequest) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.DefaultSpaceKey.Set {
-			e.FieldStart("default_space_key")
-			s.DefaultSpaceKey.Encode(e)
+		if s.DefaultMenuSpaceKey.Set {
+			e.FieldStart("default_menu_space_key")
+			s.DefaultMenuSpaceKey.Encode(e)
 		}
 	}
 	{
@@ -58224,7 +58224,7 @@ var jsonFieldsNameOfSystemAppSaveRequest = [15]string{
 	1:  "name",
 	2:  "description",
 	3:  "space_mode",
-	4:  "default_space_key",
+	4:  "default_menu_space_key",
 	5:  "auth_mode",
 	6:  "frontend_entry_url",
 	7:  "backend_entry_url",
@@ -58290,15 +58290,15 @@ func (s *SystemAppSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"space_mode\"")
 			}
-		case "default_space_key":
+		case "default_menu_space_key":
 			if err := func() error {
-				s.DefaultSpaceKey.Reset()
-				if err := s.DefaultSpaceKey.Decode(d); err != nil {
+				s.DefaultMenuSpaceKey.Reset()
+				if err := s.DefaultMenuSpaceKey.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"default_space_key\"")
+				return errors.Wrap(err, "decode field \"default_menu_space_key\"")
 			}
 		case "auth_mode":
 			if err := func() error {
@@ -59350,8 +59350,8 @@ func (s *SystemMenuSpaceEntryBindingItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppName)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("space_name")
@@ -59403,7 +59403,7 @@ var jsonFieldsNameOfSystemMenuSpaceEntryBindingItem = [15]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "app_name",
-	3:  "space_key",
+	3:  "menu_space_key",
 	4:  "space_name",
 	5:  "match_type",
 	6:  "host",
@@ -59462,17 +59462,17 @@ func (s *SystemMenuSpaceEntryBindingItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_name\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "space_name":
 			requiredBitSet[0] |= 1 << 4
@@ -59804,8 +59804,8 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		if s.MatchType.Set {
@@ -59858,7 +59858,7 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSystemMenuSpaceEntryBindingSaveRequest = [11]string{
 	0:  "id",
 	1:  "app_key",
-	2:  "space_key",
+	2:  "menu_space_key",
 	3:  "match_type",
 	4:  "host",
 	5:  "path_pattern",
@@ -59900,17 +59900,17 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "match_type":
 			if err := func() error {
@@ -60073,8 +60073,8 @@ func (s *SystemMenuSpaceHostBindingItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.Host)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("space_name")
@@ -60110,7 +60110,7 @@ var jsonFieldsNameOfSystemMenuSpaceHostBindingItem = [11]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "host",
-	3:  "space_key",
+	3:  "menu_space_key",
 	4:  "space_name",
 	5:  "description",
 	6:  "is_default",
@@ -60165,17 +60165,17 @@ func (s *SystemMenuSpaceHostBindingItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"host\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "space_name":
 			requiredBitSet[0] |= 1 << 4
@@ -60457,8 +60457,8 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.Host)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		if s.Description.Set {
@@ -60489,7 +60489,7 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSystemMenuSpaceHostBindingSaveRequest = [7]string{
 	0: "app_key",
 	1: "host",
-	2: "space_key",
+	2: "menu_space_key",
 	3: "description",
 	4: "is_default",
 	5: "status",
@@ -60529,17 +60529,17 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"host\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "description":
 			if err := func() error {
@@ -60647,12 +60647,12 @@ func (s *SystemMenuSpaceInitializeResult) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SystemMenuSpaceInitializeResult) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("source_space_key")
-		e.Str(s.SourceSpaceKey)
+		e.FieldStart("source_menu_space_key")
+		e.Str(s.SourceMenuSpaceKey)
 	}
 	{
-		e.FieldStart("target_space_key")
-		e.Str(s.TargetSpaceKey)
+		e.FieldStart("target_menu_space_key")
+		e.Str(s.TargetMenuSpaceKey)
 	}
 	{
 		e.FieldStart("force_reinitialized")
@@ -60685,8 +60685,8 @@ func (s *SystemMenuSpaceInitializeResult) encodeFields(e *jx.Encoder) {
 }
 
 var jsonFieldsNameOfSystemMenuSpaceInitializeResult = [9]string{
-	0: "source_space_key",
-	1: "target_space_key",
+	0: "source_menu_space_key",
+	1: "target_menu_space_key",
 	2: "force_reinitialized",
 	3: "cleared_menu_count",
 	4: "cleared_page_count",
@@ -60705,29 +60705,29 @@ func (s *SystemMenuSpaceInitializeResult) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "source_space_key":
+		case "source_menu_space_key":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
-				s.SourceSpaceKey = string(v)
+				s.SourceMenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"source_space_key\"")
+				return errors.Wrap(err, "decode field \"source_menu_space_key\"")
 			}
-		case "target_space_key":
+		case "target_menu_space_key":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
-				s.TargetSpaceKey = string(v)
+				s.TargetMenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_space_key\"")
+				return errors.Wrap(err, "decode field \"target_menu_space_key\"")
 			}
 		case "force_reinitialized":
 			requiredBitSet[0] |= 1 << 2
@@ -60888,8 +60888,8 @@ func (s *SystemMenuSpaceItem) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("name")
@@ -60962,7 +60962,7 @@ func (s *SystemMenuSpaceItem) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSystemMenuSpaceItem = [17]string{
 	0:  "id",
 	1:  "app_key",
-	2:  "space_key",
+	2:  "menu_space_key",
 	3:  "name",
 	4:  "description",
 	5:  "default_home_path",
@@ -61012,17 +61012,17 @@ func (s *SystemMenuSpaceItem) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "name":
 			requiredBitSet[0] |= 1 << 3
@@ -61609,8 +61609,8 @@ func (s *SystemMenuSpaceSaveRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.AppKey)
 	}
 	{
-		e.FieldStart("space_key")
-		e.Str(s.SpaceKey)
+		e.FieldStart("menu_space_key")
+		e.Str(s.MenuSpaceKey)
 	}
 	{
 		e.FieldStart("name")
@@ -61666,7 +61666,7 @@ func (s *SystemMenuSpaceSaveRequest) encodeFields(e *jx.Encoder) {
 
 var jsonFieldsNameOfSystemMenuSpaceSaveRequest = [10]string{
 	0: "app_key",
-	1: "space_key",
+	1: "menu_space_key",
 	2: "name",
 	3: "description",
 	4: "default_home_path",
@@ -61698,17 +61698,17 @@ func (s *SystemMenuSpaceSaveRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"app_key\"")
 			}
-		case "space_key":
+		case "menu_space_key":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
-				s.SpaceKey = string(v)
+				s.MenuSpaceKey = string(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_key\"")
+				return errors.Wrap(err, "decode field \"menu_space_key\"")
 			}
 		case "name":
 			requiredBitSet[0] |= 1 << 2

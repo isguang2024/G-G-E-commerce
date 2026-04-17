@@ -48,14 +48,14 @@ func buildRuntimePageRecord(item Record) gin.H {
 		"route_path": item.RoutePath,
 	}
 	if item.Meta != nil {
-		if values, ok := item.Meta["spaceKeys"].([]string); ok && len(values) > 0 {
-			node["space_keys"] = values
+		if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]string); ok && len(values) > 0 {
+			node["menu_space_keys"] = values
 			node["page_space_bindings"] = buildRuntimePageSpaceBindings(values, item.VisibilityScope)
-		} else if values, ok := item.Meta["spaceKeys"].([]interface{}); ok && len(values) > 0 {
-			node["space_keys"] = values
+		} else if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]interface{}); ok && len(values) > 0 {
+			node["menu_space_keys"] = values
 			node["page_space_bindings"] = buildRuntimePageSpaceBindings(interfaceStrings(values), item.VisibilityScope)
 		}
-		if scope, ok := item.Meta["spaceScope"].(string); ok && strings.TrimSpace(scope) != "" {
+		if scope, ok := item.Meta["menuSpaceScope"].(string); ok && strings.TrimSpace(scope) != "" {
 			node["space_scope"] = scope
 		}
 	}
@@ -118,8 +118,8 @@ func buildRuntimePageRecord(item Record) gin.H {
 	return node
 }
 
-func buildRuntimePageSpaceBindings(spaceKeys []string, visibilityScope string) []gin.H {
-	keys := uniqueSortedStrings(spaceKeys)
+func buildRuntimePageSpaceBindings(menuSpaceKeys []string, visibilityScope string) []gin.H {
+	keys := uniqueSortedStrings(menuSpaceKeys)
 	if len(keys) == 0 {
 		return nil
 	}
@@ -133,8 +133,8 @@ func buildRuntimePageSpaceBindings(spaceKeys []string, visibilityScope string) [
 			continue
 		}
 		result = append(result, gin.H{
-			"space_key": key,
-			"source":    source,
+			"menu_space_key": key,
+			"source":         source,
 		})
 	}
 	return result

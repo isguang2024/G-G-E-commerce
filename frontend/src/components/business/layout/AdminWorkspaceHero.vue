@@ -49,6 +49,7 @@
 <style scoped lang="scss">
   .workspace-hero {
     margin-bottom: 0;
+    flex-shrink: 0;
   }
 
   .workspace-hero :deep(.el-card__body) {

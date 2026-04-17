@@ -22,7 +22,7 @@ import {
   fetchUpdateMenuSpaceMode
 } from '@/domains/governance/api'
 import { useManagedAppScope } from '@/domains/app-runtime/useManagedAppScope'
-import { normalizeMenuSpaceKey } from '@/domains/navigation/utils/menu-space'
+import { buildMenuSpaceQuery, normalizeMenuSpaceKey } from '@/domains/navigation/utils/menu-space'
 import {
   collectMenuPaths,
   getAccessModeLabel,
@@ -74,14 +74,14 @@ export function useMenuSpacePage() {
   const hostFieldErrors = reactive<Record<string, string>>({})
   const spaceFormRules: FormRules = {
     name: [{ required: true, message: '请输入空间名称', trigger: 'blur' }],
-    space_key: [
+    menu_space_key: [
       { required: true, message: '请输入空间标识', trigger: 'blur' },
       { pattern: /^[a-z0-9][a-z0-9-_]*$/, message: '仅允许小写字母数字和 - _', trigger: 'blur' }
     ]
   }
   const hostFormRules: FormRules = {
     host: [{ required: true, message: '请输入 Host', trigger: 'blur' }],
-    space_key: [{ required: true, message: '请选择导航空间', trigger: 'change' }]
+    menu_space_key: [{ required: true, message: '请选择导航空间', trigger: 'change' }]
   }
   function clearFieldErrors(target: Record<string, string>) {
     for (const k of Object.keys(target)) delete target[k]
@@ -103,7 +103,7 @@ export function useMenuSpacePage() {
 
   const spaceForm = reactive<Api.SystemManage.MenuSpaceSaveParams>({
     app_key: '',
-    space_key: '',
+    menu_space_key: '',
     name: '',
     description: '',
     default_home_path: '/dashboard/console',
@@ -118,7 +118,7 @@ export function useMenuSpacePage() {
   const hostForm = reactive<HostBindingSaveForm>({
     app_key: '',
     host: '',
-    space_key: '',
+    menu_space_key: '',
     description: '',
     is_default: false,
     status: 'normal',
@@ -134,11 +134,11 @@ export function useMenuSpacePage() {
   })
 
   const currentSpace = computed(() =>
-    spaces.value.find((item) => item.spaceKey === currentSpaceKey.value)
+    spaces.value.find((item) => item.menuSpaceKey === currentSpaceKey.value)
   )
 
   const currentSpaceLabel = computed(
-    () => currentSpace.value?.name || currentSpace.value?.spaceKey || '未选择空间'
+    () => currentSpace.value?.name || currentSpace.value?.menuSpaceKey || '未选择空间'
   )
   const spaceModeLabel = computed(() => {
     if (spaceMode.value === 'single') {
@@ -177,7 +177,7 @@ export function useMenuSpacePage() {
       label: '已初始化',
       value: spaces.value.filter((item) => isSpaceInitialized(item)).length || 0
     },
-    { label: '当前解析', value: currentSpace.value?.spaceKey || '未选择' }
+    { label: '当前解析', value: currentSpace.value?.menuSpaceKey || '未选择' }
   ])
 
   const appOptions = computed(() =>
@@ -190,7 +190,7 @@ export function useMenuSpacePage() {
   const spaceOptions = computed(() =>
     spaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: item.menuSpaceKey
     }))
   )
 
@@ -238,7 +238,7 @@ export function useMenuSpacePage() {
       ])
       spaces.value = spaceRes.records || []
       hostBindings.value = hostRes.records || []
-      currentSpaceKey.value = currentRes?.space?.spaceKey || ''
+      currentSpaceKey.value = currentRes?.space?.menuSpaceKey || ''
       spaceMode.value = `${modeRes?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
       currentResolvedBy.value = `${currentRes?.resolvedBy || ''}`.trim()
       currentRequestHost.value = `${currentRes?.requestHost || ''}`.trim()
@@ -307,7 +307,7 @@ export function useMenuSpacePage() {
 
   function resetSpaceForm() {
     editingSpaceKey.value = ''
-    spaceForm.space_key = ''
+    spaceForm.menu_space_key = ''
     spaceForm.name = ''
     spaceForm.description = ''
     spaceForm.default_home_path = '/dashboard/console'
@@ -322,7 +322,7 @@ export function useMenuSpacePage() {
   function resetHostForm() {
     editingHost.value = ''
     hostForm.host = ''
-    hostForm.space_key = currentSpaceKey.value || ''
+    hostForm.menu_space_key = currentSpaceKey.value || ''
     hostForm.description = ''
     hostForm.is_default = false
     hostForm.status = 'normal'
@@ -340,8 +340,8 @@ export function useMenuSpacePage() {
   function openSpaceDrawer(item?: Api.SystemManage.MenuSpaceItem) {
     resetSpaceForm()
     if (item) {
-      editingSpaceKey.value = item.spaceKey
-      spaceForm.space_key = item.spaceKey
+      editingSpaceKey.value = item.menuSpaceKey
+      spaceForm.menu_space_key = item.menuSpaceKey
       spaceForm.name = item.name
       spaceForm.description = item.description || ''
       spaceForm.default_home_path = item.defaultHomePath || '/dashboard/console'
@@ -353,7 +353,7 @@ export function useMenuSpacePage() {
       spaceForm.meta = item.meta || {}
     }
     spaceDrawerVisible.value = true
-    loadLandingPathCandidates(spaceForm.space_key)
+    loadLandingPathCandidates(spaceForm.menu_space_key || '')
   }
 
   function openHostDrawer(
@@ -364,7 +364,7 @@ export function useMenuSpacePage() {
     if (item) {
       editingHost.value = item.host
       hostForm.host = item.host
-      hostForm.space_key = item.spaceKey
+      hostForm.menu_space_key = item.menuSpaceKey
       hostForm.description = item.description || ''
       hostForm.is_default = Boolean(item.isDefault)
       hostForm.status = item.status || 'normal'
@@ -379,7 +379,7 @@ export function useMenuSpacePage() {
         ...(item.meta || {})
       }
     } else if (preferredSpaceKey) {
-      hostForm.space_key = normalizeMenuSpaceKey(preferredSpaceKey)
+      hostForm.menu_space_key = normalizeMenuSpaceKey(preferredSpaceKey)
     }
     hostDrawerVisible.value = true
   }
@@ -392,8 +392,8 @@ export function useMenuSpacePage() {
       spaceFieldErrors.name = '请输入空间名称'
       return
     }
-    if (!`${spaceForm.space_key || ''}`.trim()) {
-      spaceFieldErrors.space_key = '请输入空间标识'
+    if (!`${spaceForm.menu_space_key || ''}`.trim()) {
+      spaceFieldErrors.menu_space_key = '请输入空间标识'
       return
     }
     const normalizedHomePath = normalizeInternalPath(spaceForm.default_home_path || '')
@@ -420,7 +420,7 @@ export function useMenuSpacePage() {
       await fetchSaveMenuSpace({
         ...spaceForm,
         app_key: targetAppKey.value,
-        space_key: normalizeMenuSpaceKey(spaceForm.space_key),
+        menu_space_key: normalizeMenuSpaceKey(spaceForm.menu_space_key),
         name: spaceForm.name.trim(),
         description: spaceForm.description?.trim() || '',
         default_home_path: normalizedHomePath,
@@ -446,18 +446,18 @@ export function useMenuSpacePage() {
       hostFieldErrors.host = '请输入 Host'
       return
     }
-    if (!`${hostForm.space_key || ''}`.trim()) {
-      hostFieldErrors.space_key = '请选择导航空间'
+    if (!`${hostForm.menu_space_key || ''}`.trim()) {
+      hostFieldErrors.menu_space_key = '请选择导航空间'
       return
     }
     const normalizedHost = `${hostForm.host || ''}`.trim().toLowerCase()
     const duplicatedBinding = hostBindings.value.find(
       (item) =>
         `${item.host || ''}`.trim().toLowerCase() === normalizedHost &&
-        normalizeMenuSpaceKey(item.spaceKey) !== normalizeMenuSpaceKey(hostForm.space_key)
+        normalizeMenuSpaceKey(item.menuSpaceKey) !== normalizeMenuSpaceKey(hostForm.menu_space_key)
     )
     if (duplicatedBinding) {
-      hostFieldErrors.host = `该 Host 已绑定到导航空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
+      hostFieldErrors.host = `该 Host 已绑定到导航空间 ${duplicatedBinding.spaceName || duplicatedBinding.menuSpaceKey}`
       return
     }
     savingHost.value = true
@@ -466,7 +466,7 @@ export function useMenuSpacePage() {
         ...hostForm,
         app_key: targetAppKey.value,
         host: hostForm.host.trim(),
-        space_key: normalizeMenuSpaceKey(hostForm.space_key),
+        menu_space_key: normalizeMenuSpaceKey(hostForm.menu_space_key),
         description: hostForm.description?.trim() || '',
         meta: {
           ...hostForm.meta,
@@ -502,21 +502,21 @@ export function useMenuSpacePage() {
   }
 
   async function initializeSpace(item: Api.SystemManage.MenuSpaceItem) {
-    if (!item?.spaceKey || item.isDefault) {
+    if (!item?.menuSpaceKey || item.isDefault) {
       return
     }
     if (isSpaceInitialized(item)) {
       ElMessage.info('当前导航空间已经初始化，可直接进入导航管理或受管页面继续调整')
       return
     }
-    initializingSpaceKey.value = item.spaceKey
+    initializingSpaceKey.value = item.menuSpaceKey
     try {
-      const result = await fetchInitializeMenuSpaceFromDefault(targetAppKey.value, item.spaceKey)
+      const result = await fetchInitializeMenuSpaceFromDefault(targetAppKey.value, item.menuSpaceKey)
       ElMessage.success(
         `已完成初始化：复制 ${result.createdMenuCount} 个导航、同步 ${result.createdPackageMenuLinkCount} 条功能包导航关联，独立页暴露 ${result.createdPageCount || 0} 项`
       )
       await loadData()
-      goToMenuManagement(item.spaceKey)
+      goToMenuManagement(item.menuSpaceKey)
     } catch (error: any) {
       ElMessage.error(error?.message || '复制默认空间导航失败')
     } finally {
@@ -525,7 +525,7 @@ export function useMenuSpacePage() {
   }
 
   async function reinitializeSpace(item: Api.SystemManage.MenuSpaceItem) {
-    if (!item?.spaceKey || item.isDefault || !isSpaceInitialized(item)) {
+    if (!item?.menuSpaceKey || item.isDefault || !isSpaceInitialized(item)) {
       return
     }
     try {
@@ -542,18 +542,18 @@ export function useMenuSpacePage() {
     } catch {
       return
     }
-    initializingSpaceKey.value = item.spaceKey
+    initializingSpaceKey.value = item.menuSpaceKey
     try {
       const result = await fetchInitializeMenuSpaceFromDefault(
         targetAppKey.value,
-        item.spaceKey,
+        item.menuSpaceKey,
         true
       )
       ElMessage.success(
         `已重新初始化：清空 ${result.clearedMenuCount || 0} 个导航、${result.clearedPageCount || 0} 项独立页暴露、${result.clearedPackageMenuLinkCount || 0} 条功能包导航关联，并重新复制 ${result.createdMenuCount} 个导航`
       )
       await loadData()
-      goToMenuManagement(item.spaceKey)
+      goToMenuManagement(item.menuSpaceKey)
     } catch (error: any) {
       ElMessage.error(error?.message || '重新初始化失败')
     } finally {
@@ -565,7 +565,7 @@ export function useMenuSpacePage() {
     router.push({
       path: '/system/menu',
       query: {
-        spaceKey: normalizeMenuSpaceKey(spaceKey),
+        ...buildMenuSpaceQuery(normalizeMenuSpaceKey(spaceKey)),
         layout: '1'
       }
     })
@@ -575,7 +575,7 @@ export function useMenuSpacePage() {
     router.push({
       path: '/system/page',
       query: {
-        spaceKey: normalizeMenuSpaceKey(spaceKey)
+        ...buildMenuSpaceQuery(normalizeMenuSpaceKey(spaceKey))
       }
     })
   }
@@ -608,7 +608,7 @@ export function useMenuSpacePage() {
   )
 
   watch(
-    () => spaceForm.space_key,
+    () => spaceForm.menu_space_key || '',
     (value, previousValue) => {
       if (!spaceDrawerVisible.value) return
       if (!`${value || ''}`.trim() || value === previousValue) return

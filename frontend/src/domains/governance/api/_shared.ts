@@ -65,9 +65,9 @@ type V5PageLike = {
   is_full_page?: boolean
   is_iframe?: boolean
   is_hide_tab?: boolean
-  space_keys?: string[]
+  menu_space_keys?: string[]
   page_space_bindings?: Array<{
-    space_key?: string
+    menu_space_key?: string
     source?: string
   }>
   space_scope?: string
@@ -87,7 +87,7 @@ type V5PageLike = {
     health_check_url?: string
   }
   meta?: {
-    spaceKeys?: string[]
+    menuSpaceKeys?: string[]
     spaceScope?: string
     visibilityScope?: string
     link?: string
@@ -514,19 +514,19 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
   }
   const hasRemoteBinding = Object.values(remoteBinding).some(Boolean)
   const rawVisibilityScope = `${item?.visibility_scope || meta?.visibilityScope || ''}`.trim()
-  const rawSpaceKeysSource = item?.space_keys || meta?.spaceKeys
+  const rawSpaceKeysSource = item?.menu_space_keys || meta?.menuSpaceKeys
   const rawSpaceKeys: string[] = Array.isArray(rawSpaceKeysSource) ? rawSpaceKeysSource : []
-  // spaceKeys 由后端把 page_space_bindings、菜单继承和父页继承统一编译后下发，前端不再自行猜测。
-  const spaceKeys = rawSpaceKeys
+  // menuSpaceKeys 由后端把 page_space_bindings、菜单继承和父页继承统一编译后下发，前端不再自行猜测。
+  const menuSpaceKeys = rawSpaceKeys
     .map((value) => normalizeMenuSpaceKey(`${value || ''}`))
     .filter(Boolean)
   const pageSpaceBindings = Array.isArray(item?.page_space_bindings)
     ? item.page_space_bindings
         .map((binding) => ({
-          spaceKey: normalizeMenuSpaceKey(`${binding?.space_key || ''}`),
+          menuSpaceKey: normalizeMenuSpaceKey(`${binding?.menu_space_key || ''}`),
           source: `${binding?.source || ''}`.trim() || undefined
         }))
-        .filter((binding) => binding.spaceKey)
+        .filter((binding) => binding.menuSpaceKey)
     : []
   const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
   const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
@@ -560,7 +560,7 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? false),
     link: `${meta?.link || ''}`.trim(),
     remoteBinding: hasRemoteBinding ? remoteBinding : undefined,
-    spaceKeys,
+    menuSpaceKeys,
     pageSpaceBindings,
     spaceScope: `${item?.space_scope || meta?.spaceScope || ''}`.trim() || undefined,
     spaceType,
@@ -568,7 +568,7 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
     status: item?.status || 'normal',
     meta: {
       ...meta,
-      ...(spaceKeys.length ? { spaceKeys } : {}),
+      ...(menuSpaceKeys.length ? { menuSpaceKeys } : {}),
       ...(rawVisibilityScope ? { visibilityScope: rawVisibilityScope } : {}),
       ...(`${item?.space_scope || meta?.spaceScope || ''}`.trim()
         ? {
@@ -620,7 +620,7 @@ export function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
   return {
     id: item?.id || '',
     appKey: item?.app_key || '',
-    spaceKey: normalizeMenuSpaceKey(item?.space_key),
+    menuSpaceKey: normalizeMenuSpaceKey(item?.menu_space_key),
     name: item?.name || '',
     description: item?.description || '',
     defaultHomePath: item?.default_home_path || '',
@@ -651,7 +651,7 @@ export function normalizeMenuSpaceHostBinding(
     appKey: item?.app_key || '',
     appName: item?.app_name || '',
     host: `${item?.host || ''}`.trim(),
-    spaceKey: normalizeMenuSpaceKey(item?.space_key),
+    menuSpaceKey: normalizeMenuSpaceKey(item?.menu_space_key),
     spaceName: item?.space_name || '',
     description: item?.description || '',
     isDefault: Boolean(item?.is_default ?? false),
@@ -689,7 +689,7 @@ export function normalizeApp(item: any): Api.SystemManage.AppItem {
     appKey: item?.app_key || '',
     name: item?.name || '',
     description: item?.description || '',
-    defaultSpaceKey: item?.default_space_key || '',
+    defaultMenuSpaceKey: item?.default_menu_space_key || '',
     spaceMode: item?.space_mode || 'single',
     authMode: item?.auth_mode || 'inherit_host',
     frontendEntryUrl: `${item?.frontend_entry_url || ''}`.trim(),
@@ -726,7 +726,7 @@ export function normalizeAppHostBinding(item: any): Api.SystemManage.AppHostBind
     host: `${item?.host || ''}`.trim(),
     pathPattern: `${item?.path_pattern || ''}`.trim(),
     priority: Number(item?.priority ?? 0),
-    defaultSpaceKey: item?.default_space_key || '',
+    defaultMenuSpaceKey: item?.default_menu_space_key || '',
     description: item?.description || '',
     isPrimary: Boolean(item?.is_primary ?? false),
     status: item?.status || 'normal',
@@ -743,7 +743,7 @@ export function normalizeMenuSpaceEntryBinding(
     id: item?.id || '',
     appKey: item?.app_key || '',
     appName: item?.app_name || '',
-    spaceKey: item?.space_key || '',
+    menuSpaceKey: item?.menu_space_key || '',
     spaceName: item?.space_name || '',
     matchType: item?.match_type || 'host_exact',
     host: `${item?.host || ''}`.trim(),
@@ -918,7 +918,7 @@ export function normalizePageAccessTraceResult(
   return {
     userId: item?.user_id || '',
     collaborationWorkspaceId: item?.collaboration_workspace_id || '',
-    spaceKey: item?.space_key || '',
+    menuSpaceKey: item?.menu_space_key || '',
     authenticated: Boolean(item?.authenticated),
     superAdmin: Boolean(item?.super_admin),
     actionKeyCount: Number(item?.action_key_count ?? 0),
@@ -974,7 +974,7 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
   const children = Array.isArray(item?.children)
     ? item.children.map((child: any) => normalizeRuntimeMenuTree(child))
     : []
-  const spaceKey = normalizeMenuSpaceKey(item?.space_key || meta?.spaceKey)
+  const menuSpaceKey = normalizeMenuSpaceKey(item?.menu_space_key || meta?.menuSpaceKey)
   const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
   const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
   return {
@@ -986,7 +986,7 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
     parent_id: item?.parent_id || '',
     sort_order: item?.sort_order ?? 0,
     redirect: item?.redirect || '',
-    spaceKey,
+    menuSpaceKey,
     spaceType,
     hostKey,
     meta: {
@@ -998,7 +998,7 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
       activePath: `${meta?.activePath || ''}`.trim() || undefined,
       // link 仅外链菜单需要，未返回时保持 undefined，避免误判成空链接。
       link: `${meta?.link || ''}`.trim() || undefined,
-      spaceKey: spaceKey || undefined,
+      menuSpaceKey: menuSpaceKey || undefined,
       spaceType: spaceType || undefined,
       hostKey: hostKey || undefined,
       // 运行时菜单里未返回 isEnable 表示“沿用默认启用”，不能归一成 false，
@@ -1021,7 +1021,7 @@ export function normalizeRuntimeNavigationManifest(
   item: any
 ): Api.SystemManage.RuntimeNavigationManifest {
   const currentApp = item?.current_app
-  const currentSpace = item?.current_space || {}
+  const currentSpace = item?.current_menu_space || item?.current_space || {}
   const menuTree = item?.menu_tree || []
   const entryRoutes = item?.entry_routes || []
   const managedPages = item?.managed_pages || []
@@ -1039,7 +1039,7 @@ export function normalizeRuntimeNavigationManifest(
           requestHost: currentApp?.request_host || currentApp?.requestHost || ''
         }
       : undefined,
-    // currentSpace 是后端对 Host / 显式 space_key 解析后的最终上下文，前端菜单树和受管页面都必须跟随它。
+    // currentSpace 是后端对 Host / 显式 menu_space_key 解析后的最终上下文，前端菜单树和受管页面都必须跟随它。
     currentSpace: {
       space,
       binding,
@@ -1050,8 +1050,8 @@ export function normalizeRuntimeNavigationManifest(
     context: {
       ...(item?.context || {}),
       app_key: item?.context?.app_key || '',
-      space_key: item?.context?.space_key || '',
-      requested_space_key: item?.context?.requested_space_key || '',
+      menu_space_key: item?.context?.menu_space_key || '',
+      requested_menu_space_key: item?.context?.requested_menu_space_key || '',
       request_host: item?.context?.request_host || ''
     },
     // menuTree 已经完成启用态、空间和权限裁剪；前端这里只做归一化与动态注册。

@@ -1,4 +1,4 @@
-﻿package menu
+package menu
 
 import (
 	"errors"
@@ -74,7 +74,7 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	}
 	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
 	appKey := normalizeMenuAppKey(req.AppKey)
-	spaceKey := strings.TrimSpace(req.SpaceKey)
+	spaceKey := strings.TrimSpace(req.MenuSpaceKey)
 	menuKey := strings.TrimSpace(req.Name)
 	if menuKey == "" {
 		return nil, fmt.Errorf("menu_key is required")
@@ -115,7 +115,7 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 		}
 		placement := &models.SpaceMenuPlacement{
 			AppKey:        appKey,
-			SpaceKey:      normalizeMenuSpaceKey(spaceKey),
+			MenuSpaceKey:  normalizeMenuSpaceKey(spaceKey),
 			MenuKey:       menuKey,
 			ParentMenuKey: parentMenuKey,
 			SortOrder:     req.SortOrder,
@@ -195,7 +195,7 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 				return err
 			}
 		}
-		if strings.TrimSpace(req.SpaceKey) == "" {
+		if strings.TrimSpace(req.MenuSpaceKey) == "" {
 			return nil
 		}
 
@@ -206,20 +206,20 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		if parentID != nil && *parentID == id {
 			return errors.New("不能将上级设为自己")
 		}
-		layoutMenus, err := s.menuRepo.ListByAppAndSpace(definition.AppKey, normalizeMenuSpaceKey(req.SpaceKey))
+		layoutMenus, err := s.menuRepo.ListByAppAndSpace(definition.AppKey, normalizeMenuSpaceKey(req.MenuSpaceKey))
 		if err != nil {
 			return err
 		}
 		if parentID != nil && s.isDescendant(layoutMenus, id, *parentID) {
 			return errors.New("不能将上级设为自身子级（会造成循环）")
 		}
-		parentMenuKey, err := s.resolveParentMenuKey(tx, definition.AppKey, req.SpaceKey, parentID)
+		parentMenuKey, err := s.resolveParentMenuKey(tx, definition.AppKey, req.MenuSpaceKey, parentID)
 		if err != nil {
 			return err
 		}
 		placement := &models.SpaceMenuPlacement{
 			AppKey:        definition.AppKey,
-			SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
+			MenuSpaceKey:  normalizeMenuSpaceKey(req.MenuSpaceKey),
 			MenuKey:       nextMenuKey,
 			ParentMenuKey: parentMenuKey,
 			SortOrder:     req.SortOrder,
@@ -228,7 +228,7 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		return tx.Unscoped().Clauses(clause.OnConflict{
 			Columns: []clause.Column{
 				{Name: "app_key"},
-				{Name: "space_key"},
+				{Name: "menu_space_key"},
 				{Name: "menu_key"},
 			},
 			DoUpdates: clause.Assignments(map[string]interface{}{
@@ -623,7 +623,7 @@ func (s *menuService) resolveParentMenuKey(tx *gorm.DB, appKey, spaceKey string,
 	if strings.TrimSpace(spaceKey) != "" {
 		var placementCount int64
 		if err := db.Model(&models.SpaceMenuPlacement{}).
-			Where("app_key = ? AND space_key = ? AND menu_key = ?", normalizeMenuAppKey(appKey), normalizeMenuSpaceKey(spaceKey), parent.MenuKey).
+			Where("app_key = ? AND menu_space_key = ? AND menu_key = ?", normalizeMenuAppKey(appKey), normalizeMenuSpaceKey(spaceKey), parent.MenuKey).
 			Count(&placementCount).Error; err != nil {
 			return "", err
 		}
@@ -770,13 +770,13 @@ func menuAccessMode(meta map[string]interface{}) string {
 }
 
 func filterMenusBySpace(flat []user.Menu, spaceKey string) []user.Menu {
-	target := spaceutil.NormalizeSpaceKey(spaceKey)
+	target := spaceutil.NormalizeMenuSpaceKey(spaceKey)
 	if target == "" {
 		return flat
 	}
 	result := make([]user.Menu, 0, len(flat))
 	for _, menu := range flat {
-		if spaceutil.NormalizeSpaceKey(menu.SpaceKey) != target {
+		if spaceutil.NormalizeMenuSpaceKey(menu.MenuSpaceKey) != target {
 			continue
 		}
 		result = append(result, menu)
@@ -1076,4 +1076,3 @@ func normalizeManagedMenuPath(path string) string {
 	}
 	return normalized
 }
-

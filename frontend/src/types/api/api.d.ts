@@ -160,8 +160,8 @@ declare namespace Api {
       requiredActions?: string[]
       actionMatchMode?: 'any' | 'all'
       actionVisibilityMode?: 'hide' | 'show'
-      // spaceKey / spaceType / hostKey 都属于后端显式下发的运行时上下文，前端不自行推导。
-      spaceKey?: string
+      // menuSpaceKey / spaceType / hostKey 都属于后端显式下发的运行时上下文，前端不自行推导。
+      menuSpaceKey?: string
       spaceType?: string
       hostKey?: string
       [k: string]: unknown
@@ -170,7 +170,7 @@ declare namespace Api {
     interface MenuSpaceItem {
       id?: string
       appKey?: string
-      spaceKey: string
+      menuSpaceKey: string
       name: string
       description?: string
       defaultHomePath?: string
@@ -197,7 +197,7 @@ declare namespace Api {
       appKey?: string
       appName?: string
       host: string
-      spaceKey: string
+      menuSpaceKey: string
       spaceName?: string
       description?: string
       isDefault?: boolean
@@ -232,7 +232,7 @@ declare namespace Api {
       name: string
       description?: string
       spaceMode?: 'single' | 'multi' | string
-      defaultSpaceKey?: string
+      defaultMenuSpaceKey?: string
       authMode?: 'inherit_host' | 'shared_cookie' | 'centralized_login' | string
       frontendEntryUrl?: string
       backendEntryUrl?: string
@@ -262,7 +262,7 @@ declare namespace Api {
       description?: string
       space_mode?: 'single' | 'multi' | string
       // 创建 App 时由服务端自动创建当前 App 自己的 default 空间；编辑时才需要显式修改默认空间。
-      default_space_key?: string
+      default_menu_space_key?: string
       auth_mode?: 'inherit_host' | 'shared_cookie' | 'centralized_login' | string
       frontend_entry_url?: string
       backend_entry_url?: string
@@ -285,7 +285,7 @@ declare namespace Api {
       host: string
       pathPattern?: string
       priority?: number
-      defaultSpaceKey?: string
+      defaultMenuSpaceKey?: string
       description?: string
       isPrimary?: boolean
       status?: 'normal' | 'disabled' | string
@@ -301,7 +301,7 @@ declare namespace Api {
       host?: string
       path_pattern?: string
       priority?: number
-      default_space_key?: string
+      default_menu_space_key?: string
       description?: string
       is_primary?: boolean
       status?: 'normal' | 'disabled' | string
@@ -312,7 +312,7 @@ declare namespace Api {
       id?: string
       appKey: string
       appName?: string
-      spaceKey: string
+      menuSpaceKey: string
       spaceName?: string
       matchType?: EntryMatchType | string
       host?: string
@@ -329,7 +329,7 @@ declare namespace Api {
     interface MenuSpaceEntryBindingSaveParams {
       id?: string
       app_key: string
-      space_key: string
+      menu_space_key?: string
       match_type?: EntryMatchType | string
       host?: string
       path_pattern?: string
@@ -386,8 +386,8 @@ declare namespace Api {
     }
 
     interface MenuSpaceInitializeResult {
-      sourceSpaceKey: string
-      targetSpaceKey: string
+      sourceMenuSpaceKey?: string
+      targetMenuSpaceKey?: string
       forceReinitialized?: boolean
       clearedMenuCount?: number
       clearedPageCount?: number
@@ -399,7 +399,7 @@ declare namespace Api {
 
     interface MenuSpaceSaveParams {
       app_key: string
-      space_key: string
+      menu_space_key?: string
       name: string
       description?: string
       default_home_path?: string
@@ -418,7 +418,7 @@ declare namespace Api {
     interface MenuSpaceHostBindingSaveParams {
       app_key: string
       host: string
-      space_key: string
+      menu_space_key?: string
       description?: string
       is_default?: boolean
       status?: 'normal' | 'disabled' | string
@@ -463,7 +463,7 @@ declare namespace Api {
     interface SpaceMenuPlacement {
       id?: string
       appKey?: string
-      spaceKey: string
+      menuSpaceKey: string
       menuKey: string
       parentMenuKey?: string
       sortOrder?: number
@@ -1034,12 +1034,12 @@ declare namespace Api {
         runtimeVersion?: string
         healthCheckUrl?: string
       }
-      // 仅保留少量运行时桥接语义；管理态主语义统一看 visibilityScope + spaceKeys。
-      spaceKey?: string
-      // 后端会把独立页的空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
-      spaceKeys?: string[]
+      // 仅保留少量运行时桥接语义；管理态主语义统一看 visibilityScope + menuSpaceKeys。
+      menuSpaceKey?: string
+      // 后端会把独立页的菜单空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
+      menuSpaceKeys?: string[]
       pageSpaceBindings?: Array<{
-        spaceKey: string
+        menuSpaceKey: string
         source?: string
       }>
       visibilityScope?: 'inherit' | 'app' | 'spaces' | string
@@ -1062,11 +1062,11 @@ declare namespace Api {
       routePath: string
       pageType: 'group' | 'display_group' | 'inner' | 'standalone' | string
       moduleKey?: string
+      menuSpaceKey?: string
       parentMenuId?: string
       parentMenuName?: string
       activeMenuPath?: string
-      spaceKey?: string
-      spaceKeys?: string[]
+      menuSpaceKeys?: string[]
       spaceScope?: 'inherit' | 'app' | 'spaces' | string
       spaceType?: string
       hostKey?: string
@@ -1092,7 +1092,7 @@ declare namespace Api {
       pageKey?: string
       pageKeys?: string
       routePath?: string
-      spaceKey?: string
+      menuSpaceKey?: string
     }
 
     interface PageAccessTraceRoleItem {
@@ -1134,7 +1134,7 @@ declare namespace Api {
     interface PageAccessTraceResult {
       userId: string
       collaborationWorkspaceId?: string
-      spaceKey: string
+      menuSpaceKey?: string
       authenticated: boolean
       superAdmin: boolean
       actionKeyCount: number
@@ -1152,7 +1152,7 @@ declare namespace Api {
           appKey?: string
           keyword?: string
           parentMenuId?: string
-          spaceKey?: string
+          menuSpaceKey?: string
         }
     >
 
@@ -1177,7 +1177,7 @@ declare namespace Api {
       inherit_permission?: boolean
       keep_alive?: boolean
       is_full_page?: boolean
-      space_keys?: string[]
+      menu_space_keys?: string[]
       visibility_scope?: 'inherit' | 'app' | 'spaces' | string
       space_type?: string
       host_key?: string
@@ -1209,8 +1209,8 @@ declare namespace Api {
       context?: {
         app_key?: string
         appKey?: string
-        space_key?: string
-        requested_space_key?: string
+        menu_space_key?: string
+        requested_menu_space_key?: string
         request_host?: string
         authenticated?: boolean
         super_admin?: boolean
@@ -1623,7 +1623,7 @@ declare namespace Api {
       icon?: string
       sort_order?: number
       meta?: MenuMetaConfig
-      space_key?: string
+      menu_space_key?: string
       space_type?: string
       host_key?: string
       hidden?: boolean
@@ -1641,7 +1641,7 @@ declare namespace Api {
       icon?: string
       sort_order?: number
       meta?: MenuMetaConfig
-      space_key?: string
+      menu_space_key?: string
       space_type?: string
       host_key?: string
       hidden?: boolean

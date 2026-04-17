@@ -16,7 +16,7 @@ import (
 
 func (h *navigationAPIHandler) GetNavigation(ctx context.Context, params gen.GetNavigationParams) (*gen.NavigationManifest, error) {
 	appKey := strings.TrimSpace(optString(params.AppKey))
-	spaceKey := strings.TrimSpace(optString(params.SpaceKey))
+	spaceKey := strings.TrimSpace(optString(params.MenuSpaceKey))
 
 	var userID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
@@ -68,7 +68,7 @@ func (h *navigationAPIHandler) GetNavigation(ctx context.Context, params gen.Get
 			return nil, err
 		}
 		if currentSpace != nil {
-			out.CurrentSpace = gen.NewOptSystemCurrentMenuSpaceResponse(*currentSpace)
+			out.CurrentMenuSpace = gen.NewOptSystemCurrentMenuSpaceResponse(*currentSpace)
 		}
 	}
 	if manifest.Context != nil {

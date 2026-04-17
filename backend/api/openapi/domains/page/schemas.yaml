@@ -26,9 +26,9 @@ components:
           type: string
         component:
           type: string
-        space_key:
+        menu_space_key:
           type: string
-        space_keys:
+        menu_space_keys:
           type: array
           items:
             type: string
@@ -91,9 +91,9 @@ components:
       type: object
       additionalProperties: false
       required:
-      - space_key
+      - menu_space_key
       properties:
-        space_key:
+        menu_space_key:
           type: string
         source:
           type: string
@@ -101,7 +101,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        spaceKeys:
+        menuSpaceKeys:
           type: array
           items: {type: string}
         spaceScope: {type: string}
@@ -376,7 +376,7 @@ components:
       additionalProperties: false
       required:
       - user_id
-      - space_key
+      - menu_space_key
       - authenticated
       - super_admin
       - action_key_count
@@ -389,7 +389,7 @@ components:
           type: string
         collaboration_workspace_id:
           type: string
-        space_key:
+        menu_space_key:
           type: string
         authenticated:
           type: boolean

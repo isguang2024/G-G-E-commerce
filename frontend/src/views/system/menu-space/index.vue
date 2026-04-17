@@ -49,16 +49,16 @@
         <div class="menu-space-list">
           <button
             v-for="item in spaces"
-            :key="item.spaceKey"
+            :key="item.menuSpaceKey"
             type="button"
             class="menu-space-item"
-            :class="{ 'is-current': currentSpaceKey === item.spaceKey }"
+            :class="{ 'is-current': currentSpaceKey === item.menuSpaceKey }"
             :data-testid="'menu-space-card'"
-            :data-space-key="item.spaceKey"
+            :data-space-key="item.menuSpaceKey"
             :data-is-default="item.isDefault ? 'true' : 'false'"
             :data-status="item.status"
             :data-host-count="item.hostCount || 0"
-            @click="currentSpaceKey = item.spaceKey"
+            @click="currentSpaceKey = item.menuSpaceKey"
           >
             <div class="menu-space-item__main">
               <div class="menu-space-item__title-row">
@@ -73,7 +73,7 @@
                 </ElTag>
               </div>
               <div class="menu-space-item__meta">
-                <span>标识 {{ item.spaceKey }}</span>
+                <span>标识 {{ item.menuSpaceKey }}</span>
                 <span>首页 {{ item.defaultHomePath || '-' }}</span>
                 <span>导航 {{ item.menuCount || 0 }}</span>
                 <span>独立页暴露 {{ item.pageCount || 0 }}</span>
@@ -97,18 +97,18 @@
             </div>
             <div class="menu-space-item__actions">
               <ElButton text type="primary" @click.stop="openSpaceDrawer(item)">编辑</ElButton>
-              <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">空间布局</ElButton>
-              <ElButton text @click.stop="goToPageManagement(item.spaceKey)">受管页面</ElButton>
+              <ElButton text @click.stop="goToMenuManagement(item.menuSpaceKey)">空间布局</ElButton>
+              <ElButton text @click.stop="goToPageManagement(item.menuSpaceKey)">受管页面</ElButton>
               <ElButton
                 v-if="!item.isDefault && !isSpaceInitialized(item)"
                 text
-                :loading="initializingSpaceKey === item.spaceKey"
+                :loading="initializingSpaceKey === item.menuSpaceKey"
                 @click.stop="initializeSpace(item)"
               >
                 初始化导航树
               </ElButton>
               <ElButton v-else-if="!item.isDefault" text disabled> 已初始化 </ElButton>
-              <ElButton text @click.stop="openHostDrawer(undefined, item.spaceKey)"
+              <ElButton text @click.stop="openHostDrawer(undefined, item.menuSpaceKey)"
                 >绑定 Host</ElButton
               >
             </div>
@@ -168,17 +168,17 @@
             </div>
           </div>
           <div class="menu-space-overview__actions">
-            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)"
+            <ElButton text @click="goToMenuManagement(currentSpace.menuSpaceKey)"
               >编辑当前空间布局</ElButton
             >
-            <ElButton text @click="goToPageManagement(currentSpace.spaceKey)"
+            <ElButton text @click="goToPageManagement(currentSpace.menuSpaceKey)"
               >进入受管页面</ElButton
             >
             <ElButton
               v-if="!currentSpace.isDefault && isSpaceInitialized(currentSpace)"
               text
               type="danger"
-              :loading="initializingSpaceKey === currentSpace.spaceKey"
+              :loading="initializingSpaceKey === currentSpace.menuSpaceKey"
               @click="reinitializeSpace(currentSpace)"
             >
               重新初始化
@@ -209,7 +209,7 @@
                 </ElTag>
               </div>
               <div class="menu-space-binding__meta">
-                <span>导航空间 {{ item.spaceName || item.spaceKey }}</span>
+                <span>导航空间 {{ item.spaceName || item.menuSpaceKey }}</span>
                 <span v-if="item.isDefault">主绑定</span>
                 <span>{{ getHostAuthModeLabel(item.authMode) }}</span>
                 <span v-if="item.routePrefix">前缀 {{ item.routePrefix }}</span>
@@ -236,14 +236,14 @@
         </ElFormItem>
         <ElFormItem
           label="空间标识"
-          prop="space_key"
-          :error="spaceFieldErrors.space_key"
+          prop="menu_space_key"
+          :error="spaceFieldErrors.menu_space_key"
           :data-testid="'menu-space-field-error'"
-          :data-field="'space_key'"
+          :data-field="'menu_space_key'"
           required
         >
           <ElInput
-            v-model="spaceForm.space_key"
+            v-model="spaceForm.menu_space_key"
             :disabled="spaceForm.is_default"
             placeholder="例如 default / personal / crm"
           />
@@ -337,13 +337,13 @@
         </ElFormItem>
         <ElFormItem
           label="导航空间"
-          prop="space_key"
-          :error="hostFieldErrors.space_key"
+          prop="menu_space_key"
+          :error="hostFieldErrors.menu_space_key"
           :data-testid="'menu-space-field-error'"
-          :data-field="'space_key'"
+          :data-field="'menu_space_key'"
           required
         >
-          <ElSelect v-model="hostForm.space_key" filterable style="width: 100%">
+          <ElSelect v-model="hostForm.menu_space_key" filterable style="width: 100%">
             <ElOption
               v-for="item in spaceOptions"
               :key="item.value"

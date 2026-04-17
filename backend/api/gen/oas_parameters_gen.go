@@ -3325,8 +3325,8 @@ func decodeGetCurrentCollaborationWorkspaceMemberRolesParams(args [1]string, arg
 
 // GetCurrentMenuSpaceParams is parameters of getCurrentMenuSpace operation.
 type GetCurrentMenuSpaceParams struct {
-	AppKey   OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackGetCurrentMenuSpaceParams(packed middleware.Parameters) (params GetCurrentMenuSpaceParams) {
@@ -3341,11 +3341,11 @@ func unpackGetCurrentMenuSpaceParams(packed middleware.Parameters) (params GetCu
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -3394,17 +3394,17 @@ func decodeGetCurrentMenuSpaceParams(args [0]string, argsEscaped bool, r *http.R
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -3416,12 +3416,12 @@ func decodeGetCurrentMenuSpaceParams(args [0]string, argsEscaped bool, r *http.R
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -3430,7 +3430,7 @@ func decodeGetCurrentMenuSpaceParams(args [0]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -4753,9 +4753,9 @@ func decodeGetMenuSpaceModeParams(args [0]string, argsEscaped bool, r *http.Requ
 
 // GetMenuTreeParams is parameters of getMenuTree operation.
 type GetMenuTreeParams struct {
-	All      OptString `json:",omitempty,omitzero"`
-	AppKey   OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	All          OptString `json:",omitempty,omitzero"`
+	AppKey       OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackGetMenuTreeParams(packed middleware.Parameters) (params GetMenuTreeParams) {
@@ -4779,11 +4779,11 @@ func unpackGetMenuTreeParams(packed middleware.Parameters) (params GetMenuTreePa
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -4873,17 +4873,17 @@ func decodeGetMenuTreeParams(args [0]string, argsEscaped bool, r *http.Request) 
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -4895,12 +4895,12 @@ func decodeGetMenuTreeParams(args [0]string, argsEscaped bool, r *http.Request) 
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -4909,7 +4909,7 @@ func decodeGetMenuTreeParams(args [0]string, argsEscaped bool, r *http.Request) 
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -4984,8 +4984,8 @@ func decodeGetMessageDispatchRecordParams(args [1]string, argsEscaped bool, r *h
 
 // GetNavigationParams is parameters of getNavigation operation.
 type GetNavigationParams struct {
-	AppKey   OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackGetNavigationParams(packed middleware.Parameters) (params GetNavigationParams) {
@@ -5000,11 +5000,11 @@ func unpackGetNavigationParams(packed middleware.Parameters) (params GetNavigati
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -5053,17 +5053,17 @@ func decodeGetNavigationParams(args [0]string, argsEscaped bool, r *http.Request
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -5075,12 +5075,12 @@ func decodeGetNavigationParams(args [0]string, argsEscaped bool, r *http.Request
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -5089,7 +5089,7 @@ func decodeGetNavigationParams(args [0]string, argsEscaped bool, r *http.Request
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -5280,7 +5280,7 @@ type GetPageAccessTraceParams struct {
 	// 协作空间 ID；为空表示个人空间链路.
 	CollaborationWorkspaceID OptUUID `json:",omitempty,omitzero"`
 	// 菜单空间 key；为空自动解析默认空间.
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 	// 单个页面 key，留空则返回运行时可见全部页面.
 	PageKey OptString `json:",omitempty,omitzero"`
 	// 多页面 key 逗号分隔.
@@ -5315,11 +5315,11 @@ func unpackGetPageAccessTraceParams(packed middleware.Parameters) (params GetPag
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	{
@@ -5467,17 +5467,17 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -5489,12 +5489,12 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -5503,7 +5503,7 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -7560,22 +7560,22 @@ func decodeHandleInboxTodoParams(args [1]string, argsEscaped bool, r *http.Reque
 
 // InitializeMenuSpaceFromDefaultParams is parameters of initializeMenuSpaceFromDefault operation.
 type InitializeMenuSpaceFromDefaultParams struct {
-	SpaceKey string
+	MenuSpaceKey string
 }
 
 func unpackInitializeMenuSpaceFromDefaultParams(packed middleware.Parameters) (params InitializeMenuSpaceFromDefaultParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "spaceKey",
+			Name: "menuSpaceKey",
 			In:   "path",
 		}
-		params.SpaceKey = packed[key].(string)
+		params.MenuSpaceKey = packed[key].(string)
 	}
 	return params
 }
 
 func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool, r *http.Request) (params InitializeMenuSpaceFromDefaultParams, _ error) {
-	// Decode path: spaceKey.
+	// Decode path: menuSpaceKey.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7587,7 +7587,7 @@ func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "spaceKey",
+				Param:   "menuSpaceKey",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
@@ -7604,7 +7604,7 @@ func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool
 					return err
 				}
 
-				params.SpaceKey = c
+				params.MenuSpaceKey = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7615,7 +7615,7 @@ func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "spaceKey",
+			Name: "menuSpaceKey",
 			In:   "path",
 			Err:  err,
 		}
@@ -10744,8 +10744,8 @@ func decodeListMessageDispatchRecordsParams(args [0]string, argsEscaped bool, r 
 
 // ListPageMenuOptionsParams is parameters of listPageMenuOptions operation.
 type ListPageMenuOptionsParams struct {
-	AppKey   string
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       string
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListPageMenuOptionsParams(packed middleware.Parameters) (params ListPageMenuOptionsParams) {
@@ -10758,11 +10758,11 @@ func unpackListPageMenuOptionsParams(packed middleware.Parameters) (params ListP
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -10806,17 +10806,17 @@ func decodeListPageMenuOptionsParams(args [0]string, argsEscaped bool, r *http.R
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -10828,12 +10828,12 @@ func decodeListPageMenuOptionsParams(args [0]string, argsEscaped bool, r *http.R
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -10842,7 +10842,7 @@ func decodeListPageMenuOptionsParams(args [0]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -10852,8 +10852,8 @@ func decodeListPageMenuOptionsParams(args [0]string, argsEscaped bool, r *http.R
 
 // ListPageOptionsParams is parameters of listPageOptions operation.
 type ListPageOptionsParams struct {
-	AppKey   string
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       string
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListPageOptionsParams(packed middleware.Parameters) (params ListPageOptionsParams) {
@@ -10866,11 +10866,11 @@ func unpackListPageOptionsParams(packed middleware.Parameters) (params ListPageO
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -10914,17 +10914,17 @@ func decodeListPageOptionsParams(args [0]string, argsEscaped bool, r *http.Reque
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -10936,12 +10936,12 @@ func decodeListPageOptionsParams(args [0]string, argsEscaped bool, r *http.Reque
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -10950,7 +10950,7 @@ func decodeListPageOptionsParams(args [0]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -10960,12 +10960,12 @@ func decodeListPageOptionsParams(args [0]string, argsEscaped bool, r *http.Reque
 
 // ListPagesParams is parameters of listPages operation.
 type ListPagesParams struct {
-	AppKey   string
-	Current  OptInt    `json:",omitempty,omitzero"`
-	Size     OptInt    `json:",omitempty,omitzero"`
-	Keyword  OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
-	Status   OptString `json:",omitempty,omitzero"`
+	AppKey       string
+	Current      OptInt    `json:",omitempty,omitzero"`
+	Size         OptInt    `json:",omitempty,omitzero"`
+	Keyword      OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
+	Status       OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListPagesParams(packed middleware.Parameters) (params ListPagesParams) {
@@ -11005,11 +11005,11 @@ func unpackListPagesParams(packed middleware.Parameters) (params ListPagesParams
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	{
@@ -11195,17 +11195,17 @@ func decodeListPagesParams(args [0]string, argsEscaped bool, r *http.Request) (p
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -11217,12 +11217,12 @@ func decodeListPagesParams(args [0]string, argsEscaped bool, r *http.Request) (p
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -11231,7 +11231,7 @@ func decodeListPagesParams(args [0]string, argsEscaped bool, r *http.Request) (p
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -11865,8 +11865,8 @@ func decodeListPermissionActionsParams(args [0]string, argsEscaped bool, r *http
 
 // ListPublicRuntimePagesParams is parameters of listPublicRuntimePages operation.
 type ListPublicRuntimePagesParams struct {
-	AppKey   OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListPublicRuntimePagesParams(packed middleware.Parameters) (params ListPublicRuntimePagesParams) {
@@ -11881,11 +11881,11 @@ func unpackListPublicRuntimePagesParams(packed middleware.Parameters) (params Li
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -11934,17 +11934,17 @@ func decodeListPublicRuntimePagesParams(args [0]string, argsEscaped bool, r *htt
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -11956,12 +11956,12 @@ func decodeListPublicRuntimePagesParams(args [0]string, argsEscaped bool, r *htt
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -11970,7 +11970,7 @@ func decodeListPublicRuntimePagesParams(args [0]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -12549,8 +12549,8 @@ func decodeListRolesParams(args [0]string, argsEscaped bool, r *http.Request) (p
 
 // ListRuntimePagesParams is parameters of listRuntimePages operation.
 type ListRuntimePagesParams struct {
-	AppKey   OptString `json:",omitempty,omitzero"`
-	SpaceKey OptString `json:",omitempty,omitzero"`
+	AppKey       OptString `json:",omitempty,omitzero"`
+	MenuSpaceKey OptString `json:",omitempty,omitzero"`
 }
 
 func unpackListRuntimePagesParams(packed middleware.Parameters) (params ListRuntimePagesParams) {
@@ -12565,11 +12565,11 @@ func unpackListRuntimePagesParams(packed middleware.Parameters) (params ListRunt
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.SpaceKey = v.(OptString)
+			params.MenuSpaceKey = v.(OptString)
 		}
 	}
 	return params
@@ -12618,17 +12618,17 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 			Err:  err,
 		}
 	}
-	// Decode query: space_key.
+	// Decode query: menu_space_key.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "space_key",
+			Name:    "menu_space_key",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSpaceKeyVal string
+				var paramsDotMenuSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -12640,12 +12640,12 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 						return err
 					}
 
-					paramsDotSpaceKeyVal = c
+					paramsDotMenuSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
+				params.MenuSpaceKey.SetTo(paramsDotMenuSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -12654,7 +12654,7 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "space_key",
+			Name: "menu_space_key",
 			In:   "query",
 			Err:  err,
 		}

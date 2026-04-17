@@ -15060,9 +15060,9 @@ func (s *Server) handleGetCurrentMenuSpaceRequest(args [0]string, argsEscaped bo
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -18194,9 +18194,9 @@ func (s *Server) handleGetMenuTreeRequest(args [0]string, argsEscaped bool, w ht
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -18744,9 +18744,9 @@ func (s *Server) handleGetNavigationRequest(args [0]string, argsEscaped bool, w 
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -19684,9 +19684,9 @@ func (s *Server) handleGetPageAccessTraceRequest(args [0]string, argsEscaped boo
 					In:   "query",
 				}: params.CollaborationWorkspaceID,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 				{
 					Name: "page_key",
 					In:   "query",
@@ -24015,14 +24015,14 @@ func (s *Server) handleIngestTelemetryLogsRequest(args [0]string, argsEscaped bo
 //
 // 从默认空间初始化菜单空间.
 //
-// POST /system/menu-spaces/{spaceKey}/initialize-default
+// POST /system/menu-spaces/{menuSpaceKey}/initialize-default
 func (s *Server) handleInitializeMenuSpaceFromDefaultRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("initializeMenuSpaceFromDefault"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/system/menu-spaces/{spaceKey}/initialize-default"),
+		semconv.HTTPRouteKey.String("/system/menu-spaces/{menuSpaceKey}/initialize-default"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
@@ -24155,9 +24155,9 @@ func (s *Server) handleInitializeMenuSpaceFromDefaultRequest(args [1]string, arg
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "spaceKey",
+					Name: "menuSpaceKey",
 					In:   "path",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -30086,9 +30086,9 @@ func (s *Server) handleListPageMenuOptionsRequest(args [0]string, argsEscaped bo
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -30277,9 +30277,9 @@ func (s *Server) handleListPageOptionsRequest(args [0]string, argsEscaped bool, 
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -30480,9 +30480,9 @@ func (s *Server) handleListPagesRequest(args [0]string, argsEscaped bool, w http
 					In:   "query",
 				}: params.Keyword,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 				{
 					Name: "status",
 					In:   "query",
@@ -31747,9 +31747,9 @@ func (s *Server) handleListPublicRuntimePagesRequest(args [0]string, argsEscaped
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}
@@ -32699,9 +32699,9 @@ func (s *Server) handleListRuntimePagesRequest(args [0]string, argsEscaped bool,
 					In:   "query",
 				}: params.AppKey,
 				{
-					Name: "space_key",
+					Name: "menu_space_key",
 					In:   "query",
-				}: params.SpaceKey,
+				}: params.MenuSpaceKey,
 			},
 			Raw: r,
 		}

@@ -20,7 +20,7 @@ export async function fetchGetPageList(params: Api.SystemManage.PageSearchParams
     size: params?.size,
     app_key: params?.appKey || '',
     keyword: params?.keyword,
-    space_key: params?.spaceKey,
+    menu_space_key: params?.menuSpaceKey,
     status: params?.status
   }
   const res = await unwrap(v5Client.GET('/pages', { params: { query } }))
@@ -30,9 +30,9 @@ export async function fetchGetPageList(params: Api.SystemManage.PageSearchParams
   } as Api.SystemManage.PageList
 }
 
-export async function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
+export async function fetchGetPageOptions(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/pages/options', 'get'> = { app_key: appKey || '' }
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   const res = await unwrap(v5Client.GET('/pages/options', { params: { query } }))
   return {
     records: (res.records || []).map(normalizePageItem),
@@ -43,18 +43,18 @@ export async function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
 /**
  * 获取运行时导航清单。
  */
-export async function fetchGetRuntimeNavigation(spaceKey?: string, appKey?: string) {
+export async function fetchGetRuntimeNavigation(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/runtime/navigation', 'get'> = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/runtime/navigation', { params: { query } }))
   return normalizeRuntimeNavigationManifest(res)
 }
 
 /** 获取运行时页面注册表 */
-export async function fetchGetRuntimePageList(spaceKey?: string, appKey?: string) {
+export async function fetchGetRuntimePageList(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/pages/runtime', 'get'> = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/pages/runtime', { params: { query } }))
   return {
@@ -64,9 +64,9 @@ export async function fetchGetRuntimePageList(spaceKey?: string, appKey?: string
 }
 
 /** 获取公开运行时页面注册表 */
-export async function fetchGetRuntimePublicPageList(spaceKey?: string, appKey?: string) {
+export async function fetchGetRuntimePublicPageList(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/pages/runtime/public', 'get'> = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/pages/runtime/public', { params: { query } }))
   return {
@@ -140,7 +140,7 @@ export async function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
     inherit_permission: data.inherit_permission,
     keep_alive: data.keep_alive,
     is_full_page: data.is_full_page,
-    space_keys: data.space_keys,
+    menu_space_keys: data.menu_space_keys,
     visibility_scope: data.visibility_scope,
     remote_binding: data.remote_binding,
     status: data.status,
@@ -178,7 +178,7 @@ export async function fetchUpdatePage(id: string, data: Api.SystemManage.PageSav
     inherit_permission: data.inherit_permission,
     keep_alive: data.keep_alive,
     is_full_page: data.is_full_page,
-    space_keys: data.space_keys,
+    menu_space_keys: data.menu_space_keys,
     visibility_scope: data.visibility_scope,
     remote_binding: data.remote_binding,
     status: data.status,
@@ -203,9 +203,9 @@ export async function fetchDeletePage(id: string, appKey: string) {
 }
 
 /** 获取页面上级菜单候选 */
-export async function fetchGetPageMenuOptions(spaceKey: string | undefined, appKey: string) {
+export async function fetchGetPageMenuOptions(menuSpaceKey: string | undefined, appKey: string) {
   const query: V5Query<'/pages/menu-options', 'get'> = { app_key: appKey }
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   const res = await unwrap(v5Client.GET('/pages/menu-options', { params: { query } }))
   return {
     records: (res.records || []).map(normalizePageMenuOption),
@@ -223,7 +223,9 @@ export async function fetchGetPageAccessTrace(params: Api.SystemManage.PageAcces
     ...(params.pageKey ? { page_key: params.pageKey } : {}),
     ...(params.pageKeys ? { page_keys: params.pageKeys } : {}),
     ...(params.routePath ? { route_path: params.routePath } : {}),
-    ...(params.spaceKey ? { space_key: params.spaceKey } : {})
+    ...(params.menuSpaceKey
+      ? { menu_space_key: params.menuSpaceKey }
+      : {})
   }
   const res = await unwrap(v5Client.GET('/pages/access-trace', { params: { query } }))
   return normalizePageAccessTraceResult(res)

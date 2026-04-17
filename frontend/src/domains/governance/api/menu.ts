@@ -10,18 +10,18 @@ import {
 } from './_shared'
 
 /** 获取菜单树 */
-export async function fetchGetMenuList(spaceKey?: string, appKey?: string) {
+export async function fetchGetMenuList(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/menus/tree', 'get'> = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
   return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
 /** 获取完整菜单树 */
-export async function fetchGetMenuTreeAll(spaceKey?: string, appKey?: string) {
+export async function fetchGetMenuTreeAll(menuSpaceKey?: string, appKey?: string) {
   const query: V5Query<'/menus/tree', 'get'> = { all: '1' }
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
   return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]

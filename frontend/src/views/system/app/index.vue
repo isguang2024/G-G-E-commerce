@@ -79,7 +79,7 @@
                 <span>·</span>
                 <span>{{ authModeLabel(item.authMode) }}</span>
                 <span>·</span>
-                <span>默认 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
+                <span>默认 {{ displaySpaceLabel(item.defaultMenuSpaceKey) }}</span>
                 <span>·</span>
                 <span
                   >{{ item.menuSpaceCount || 0 }} 空间 / {{ item.menuCount || 0 }} 菜单 /
@@ -122,7 +122,7 @@
           <div class="app-overview__summary">
             <span>主 Host <strong>{{ selectedAppRecord.primaryHost || '未设置' }}</strong></span>
             <span>·</span>
-            <span>默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span>
+            <span>默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultMenuSpaceKey) }}</strong></span>
             <span>·</span>
             <span>前端入口 <strong>{{ selectedAppRecord.frontendEntryUrl || '继承当前地址' }}</strong></span>
           </div>
@@ -204,7 +204,7 @@
                   </ElTag>
                 </div>
                 <div class="app-rule-row__meta">
-                  <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey) }}</span>
+                  <span>默认空间 {{ displaySpaceLabel(item.defaultMenuSpaceKey, selectedAppRecord?.defaultMenuSpaceKey) }}</span>
                   <span>优先级 {{ item.priority || 0 }}</span>
                   <span v-if="item.description">{{ item.description }}</span>
                 </div>
@@ -230,7 +230,7 @@
             </div>
             <div
               v-for="item in spaceEntryBindings"
-              :key="item.id || item.spaceKey + item.host + item.pathPattern"
+              :key="item.id || item.menuSpaceKey + item.host + item.pathPattern"
               class="app-rule-row"
               @click="openSpaceEntryDialog(item)"
             >
@@ -238,7 +238,7 @@
                 <div class="app-rule-row__title-row">
                   <ElTag size="small" effect="plain">{{ matchTypeLabel(item.matchType) }}</ElTag>
                   <span class="app-rule-row__host">{{ describeEntryRule(item) }}</span>
-                  <ElTag size="small" type="warning" effect="plain">→ {{ item.spaceName || item.spaceKey }}</ElTag>
+                  <ElTag size="small" type="warning" effect="plain">→ {{ item.spaceName || item.menuSpaceKey }}</ElTag>
                   <ElTag size="small" :type="item.status === 'normal' ? 'info' : 'danger'" effect="plain">
                     {{ item.status === 'normal' ? '启用' : '停用' }}
                   </ElTag>
@@ -393,9 +393,9 @@
                 <ElOption label="多空间" value="multi" />
               </ElSelect>
             </ElFormItem>
-            <ElFormItem v-if="editingAppKey" label="默认空间">
+            <ElFormItem v-if="editingAppKey" label="默认菜单空间">
               <ElSelect
-                v-model="appForm.default_space_key"
+                v-model="defaultMenuSpaceKey"
                 filterable
                 allow-create
                 default-first-option
@@ -403,9 +403,9 @@
               >
                 <ElOption
                   v-for="item in spaces"
-                  :key="item.spaceKey"
-                  :label="`${item.name} · ${item.spaceKey}`"
-                  :value="item.spaceKey"
+                  :key="item.menuSpaceKey"
+                  :label="`${item.name} · ${item.menuSpaceKey}`"
+                  :value="item.menuSpaceKey"
                 />
               </ElSelect>
             </ElFormItem>
@@ -671,19 +671,19 @@
             <code>*</code>（单段通配）、<code>**</code>（多段通配）、<code>:name</code>（命名参数）
           </div>
         </ElFormItem>
-        <ElFormItem label="默认空间">
-          <ElSelect
-            v-model="entryForm.default_space_key"
-            filterable
-            allow-create
-            default-first-option
+            <ElFormItem label="默认菜单空间">
+              <ElSelect
+                v-model="entryDefaultMenuSpaceKey"
+                filterable
+                allow-create
+                default-first-option
             style="width: 100%"
           >
             <ElOption
               v-for="item in spaces"
-              :key="item.spaceKey"
-              :label="`${item.name} · ${item.spaceKey}`"
-              :value="item.spaceKey"
+              :key="item.menuSpaceKey"
+              :label="`${item.name} · ${item.menuSpaceKey}`"
+              :value="item.menuSpaceKey"
             />
           </ElSelect>
         </ElFormItem>
@@ -726,16 +726,16 @@
       append-to-body
     >
       <ElForm ref="spaceEntryFormRef" :model="spaceEntryForm" label-position="top">
-        <ElFormItem label="目标菜单空间" prop="space_key"
-          :error="spaceEntryFieldErrors.space_key"
+        <ElFormItem label="目标菜单空间" prop="menu_space_key"
+          :error="spaceEntryFieldErrors.menu_space_key"
           :data-testid="'app-field-error'"
-          :data-field="'space_key'">
-          <ElSelect v-model="spaceEntryForm.space_key" filterable style="width: 100%">
+          :data-field="'menu_space_key'">
+          <ElSelect v-model="spaceEntryMenuSpaceKey" filterable style="width: 100%">
             <ElOption
               v-for="item in spaces"
-              :key="item.spaceKey"
-              :label="`${item.name} · ${item.spaceKey}`"
-              :value="item.spaceKey"
+              :key="item.menuSpaceKey"
+              :label="`${item.name} · ${item.menuSpaceKey}`"
+              :value="item.menuSpaceKey"
             />
           </ElSelect>
         </ElFormItem>
@@ -915,7 +915,7 @@
     name: '',
     description: '',
     space_mode: 'single',
-    default_space_key: '',
+    default_menu_space_key: '',
     auth_mode: 'inherit_host',
     frontend_entry_url: '',
     backend_entry_url: '',
@@ -946,7 +946,7 @@
     host: '',
     path_pattern: '',
     priority: 0,
-    default_space_key: '',
+    default_menu_space_key: '',
     description: '',
     is_primary: false,
     status: 'normal',
@@ -956,7 +956,7 @@
   const spaceEntryForm = reactive<Api.SystemManage.MenuSpaceEntryBindingSaveParams>({
     id: '',
     app_key: '',
-    space_key: '',
+    menu_space_key: '',
     match_type: 'host_exact',
     host: '',
     path_pattern: '',
@@ -965,6 +965,24 @@
     is_primary: false,
     status: 'normal',
     meta: {}
+  })
+  const defaultMenuSpaceKey = computed({
+    get: () => appForm.default_menu_space_key,
+    set: (value: string) => {
+      appForm.default_menu_space_key = value
+    }
+  })
+  const entryDefaultMenuSpaceKey = computed({
+    get: () => entryForm.default_menu_space_key,
+    set: (value: string) => {
+      entryForm.default_menu_space_key = value
+    }
+  })
+  const spaceEntryMenuSpaceKey = computed({
+    get: () => spaceEntryForm.menu_space_key,
+    set: (value: string) => {
+      spaceEntryForm.menu_space_key = value
+    }
   })
 
   const matchTypeLabelMap: Record<string, string> = {
@@ -1037,8 +1055,6 @@
     switch (`${currentApp.value?.resolvedBy || ''}`.trim()) {
       case 'host_binding':
         return 'Host 绑定'
-      case 'legacy_space_host_binding':
-        return '旧空间 Host 绑定'
       case 'explicit':
         return '显式指定'
       case 'default_app':
@@ -1409,7 +1425,7 @@
     appForm.name = ''
     appForm.description = ''
     appForm.space_mode = 'single'
-    appForm.default_space_key = ''
+    appForm.default_menu_space_key = ''
     appForm.auth_mode = 'inherit_host'
     appForm.frontend_entry_url = ''
     appForm.backend_entry_url = ''
@@ -1438,7 +1454,10 @@
     entryForm.host = ''
     entryForm.path_pattern = ''
     entryForm.priority = 0
-    entryForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey)
+    entryForm.default_menu_space_key = resolveSpaceKey(
+      selectedAppRecord.value?.defaultMenuSpaceKey,
+      selectedAppRecord.value?.defaultMenuSpaceKey
+    )
     entryForm.description = ''
     entryForm.is_primary = false
     entryForm.status = 'normal'
@@ -1449,7 +1468,7 @@
     editingSpaceEntryId.value = ''
     spaceEntryForm.id = ''
     spaceEntryForm.app_key = resolveAppKey(selectedAppKey.value)
-    spaceEntryForm.space_key = spaces.value[0]?.spaceKey || ''
+    spaceEntryForm.menu_space_key = spaces.value[0]?.menuSpaceKey || ''
     spaceEntryForm.match_type = 'host_exact'
     spaceEntryForm.host = ''
     spaceEntryForm.path_pattern = ''
@@ -1468,7 +1487,10 @@
       appForm.name = item.name
       appForm.description = item.description || ''
       appForm.space_mode = item.spaceMode === 'multi' ? 'multi' : 'single'
-      appForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey)
+      appForm.default_menu_space_key = resolveSpaceKey(
+        item.defaultMenuSpaceKey,
+        item.defaultMenuSpaceKey
+      )
       appForm.auth_mode = item.authMode || 'inherit_host'
       appForm.frontend_entry_url = item.frontendEntryUrl || ''
       appForm.backend_entry_url = item.backendEntryUrl || ''
@@ -1504,9 +1526,10 @@
       entryForm.host = item.host || ''
       entryForm.path_pattern = item.pathPattern || ''
       entryForm.priority = item.priority || 0
-      entryForm.default_space_key = resolveSpaceKey(
-        item.defaultSpaceKey,
-        selectedAppRecord.value?.defaultSpaceKey
+      entryForm.default_menu_space_key = resolveSpaceKey(
+        item.defaultMenuSpaceKey,
+        item.defaultMenuSpaceKey,
+        selectedAppRecord.value?.defaultMenuSpaceKey
       )
       entryForm.description = item.description || ''
       entryForm.is_primary = Boolean(item.isPrimary)
@@ -1522,7 +1545,7 @@
       editingSpaceEntryId.value = item.id || ''
       spaceEntryForm.id = item.id || ''
       spaceEntryForm.app_key = item.appKey || selectedAppKey.value
-      spaceEntryForm.space_key = item.spaceKey || ''
+      spaceEntryForm.menu_space_key = item.menuSpaceKey || ''
       spaceEntryForm.match_type = normalizeMatchType(item.matchType)
       spaceEntryForm.host = item.host || ''
       spaceEntryForm.path_pattern = item.pathPattern || ''
@@ -1583,11 +1606,11 @@
         capabilities,
         meta: { ...appMetaBase.value }
       }
-      const nextDefaultSpaceKey = resolveSpaceKey(appForm.default_space_key)
+      const nextDefaultSpaceKey = resolveSpaceKey(appForm.default_menu_space_key)
       if (editingAppKey.value && nextDefaultSpaceKey) {
-        payload.default_space_key = nextDefaultSpaceKey
+        payload.default_menu_space_key = nextDefaultSpaceKey
       } else {
-        delete payload.default_space_key
+        delete payload.default_menu_space_key
       }
       const saved = await fetchSaveApp({
         ...payload
@@ -1638,8 +1661,14 @@
       }
       return
     }
-    if (!resolveSpaceKey(entryForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey)) {
-      entryFieldErrors.default_space_key = '请选择或填写默认空间'
+    if (
+      !resolveSpaceKey(
+        entryForm.default_menu_space_key,
+        selectedAppRecord.value?.defaultMenuSpaceKey,
+        selectedAppRecord.value?.defaultMenuSpaceKey
+      )
+    ) {
+      entryFieldErrors.default_menu_space_key = '请选择或填写默认空间'
       return
     }
     savingHost.value = true
@@ -1649,9 +1678,10 @@
         app_key: selectedAppKey.value,
         host: (entryForm.host || '').trim().toLowerCase(),
         path_pattern: (entryForm.path_pattern || '').trim(),
-        default_space_key: resolveSpaceKey(
-          entryForm.default_space_key,
-          selectedAppRecord.value?.defaultSpaceKey
+        default_menu_space_key: resolveSpaceKey(
+          entryForm.default_menu_space_key,
+          selectedAppRecord.value?.defaultMenuSpaceKey,
+          selectedAppRecord.value?.defaultMenuSpaceKey
         ),
         description: entryForm.description?.trim() || ''
       })
@@ -1683,8 +1713,8 @@
       ElMessage.warning('请先选择应用')
       return
     }
-    if (!spaceEntryForm.space_key) {
-      spaceEntryFieldErrors.space_key = '请选择目标菜单空间'
+    if (!spaceEntryForm.menu_space_key) {
+      spaceEntryFieldErrors.menu_space_key = '请选择目标菜单空间'
       return
     }
     const err = validateEntryForm(spaceEntryForm)

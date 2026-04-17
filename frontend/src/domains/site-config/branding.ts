@@ -15,18 +15,25 @@
 import { computed, watch } from 'vue'
 import AppConfig from '@/config'
 import { useSiteConfigStore } from '@/store/modules/site-config'
+import { getHttpAccessToken } from '@/utils/http/request-context'
 
 export const SITE_BRANDING_APP_KEY = 'admin'
 export const SITE_BRANDING_KEYS = ['site.name', 'site.logo', 'site.favicon']
 
 let initPromise: Promise<void> | null = null
+const AUTH_ROUTE_PREFIX = '/account/auth/'
 
 /**
  * 启动时加载一次站点品牌配置。
  * 幂等：重复调用只会触发一次远程请求。失败时静默（维持默认值），不阻塞应用。
  */
 export function initSiteBranding(): Promise<void> {
+  applyFaviconToDom()
+  registerFaviconWatcher()
   if (initPromise) return initPromise
+  if (shouldDeferRemoteBrandingLoad()) {
+    return Promise.resolve()
+  }
   const store = useSiteConfigStore()
   initPromise = store
     .loadInitial(SITE_BRANDING_APP_KEY, SITE_BRANDING_KEYS)
@@ -34,9 +41,8 @@ export function initSiteBranding(): Promise<void> {
       applyFaviconToDom()
       registerFaviconWatcher()
     })
-    .catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('[site-config] initial load failed:', err)
+    .catch(() => {
+      initPromise = null
     })
   return initPromise
 }
@@ -96,4 +102,9 @@ function registerFaviconWatcher() {
     () => store.getImage('site.favicon', ''),
     () => applyFaviconToDom()
   )
+}
+
+function shouldDeferRemoteBrandingLoad(): boolean {
+  if (typeof window === 'undefined') return false
+  return !getHttpAccessToken() && window.location.pathname.startsWith(AUTH_ROUTE_PREFIX)
 }

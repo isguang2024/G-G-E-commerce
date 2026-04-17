@@ -12,7 +12,7 @@ paths:
         in: query
         schema:
           type: string
-      - name: space_key
+      - name: menu_space_key
         in: query
         schema:
           type: string
@@ -36,7 +36,7 @@ paths:
         in: query
         schema:
           type: string
-      - name: space_key
+      - name: menu_space_key
         in: query
         schema:
           type: string
@@ -61,7 +61,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: space_key
+      - name: menu_space_key
         in: query
         schema:
           type: string
@@ -86,7 +86,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: space_key
+      - name: menu_space_key
         in: query
         schema:
           type: string
@@ -124,7 +124,7 @@ paths:
         schema:
           type: string
           format: uuid
-      - name: space_key
+      - name: menu_space_key
         in: query
         description: 菜单空间 key；为空自动解析默认空间
         schema:
@@ -221,7 +221,7 @@ paths:
         in: query
         schema:
           type: string
-      - name: space_key
+      - name: menu_space_key
         in: query
         schema:
           type: string

@@ -58,6 +58,8 @@ function resolveSpaceDefinition(appKey: string) {
   if (appKey === 'demo-app') {
     return {
       space_key: 'demo-default',
+      menu_space_key: 'demo-default',
+      menuSpaceKey: 'demo-default',
       name: 'Demo 空间',
       status: 'normal',
       is_default: true,
@@ -70,6 +72,8 @@ function resolveSpaceDefinition(appKey: string) {
 
   return {
     space_key: 'default',
+    menu_space_key: 'default',
+    menuSpaceKey: 'default',
     name: '默认空间',
     status: 'normal',
     is_default: true,
@@ -96,7 +100,9 @@ function resolveNavigationManifest(appKey: string) {
       },
       context: {
         app_key: 'demo-app',
-        space_key: 'demo-default'
+        space_key: 'demo-default',
+        menu_space_key: 'demo-default',
+        menuSpaceKey: 'demo-default'
       },
       menu_tree: [
         {
@@ -143,7 +149,9 @@ function resolveNavigationManifest(appKey: string) {
     },
     context: {
       app_key: 'platform-admin',
-      space_key: 'default'
+      space_key: 'default',
+      menu_space_key: 'default',
+      menuSpaceKey: 'default'
     },
     menu_tree: [
       {

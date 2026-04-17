@@ -242,14 +242,14 @@ func ensureAccessTraceNavigationSeed() error {
 		return err
 	}
 	definition, err := syncMenuSeed(permissionseed.MenuSeed{
-		SpaceKey:   systemmodels.DefaultMenuSpaceKey,
-		Name:       "AccessTrace",
-		ParentName: "SystemNavigation",
-		Path:       "/system/access-trace",
-		Component:  "/system/access-trace",
-		Title:      "访问链路测试",
-		SortOrder:  5,
-		Meta:       meta,
+		MenuSpaceKey: systemmodels.DefaultMenuSpaceKey,
+		Name:         "AccessTrace",
+		ParentName:   "SystemNavigation",
+		Path:         "/system/access-trace",
+		Component:    "/system/access-trace",
+		Title:        "访问链路测试",
+		SortOrder:    5,
+		Meta:         meta,
 	})
 	if err != nil {
 		return err
@@ -266,7 +266,7 @@ func ensureAccessTraceNavigationSeed() error {
 			RouteName:         "SystemAccessTrace",
 			RoutePath:         "/system/access-trace",
 			Component:         "/system/access-trace",
-			SpaceKey:          "",
+			MenuSpaceKey:      "",
 			PageType:          "inner",
 			VisibilityScope:   "inherit",
 			Source:            "manual",
@@ -291,7 +291,7 @@ func ensureAccessTraceNavigationSeed() error {
 		page.RouteName = "SystemAccessTrace"
 		page.RoutePath = "/system/access-trace"
 		page.Component = "/system/access-trace"
-		page.SpaceKey = ""
+		page.MenuSpaceKey = ""
 		page.PageType = "inner"
 		page.VisibilityScope = "inherit"
 		page.Source = "manual"
@@ -322,7 +322,7 @@ func ensureAccessTraceNavigationSeed() error {
 func removePermissionSimulatorNavigation(logger *zap.Logger) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		var menus []usermodel.Menu
-		if err := tx.Where("space_key = ? AND (name = ? OR title = ? OR path = ?)", systemmodels.DefaultMenuSpaceKey, "PermissionSimulator", "权限模拟", "/system/permission-simulator").
+		if err := tx.Where("menu_space_key = ? AND (name = ? OR title = ? OR path = ?)", systemmodels.DefaultMenuSpaceKey, "PermissionSimulator", "权限模拟", "/system/permission-simulator").
 			Find(&menus).Error; err != nil {
 			return err
 		}
@@ -489,7 +489,7 @@ func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
 		}
 	}
 	if err := database.DB.Model(&systemmodels.SpaceMenuPlacement{}).
-		Where("app_key = ? AND space_key = ? AND menu_key = ?", systemmodels.DefaultAppKey, spaceKey, "AccessTrace").
+		Where("app_key = ? AND menu_space_key = ? AND menu_key = ?", systemmodels.DefaultAppKey, spaceKey, "AccessTrace").
 		Updates(map[string]any{"sort_order": 5, "hidden": false}).Error; err != nil {
 		return err
 	}
@@ -503,7 +503,7 @@ func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
 		page.RouteName = "SystemAccessTrace"
 		page.RoutePath = path
 		page.Component = path
-		page.SpaceKey = ""
+		page.MenuSpaceKey = ""
 		page.PageType = "inner"
 		page.VisibilityScope = "inherit"
 		page.Source = "manual"
@@ -527,7 +527,7 @@ func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
 			"route_name":         page.RouteName,
 			"route_path":         page.RoutePath,
 			"component":          page.Component,
-			"space_key":          "",
+			"menu_space_key":     "",
 			"visibility_scope":   page.VisibilityScope,
 			"page_type":          page.PageType,
 			"source":             page.Source,
@@ -1231,21 +1231,21 @@ func initDefaultMenuSpaces(logger *zap.Logger) error {
 	for _, spec := range permissionseed.DefaultMenuSpaces() {
 		spaceModel := &systemmodels.MenuSpace{
 			AppKey:          systemmodels.DefaultAppKey,
-			SpaceKey:        strings.TrimSpace(spec.SpaceKey),
+			MenuSpaceKey:    strings.TrimSpace(spec.MenuSpaceKey),
 			Name:            strings.TrimSpace(spec.Name),
 			Description:     strings.TrimSpace(spec.Description),
 			DefaultHomePath: strings.TrimSpace(spec.DefaultHomePath),
-			IsDefault:       spec.IsDefault || strings.TrimSpace(spec.SpaceKey) == systemmodels.DefaultMenuSpaceKey,
+			IsDefault:       spec.IsDefault || strings.TrimSpace(spec.MenuSpaceKey) == systemmodels.DefaultMenuSpaceKey,
 			Status:          normalizeMenuSpaceStatus(spec.Status),
 			Meta:            spec.Meta,
 		}
-		if spaceModel.SpaceKey == "" {
-			spaceModel.SpaceKey = systemmodels.DefaultMenuSpaceKey
+		if spaceModel.MenuSpaceKey == "" {
+			spaceModel.MenuSpaceKey = systemmodels.DefaultMenuSpaceKey
 		}
 		if spaceModel.Name == "" {
 			spaceModel.Name = "默认菜单空间"
 		}
-		if spaceModel.DefaultHomePath == "" && spaceModel.SpaceKey == systemmodels.DefaultMenuSpaceKey {
+		if spaceModel.DefaultHomePath == "" && spaceModel.MenuSpaceKey == systemmodels.DefaultMenuSpaceKey {
 			spaceModel.DefaultHomePath = "/dashboard/console"
 		}
 		if spaceModel.Meta == nil {
@@ -1253,7 +1253,7 @@ func initDefaultMenuSpaces(logger *zap.Logger) error {
 		}
 		var existing systemmodels.MenuSpace
 		err := database.DB.
-			Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", spaceModel.AppKey, spaceModel.SpaceKey).
+			Where("app_key = ? AND menu_space_key = ? AND deleted_at IS NULL", spaceModel.AppKey, spaceModel.MenuSpaceKey).
 			First(&existing).Error
 		switch {
 		case err == nil:
@@ -1408,17 +1408,17 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*systemmodels.MenuDefinition, e
 		definition.Meta = meta
 	}
 
-	spaceKey := normalizeMenuSeedSpaceKey(spec.SpaceKey)
+	spaceKey := normalizeMenuSeedMenuSpaceKey(spec.MenuSpaceKey)
 	parentMenuKey := strings.TrimSpace(spec.ParentName)
 	placement := &systemmodels.SpaceMenuPlacement{}
-	err = database.DB.Where("app_key = ? AND space_key = ? AND menu_key = ? AND deleted_at IS NULL", appKey, spaceKey, menuKey).First(placement).Error
+	err = database.DB.Where("app_key = ? AND menu_space_key = ? AND menu_key = ? AND deleted_at IS NULL", appKey, spaceKey, menuKey).First(placement).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		placement = &systemmodels.SpaceMenuPlacement{
 			AppKey:        appKey,
-			SpaceKey:      spaceKey,
+			MenuSpaceKey:  spaceKey,
 			MenuKey:       menuKey,
 			ParentMenuKey: parentMenuKey,
 			SortOrder:     spec.SortOrder,
@@ -1480,13 +1480,13 @@ func ensureNavigationModelFoundation(logger *zap.Logger) error {
 		`CREATE TABLE IF NOT EXISTS page_space_bindings (
 			id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 			page_id uuid NOT NULL,
-			space_key varchar(100) NOT NULL,
+			menu_space_key varchar(100) NOT NULL,
 			created_at timestamptz NOT NULL DEFAULT NOW(),
 			updated_at timestamptz NOT NULL DEFAULT NOW(),
 			deleted_at timestamptz NULL
 		)`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_page_space_bindings_page_space_unique
-			ON page_space_bindings (page_id, space_key)
+			ON page_space_bindings (page_id, menu_space_key)
 			WHERE deleted_at IS NULL`,
 		`UPDATE menus
 			SET kind = CASE
@@ -1494,11 +1494,11 @@ func ensureNavigationModelFoundation(logger *zap.Logger) error {
 				WHEN COALESCE(NULLIF(TRIM(component), ''), '') <> '' THEN 'entry'
 				ELSE 'directory'
 			END`,
-		`INSERT INTO page_space_bindings (page_id, space_key, created_at, updated_at)
-			SELECT id, LOWER(TRIM(space_key)), NOW(), NOW()
+		`INSERT INTO page_space_bindings (page_id, menu_space_key, created_at, updated_at)
+			SELECT id, LOWER(TRIM(menu_space_key)), NOW(), NOW()
 			FROM ui_pages
-			WHERE COALESCE(NULLIF(TRIM(space_key), ''), '') <> ''
-			  AND LOWER(TRIM(space_key)) <> 'default'
+			WHERE COALESCE(NULLIF(TRIM(menu_space_key), ''), '') <> ''
+			  AND LOWER(TRIM(menu_space_key)) <> 'default'
 			  AND parent_menu_id IS NULL
 			  AND COALESCE(NULLIF(TRIM(parent_page_key), ''), '') = ''
 			ON CONFLICT DO NOTHING`,
@@ -1643,7 +1643,7 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 	delete(meta, "spaceScope")
 
 	visibilityScope := normalizePageSeedVisibilityScope(pageType, spec.VisibilityScope, parentMenuID, spec.ParentPageKey)
-	spaceKeys := normalizePageSeedBindingKeys(spec.SpaceKey, spec.SpaceKeys, pageType, visibilityScope, parentMenuID, spec.ParentPageKey)
+	spaceKeys := normalizePageSeedBindingKeys(spec.MenuSpaceKey, spec.MenuSpaceKeys, pageType, visibilityScope, parentMenuID, spec.ParentPageKey)
 	parentPageKey := strings.TrimSpace(spec.ParentPageKey)
 	activeMenuPath := strings.TrimSpace(spec.ActiveMenuPath)
 	switch visibilityScope {
@@ -1663,7 +1663,7 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 		RouteName:         strings.TrimSpace(spec.RouteName),
 		RoutePath:         strings.TrimSpace(spec.RoutePath),
 		Component:         strings.TrimSpace(spec.Component),
-		SpaceKey:          "",
+		MenuSpaceKey:      "",
 		PageType:          pageType,
 		VisibilityScope:   visibilityScope,
 		Source:            source,
@@ -1704,7 +1704,7 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
-		"space_key":          item.SpaceKey,
+		"menu_space_key":     item.MenuSpaceKey,
 		"page_type":          item.PageType,
 		"visibility_scope":   item.VisibilityScope,
 		"source":             item.Source,
@@ -1790,9 +1790,9 @@ func syncSeedPageSpaceBindings(pageID uuid.UUID, visibilityScope string, spaceKe
 	}
 	for _, key := range spaceKeys {
 		binding := systemmodels.PageSpaceBinding{
-			AppKey:   systemmodels.DefaultAppKey,
-			PageID:   pageID,
-			SpaceKey: strings.TrimSpace(key),
+			AppKey:       systemmodels.DefaultAppKey,
+			PageID:       pageID,
+			MenuSpaceKey: strings.TrimSpace(key),
 		}
 		if err := database.DB.Create(&binding).Error; err != nil {
 			return err
@@ -2148,7 +2148,7 @@ func normalizeMenuSpaceStatus(value string) string {
 	}
 }
 
-func normalizeMenuSeedSpaceKey(value string) string {
+func normalizeMenuSeedMenuSpaceKey(value string) string {
 	target := strings.TrimSpace(strings.ToLower(value))
 	if target == "" {
 		return systemmodels.DefaultMenuSpaceKey

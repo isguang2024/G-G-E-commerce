@@ -127,7 +127,7 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
       logger.warn('navigation.runtime.prewarm_app_context_failed', { err: error })
     }
   }
-  const fallbackSpaceKey = normalizeMenuSpaceKey(menuSpaceStore.defaultSpaceKey)
+  const fallbackSpaceKey = normalizeMenuSpaceKey(menuSpaceStore.defaultMenuSpaceKey)
   const candidateSpaceKeys = Array.from(
     new Set(
       [requestedSpaceKey, fallbackSpaceKey, '']
@@ -175,7 +175,10 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
     })
   }
   const resolvedSpaceKey = normalizeMenuSpaceKey(
-    manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || usedSpaceKey
+    (manifest.currentSpace?.space as any)?.menu_space_key ||
+      (manifest.currentSpace?.space as any)?.menuSpaceKey ||
+      (manifest.context as any)?.menu_space_key ||
+      usedSpaceKey
   )
 
   if (

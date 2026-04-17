@@ -60,7 +60,7 @@
   )
   const showSpaceLabel = computed(() => shouldShowSpaceBadge.value && !isDefaultSpace.value)
   const spaceName = computed(
-    () => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '未选择空间'
+    () => currentSpace.value?.spaceName || currentSpace.value?.menuSpaceKey || '未选择空间'
   )
 </script>
 

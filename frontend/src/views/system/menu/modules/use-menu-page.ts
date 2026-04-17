@@ -29,6 +29,10 @@ import {
   fetchGetApps
 } from '@/domains/governance/api'
 import {
+  buildMenuSpaceQuery,
+  resolveMenuSpaceQueryKey
+} from '@/domains/navigation/utils/menu-space'
+import {
   cloneMenuNode,
   getAccessModeLabel,
   getAccessModeTag,
@@ -77,6 +81,7 @@ export function useMenuPage() {
       logger.debug(`system.menu.${event}`, context)
     }
   }
+  const getMenuSpaceKey = (item: any) => `${item?.menuSpaceKey || ''}`.trim()
 
   // --- 搜索相关 ---
   const initialSearchState = { name: '', route: '' }
@@ -113,12 +118,12 @@ export function useMenuPage() {
   }
 
   const menuSpaceMap = computed(
-    () => new Map(menuSpaces.value.map((item) => [item.spaceKey, item]))
+    () => new Map(menuSpaces.value.map((item) => [getMenuSpaceKey(item), item]))
   )
   const menuSpaceOptions = computed(() =>
     menuSpaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: getMenuSpaceKey(item)
     }))
   )
   const appOptions = computed(() =>
@@ -368,7 +373,7 @@ export function useMenuPage() {
     router.replace({
       query: {
         ...route.query,
-        spaceKey: spaceKey || undefined
+        ...buildMenuSpaceQuery(spaceKey)
       }
     })
   }
@@ -378,20 +383,23 @@ export function useMenuPage() {
       path: '/system/menu',
       query: {
         ...route.query,
-        spaceKey: activeSpaceKey.value || undefined,
+        ...buildMenuSpaceQuery(activeSpaceKey.value),
         layout: undefined
       }
     })
   }
 
   const resolveInitialSpaceKey = () => {
-    const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
-    if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+    const requestedSpaceKey = resolveMenuSpaceQueryKey(route.query as Record<string, unknown>)
+    if (
+      requestedSpaceKey &&
+      menuSpaces.value.some((item) => getMenuSpaceKey(item) === requestedSpaceKey)
+    ) {
       return requestedSpaceKey
     }
     return (
-      menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
-      menuSpaces.value[0]?.spaceKey ||
+      getMenuSpaceKey(menuSpaces.value.find((item) => item.isDefault)) ||
+      getMenuSpaceKey(menuSpaces.value[0]) ||
       ''
     )
   }
@@ -421,7 +429,8 @@ export function useMenuPage() {
     await router.replace({
       query: {
         ...route.query,
-        spaceKey: undefined
+        menu_space_key: undefined,
+        menuSpaceKey: undefined
       }
     })
   }
@@ -571,7 +580,7 @@ export function useMenuPage() {
   const buildMenuMetaFromForm = (formData: any) => {
     const isEntry = `${formData.kind || 'entry'}` === 'entry'
     const isExternal = `${formData.kind || ''}` === 'external'
-    const workingSpaceKey = `${formData.spaceKey || activeSpaceKey.value || ''}`.trim()
+    const workingMenuSpaceKey = `${formData.menuSpaceKey || activeSpaceKey.value || ''}`.trim()
     const meta: Record<string, any> = {
       isEnable: formData.isEnable,
       keepAlive: isEntry ? formData.keepAlive : false,
@@ -585,7 +594,7 @@ export function useMenuPage() {
       fixedTab: isEntry ? formData.fixedTab : false,
       isFullPage: isEntry ? formData.isFullPage : false,
       accessMode: formData.accessMode || 'permission',
-      spaceKey: workingSpaceKey
+      menuSpaceKey: workingMenuSpaceKey
     }
     if (isEntry && formData.customParent?.trim()) {
       meta.customParent = formData.customParent.trim()
@@ -603,7 +612,7 @@ export function useMenuPage() {
     title: formData.name || '',
     icon: formData.icon || '',
     sort_order: Number(formData.sort ?? 0),
-    space_key: `${formData.spaceKey || activeSpaceKey.value || ''}`.trim(),
+    menu_space_key: `${formData.menuSpaceKey || activeSpaceKey.value || ''}`.trim(),
     meta
   })
 
@@ -710,7 +719,7 @@ export function useMenuPage() {
           title: row.meta?.title || '',
           icon: row.meta?.icon || '',
           sort_order: Number(row.sort_order ?? 0),
-          space_key: `${row.spaceKey || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
+          menu_space_key: `${(row as any).menuSpaceKey || row.meta?.menuSpaceKey || activeSpaceKey.value || ''}`.trim(),
           meta
         },
         { showErrorMessage: false }
@@ -755,8 +764,8 @@ export function useMenuPage() {
   })
 
   watch(
-    () => [targetAppKey.value, route.query.spaceKey],
-    async ([appKey, value]) => {
+    () => [targetAppKey.value, route.query.menu_space_key, route.query.menuSpaceKey],
+    async ([appKey]) => {
       if (!targetAppKey.value) {
         rawMenuTree.value = []
         rawPages.value = []
@@ -767,12 +776,12 @@ export function useMenuPage() {
       }
       if (!appKey) return
       await syncMenuSpaces()
-      const requestedSpaceKey = `${value || ''}`.trim()
+      const requestedSpaceKey = resolveMenuSpaceQueryKey(route.query as Record<string, unknown>)
       if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
         await getMenuList()
         return
       }
-      if (!menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+      if (!menuSpaces.value.some((item) => getMenuSpaceKey(item) === requestedSpaceKey)) {
         await getMenuList()
         return
       }

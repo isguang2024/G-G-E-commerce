@@ -34,9 +34,9 @@
           <ElOption label="全部菜单空间" value="" />
           <ElOption
             v-for="space in menuSpaceOptions"
-            :key="space.spaceKey"
-            :label="`${space.name} (${space.spaceKey})`"
-            :value="space.spaceKey"
+            :key="space.menuSpaceKey"
+            :label="`${space.name} (${space.menuSpaceKey})`"
+            :value="space.menuSpaceKey"
           />
         </ElSelect>
         <ElInput

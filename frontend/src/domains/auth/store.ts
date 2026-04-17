@@ -220,11 +220,13 @@ export const useUserStore = defineStore(
       const preferredSpaceKey = menuSpaceStore.currentSpaceKey
       const binding = menuSpaceStore.resolveHostBinding(preferredSpaceKey)
 
-      try {
-        const { fetchLogout } = await import('@/domains/auth/api')
-        await fetchLogout()
-      } catch {
-        // stateless JWT 登出允许前端本地兜底
+      if (accessToken.value || refreshToken.value || isLogin.value) {
+        try {
+          const { fetchLogout } = await import('@/domains/auth/api')
+          await fetchLogout()
+        } catch {
+          // stateless JWT 登出允许前端本地兜底
+        }
       }
       clearSessionState({ preserveLastUserId: true })
 
@@ -243,7 +245,7 @@ export const useUserStore = defineStore(
           targetAppKey,
           redirectTarget,
           redirectUri,
-          preferredSpaceKey || binding?.spaceKey || '',
+          preferredSpaceKey || binding?.menuSpaceKey || '',
           loginPageKey
         )
         persistCentralizedAuthAttempt(attempt)
@@ -253,7 +255,7 @@ export const useUserStore = defineStore(
             targetAppKey,
             targetPath: redirectTarget,
             redirectUri,
-            navigationSpaceKey: preferredSpaceKey || binding?.spaceKey || '',
+            navigationSpaceKey: preferredSpaceKey || binding?.menuSpaceKey || '',
             state: attempt.state,
             nonce: attempt.nonce,
             loginPageKey: attempt.loginPageKey

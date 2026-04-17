@@ -1,4 +1,4 @@
-﻿package page
+package page
 
 import (
 	"sort"
@@ -24,7 +24,7 @@ func loadPageSpaceBindingMap(dbQuery *gorm.DB, appKey string) (map[uuid.UUID][]s
 	result := make(map[uuid.UUID][]string, len(bindings))
 	for _, item := range bindings {
 		pageID := item.PageID
-		spaceKey := normalizeSpaceKey(item.SpaceKey)
+		spaceKey := normalizeMenuSpaceKey(item.MenuSpaceKey)
 		if pageID == uuid.Nil || spaceKey == "" {
 			continue
 		}
@@ -36,7 +36,7 @@ func loadPageSpaceBindingMap(dbQuery *gorm.DB, appKey string) (map[uuid.UUID][]s
 	return result, nil
 }
 
-func resolvePageSpaceKeys(
+func resolvePageMenuSpaceKeys(
 	page models.UIPage,
 	pageMap map[string]models.UIPage,
 	menuMap map[uuid.UUID]runtimeMenuNode,
@@ -45,7 +45,7 @@ func resolvePageSpaceKeys(
 ) []string {
 	if page.ParentMenuID != nil {
 		if node, ok := menuMap[*page.ParentMenuID]; ok {
-			return []string{normalizeSpaceKey(node.Menu.SpaceKey)}
+			return []string{normalizeMenuSpaceKey(node.Menu.MenuSpaceKey)}
 		}
 	}
 	if parentPageKey := strings.TrimSpace(page.ParentPageKey); parentPageKey != "" {
@@ -55,7 +55,7 @@ func resolvePageSpaceKeys(
 		if parentPage, ok := pageMap[parentPageKey]; ok {
 			seen[parentPageKey] = struct{}{}
 			defer delete(seen, parentPageKey)
-			return resolvePageSpaceKeys(parentPage, pageMap, menuMap, bindingMap, seen)
+			return resolvePageMenuSpaceKeys(parentPage, pageMap, menuMap, bindingMap, seen)
 		}
 	}
 	if keys := uniqueSortedStrings(bindingMap[page.ID]); len(keys) > 0 {
@@ -64,17 +64,17 @@ func resolvePageSpaceKeys(
 	return []string{}
 }
 
-func isPageVisibleInSpace(item models.UIPage, targetSpaceKey string) bool {
+func isPageVisibleInSpace(item models.UIPage, targetMenuSpaceKey string) bool {
 	if readPageVisibilityScope(item) == pageVisibilityScopeApp {
 		return true
 	}
-	keys := readPageSpaceKeys(item)
+	keys := readPageMenuSpaceKeys(item)
 	if len(keys) == 0 {
 		return true
 	}
-	target := normalizeSpaceKey(targetSpaceKey)
+	target := normalizeMenuSpaceKey(targetMenuSpaceKey)
 	for _, key := range keys {
-		if normalizeSpaceKey(key) == target {
+		if normalizeMenuSpaceKey(key) == target {
 			return true
 		}
 	}
@@ -97,7 +97,7 @@ func readPageVisibilityScope(item models.UIPage) string {
 		return strings.TrimSpace(item.VisibilityScope)
 	}
 	if item.Meta != nil {
-		if scope, ok := item.Meta["spaceScope"].(string); ok {
+		if scope, ok := item.Meta["menuSpaceScope"].(string); ok {
 			switch strings.TrimSpace(scope) {
 			case "bound":
 				return pageVisibilityScopeSpaces
@@ -110,14 +110,14 @@ func readPageVisibilityScope(item models.UIPage) string {
 		return pageVisibilityScopeInherit
 	}
 	if item.Meta != nil {
-		if values, ok := item.Meta["spaceKeys"].([]string); ok && len(uniqueSortedStrings(values)) > 0 {
+		if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]string); ok && len(uniqueSortedStrings(values)) > 0 {
 			return pageVisibilityScopeSpaces
 		}
-		if values, ok := item.Meta["spaceKeys"].([]interface{}); ok {
+		if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]interface{}); ok {
 			result := make([]string, 0, len(values))
 			for _, value := range values {
 				if text, ok := value.(string); ok {
-					result = append(result, normalizeSpaceKey(text))
+					result = append(result, normalizeMenuSpaceKey(text))
 				}
 			}
 			if len(uniqueSortedStrings(result)) > 0 {
@@ -128,19 +128,19 @@ func readPageVisibilityScope(item models.UIPage) string {
 	return pageVisibilityScopeApp
 }
 
-func readPageSpaceKeys(item models.UIPage) []string {
+func readPageMenuSpaceKeys(item models.UIPage) []string {
 	if readPageVisibilityScope(item) == pageVisibilityScopeApp {
 		return []string{}
 	}
 	if item.Meta != nil {
-		if values, ok := item.Meta["spaceKeys"].([]string); ok {
+		if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]string); ok {
 			return uniqueSortedStrings(values)
 		}
-		if values, ok := item.Meta["spaceKeys"].([]interface{}); ok {
+		if values, ok := pageMetaMenuSpaceKeys(item.Meta).([]interface{}); ok {
 			result := make([]string, 0, len(values))
 			for _, value := range values {
 				if text, ok := value.(string); ok {
-					result = append(result, normalizeSpaceKey(text))
+					result = append(result, normalizeMenuSpaceKey(text))
 				}
 			}
 			return uniqueSortedStrings(result)
@@ -159,23 +159,30 @@ func applyResolvedPageSpace(item *models.UIPage, keys []string) {
 	if item.Meta == nil {
 		item.Meta = models.MetaJSON{}
 	}
-	delete(item.Meta, "spaceKeys")
-	delete(item.Meta, "spaceScope")
+	delete(item.Meta, "menuSpaceKeys")
+	delete(item.Meta, "menuSpaceScope")
 	switch visibilityScope {
 	case pageVisibilityScopeInherit:
-		item.SpaceKey = ""
+		item.MenuSpaceKey = ""
 		if len(keys) > 0 {
-			item.Meta["spaceKeys"] = keys
+			item.Meta["menuSpaceKeys"] = keys
 		}
-		item.Meta["spaceScope"] = pageVisibilityScopeInherit
+		item.Meta["menuSpaceScope"] = pageVisibilityScopeInherit
 	case pageVisibilityScopeSpaces:
-		item.SpaceKey = ""
-		item.Meta["spaceKeys"] = keys
-		item.Meta["spaceScope"] = pageVisibilityScopeSpaces
+		item.MenuSpaceKey = ""
+		item.Meta["menuSpaceKeys"] = keys
+		item.Meta["menuSpaceScope"] = pageVisibilityScopeSpaces
 	default:
-		item.SpaceKey = ""
-		item.Meta["spaceScope"] = pageVisibilityScopeApp
+		item.MenuSpaceKey = ""
+		item.Meta["menuSpaceScope"] = pageVisibilityScopeApp
 	}
+}
+
+func pageMetaMenuSpaceKeys(meta models.MetaJSON) interface{} {
+	if meta == nil {
+		return nil
+	}
+	return meta["menuSpaceKeys"]
 }
 
 func isMenuBackedEntryPage(item models.UIPage, menuMap map[uuid.UUID]runtimeMenuNode) bool {
@@ -220,7 +227,7 @@ func uniqueSortedStrings(items []string) []string {
 	seen := make(map[string]struct{}, len(items))
 	result := make([]string, 0, len(items))
 	for _, item := range items {
-		key := normalizeSpaceKey(item)
+		key := normalizeMenuSpaceKey(item)
 		if key == "" {
 			continue
 		}
@@ -233,4 +240,3 @@ func uniqueSortedStrings(items []string) []string {
 	sort.Strings(result)
 	return result
 }
-

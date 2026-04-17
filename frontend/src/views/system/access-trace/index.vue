@@ -45,7 +45,7 @@
 
         <ElFormItem label="菜单空间">
           <ElSelect
-            v-model="query.spaceKey"
+            v-model="query.menuSpaceKey"
             filterable
             clearable
             placeholder="默认空间"
@@ -155,7 +155,7 @@
         :data-visible-menu-count="visibleMenuCount"
         :data-visible-page-count="visiblePageCount"
         :data-total-page-count="pageRows.length"
-        :data-space-key="result.spaceKey || ''"
+        :data-space-key="result.menuSpaceKey || ''"
         :data-collaboration-workspace-id="result.collaborationWorkspaceId || ''"
         :data-user-id="result.userId || ''"
         hidden
@@ -203,7 +203,7 @@
         <div class="stat-card stat-card-wide">
           <div class="stat-label">菜单空间 · 协作空间</div>
           <div class="stat-value stat-meta">
-            <ElTag size="small" effect="plain">{{ result.spaceKey || '-' }}</ElTag>
+            <ElTag size="small" effect="plain">{{ result.menuSpaceKey || '-' }}</ElTag>
             <ElTag size="small" effect="plain" type="info">
               {{ result.collaborationWorkspaceId ? '协作空间' : '个人空间' }}
             </ElTag>
@@ -559,7 +559,7 @@
   const spaceOptions = computed(() =>
     menuSpaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: item.menuSpaceKey
     }))
   )
   const roleRows = computed(() => result.value?.roles || [])
@@ -680,7 +680,7 @@
     query.userId = ''
     query.collaborationWorkspaceId = ''
     query.pageKey = ''
-    query.spaceKey = ''
+    query.menuSpaceKey = ''
     roleCodeFilter.value = ''
     onlyCollaborationWorkspaceUsers.value = false
     pageKeyword.value = ''
@@ -692,7 +692,7 @@
     userId: '',
     collaborationWorkspaceId: '',
     pageKey: '',
-    spaceKey: ''
+    menuSpaceKey: ''
   })
 
   function formatUserLabel(user: Api.SystemManage.UserListItem) {
@@ -811,7 +811,7 @@
   async function handleManagedAppChange(value?: string) {
     await setManagedAppKey(`${value || ''}`.trim())
     query.pageKey = ''
-    query.spaceKey = ''
+    query.menuSpaceKey = ''
     query.userId = ''
     query.collaborationWorkspaceId = ''
     roleCodeFilter.value = ''

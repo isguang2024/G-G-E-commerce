@@ -1,4 +1,4 @@
-﻿package page
+package page
 
 import (
 	"sort"
@@ -47,8 +47,8 @@ func TestResolveRuntimeMenuInheritedAccessHonorsShowVisibilityMode(t *testing.T)
 	}
 	node := runtimeMenuNode{
 		Menu: models.Menu{
-			ID:       menuID,
-			SpaceKey: "default",
+			ID:           menuID,
+			MenuSpaceKey: "default",
 			Meta: models.MetaJSON{
 				"accessMode":           "permission",
 				"requiredAction":       "collaboration_workspace.read",
@@ -164,4 +164,3 @@ func TestIntersectVisibleMenusByPermissionKey(t *testing.T) {
 		assertContainsAll(t, result, ghostID, plainID)
 	})
 }
-

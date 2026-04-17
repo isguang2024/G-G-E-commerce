@@ -13,7 +13,7 @@ const DefaultMenuSpaceKey = "default"
 type MenuSpace struct {
 	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	AppKey          string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	SpaceKey        string         `gorm:"type:varchar(100);not null;index" json:"space_key"`
+	MenuSpaceKey    string         `gorm:"type:varchar(100);not null;index" json:"menu_space_key"`
 	Name            string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description     string         `gorm:"type:text;not null;default:''" json:"description"`
 	DefaultHomePath string         `gorm:"type:varchar(255);not null;default:''" json:"default_home_path"`
@@ -31,16 +31,16 @@ func (MenuSpace) TableName() string {
 
 // MenuSpaceHostBinding 菜单空间 Host 绑定
 type MenuSpaceHostBinding struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	SpaceKey    string         `gorm:"type:varchar(100);not null;index" json:"space_key"`
-	Host        string         `gorm:"type:varchar(255);not null;uniqueIndex" json:"host"`
-	Description string         `gorm:"type:text;not null;default:''" json:"description"`
-	IsDefault   bool           `gorm:"not null;default:false" json:"is_default"`
-	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	Meta        MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	MenuSpaceKey string         `gorm:"type:varchar(100);not null;index" json:"menu_space_key"`
+	Host         string         `gorm:"type:varchar(255);not null;uniqueIndex" json:"host"`
+	Description  string         `gorm:"type:text;not null;default:''" json:"description"`
+	IsDefault    bool           `gorm:"not null;default:false" json:"is_default"`
+	Status       string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta         MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (MenuSpaceHostBinding) TableName() string {

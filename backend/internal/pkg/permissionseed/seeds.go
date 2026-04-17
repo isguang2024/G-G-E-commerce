@@ -1,4 +1,4 @@
-﻿package permissionseed
+package permissionseed
 
 import (
 	"crypto/sha1"
@@ -60,7 +60,7 @@ type FeaturePackageBundleSeed struct {
 }
 
 type MenuSeed struct {
-	SpaceKey      string
+	MenuSpaceKey  string
 	Kind          string
 	Name          string
 	ParentName    string
@@ -74,7 +74,7 @@ type MenuSeed struct {
 }
 
 type MenuSpaceSeed struct {
-	SpaceKey        string
+	MenuSpaceKey    string
 	Name            string
 	Description     string
 	DefaultHomePath string
@@ -99,8 +99,8 @@ type APIEndpointCategorySeed struct {
 }
 
 type PageSeed struct {
-	SpaceKey          string
-	SpaceKeys         []string
+	MenuSpaceKey      string
+	MenuSpaceKeys     []string
 	PageKey           string
 	Name              string
 	RouteName         string
@@ -623,8 +623,8 @@ func DefaultMenus() []MenuSeed {
 		{Name: "CollaborationWorkspaceMembers", ParentName: "CollaborationWorkspaceRoot", Path: "members", Component: "/collaboration-workspace/members", Title: "协作空间成员", SortOrder: 2, Meta: metaCollaborationWorkspaceAccessOnly},
 	}
 	for i := range items {
-		if strings.TrimSpace(items[i].SpaceKey) == "" {
-			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
+		if strings.TrimSpace(items[i].MenuSpaceKey) == "" {
+			items[i].MenuSpaceKey = systemmodels.DefaultMenuSpaceKey
 		}
 		if strings.TrimSpace(items[i].Kind) == "" {
 			items[i].Kind = deriveMenuSeedKind(items[i])
@@ -653,7 +653,7 @@ func deriveMenuSeedKind(item MenuSeed) string {
 func DefaultMenuSpaces() []MenuSpaceSeed {
 	return []MenuSpaceSeed{
 		{
-			SpaceKey:        systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:    systemmodels.DefaultMenuSpaceKey,
 			Name:            "默认菜单空间",
 			Description:     "兼容当前单域单菜单运行模式",
 			DefaultHomePath: "/dashboard/console",
@@ -662,7 +662,7 @@ func DefaultMenuSpaces() []MenuSpaceSeed {
 			Meta:            usermodel.MetaJSON{},
 		},
 		{
-			SpaceKey:        "ops",
+			MenuSpaceKey:    "ops",
 			Name:            "运营空间",
 			Description:     "用于验证多空间菜单与空间级页面可见性。",
 			DefaultHomePath: "/dashboard/console",
@@ -760,7 +760,7 @@ func DefaultPages() []PageSeed {
 			Component:         "/system/access-trace",
 			PageType:          "standalone",
 			VisibilityScope:   "spaces",
-			SpaceKeys:         []string{"ops"},
+			MenuSpaceKeys:     []string{"ops"},
 			Source:            "manual",
 			ModuleKey:         "system",
 			SortOrder:         18,
@@ -992,7 +992,7 @@ func DefaultPages() []PageSeed {
 func LegacyMenuBackedPages() []PageSeed {
 	items := []PageSeed{
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:      systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "workspace.inbox",
 			Name:              "消息中心",
 			RouteName:         "WorkspaceInbox",
@@ -1013,7 +1013,7 @@ func LegacyMenuBackedPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{"isHideTab": false},
 		},
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:      systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "system.menu_space.manage",
 			Name:              "菜单空间",
 			RouteName:         "MenuSpaceManage",
@@ -1035,7 +1035,7 @@ func LegacyMenuBackedPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:      systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "system.message.manage",
 			Name:              "消息发送",
 			RouteName:         "MessageManage",
@@ -1057,7 +1057,7 @@ func LegacyMenuBackedPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:      systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "collaboration_workspace.index",
 			Name:              "CollaborationWorkspace",
 			RouteName:         "CollaborationWorkspaceIndex",
@@ -1079,7 +1079,7 @@ func LegacyMenuBackedPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			MenuSpaceKey:      systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "collaboration_workspace.message.manage",
 			Name:              "协作空间消息发送",
 			RouteName:         "CollaborationWorkspaceMessageManage",
@@ -1135,4 +1135,3 @@ func newPermissionKeySeed(resourceCode, actionCode, name, description string) Pe
 		IsBuiltin:        true,
 	}
 }
-

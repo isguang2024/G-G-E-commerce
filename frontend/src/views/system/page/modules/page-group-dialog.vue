@@ -80,7 +80,7 @@
             </ElFormItem>
           </ElCol>
           <ElCol v-if="showSpaceBindingField" :span="12">
-            <ElFormItem label="开放空间" prop="spaceKeys">
+            <ElFormItem label="开放空间" prop="menuSpaceKeys">
               <template #label>
                 <PageFieldLabel
                   label="开放空间"
@@ -88,7 +88,7 @@
                 />
               </template>
               <ElSelect
-                v-model="form.spaceKeys"
+                v-model="form.menuSpaceKeys"
                 multiple
                 collapse-tags
                 collapse-tags-tooltip
@@ -377,7 +377,7 @@
     permissionKey: '',
     moduleKey: '',
     visibilityScope: 'app',
-    spaceKeys: [] as string[],
+    menuSpaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
     parentPageKey: '',
@@ -396,7 +396,7 @@
   const menuSpaceOptions = computed(() =>
     (props.menuSpaces || []).map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: item.menuSpaceKey
     }))
   )
   const showVisibilityScopeField = computed(() => mountMode.value === 'none')
@@ -533,7 +533,11 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
+      const menuSpaceKeys = Array.isArray((props.pageData as any).menuSpaceKeys)
+        ? (props.pageData as any).menuSpaceKeys
+        : Array.isArray(props.pageData.menuSpaceKeys)
+          ? props.pageData.menuSpaceKeys
+          : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -544,7 +548,7 @@
         moduleKey: props.pageData.moduleKey || '',
         visibilityScope:
           `${props.pageData.visibilityScope || props.pageData.spaceScope || ''}`.trim() || 'app',
-        spaceKeys: spaceKeys,
+        menuSpaceKeys: menuSpaceKeys,
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -566,7 +570,7 @@
       visibilityScope:
         `${props.defaultData?.visibilityScope || props.defaultData?.spaceScope || ''}`.trim() ||
         'app',
-      spaceKeys: props.defaultData?.spaceKeys || [],
+      menuSpaceKeys: (props.defaultData as any)?.menuSpaceKeys || [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -590,7 +594,7 @@
 
   async function loadOptions() {
     // 页面中心仍按“当前空间视角”返回可挂接菜单与父分组选项，避免跨空间候选串线。
-    const scopeKey = `${form.spaceKeys[0] || ''}`.trim()
+    const scopeKey = `${form.menuSpaceKeys[0] || ''}`.trim()
     const appKey = `${props.appKey || ''}`.trim()
     const [menuRes, pageRes] = await Promise.all([
       fetchGetPageMenuOptions(scopeKey || undefined, appKey),
@@ -609,7 +613,7 @@
   }
 
   watch(
-    () => form.spaceKeys,
+    () => form.menuSpaceKeys,
     async () => {
       if (!props.modelValue) return
       form.parentMenuId = ''
@@ -628,7 +632,7 @@
     () => form.visibilityScope,
     (value) => {
       if (value !== 'spaces') {
-        form.spaceKeys = []
+        form.menuSpaceKeys = []
       }
     }
   )
@@ -674,7 +678,7 @@
       }
       if (mountMode.value !== 'none') {
         form.visibilityScope = 'app'
-        form.spaceKeys = []
+        form.menuSpaceKeys = []
       }
       nextTick(() =>
         formRef.value?.validateField(['parentMenuId', 'parentPageKey']).catch(() => undefined)
@@ -719,7 +723,7 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: resolvedModuleKey.value,
         visibility_scope: visibilityScope,
-        space_keys: visibilityScope === 'spaces' ? form.spaceKeys : [],
+        menu_space_keys: visibilityScope === 'spaces' ? form.menuSpaceKeys : [],
         sort_order: form.sortOrder,
         parent_menu_id: mountMode.value === 'menu' ? normalizeMenuId(form.parentMenuId) : '',
         parent_page_key: mountMode.value === 'page' ? form.parentPageKey || '' : '',

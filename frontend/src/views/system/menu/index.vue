@@ -154,7 +154,7 @@
 
         <template #space="{ row }">
           <ElTag size="small" effect="plain" type="info">
-            {{ getSpaceName(row.spaceKey || row.meta?.spaceKey) }}
+            {{ getSpaceName(row.menuSpaceKey || row.meta?.menuSpaceKey) }}
           </ElTag>
         </template>
 

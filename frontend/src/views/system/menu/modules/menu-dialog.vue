@@ -60,8 +60,8 @@
           </ElFormItem>
         </ElCol>
         <ElCol v-if="showSpaceField" :span="12">
-          <ElFormItem label="菜单空间" prop="spaceKey">
-            <ElSelect v-model="form.spaceKey" style="width: 100%">
+          <ElFormItem label="菜单空间" prop="menuSpaceKey">
+            <ElSelect v-model="form.menuSpaceKey" style="width: 100%">
               <ElOption
                 v-for="item in menuSpaceOptions"
                 :key="item.value"
@@ -274,7 +274,7 @@
     customParent: string
     accessMode: 'permission' | 'jwt' | 'public'
     isFullPage: boolean
-    spaceKey: string
+    menuSpaceKey: string
   }
 
   interface Props {
@@ -308,6 +308,7 @@
   const emit = defineEmits<Emits>()
   const formRef = ref()
   const isEdit = ref(false)
+  const getMenuSpaceKey = (item: any) => `${item?.menuSpaceKey || ''}`.trim()
 
   const form = reactive<MenuFormData>({
     id: 0,
@@ -332,7 +333,7 @@
     customParent: '',
     accessMode: 'permission',
     isFullPage: false,
-    spaceKey: ''
+    menuSpaceKey: ''
   })
 
   function collectIds(node: AppRouteRecord & { id?: string; children?: any[] }): string[] {
@@ -383,11 +384,14 @@
   const menuSpaceOptions = computed(() =>
     (props.menuSpaces || []).map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
+      value: getMenuSpaceKey(item)
     }))
   )
   const resolvedFallbackSpaceKey = computed(
-    () => props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || ''
+    () =>
+      props.currentSpaceKey ||
+      getMenuSpaceKey(props.menuSpaces?.find((item) => item.isDefault)) ||
+      ''
   )
   const showSpaceField = computed(() => props.showSpaceField)
 
@@ -535,7 +539,7 @@
     form.customParent = ''
     form.accessMode = 'permission'
     form.isFullPage = false
-    form.spaceKey = resolvedFallbackSpaceKey.value
+    form.menuSpaceKey = resolvedFallbackSpaceKey.value
     formRef.value?.clearValidate?.()
   }
 
@@ -568,8 +572,7 @@
     form.customParent = row.meta?.customParent || ''
     form.accessMode = row.meta?.accessMode || 'permission'
     form.isFullPage = row.meta?.isFullPage === true
-    form.spaceKey =
-      `${row.spaceKey || row.space_key || row.meta?.spaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
+    form.menuSpaceKey = `${(row as any).menuSpaceKey || row.meta?.menuSpaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
   }
 
   function applyKindSideEffects(kind: MenuKind) {

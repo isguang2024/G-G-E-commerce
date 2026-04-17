@@ -2671,7 +2671,7 @@ func (s *NavigationManifest) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.CurrentSpace.Get(); ok {
+		if value, ok := s.CurrentMenuSpace.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
 					return err
@@ -2684,7 +2684,7 @@ func (s *NavigationManifest) Validate() error {
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "current_space",
+			Name:  "current_menu_space",
 			Error: err,
 		})
 	}

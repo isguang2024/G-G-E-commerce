@@ -4724,18 +4724,18 @@ func (s *FeaturePackageList) SetSize(val int) {
 
 // Ref: #/components/schemas/FeaturePackageMenuItem
 type FeaturePackageMenuItem struct {
-	ID        uuid.UUID  `json:"id"`
-	ParentID  OptNilUUID `json:"parent_id"`
-	AppKey    string     `json:"app_key"`
-	SpaceKey  string     `json:"space_key"`
-	Kind      string     `json:"kind"`
-	Path      OptString  `json:"path"`
-	Name      string     `json:"name"`
-	Component OptString  `json:"component"`
-	Title     string     `json:"title"`
-	Icon      OptString  `json:"icon"`
-	SortOrder int        `json:"sort_order"`
-	Hidden    bool       `json:"hidden"`
+	ID           uuid.UUID  `json:"id"`
+	ParentID     OptNilUUID `json:"parent_id"`
+	AppKey       string     `json:"app_key"`
+	MenuSpaceKey string     `json:"menu_space_key"`
+	Kind         string     `json:"kind"`
+	Path         OptString  `json:"path"`
+	Name         string     `json:"name"`
+	Component    OptString  `json:"component"`
+	Title        string     `json:"title"`
+	Icon         OptString  `json:"icon"`
+	SortOrder    int        `json:"sort_order"`
+	Hidden       bool       `json:"hidden"`
 }
 
 // GetID returns the value of ID.
@@ -4753,9 +4753,9 @@ func (s *FeaturePackageMenuItem) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *FeaturePackageMenuItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *FeaturePackageMenuItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetKind returns the value of Kind.
@@ -4813,9 +4813,9 @@ func (s *FeaturePackageMenuItem) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *FeaturePackageMenuItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *FeaturePackageMenuItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetKind sets the value of Kind.
@@ -9465,7 +9465,7 @@ type MenuSaveRequest struct {
 	RoutePath      OptString  `json:"route_path"`
 	AppKeys        []string   `json:"app_keys"`
 	AppKey         OptString  `json:"app_key"`
-	SpaceKey       OptString  `json:"space_key"`
+	MenuSpaceKey   OptString  `json:"menu_space_key"`
 	SortOrder      OptInt     `json:"sort_order"`
 	Status         OptString  `json:"status"`
 	PermissionKeys []string   `json:"permission_keys"`
@@ -9526,9 +9526,9 @@ func (s *MenuSaveRequest) GetAppKey() OptString {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *MenuSaveRequest) GetSpaceKey() OptString {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *MenuSaveRequest) GetMenuSpaceKey() OptString {
+	return s.MenuSpaceKey
 }
 
 // GetSortOrder returns the value of SortOrder.
@@ -9601,9 +9601,9 @@ func (s *MenuSaveRequest) SetAppKey(val OptString) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *MenuSaveRequest) SetSpaceKey(val OptString) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *MenuSaveRequest) SetMenuSpaceKey(val OptString) {
+	s.MenuSpaceKey = val
 }
 
 // SetSortOrder sets the value of SortOrder.
@@ -9649,20 +9649,20 @@ func (s *MenuSourceEntry) SetPackageIds(val []uuid.UUID) {
 
 // Ref: #/components/schemas/MenuTreeItem
 type MenuTreeItem struct {
-	ID        uuid.UUID      `json:"id"`
-	ParentID  OptNilUUID     `json:"parent_id"`
-	AppKey    string         `json:"app_key"`
-	SpaceKey  string         `json:"space_key"`
-	Kind      string         `json:"kind"`
-	Path      string         `json:"path"`
-	Name      string         `json:"name"`
-	Component string         `json:"component"`
-	Title     OptString      `json:"title"`
-	Icon      OptString      `json:"icon"`
-	Hidden    OptBool        `json:"hidden"`
-	Meta      MenuTreeMeta   `json:"meta"`
-	SortOrder int            `json:"sort_order"`
-	Children  []MenuTreeItem `json:"children"`
+	ID           uuid.UUID      `json:"id"`
+	ParentID     OptNilUUID     `json:"parent_id"`
+	AppKey       string         `json:"app_key"`
+	MenuSpaceKey string         `json:"menu_space_key"`
+	Kind         string         `json:"kind"`
+	Path         string         `json:"path"`
+	Name         string         `json:"name"`
+	Component    string         `json:"component"`
+	Title        OptString      `json:"title"`
+	Icon         OptString      `json:"icon"`
+	Hidden       OptBool        `json:"hidden"`
+	Meta         MenuTreeMeta   `json:"meta"`
+	SortOrder    int            `json:"sort_order"`
+	Children     []MenuTreeItem `json:"children"`
 }
 
 // GetID returns the value of ID.
@@ -9680,9 +9680,9 @@ func (s *MenuTreeItem) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *MenuTreeItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *MenuTreeItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetKind returns the value of Kind.
@@ -9750,9 +9750,9 @@ func (s *MenuTreeItem) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *MenuTreeItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *MenuTreeItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetKind sets the value of Kind.
@@ -11825,9 +11825,9 @@ func (*MutationResult) logoutRes()                {}
 // Ref: #/components/schemas/NavigationContext
 type NavigationContext struct {
 	AppKey                   string  `json:"app_key"`
-	SpaceKey                 string  `json:"space_key"`
+	MenuSpaceKey             string  `json:"menu_space_key"`
 	RequestHost              string  `json:"request_host"`
-	RequestedSpaceKey        string  `json:"requested_space_key"`
+	RequestedMenuSpaceKey    string  `json:"requested_menu_space_key"`
 	Authenticated            bool    `json:"authenticated"`
 	SuperAdmin               bool    `json:"super_admin"`
 	VisibleMenuCount         int     `json:"visible_menu_count"`
@@ -11842,9 +11842,9 @@ func (s *NavigationContext) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *NavigationContext) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *NavigationContext) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetRequestHost returns the value of RequestHost.
@@ -11852,9 +11852,9 @@ func (s *NavigationContext) GetRequestHost() string {
 	return s.RequestHost
 }
 
-// GetRequestedSpaceKey returns the value of RequestedSpaceKey.
-func (s *NavigationContext) GetRequestedSpaceKey() string {
-	return s.RequestedSpaceKey
+// GetRequestedMenuSpaceKey returns the value of RequestedMenuSpaceKey.
+func (s *NavigationContext) GetRequestedMenuSpaceKey() string {
+	return s.RequestedMenuSpaceKey
 }
 
 // GetAuthenticated returns the value of Authenticated.
@@ -11897,9 +11897,9 @@ func (s *NavigationContext) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *NavigationContext) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *NavigationContext) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetRequestHost sets the value of RequestHost.
@@ -11907,9 +11907,9 @@ func (s *NavigationContext) SetRequestHost(val string) {
 	s.RequestHost = val
 }
 
-// SetRequestedSpaceKey sets the value of RequestedSpaceKey.
-func (s *NavigationContext) SetRequestedSpaceKey(val string) {
-	s.RequestedSpaceKey = val
+// SetRequestedMenuSpaceKey sets the value of RequestedMenuSpaceKey.
+func (s *NavigationContext) SetRequestedMenuSpaceKey(val string) {
+	s.RequestedMenuSpaceKey = val
 }
 
 // SetAuthenticated sets the value of Authenticated.
@@ -11949,13 +11949,13 @@ func (s *NavigationContext) SetCollaborationWorkspaceID(val OptUUID) {
 
 // Ref: #/components/schemas/NavigationManifest
 type NavigationManifest struct {
-	VersionStamp string                            `json:"version_stamp"`
-	CurrentApp   OptSystemCurrentAppResponse       `json:"current_app"`
-	CurrentSpace OptSystemCurrentMenuSpaceResponse `json:"current_space"`
-	Context      OptNavigationContext              `json:"context"`
-	MenuTree     []MenuTreeItem                    `json:"menu_tree"`
-	EntryRoutes  []MenuTreeItem                    `json:"entry_routes"`
-	ManagedPages []PageListItem                    `json:"managed_pages"`
+	VersionStamp     string                            `json:"version_stamp"`
+	CurrentApp       OptSystemCurrentAppResponse       `json:"current_app"`
+	CurrentMenuSpace OptSystemCurrentMenuSpaceResponse `json:"current_menu_space"`
+	Context          OptNavigationContext              `json:"context"`
+	MenuTree         []MenuTreeItem                    `json:"menu_tree"`
+	EntryRoutes      []MenuTreeItem                    `json:"entry_routes"`
+	ManagedPages     []PageListItem                    `json:"managed_pages"`
 }
 
 // GetVersionStamp returns the value of VersionStamp.
@@ -11968,9 +11968,9 @@ func (s *NavigationManifest) GetCurrentApp() OptSystemCurrentAppResponse {
 	return s.CurrentApp
 }
 
-// GetCurrentSpace returns the value of CurrentSpace.
-func (s *NavigationManifest) GetCurrentSpace() OptSystemCurrentMenuSpaceResponse {
-	return s.CurrentSpace
+// GetCurrentMenuSpace returns the value of CurrentMenuSpace.
+func (s *NavigationManifest) GetCurrentMenuSpace() OptSystemCurrentMenuSpaceResponse {
+	return s.CurrentMenuSpace
 }
 
 // GetContext returns the value of Context.
@@ -12003,9 +12003,9 @@ func (s *NavigationManifest) SetCurrentApp(val OptSystemCurrentAppResponse) {
 	s.CurrentApp = val
 }
 
-// SetCurrentSpace sets the value of CurrentSpace.
-func (s *NavigationManifest) SetCurrentSpace(val OptSystemCurrentMenuSpaceResponse) {
-	s.CurrentSpace = val
+// SetCurrentMenuSpace sets the value of CurrentMenuSpace.
+func (s *NavigationManifest) SetCurrentMenuSpace(val OptSystemCurrentMenuSpaceResponse) {
+	s.CurrentMenuSpace = val
 }
 
 // SetContext sets the value of Context.
@@ -17136,7 +17136,7 @@ func (s *PageAccessTracePageItem) SetEffectiveChain(val []string) {
 type PageAccessTraceResponse struct {
 	UserID                   string                    `json:"user_id"`
 	CollaborationWorkspaceID OptString                 `json:"collaboration_workspace_id"`
-	SpaceKey                 string                    `json:"space_key"`
+	MenuSpaceKey             string                    `json:"menu_space_key"`
 	Authenticated            bool                      `json:"authenticated"`
 	SuperAdmin               bool                      `json:"super_admin"`
 	ActionKeyCount           int                       `json:"action_key_count"`
@@ -17156,9 +17156,9 @@ func (s *PageAccessTraceResponse) GetCollaborationWorkspaceID() OptString {
 	return s.CollaborationWorkspaceID
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *PageAccessTraceResponse) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *PageAccessTraceResponse) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetAuthenticated returns the value of Authenticated.
@@ -17206,9 +17206,9 @@ func (s *PageAccessTraceResponse) SetCollaborationWorkspaceID(val OptString) {
 	s.CollaborationWorkspaceID = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *PageAccessTraceResponse) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *PageAccessTraceResponse) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetAuthenticated sets the value of Authenticated.
@@ -17377,8 +17377,8 @@ type PageListItem struct {
 	RouteName         OptString              `json:"route_name"`
 	RoutePath         string                 `json:"route_path"`
 	Component         OptString              `json:"component"`
-	SpaceKey          OptString              `json:"space_key"`
-	SpaceKeys         []string               `json:"space_keys"`
+	MenuSpaceKey      OptString              `json:"menu_space_key"`
+	MenuSpaceKeys     []string               `json:"menu_space_keys"`
 	PageSpaceBindings []PageSpaceBindingItem `json:"page_space_bindings"`
 	SpaceScope        OptString              `json:"space_scope"`
 	PageType          OptString              `json:"page_type"`
@@ -17441,14 +17441,14 @@ func (s *PageListItem) GetComponent() OptString {
 	return s.Component
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *PageListItem) GetSpaceKey() OptString {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *PageListItem) GetMenuSpaceKey() OptString {
+	return s.MenuSpaceKey
 }
 
-// GetSpaceKeys returns the value of SpaceKeys.
-func (s *PageListItem) GetSpaceKeys() []string {
-	return s.SpaceKeys
+// GetMenuSpaceKeys returns the value of MenuSpaceKeys.
+func (s *PageListItem) GetMenuSpaceKeys() []string {
+	return s.MenuSpaceKeys
 }
 
 // GetPageSpaceBindings returns the value of PageSpaceBindings.
@@ -17611,14 +17611,14 @@ func (s *PageListItem) SetComponent(val OptString) {
 	s.Component = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *PageListItem) SetSpaceKey(val OptString) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *PageListItem) SetMenuSpaceKey(val OptString) {
+	s.MenuSpaceKey = val
 }
 
-// SetSpaceKeys sets the value of SpaceKeys.
-func (s *PageListItem) SetSpaceKeys(val []string) {
-	s.SpaceKeys = val
+// SetMenuSpaceKeys sets the value of MenuSpaceKeys.
+func (s *PageListItem) SetMenuSpaceKeys(val []string) {
+	s.MenuSpaceKeys = val
 }
 
 // SetPageSpaceBindings sets the value of PageSpaceBindings.
@@ -17859,7 +17859,7 @@ func (s *PageMenuOptionsResponse) SetTotal(val int) {
 
 // Ref: #/components/schemas/PageMeta
 type PageMeta struct {
-	SpaceKeys            []string  `json:"spaceKeys"`
+	MenuSpaceKeys        []string  `json:"menuSpaceKeys"`
 	SpaceScope           OptString `json:"spaceScope"`
 	VisibilityScope      OptString `json:"visibilityScope"`
 	Link                 OptString `json:"link"`
@@ -17875,9 +17875,9 @@ type PageMeta struct {
 	SpaceType            OptString `json:"spaceType"`
 }
 
-// GetSpaceKeys returns the value of SpaceKeys.
-func (s *PageMeta) GetSpaceKeys() []string {
-	return s.SpaceKeys
+// GetMenuSpaceKeys returns the value of MenuSpaceKeys.
+func (s *PageMeta) GetMenuSpaceKeys() []string {
+	return s.MenuSpaceKeys
 }
 
 // GetSpaceScope returns the value of SpaceScope.
@@ -17945,9 +17945,9 @@ func (s *PageMeta) GetSpaceType() OptString {
 	return s.SpaceType
 }
 
-// SetSpaceKeys sets the value of SpaceKeys.
-func (s *PageMeta) SetSpaceKeys(val []string) {
-	s.SpaceKeys = val
+// SetMenuSpaceKeys sets the value of MenuSpaceKeys.
+func (s *PageMeta) SetMenuSpaceKeys(val []string) {
+	s.MenuSpaceKeys = val
 }
 
 // SetSpaceScope sets the value of SpaceScope.
@@ -18136,7 +18136,7 @@ type PageSaveRequest struct {
 	RouteName         string               `json:"route_name"`
 	RoutePath         string               `json:"route_path"`
 	Component         string               `json:"component"`
-	SpaceKeys         []string             `json:"space_keys"`
+	MenuSpaceKeys     []string             `json:"menu_space_keys"`
 	PageType          OptString            `json:"page_type"`
 	VisibilityScope   OptString            `json:"visibility_scope"`
 	Source            OptString            `json:"source"`
@@ -18182,9 +18182,9 @@ func (s *PageSaveRequest) GetComponent() string {
 	return s.Component
 }
 
-// GetSpaceKeys returns the value of SpaceKeys.
-func (s *PageSaveRequest) GetSpaceKeys() []string {
-	return s.SpaceKeys
+// GetMenuSpaceKeys returns the value of MenuSpaceKeys.
+func (s *PageSaveRequest) GetMenuSpaceKeys() []string {
+	return s.MenuSpaceKeys
 }
 
 // GetPageType returns the value of PageType.
@@ -18302,9 +18302,9 @@ func (s *PageSaveRequest) SetComponent(val string) {
 	s.Component = val
 }
 
-// SetSpaceKeys sets the value of SpaceKeys.
-func (s *PageSaveRequest) SetSpaceKeys(val []string) {
-	s.SpaceKeys = val
+// SetMenuSpaceKeys sets the value of MenuSpaceKeys.
+func (s *PageSaveRequest) SetMenuSpaceKeys(val []string) {
+	s.MenuSpaceKeys = val
 }
 
 // SetPageType sets the value of PageType.
@@ -18406,8 +18406,8 @@ type PageSaveResult struct {
 	RouteName         string    `json:"route_name"`
 	RoutePath         string    `json:"route_path"`
 	Component         string    `json:"component"`
-	SpaceKey          string    `json:"space_key"`
-	SpaceKeys         []string  `json:"space_keys"`
+	MenuSpaceKey      string    `json:"menu_space_key"`
+	MenuSpaceKeys     []string  `json:"menu_space_keys"`
 	PageType          string    `json:"page_type"`
 	VisibilityScope   string    `json:"visibility_scope"`
 	Source            string    `json:"source"`
@@ -18467,14 +18467,14 @@ func (s *PageSaveResult) GetComponent() string {
 	return s.Component
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *PageSaveResult) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *PageSaveResult) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
-// GetSpaceKeys returns the value of SpaceKeys.
-func (s *PageSaveResult) GetSpaceKeys() []string {
-	return s.SpaceKeys
+// GetMenuSpaceKeys returns the value of MenuSpaceKeys.
+func (s *PageSaveResult) GetMenuSpaceKeys() []string {
+	return s.MenuSpaceKeys
 }
 
 // GetPageType returns the value of PageType.
@@ -18622,14 +18622,14 @@ func (s *PageSaveResult) SetComponent(val string) {
 	s.Component = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *PageSaveResult) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *PageSaveResult) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
-// SetSpaceKeys sets the value of SpaceKeys.
-func (s *PageSaveResult) SetSpaceKeys(val []string) {
-	s.SpaceKeys = val
+// SetMenuSpaceKeys sets the value of MenuSpaceKeys.
+func (s *PageSaveResult) SetMenuSpaceKeys(val []string) {
+	s.MenuSpaceKeys = val
 }
 
 // SetPageType sets the value of PageType.
@@ -18744,13 +18744,13 @@ func (s *PageSaveResult) SetUpdatedAt(val time.Time) {
 
 // Ref: #/components/schemas/PageSpaceBindingItem
 type PageSpaceBindingItem struct {
-	SpaceKey string    `json:"space_key"`
-	Source   OptString `json:"source"`
+	MenuSpaceKey string    `json:"menu_space_key"`
+	Source       OptString `json:"source"`
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *PageSpaceBindingItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *PageSpaceBindingItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetSource returns the value of Source.
@@ -18758,9 +18758,9 @@ func (s *PageSpaceBindingItem) GetSource() OptString {
 	return s.Source
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *PageSpaceBindingItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *PageSpaceBindingItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetSource sets the value of Source.
@@ -25380,20 +25380,20 @@ func (s *SystemAppCapabilities) init() SystemAppCapabilities {
 
 // Ref: #/components/schemas/SystemAppHostBindingItem
 type SystemAppHostBindingItem struct {
-	ID              uuid.UUID  `json:"id"`
-	AppKey          string     `json:"app_key"`
-	AppName         string     `json:"app_name"`
-	MatchType       string     `json:"match_type"`
-	Host            string     `json:"host"`
-	PathPattern     string     `json:"path_pattern"`
-	Priority        int64      `json:"priority"`
-	Description     string     `json:"description"`
-	IsPrimary       bool       `json:"is_primary"`
-	DefaultSpaceKey string     `json:"default_space_key"`
-	Status          string     `json:"status"`
-	Meta            SystemMeta `json:"meta"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
+	ID                  uuid.UUID  `json:"id"`
+	AppKey              string     `json:"app_key"`
+	AppName             string     `json:"app_name"`
+	MatchType           string     `json:"match_type"`
+	Host                string     `json:"host"`
+	PathPattern         string     `json:"path_pattern"`
+	Priority            int64      `json:"priority"`
+	Description         string     `json:"description"`
+	IsPrimary           bool       `json:"is_primary"`
+	DefaultMenuSpaceKey string     `json:"default_menu_space_key"`
+	Status              string     `json:"status"`
+	Meta                SystemMeta `json:"meta"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -25441,9 +25441,9 @@ func (s *SystemAppHostBindingItem) GetIsPrimary() bool {
 	return s.IsPrimary
 }
 
-// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
-func (s *SystemAppHostBindingItem) GetDefaultSpaceKey() string {
-	return s.DefaultSpaceKey
+// GetDefaultMenuSpaceKey returns the value of DefaultMenuSpaceKey.
+func (s *SystemAppHostBindingItem) GetDefaultMenuSpaceKey() string {
+	return s.DefaultMenuSpaceKey
 }
 
 // GetStatus returns the value of Status.
@@ -25511,9 +25511,9 @@ func (s *SystemAppHostBindingItem) SetIsPrimary(val bool) {
 	s.IsPrimary = val
 }
 
-// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
-func (s *SystemAppHostBindingItem) SetDefaultSpaceKey(val string) {
-	s.DefaultSpaceKey = val
+// SetDefaultMenuSpaceKey sets the value of DefaultMenuSpaceKey.
+func (s *SystemAppHostBindingItem) SetDefaultMenuSpaceKey(val string) {
+	s.DefaultMenuSpaceKey = val
 }
 
 // SetStatus sets the value of Status.
@@ -25564,17 +25564,17 @@ func (s *SystemAppHostBindingListResponse) SetTotal(val int64) {
 
 // Ref: #/components/schemas/SystemAppHostBindingSaveRequest
 type SystemAppHostBindingSaveRequest struct {
-	ID              OptString     `json:"id"`
-	AppKey          string        `json:"app_key"`
-	MatchType       OptString     `json:"match_type"`
-	Host            string        `json:"host"`
-	PathPattern     OptString     `json:"path_pattern"`
-	Priority        OptInt        `json:"priority"`
-	Description     OptString     `json:"description"`
-	IsPrimary       OptBool       `json:"is_primary"`
-	DefaultSpaceKey OptString     `json:"default_space_key"`
-	Status          OptString     `json:"status"`
-	Meta            OptSystemMeta `json:"meta"`
+	ID                  OptString     `json:"id"`
+	AppKey              string        `json:"app_key"`
+	MatchType           OptString     `json:"match_type"`
+	Host                string        `json:"host"`
+	PathPattern         OptString     `json:"path_pattern"`
+	Priority            OptInt        `json:"priority"`
+	Description         OptString     `json:"description"`
+	IsPrimary           OptBool       `json:"is_primary"`
+	DefaultMenuSpaceKey OptString     `json:"default_menu_space_key"`
+	Status              OptString     `json:"status"`
+	Meta                OptSystemMeta `json:"meta"`
 }
 
 // GetID returns the value of ID.
@@ -25617,9 +25617,9 @@ func (s *SystemAppHostBindingSaveRequest) GetIsPrimary() OptBool {
 	return s.IsPrimary
 }
 
-// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
-func (s *SystemAppHostBindingSaveRequest) GetDefaultSpaceKey() OptString {
-	return s.DefaultSpaceKey
+// GetDefaultMenuSpaceKey returns the value of DefaultMenuSpaceKey.
+func (s *SystemAppHostBindingSaveRequest) GetDefaultMenuSpaceKey() OptString {
+	return s.DefaultMenuSpaceKey
 }
 
 // GetStatus returns the value of Status.
@@ -25672,9 +25672,9 @@ func (s *SystemAppHostBindingSaveRequest) SetIsPrimary(val OptBool) {
 	s.IsPrimary = val
 }
 
-// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
-func (s *SystemAppHostBindingSaveRequest) SetDefaultSpaceKey(val OptString) {
-	s.DefaultSpaceKey = val
+// SetDefaultMenuSpaceKey sets the value of DefaultMenuSpaceKey.
+func (s *SystemAppHostBindingSaveRequest) SetDefaultMenuSpaceKey(val OptString) {
+	s.DefaultMenuSpaceKey = val
 }
 
 // SetStatus sets the value of Status.
@@ -25689,33 +25689,33 @@ func (s *SystemAppHostBindingSaveRequest) SetMeta(val OptSystemMeta) {
 
 // Ref: #/components/schemas/SystemAppItem
 type SystemAppItem struct {
-	ID               uuid.UUID             `json:"id"`
-	AppKey           string                `json:"app_key"`
-	Name             string                `json:"name"`
-	Description      string                `json:"description"`
-	DefaultSpaceKey  string                `json:"default_space_key"`
-	SpaceMode        string                `json:"space_mode"`
-	AuthMode         OptString             `json:"auth_mode"`
-	FrontendEntryURL OptString             `json:"frontend_entry_url"`
-	BackendEntryURL  OptString             `json:"backend_entry_url"`
-	HealthCheckURL   OptString             `json:"health_check_url"`
-	ManifestURL      OptString             `json:"manifest_url"`
-	RuntimeVersion   OptString             `json:"runtime_version"`
-	ProbeStatus      OptString             `json:"probe_status"`
-	ProbeTarget      OptString             `json:"probe_target"`
-	ProbeMessage     OptString             `json:"probe_message"`
-	ProbeCheckedAt   OptDateTime           `json:"probe_checked_at"`
-	IsDefault        bool                  `json:"is_default"`
-	Status           string                `json:"status"`
-	HostCount        int64                 `json:"host_count"`
-	SpaceCount       int64                 `json:"space_count"`
-	MenuCount        int64                 `json:"menu_count"`
-	PageCount        int64                 `json:"page_count"`
-	PrimaryHosts     []string              `json:"primary_hosts"`
-	Capabilities     SystemAppCapabilities `json:"capabilities"`
-	Meta             SystemMeta            `json:"meta"`
-	CreatedAt        time.Time             `json:"created_at"`
-	UpdatedAt        time.Time             `json:"updated_at"`
+	ID                  uuid.UUID             `json:"id"`
+	AppKey              string                `json:"app_key"`
+	Name                string                `json:"name"`
+	Description         string                `json:"description"`
+	DefaultMenuSpaceKey string                `json:"default_menu_space_key"`
+	SpaceMode           string                `json:"space_mode"`
+	AuthMode            OptString             `json:"auth_mode"`
+	FrontendEntryURL    OptString             `json:"frontend_entry_url"`
+	BackendEntryURL     OptString             `json:"backend_entry_url"`
+	HealthCheckURL      OptString             `json:"health_check_url"`
+	ManifestURL         OptString             `json:"manifest_url"`
+	RuntimeVersion      OptString             `json:"runtime_version"`
+	ProbeStatus         OptString             `json:"probe_status"`
+	ProbeTarget         OptString             `json:"probe_target"`
+	ProbeMessage        OptString             `json:"probe_message"`
+	ProbeCheckedAt      OptDateTime           `json:"probe_checked_at"`
+	IsDefault           bool                  `json:"is_default"`
+	Status              string                `json:"status"`
+	HostCount           int64                 `json:"host_count"`
+	SpaceCount          int64                 `json:"space_count"`
+	MenuCount           int64                 `json:"menu_count"`
+	PageCount           int64                 `json:"page_count"`
+	PrimaryHosts        []string              `json:"primary_hosts"`
+	Capabilities        SystemAppCapabilities `json:"capabilities"`
+	Meta                SystemMeta            `json:"meta"`
+	CreatedAt           time.Time             `json:"created_at"`
+	UpdatedAt           time.Time             `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -25738,9 +25738,9 @@ func (s *SystemAppItem) GetDescription() string {
 	return s.Description
 }
 
-// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
-func (s *SystemAppItem) GetDefaultSpaceKey() string {
-	return s.DefaultSpaceKey
+// GetDefaultMenuSpaceKey returns the value of DefaultMenuSpaceKey.
+func (s *SystemAppItem) GetDefaultMenuSpaceKey() string {
+	return s.DefaultMenuSpaceKey
 }
 
 // GetSpaceMode returns the value of SpaceMode.
@@ -25873,9 +25873,9 @@ func (s *SystemAppItem) SetDescription(val string) {
 	s.Description = val
 }
 
-// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
-func (s *SystemAppItem) SetDefaultSpaceKey(val string) {
-	s.DefaultSpaceKey = val
+// SetDefaultMenuSpaceKey sets the value of DefaultMenuSpaceKey.
+func (s *SystemAppItem) SetDefaultMenuSpaceKey(val string) {
+	s.DefaultMenuSpaceKey = val
 }
 
 // SetSpaceMode sets the value of SpaceMode.
@@ -26318,21 +26318,21 @@ func (s *SystemAppPreflightSummary) SetSuccessCount(val int64) {
 
 // Ref: #/components/schemas/SystemAppSaveRequest
 type SystemAppSaveRequest struct {
-	AppKey           string                   `json:"app_key"`
-	Name             string                   `json:"name"`
-	Description      OptString                `json:"description"`
-	SpaceMode        OptString                `json:"space_mode"`
-	DefaultSpaceKey  OptString                `json:"default_space_key"`
-	AuthMode         OptString                `json:"auth_mode"`
-	FrontendEntryURL OptString                `json:"frontend_entry_url"`
-	BackendEntryURL  OptString                `json:"backend_entry_url"`
-	HealthCheckURL   OptString                `json:"health_check_url"`
-	ManifestURL      OptString                `json:"manifest_url"`
-	RuntimeVersion   OptString                `json:"runtime_version"`
-	Capabilities     OptSystemAppCapabilities `json:"capabilities"`
-	Status           OptString                `json:"status"`
-	IsDefault        OptBool                  `json:"is_default"`
-	Meta             OptSystemMeta            `json:"meta"`
+	AppKey              string                   `json:"app_key"`
+	Name                string                   `json:"name"`
+	Description         OptString                `json:"description"`
+	SpaceMode           OptString                `json:"space_mode"`
+	DefaultMenuSpaceKey OptString                `json:"default_menu_space_key"`
+	AuthMode            OptString                `json:"auth_mode"`
+	FrontendEntryURL    OptString                `json:"frontend_entry_url"`
+	BackendEntryURL     OptString                `json:"backend_entry_url"`
+	HealthCheckURL      OptString                `json:"health_check_url"`
+	ManifestURL         OptString                `json:"manifest_url"`
+	RuntimeVersion      OptString                `json:"runtime_version"`
+	Capabilities        OptSystemAppCapabilities `json:"capabilities"`
+	Status              OptString                `json:"status"`
+	IsDefault           OptBool                  `json:"is_default"`
+	Meta                OptSystemMeta            `json:"meta"`
 }
 
 // GetAppKey returns the value of AppKey.
@@ -26355,9 +26355,9 @@ func (s *SystemAppSaveRequest) GetSpaceMode() OptString {
 	return s.SpaceMode
 }
 
-// GetDefaultSpaceKey returns the value of DefaultSpaceKey.
-func (s *SystemAppSaveRequest) GetDefaultSpaceKey() OptString {
-	return s.DefaultSpaceKey
+// GetDefaultMenuSpaceKey returns the value of DefaultMenuSpaceKey.
+func (s *SystemAppSaveRequest) GetDefaultMenuSpaceKey() OptString {
+	return s.DefaultMenuSpaceKey
 }
 
 // GetAuthMode returns the value of AuthMode.
@@ -26430,9 +26430,9 @@ func (s *SystemAppSaveRequest) SetSpaceMode(val OptString) {
 	s.SpaceMode = val
 }
 
-// SetDefaultSpaceKey sets the value of DefaultSpaceKey.
-func (s *SystemAppSaveRequest) SetDefaultSpaceKey(val OptString) {
-	s.DefaultSpaceKey = val
+// SetDefaultMenuSpaceKey sets the value of DefaultMenuSpaceKey.
+func (s *SystemAppSaveRequest) SetDefaultMenuSpaceKey(val OptString) {
+	s.DefaultMenuSpaceKey = val
 }
 
 // SetAuthMode sets the value of AuthMode.
@@ -26804,21 +26804,21 @@ func (s *SystemFastEnterQuickLink) SetLink(val OptString) {
 
 // Ref: #/components/schemas/SystemMenuSpaceEntryBindingItem
 type SystemMenuSpaceEntryBindingItem struct {
-	ID          uuid.UUID  `json:"id"`
-	AppKey      string     `json:"app_key"`
-	AppName     string     `json:"app_name"`
-	SpaceKey    string     `json:"space_key"`
-	SpaceName   string     `json:"space_name"`
-	MatchType   string     `json:"match_type"`
-	Host        string     `json:"host"`
-	PathPattern string     `json:"path_pattern"`
-	Priority    int64      `json:"priority"`
-	IsPrimary   bool       `json:"is_primary"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	Meta        SystemMeta `json:"meta"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID           uuid.UUID  `json:"id"`
+	AppKey       string     `json:"app_key"`
+	AppName      string     `json:"app_name"`
+	MenuSpaceKey string     `json:"menu_space_key"`
+	SpaceName    string     `json:"space_name"`
+	MatchType    string     `json:"match_type"`
+	Host         string     `json:"host"`
+	PathPattern  string     `json:"path_pattern"`
+	Priority     int64      `json:"priority"`
+	IsPrimary    bool       `json:"is_primary"`
+	Description  string     `json:"description"`
+	Status       string     `json:"status"`
+	Meta         SystemMeta `json:"meta"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -26836,9 +26836,9 @@ func (s *SystemMenuSpaceEntryBindingItem) GetAppName() string {
 	return s.AppName
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceEntryBindingItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceEntryBindingItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetSpaceName returns the value of SpaceName.
@@ -26911,9 +26911,9 @@ func (s *SystemMenuSpaceEntryBindingItem) SetAppName(val string) {
 	s.AppName = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceEntryBindingItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceEntryBindingItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetSpaceName sets the value of SpaceName.
@@ -26999,17 +26999,17 @@ func (s *SystemMenuSpaceEntryBindingListResponse) SetTotal(val int64) {
 
 // Ref: #/components/schemas/SystemMenuSpaceEntryBindingSaveRequest
 type SystemMenuSpaceEntryBindingSaveRequest struct {
-	ID          OptString     `json:"id"`
-	AppKey      string        `json:"app_key"`
-	SpaceKey    string        `json:"space_key"`
-	MatchType   OptString     `json:"match_type"`
-	Host        string        `json:"host"`
-	PathPattern OptString     `json:"path_pattern"`
-	Priority    OptInt        `json:"priority"`
-	Description OptString     `json:"description"`
-	IsPrimary   OptBool       `json:"is_primary"`
-	Status      OptString     `json:"status"`
-	Meta        OptSystemMeta `json:"meta"`
+	ID           OptString     `json:"id"`
+	AppKey       string        `json:"app_key"`
+	MenuSpaceKey string        `json:"menu_space_key"`
+	MatchType    OptString     `json:"match_type"`
+	Host         string        `json:"host"`
+	PathPattern  OptString     `json:"path_pattern"`
+	Priority     OptInt        `json:"priority"`
+	Description  OptString     `json:"description"`
+	IsPrimary    OptBool       `json:"is_primary"`
+	Status       OptString     `json:"status"`
+	Meta         OptSystemMeta `json:"meta"`
 }
 
 // GetID returns the value of ID.
@@ -27022,9 +27022,9 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceEntryBindingSaveRequest) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetMatchType returns the value of MatchType.
@@ -27077,9 +27077,9 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceEntryBindingSaveRequest) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceEntryBindingSaveRequest) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetMatchType sets the value of MatchType.
@@ -27124,17 +27124,17 @@ func (s *SystemMenuSpaceEntryBindingSaveRequest) SetMeta(val OptSystemMeta) {
 
 // Ref: #/components/schemas/SystemMenuSpaceHostBindingItem
 type SystemMenuSpaceHostBindingItem struct {
-	ID          uuid.UUID  `json:"id"`
-	AppKey      string     `json:"app_key"`
-	Host        string     `json:"host"`
-	SpaceKey    string     `json:"space_key"`
-	SpaceName   string     `json:"space_name"`
-	Description string     `json:"description"`
-	IsDefault   bool       `json:"is_default"`
-	Status      string     `json:"status"`
-	Meta        SystemMeta `json:"meta"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID           uuid.UUID  `json:"id"`
+	AppKey       string     `json:"app_key"`
+	Host         string     `json:"host"`
+	MenuSpaceKey string     `json:"menu_space_key"`
+	SpaceName    string     `json:"space_name"`
+	Description  string     `json:"description"`
+	IsDefault    bool       `json:"is_default"`
+	Status       string     `json:"status"`
+	Meta         SystemMeta `json:"meta"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -27152,9 +27152,9 @@ func (s *SystemMenuSpaceHostBindingItem) GetHost() string {
 	return s.Host
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceHostBindingItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceHostBindingItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetSpaceName returns the value of SpaceName.
@@ -27207,9 +27207,9 @@ func (s *SystemMenuSpaceHostBindingItem) SetHost(val string) {
 	s.Host = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceHostBindingItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceHostBindingItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetSpaceName sets the value of SpaceName.
@@ -27275,13 +27275,13 @@ func (s *SystemMenuSpaceHostBindingListResponse) SetTotal(val int64) {
 
 // Ref: #/components/schemas/SystemMenuSpaceHostBindingSaveRequest
 type SystemMenuSpaceHostBindingSaveRequest struct {
-	AppKey      string        `json:"app_key"`
-	Host        string        `json:"host"`
-	SpaceKey    string        `json:"space_key"`
-	Description OptString     `json:"description"`
-	IsDefault   OptBool       `json:"is_default"`
-	Status      OptString     `json:"status"`
-	Meta        OptSystemMeta `json:"meta"`
+	AppKey       string        `json:"app_key"`
+	Host         string        `json:"host"`
+	MenuSpaceKey string        `json:"menu_space_key"`
+	Description  OptString     `json:"description"`
+	IsDefault    OptBool       `json:"is_default"`
+	Status       OptString     `json:"status"`
+	Meta         OptSystemMeta `json:"meta"`
 }
 
 // GetAppKey returns the value of AppKey.
@@ -27294,9 +27294,9 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) GetHost() string {
 	return s.Host
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceHostBindingSaveRequest) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetDescription returns the value of Description.
@@ -27329,9 +27329,9 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) SetHost(val string) {
 	s.Host = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceHostBindingSaveRequest) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceHostBindingSaveRequest) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetDescription sets the value of Description.
@@ -27356,8 +27356,8 @@ func (s *SystemMenuSpaceHostBindingSaveRequest) SetMeta(val OptSystemMeta) {
 
 // Ref: #/components/schemas/SystemMenuSpaceInitializeResult
 type SystemMenuSpaceInitializeResult struct {
-	SourceSpaceKey              string `json:"source_space_key"`
-	TargetSpaceKey              string `json:"target_space_key"`
+	SourceMenuSpaceKey          string `json:"source_menu_space_key"`
+	TargetMenuSpaceKey          string `json:"target_menu_space_key"`
 	ForceReinitialized          bool   `json:"force_reinitialized"`
 	ClearedMenuCount            int64  `json:"cleared_menu_count"`
 	ClearedPageCount            int64  `json:"cleared_page_count"`
@@ -27367,14 +27367,14 @@ type SystemMenuSpaceInitializeResult struct {
 	CreatedPackageMenuLinkCount int64  `json:"created_package_menu_link_count"`
 }
 
-// GetSourceSpaceKey returns the value of SourceSpaceKey.
-func (s *SystemMenuSpaceInitializeResult) GetSourceSpaceKey() string {
-	return s.SourceSpaceKey
+// GetSourceMenuSpaceKey returns the value of SourceMenuSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) GetSourceMenuSpaceKey() string {
+	return s.SourceMenuSpaceKey
 }
 
-// GetTargetSpaceKey returns the value of TargetSpaceKey.
-func (s *SystemMenuSpaceInitializeResult) GetTargetSpaceKey() string {
-	return s.TargetSpaceKey
+// GetTargetMenuSpaceKey returns the value of TargetMenuSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) GetTargetMenuSpaceKey() string {
+	return s.TargetMenuSpaceKey
 }
 
 // GetForceReinitialized returns the value of ForceReinitialized.
@@ -27412,14 +27412,14 @@ func (s *SystemMenuSpaceInitializeResult) GetCreatedPackageMenuLinkCount() int64
 	return s.CreatedPackageMenuLinkCount
 }
 
-// SetSourceSpaceKey sets the value of SourceSpaceKey.
-func (s *SystemMenuSpaceInitializeResult) SetSourceSpaceKey(val string) {
-	s.SourceSpaceKey = val
+// SetSourceMenuSpaceKey sets the value of SourceMenuSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) SetSourceMenuSpaceKey(val string) {
+	s.SourceMenuSpaceKey = val
 }
 
-// SetTargetSpaceKey sets the value of TargetSpaceKey.
-func (s *SystemMenuSpaceInitializeResult) SetTargetSpaceKey(val string) {
-	s.TargetSpaceKey = val
+// SetTargetMenuSpaceKey sets the value of TargetMenuSpaceKey.
+func (s *SystemMenuSpaceInitializeResult) SetTargetMenuSpaceKey(val string) {
+	s.TargetMenuSpaceKey = val
 }
 
 // SetForceReinitialized sets the value of ForceReinitialized.
@@ -27461,7 +27461,7 @@ func (s *SystemMenuSpaceInitializeResult) SetCreatedPackageMenuLinkCount(val int
 type SystemMenuSpaceItem struct {
 	ID               uuid.UUID  `json:"id"`
 	AppKey           string     `json:"app_key"`
-	SpaceKey         string     `json:"space_key"`
+	MenuSpaceKey     string     `json:"menu_space_key"`
 	Name             string     `json:"name"`
 	Description      string     `json:"description"`
 	DefaultHomePath  string     `json:"default_home_path"`
@@ -27488,9 +27488,9 @@ func (s *SystemMenuSpaceItem) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceItem) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceItem) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetName returns the value of Name.
@@ -27573,9 +27573,9 @@ func (s *SystemMenuSpaceItem) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceItem) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceItem) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetName sets the value of Name.
@@ -27718,7 +27718,7 @@ func (s *SystemMenuSpaceModeSaveRequest) SetMode(val string) {
 // Ref: #/components/schemas/SystemMenuSpaceSaveRequest
 type SystemMenuSpaceSaveRequest struct {
 	AppKey           string        `json:"app_key"`
-	SpaceKey         string        `json:"space_key"`
+	MenuSpaceKey     string        `json:"menu_space_key"`
 	Name             string        `json:"name"`
 	Description      OptString     `json:"description"`
 	DefaultHomePath  OptString     `json:"default_home_path"`
@@ -27734,9 +27734,9 @@ func (s *SystemMenuSpaceSaveRequest) GetAppKey() string {
 	return s.AppKey
 }
 
-// GetSpaceKey returns the value of SpaceKey.
-func (s *SystemMenuSpaceSaveRequest) GetSpaceKey() string {
-	return s.SpaceKey
+// GetMenuSpaceKey returns the value of MenuSpaceKey.
+func (s *SystemMenuSpaceSaveRequest) GetMenuSpaceKey() string {
+	return s.MenuSpaceKey
 }
 
 // GetName returns the value of Name.
@@ -27784,9 +27784,9 @@ func (s *SystemMenuSpaceSaveRequest) SetAppKey(val string) {
 	s.AppKey = val
 }
 
-// SetSpaceKey sets the value of SpaceKey.
-func (s *SystemMenuSpaceSaveRequest) SetSpaceKey(val string) {
-	s.SpaceKey = val
+// SetMenuSpaceKey sets the value of MenuSpaceKey.
+func (s *SystemMenuSpaceSaveRequest) SetMenuSpaceKey(val string) {
+	s.MenuSpaceKey = val
 }
 
 // SetName sets the value of Name.

@@ -50,6 +50,8 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
           records: [
             {
               space_key: 'default',
+              menu_space_key: 'default',
+              menuSpaceKey: 'default',
               name: '默认空间',
               status: 'normal',
               is_default: true,
@@ -216,6 +218,8 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
           current_space: {
             space: {
               space_key: 'default',
+              menu_space_key: 'default',
+              menuSpaceKey: 'default',
               name: '默认空间',
               status: 'normal',
               is_default: true,
@@ -230,7 +234,9 @@ test('正确凭据登录后进入系统主页并写入会话', async ({ page }) 
           },
           context: {
             app_key: 'platform-admin',
-            space_key: 'default'
+            space_key: 'default',
+            menu_space_key: 'default',
+            menuSpaceKey: 'default'
           },
           menu_tree: [
             {

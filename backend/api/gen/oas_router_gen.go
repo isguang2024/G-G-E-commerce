@@ -6045,7 +6045,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 									elem = origElem
 								}
-								// Param: "spaceKey"
+								// Param: "menuSpaceKey"
 								// Match until "/"
 								idx := strings.IndexByte(elem, '/')
 								if idx < 0 {
@@ -12583,7 +12583,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 									elem = origElem
 								}
-								// Param: "spaceKey"
+								// Param: "menuSpaceKey"
 								// Match until "/"
 								idx := strings.IndexByte(elem, '/')
 								if idx < 0 {
@@ -12612,7 +12612,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = "从默认空间初始化菜单空间"
 											r.operationID = "initializeMenuSpaceFromDefault"
 											r.operationGroup = ""
-											r.pathPattern = "/system/menu-spaces/{spaceKey}/initialize-default"
+											r.pathPattern = "/system/menu-spaces/{menuSpaceKey}/initialize-default"
 											r.args = args
 											r.count = 1
 											return r, true

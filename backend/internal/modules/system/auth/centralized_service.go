@@ -1,4 +1,4 @@
-﻿package auth
+package auth
 
 import (
 	"context"
@@ -232,7 +232,7 @@ func (s *centralizedAuthService) resolveLanding(targetAppKey, targetPath, naviga
 	}
 	spaceKey := strings.TrimSpace(navigationSpaceKey)
 	if spaceKey == "" {
-		spaceKey = strings.TrimSpace(app.DefaultSpaceKey)
+		spaceKey = strings.TrimSpace(app.DefaultMenuSpaceKey)
 	}
 	return app.AppKey, spaceKey, homePath, nil
 }
@@ -356,4 +356,3 @@ func hostMatchesBinding(targetHost, targetHostname, bindingHost string) bool {
 	}
 	return normalizeHostname(normalizedBindingHost) == targetHostname
 }
-

@@ -2324,7 +2324,7 @@
     {
       "operation_id": "initializeMenuSpaceFromDefault",
       "method": "post",
-      "path": "/system/menu-spaces/{spaceKey}/initialize-default",
+      "path": "/system/menu-spaces/{menuSpaceKey}/initialize-default",
       "permission_key": "system.menu.manage",
       "summary": "从默认空间初始化菜单空间",
       "tags": "system",

@@ -406,3 +406,27 @@
 ### 下次方向
 - 继续完成 `frontend/` 的 S7 收口，尤其是 `api/workspace.ts`、`workspace store`、请求头 `X-Collaboration-Workspace-Id` 与协作空间页面封装，避免前后端仍处于半双轨状态。
 - 若要继续做更彻底的领域收敛，下一轮应单独规划消息域里的 `owner/target/recipient_collaboration_workspace_id` 兼容字段是否改名；这次先保证运行时不再依赖被删除的 legacy schema。
+
+## 2026-04-17 菜单语义 menu_space / menu_space_key 收紧
+
+### 本次改动
+- 统一收紧菜单领域命名：菜单空间主语义改为 `menu_space`，相关字段统一改为 `menu_space_key`、`menu_space_keys`、`default_menu_space_key`，避免再和业务主域 `workspace space` 混用。
+- 后端已同步修改模型、DTO、handler、service、运行时缓存、默认 seed 与 OpenAPI 真相源，并新增迁移 [backend/internal/pkg/database/migrations/00035_menu_space_key_cleanup.sql](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/database/migrations/00035_menu_space_key_cleanup.sql) 完成库表字段收口。
+- 已按 OpenAPI-first 链路刷新生成物：重跑 `bundle`、`lint`、`ogen`、`gen-permissions` 与前端 `pnpm run gen:api`，前后端均切到新契约；前端读取侧保留旧字段 fallback 兼容，`navigation_space_key` 这一条 auth 协议线本轮未动。
+- 已验证 `go test ./internal/api/handlers -count=1`、`go test ./internal/api/router -count=1`、`go test ./internal/modules/system/app ./internal/modules/system/space ./internal/modules/system/page ./internal/modules/system/navigation -count=1`、`pnpm run gen:api`、`pnpm build` 通过。
+
+### 下次方向
+- 继续清理文档与零散运行时里的旧称呼，把剩余“菜单叫 space”的表述统一收口，避免新代码再引入歧义。
+- 如果后续要彻底去掉兼容分支，可以在一轮单独回收中移除前端对 `space_key` / `space_keys` / `default_space_key` 的 fallback，并同步做一次真实库数据巡检。
+
+## 2026-04-17 菜单空间兼容兜底彻底回收
+
+### 本次改动
+- 继续把前端菜单域、页面域、系统治理页里的旧字段兼容彻底删掉：`spaceKey`、`spaceKeys`、`defaultSpaceKey` 不再作为菜单空间读写入口，统一只认 `menuSpaceKey`、`menuSpaceKeys`、`defaultMenuSpaceKey`。
+- 收口了运行时菜单空间 store、系统 App/菜单空间/页面管理页、菜单弹窗和路由跳转链路；路由 meta、菜单树、页面暴露和 Host 绑定都已只走新命名，不再保留旧字段 fallback。
+- 后端同时补掉了剩余注释和上下文口径里的旧 `space_key` 表述，菜单上下文统一回到 `menu_space_key`；认证协议里的 `navigation_space_key` 保持不动，因为它属于登录落点协议，不是菜单领域旧名兼容。
+- 已复验 `pnpm exec vue-tsc --noEmit`、`pnpm build`、`go test ./internal/api/handlers ./internal/api/router ./internal/modules/system/navigation ./internal/modules/system/space ./internal/modules/system/page ./internal/modules/system/app -count=1` 全部通过。
+
+### 下次方向
+- 如果要继续深挖，可再做一轮纯重命名，把后端 service/repository 内部局部变量里的 `spaceKey` 也系统改为 `menuSpaceKey`，进一步减少阅读歧义；这轮先优先回收兼容分支与对外字段。
+- 认证、注册、回跳链路里的 `navigation_space_key` 目前仍是独立协议语义；若后续也要统一命名，需要单独评估登录态回跳和第三方注册落点的兼容成本。

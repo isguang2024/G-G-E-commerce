@@ -1,4 +1,4 @@
-﻿package page
+package page
 
 import (
 	"github.com/google/uuid"
@@ -7,13 +7,13 @@ import (
 )
 
 // ListRuntime returns runtime-visible pages for the given user and space.
-func (s *service) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
+func (s *service) ListRuntime(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 }
 
 // ListRuntimePublic returns publicly visible runtime pages.
-func (s *service) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
+func (s *service) ListRuntimePublic(appKey, host, requestedMenuSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedMenuSpaceKey, userID, collaborationWorkspaceID)
 }
 
 // ResolveCompiledAccessContext builds the compiled access context for a user/space.
@@ -67,8 +67,8 @@ func (s *service) applyManagedPageModel(
 		if isMenuBackedEntryPage(record.UIPage, menuMap) {
 			continue
 		}
-		resolvedSpaceKeys := resolvePageSpaceKeys(record.UIPage, pageMap, menuMap, bindingMap, map[string]struct{}{})
-		applyResolvedPageSpace(&record.UIPage, resolvedSpaceKeys)
+		resolvedMenuSpaceKeys := resolvePageMenuSpaceKeys(record.UIPage, pageMap, menuMap, bindingMap, map[string]struct{}{})
+		applyResolvedPageSpace(&record.UIPage, resolvedMenuSpaceKeys)
 		record.ActiveMenuPath = s.resolveActiveMenuPath(
 			&record.UIPage,
 			menuMap,
@@ -82,4 +82,3 @@ func (s *service) applyManagedPageModel(
 	}
 	return filtered
 }
-

@@ -122,7 +122,7 @@ export function useFastEnter() {
       const resolved = router.resolve({ name: routeTarget })
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
         resolved.fullPath || resolved.path,
-        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+        `${resolved.meta?.menuSpaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
         await router.push(nextTarget.target)
@@ -144,7 +144,7 @@ export function useFastEnter() {
       }
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
         linkTarget,
-        `${resolvedRoute.meta?.spaceKey || ''}`.trim() || undefined
+        `${resolvedRoute.meta?.menuSpaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
         await router.push(linkTarget)

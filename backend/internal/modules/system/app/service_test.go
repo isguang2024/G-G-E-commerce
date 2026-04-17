@@ -1,4 +1,4 @@
-﻿package app
+package app
 
 import (
 	"testing"
@@ -37,8 +37,8 @@ func TestSaveHostBindingAllowsEmptyBodyAppKeyWithoutDefaultMismatch(t *testing.T
 	svc := &service{}
 
 	_, err := svc.SaveHostBinding("merchant-console", &SaveHostBindingRequest{
-		Host:            "admin.example.com",
-		DefaultSpaceKey: "ops",
+		Host:                "admin.example.com",
+		DefaultMenuSpaceKey: "ops",
 	})
 	if err == nil {
 		t.Fatalf("SaveHostBinding() error = nil, want downstream validation error")
@@ -121,4 +121,3 @@ func TestNormalizeGovernanceMetaPreservesUnknownKeys(t *testing.T) {
 		t.Fatalf("meta[feature_flags] = %#v, want dropped", meta["feature_flags"])
 	}
 }
-

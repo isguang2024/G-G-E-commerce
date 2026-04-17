@@ -266,7 +266,7 @@
     })
     const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
       resolved.href,
-      `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+      `${resolved.meta?.menuSpaceKey || ''}`.trim() || undefined
     )
     if (nextTarget.mode === 'router') {
       await router.push({

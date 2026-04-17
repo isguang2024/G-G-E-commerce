@@ -814,7 +814,7 @@ type Handler interface {
 	//
 	// 从默认空间初始化菜单空间.
 	//
-	// POST /system/menu-spaces/{spaceKey}/initialize-default
+	// POST /system/menu-spaces/{menuSpaceKey}/initialize-default
 	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*SystemMenuSpaceInitializeResult, error)
 	// ListApiEndpointCategories implements listApiEndpointCategories operation.
 	//

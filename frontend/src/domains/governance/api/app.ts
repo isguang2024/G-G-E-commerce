@@ -61,9 +61,9 @@ export async function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnte
   return normalizeFastEnterConfig(res)
 }
 
-export async function fetchGetCurrentMenuSpace(spaceKey: string | undefined, appKey: string) {
+export async function fetchGetCurrentMenuSpace(menuSpaceKey: string | undefined, appKey: string) {
   const query: V5Query<'/system/menu-spaces/current', 'get'> = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (menuSpaceKey) query.menu_space_key = normalizeMenuSpaceKey(menuSpaceKey)
   if (appKey) query.app_key = appKey
   const res = await unwrap(v5Client.GET('/system/menu-spaces/current', { params: { query } }))
   return {
@@ -101,7 +101,7 @@ export async function fetchSaveApp(data: Api.SystemManage.AppSaveParams) {
     name: data.name,
     description: data.description,
     space_mode: data.space_mode,
-    default_space_key: data.default_space_key,
+    default_menu_space_key: data.default_menu_space_key,
     auth_mode: data.auth_mode,
     frontend_entry_url: data.frontend_entry_url,
     backend_entry_url: data.backend_entry_url,
@@ -195,7 +195,7 @@ export async function fetchSaveAppHostBinding(data: Api.SystemManage.AppHostBind
     priority: data.priority,
     description: data.description,
     is_primary: data.is_primary,
-    default_space_key: data.default_space_key,
+    default_menu_space_key: data.default_menu_space_key,
     status: data.status,
     meta: data.meta
   }
@@ -233,7 +233,7 @@ export async function fetchSaveMenuSpaceEntryBinding(
   const body: V5RequestBody<'/system/menu-space-entry-bindings', 'post'> = {
     id: data.id,
     app_key: data.app_key,
-    space_key: data.space_key,
+    menu_space_key: normalizeMenuSpaceKey(data.menu_space_key || ''),
     match_type: data.match_type,
     host: data.host || '',
     path_pattern: data.path_pattern,
@@ -274,7 +274,7 @@ export async function fetchGetMenuSpaces(appKey: string) {
 export async function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSaveParams) {
   const body: V5RequestBody<'/system/menu-spaces', 'post'> = {
     app_key: data.app_key,
-    space_key: data.space_key,
+    menu_space_key: normalizeMenuSpaceKey(data.menu_space_key || ''),
     name: data.name,
     description: data.description,
     default_home_path: data.default_home_path,
@@ -290,19 +290,19 @@ export async function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSavePar
 
 export async function fetchInitializeMenuSpaceFromDefault(
   appKey: string,
-  spaceKey: string,
+  menuSpaceKey: string,
   force = false
 ) {
   void appKey
   void force
   const res = await unwrap(
-    v5Client.POST('/system/menu-spaces/{spaceKey}/initialize-default', {
-      params: { path: { spaceKey: normalizeMenuSpaceKey(spaceKey) } }
+    v5Client.POST('/system/menu-spaces/{menuSpaceKey}/initialize-default', {
+      params: { path: { menuSpaceKey: normalizeMenuSpaceKey(menuSpaceKey) } }
     })
   )
   return {
-    sourceSpaceKey: res?.source_space_key || '',
-    targetSpaceKey: res?.target_space_key || normalizeMenuSpaceKey(spaceKey),
+    sourceMenuSpaceKey: res?.source_menu_space_key || '',
+    targetMenuSpaceKey: res?.target_menu_space_key || normalizeMenuSpaceKey(menuSpaceKey),
     forceReinitialized: Boolean(res?.force_reinitialized ?? false),
     clearedMenuCount: Number(res?.cleared_menu_count ?? 0),
     clearedPageCount: Number(res?.cleared_page_count ?? 0),
@@ -328,7 +328,7 @@ export async function fetchSaveMenuSpaceHostBinding(
   const body: V5RequestBody<'/system/menu-space-host-bindings', 'post'> = {
     app_key: data.app_key,
     host: data.host,
-    space_key: data.space_key,
+    menu_space_key: normalizeMenuSpaceKey(data.menu_space_key || ''),
     description: data.description,
     is_default: data.is_default,
     status: data.status,

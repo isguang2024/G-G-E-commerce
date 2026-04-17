@@ -994,7 +994,7 @@ components:
         current_app:
           $ref: '../domains/system/schemas.yaml#/components/schemas/SystemCurrentAppResponse'
           nullable: true
-        current_space:
+        current_menu_space:
           $ref: '../domains/system/schemas.yaml#/components/schemas/SystemCurrentMenuSpaceResponse'
         context:
           $ref: '#/components/schemas/NavigationContext'
@@ -1015,9 +1015,9 @@ components:
       additionalProperties: false
       required:
       - app_key
-      - space_key
+      - menu_space_key
       - request_host
-      - requested_space_key
+      - requested_menu_space_key
       - authenticated
       - super_admin
       - visible_menu_count
@@ -1026,11 +1026,11 @@ components:
       properties:
         app_key:
           type: string
-        space_key:
+        menu_space_key:
           type: string
         request_host:
           type: string
-        requested_space_key:
+        requested_menu_space_key:
           type: string
         authenticated:
           type: boolean
@@ -1095,7 +1095,7 @@ components:
       required:
       - id
       - app_key
-      - space_key
+      - menu_space_key
       - kind
       - path
       - name
@@ -1112,7 +1112,7 @@ components:
           nullable: true
         app_key:
           type: string
-        space_key:
+        menu_space_key:
           type: string
         kind:
           type: string
@@ -1168,7 +1168,7 @@ components:
             type: string
         app_key:
           type: string
-        space_key:
+        menu_space_key:
           type: string
         sort_order:
           type: integer
@@ -1229,7 +1229,7 @@ components:
           type: string
         component:
           type: string
-        space_keys:
+        menu_space_keys:
           type: array
           items:
             type: string
@@ -1280,7 +1280,7 @@ components:
       - route_name
       - route_path
       - component
-      - space_key
+      - menu_space_key
       - page_type
       - visibility_scope
       - source
@@ -1315,9 +1315,9 @@ components:
           type: string
         component:
           type: string
-        space_key:
+        menu_space_key:
           type: string
-        space_keys:
+        menu_space_keys:
           type: array
           items:
             type: string
@@ -1622,12 +1622,12 @@ components:
             $ref: '#/components/schemas/FeaturePackageMenuItem'
     FeaturePackageMenuItem:
       type: object
-      required: [id, app_key, space_key, kind, name, title, sort_order, hidden]
+      required: [id, app_key, menu_space_key, kind, name, title, sort_order, hidden]
       properties:
         id: {type: string, format: uuid}
         parent_id: {type: string, format: uuid, nullable: true}
         app_key: {type: string}
-        space_key: {type: string}
+        menu_space_key: {type: string}
         kind: {type: string}
         path: {type: string}
         name: {type: string}

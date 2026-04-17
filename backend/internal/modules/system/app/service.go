@@ -1,4 +1,4 @@
-﻿package app
+package app
 
 import (
 	"errors"
@@ -85,35 +85,35 @@ type AppPreflightResponse struct {
 }
 
 type SaveAppRequest struct {
-	AppKey           string                 `json:"app_key"`
-	Name             string                 `json:"name"`
-	Description      string                 `json:"description"`
-	SpaceMode        string                 `json:"space_mode"`
-	DefaultSpaceKey  string                 `json:"default_space_key"`
-	AuthMode         string                 `json:"auth_mode"`
-	FrontendEntryURL string                 `json:"frontend_entry_url"`
-	BackendEntryURL  string                 `json:"backend_entry_url"`
-	HealthCheckURL   string                 `json:"health_check_url"`
-	ManifestURL      string                 `json:"manifest_url"`
-	RuntimeVersion   string                 `json:"runtime_version"`
-	Capabilities     map[string]interface{} `json:"capabilities"`
-	Status           string                 `json:"status"`
-	IsDefault        bool                   `json:"is_default"`
-	Meta             map[string]interface{} `json:"meta"`
+	AppKey              string                 `json:"app_key"`
+	Name                string                 `json:"name"`
+	Description         string                 `json:"description"`
+	SpaceMode           string                 `json:"space_mode"`
+	DefaultMenuSpaceKey string                 `json:"default_menu_space_key"`
+	AuthMode            string                 `json:"auth_mode"`
+	FrontendEntryURL    string                 `json:"frontend_entry_url"`
+	BackendEntryURL     string                 `json:"backend_entry_url"`
+	HealthCheckURL      string                 `json:"health_check_url"`
+	ManifestURL         string                 `json:"manifest_url"`
+	RuntimeVersion      string                 `json:"runtime_version"`
+	Capabilities        map[string]interface{} `json:"capabilities"`
+	Status              string                 `json:"status"`
+	IsDefault           bool                   `json:"is_default"`
+	Meta                map[string]interface{} `json:"meta"`
 }
 
 type SaveHostBindingRequest struct {
-	ID              string                 `json:"id"`
-	AppKey          string                 `json:"app_key"`
-	MatchType       string                 `json:"match_type"`
-	Host            string                 `json:"host"`
-	PathPattern     string                 `json:"path_pattern"`
-	Priority        int                    `json:"priority"`
-	Description     string                 `json:"description"`
-	IsPrimary       bool                   `json:"is_primary"`
-	DefaultSpaceKey string                 `json:"default_space_key"`
-	Status          string                 `json:"status"`
-	Meta            map[string]interface{} `json:"meta"`
+	ID                  string                 `json:"id"`
+	AppKey              string                 `json:"app_key"`
+	MatchType           string                 `json:"match_type"`
+	Host                string                 `json:"host"`
+	PathPattern         string                 `json:"path_pattern"`
+	Priority            int                    `json:"priority"`
+	Description         string                 `json:"description"`
+	IsPrimary           bool                   `json:"is_primary"`
+	DefaultMenuSpaceKey string                 `json:"default_menu_space_key"`
+	Status              string                 `json:"status"`
+	Meta                map[string]interface{} `json:"meta"`
 }
 
 type MenuSpaceEntryBindingRecord struct {
@@ -123,17 +123,17 @@ type MenuSpaceEntryBindingRecord struct {
 }
 
 type SaveMenuSpaceEntryBindingRequest struct {
-	ID          string                 `json:"id"`
-	AppKey      string                 `json:"app_key"`
-	SpaceKey    string                 `json:"space_key"`
-	MatchType   string                 `json:"match_type"`
-	Host        string                 `json:"host"`
-	PathPattern string                 `json:"path_pattern"`
-	Priority    int                    `json:"priority"`
-	Description string                 `json:"description"`
-	IsPrimary   bool                   `json:"is_primary"`
-	Status      string                 `json:"status"`
-	Meta        map[string]interface{} `json:"meta"`
+	ID           string                 `json:"id"`
+	AppKey       string                 `json:"app_key"`
+	MenuSpaceKey string                 `json:"menu_space_key"`
+	MatchType    string                 `json:"match_type"`
+	Host         string                 `json:"host"`
+	PathPattern  string                 `json:"path_pattern"`
+	Priority     int                    `json:"priority"`
+	Description  string                 `json:"description"`
+	IsPrimary    bool                   `json:"is_primary"`
+	Status       string                 `json:"status"`
+	Meta         map[string]interface{} `json:"meta"`
 }
 
 type Service interface {
@@ -249,7 +249,7 @@ func ResolveMenuSpaceEntry(db *gorm.DB, appKey, host, path string) (string, stri
 		}
 		return "", "", err
 	}
-	defaultSpace := strings.TrimSpace(app.DefaultSpaceKey)
+	defaultSpace := strings.TrimSpace(app.DefaultMenuSpaceKey)
 	if app.SpaceMode != "multi" {
 		// 单空间短路。
 		return defaultSpace, "single_space_app", nil
@@ -264,11 +264,11 @@ func ResolveMenuSpaceEntry(db *gorm.DB, appKey, host, path string) (string, stri
 	}
 	matched := matchMenuSpaceEntryBinding(bindings, normalizedHost, normalizedPath)
 	if matched != nil {
-		spaceKey := strings.TrimSpace(matched.SpaceKey)
+		spaceKey := strings.TrimSpace(matched.MenuSpaceKey)
 		// P2: 校验目标空间存在且未被禁用，避免遗留绑定指向失效空间。
 		var space models.MenuSpace
-		err := db.Select("space_key", "status").
-			Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", normalizedAppKey, spaceKey).
+		err := db.Select("menu_space_key", "status").
+			Where("app_key = ? AND menu_space_key = ? AND deleted_at IS NULL", normalizedAppKey, spaceKey).
 			First(&space).Error
 		if err == nil && space.Status != "disabled" {
 			return spaceKey, "entry_binding", nil
@@ -662,7 +662,7 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	if name == "" {
 		return nil, errors.New("应用名称不能为空")
 	}
-	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
+	defaultMenuSpaceKey := spacepkg.NormalizeMenuSpaceKey(req.DefaultMenuSpaceKey)
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
 		status = "normal"
@@ -678,19 +678,19 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	applyAppRemoteContract(normalizedMeta, req.ManifestURL, req.RuntimeVersion)
 
 	payload := models.App{
-		AppKey:           appKey,
-		Name:             name,
-		Description:      strings.TrimSpace(req.Description),
-		SpaceMode:        normalizeAppSpaceMode(req.SpaceMode),
-		DefaultSpaceKey:  defaultSpaceKey,
-		AuthMode:         authMode,
-		FrontendEntryURL: strings.TrimSpace(req.FrontendEntryURL),
-		BackendEntryURL:  strings.TrimSpace(req.BackendEntryURL),
-		HealthCheckURL:   strings.TrimSpace(req.HealthCheckURL),
-		Capabilities:     normalizeMetaJSON(req.Capabilities),
-		Status:           status,
-		IsDefault:        req.IsDefault || appKey == models.DefaultAppKey,
-		Meta:             normalizedMeta,
+		AppKey:              appKey,
+		Name:                name,
+		Description:         strings.TrimSpace(req.Description),
+		SpaceMode:           normalizeAppSpaceMode(req.SpaceMode),
+		DefaultMenuSpaceKey: defaultMenuSpaceKey,
+		AuthMode:            authMode,
+		FrontendEntryURL:    strings.TrimSpace(req.FrontendEntryURL),
+		BackendEntryURL:     strings.TrimSpace(req.BackendEntryURL),
+		HealthCheckURL:      strings.TrimSpace(req.HealthCheckURL),
+		Capabilities:        normalizeMetaJSON(req.Capabilities),
+		Status:              status,
+		IsDefault:           req.IsDefault || appKey == models.DefaultAppKey,
+		Meta:                normalizedMeta,
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -698,33 +698,33 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		err := tx.Where("app_key = ? AND deleted_at IS NULL", appKey).First(&existing).Error
 		switch {
 		case err == nil:
-			if payload.DefaultSpaceKey == "" {
-				payload.DefaultSpaceKey = spacepkg.NormalizeSpaceKey(existing.DefaultSpaceKey)
+			if payload.DefaultMenuSpaceKey == "" {
+				payload.DefaultMenuSpaceKey = spacepkg.NormalizeMenuSpaceKey(existing.DefaultMenuSpaceKey)
 			}
-			if payload.DefaultSpaceKey == "" {
-				payload.DefaultSpaceKey = models.DefaultMenuSpaceKey
+			if payload.DefaultMenuSpaceKey == "" {
+				payload.DefaultMenuSpaceKey = models.DefaultMenuSpaceKey
 			}
-			if err := ensureSpaceExistsForApp(tx, appKey, payload.DefaultSpaceKey); err != nil {
+			if err := ensureSpaceExistsForApp(tx, appKey, payload.DefaultMenuSpaceKey); err != nil {
 				return err
 			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
-				"name":               payload.Name,
-				"description":        payload.Description,
-				"space_mode":         payload.SpaceMode,
-				"default_space_key":  payload.DefaultSpaceKey,
-				"auth_mode":          payload.AuthMode,
-				"frontend_entry_url": payload.FrontendEntryURL,
-				"backend_entry_url":  payload.BackendEntryURL,
-				"health_check_url":   payload.HealthCheckURL,
-				"capabilities":       payload.Capabilities,
-				"status":             payload.Status,
-				"is_default":         payload.IsDefault,
-				"meta":               payload.Meta,
+				"name":                   payload.Name,
+				"description":            payload.Description,
+				"space_mode":             payload.SpaceMode,
+				"default_menu_space_key": payload.DefaultMenuSpaceKey,
+				"auth_mode":              payload.AuthMode,
+				"frontend_entry_url":     payload.FrontendEntryURL,
+				"backend_entry_url":      payload.BackendEntryURL,
+				"health_check_url":       payload.HealthCheckURL,
+				"capabilities":           payload.Capabilities,
+				"status":                 payload.Status,
+				"is_default":             payload.IsDefault,
+				"meta":                   payload.Meta,
 			}).Error; updateErr != nil {
 				return updateErr
 			}
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			payload.DefaultSpaceKey = models.DefaultMenuSpaceKey
+			payload.DefaultMenuSpaceKey = models.DefaultMenuSpaceKey
 			if createErr := tx.Create(&payload).Error; createErr != nil {
 				return createErr
 			}
@@ -734,9 +734,9 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		if err := spacepkg.EnsureDefaultMenuSpace(tx, appKey); err != nil {
 			return err
 		}
-		if payload.DefaultSpaceKey == models.DefaultMenuSpaceKey {
+		if payload.DefaultMenuSpaceKey == models.DefaultMenuSpaceKey {
 			if err := tx.Model(&models.MenuSpace{}).
-				Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", appKey, models.DefaultMenuSpaceKey).
+				Where("app_key = ? AND menu_space_key = ? AND deleted_at IS NULL", appKey, models.DefaultMenuSpaceKey).
 				Updates(map[string]interface{}{
 					"is_default": true,
 					"status":     "normal",
@@ -917,9 +917,9 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
-	if defaultSpaceKey == "" {
-		return nil, errors.New("default_space_key 不能为空")
+	defaultMenuSpaceKey := spacepkg.NormalizeMenuSpaceKey(req.DefaultMenuSpaceKey)
+	if defaultMenuSpaceKey == "" {
+		return nil, errors.New("default_menu_space_key 不能为空")
 	}
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
@@ -927,20 +927,20 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 
 	binding := models.AppHostBinding{
-		AppKey:          normalizedAppKey,
-		MatchType:       matchType,
-		Host:            host,
-		PathPattern:     pathPattern,
-		Priority:        req.Priority,
-		Description:     strings.TrimSpace(req.Description),
-		IsPrimary:       req.IsPrimary,
-		DefaultSpaceKey: defaultSpaceKey,
-		Status:          status,
-		Meta:            models.MetaJSON(req.Meta),
+		AppKey:              normalizedAppKey,
+		MatchType:           matchType,
+		Host:                host,
+		PathPattern:         pathPattern,
+		Priority:            req.Priority,
+		Description:         strings.TrimSpace(req.Description),
+		IsPrimary:           req.IsPrimary,
+		DefaultMenuSpaceKey: defaultMenuSpaceKey,
+		Status:              status,
+		Meta:                models.MetaJSON(req.Meta),
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := ensureSpaceExistsForApp(tx, normalizedAppKey, defaultSpaceKey); err != nil {
+		if err := ensureSpaceExistsForApp(tx, normalizedAppKey, defaultMenuSpaceKey); err != nil {
 			return err
 		}
 		// 唯一性：(match_type, host, path_pattern) 全局唯一。
@@ -963,16 +963,16 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 				return err
 			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
-				"app_key":           binding.AppKey,
-				"match_type":        binding.MatchType,
-				"host":              binding.Host,
-				"path_pattern":      binding.PathPattern,
-				"priority":          binding.Priority,
-				"description":       binding.Description,
-				"is_primary":        binding.IsPrimary,
-				"default_space_key": binding.DefaultSpaceKey,
-				"status":            binding.Status,
-				"meta":              binding.Meta,
+				"app_key":                binding.AppKey,
+				"match_type":             binding.MatchType,
+				"host":                   binding.Host,
+				"path_pattern":           binding.PathPattern,
+				"priority":               binding.Priority,
+				"description":            binding.Description,
+				"is_primary":             binding.IsPrimary,
+				"default_menu_space_key": binding.DefaultMenuSpaceKey,
+				"status":                 binding.Status,
+				"meta":                   binding.Meta,
 			}).Error; updateErr != nil {
 				return updateErr
 			}
@@ -1038,14 +1038,14 @@ func (s *service) ListMenuSpaceEntryBindings(appKey string) ([]MenuSpaceEntryBin
 	_ = s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).Find(&spaceList).Error
 	spaceNames := make(map[string]string, len(spaceList))
 	for _, sp := range spaceList {
-		spaceNames[sp.SpaceKey] = sp.Name
+		spaceNames[sp.MenuSpaceKey] = sp.Name
 	}
 	records := make([]MenuSpaceEntryBindingRecord, 0, len(items))
 	for _, item := range items {
 		records = append(records, MenuSpaceEntryBindingRecord{
 			MenuSpaceEntryBinding: item,
 			AppName:               app.Name,
-			SpaceName:             spaceNames[item.SpaceKey],
+			SpaceName:             spaceNames[item.MenuSpaceKey],
 		})
 	}
 	return records, nil
@@ -1062,9 +1062,9 @@ func (s *service) SaveMenuSpaceEntryBinding(appKey string, req *SaveMenuSpaceEnt
 	if requestAppKey := appctx.NormalizeExplicitAppKey(req.AppKey); requestAppKey != "" && requestAppKey != normalizedAppKey {
 		return nil, errors.New("app_key 不匹配")
 	}
-	spaceKey := spacepkg.NormalizeSpaceKey(req.SpaceKey)
+	spaceKey := spacepkg.NormalizeMenuSpaceKey(req.MenuSpaceKey)
 	if spaceKey == "" {
-		return nil, errors.New("space_key 不能为空")
+		return nil, errors.New("menu_space_key 不能为空")
 	}
 	// 单空间 App 不允许配置 Level 2。
 	var app models.App
@@ -1116,16 +1116,16 @@ func (s *service) SaveMenuSpaceEntryBinding(appKey string, req *SaveMenuSpaceEnt
 		status = "normal"
 	}
 	binding := models.MenuSpaceEntryBinding{
-		AppKey:      normalizedAppKey,
-		SpaceKey:    spaceKey,
-		MatchType:   matchType,
-		Host:        host,
-		PathPattern: pathPattern,
-		Priority:    req.Priority,
-		IsPrimary:   req.IsPrimary,
-		Description: strings.TrimSpace(req.Description),
-		Status:      status,
-		Meta:        models.MetaJSON(req.Meta),
+		AppKey:       normalizedAppKey,
+		MenuSpaceKey: spaceKey,
+		MatchType:    matchType,
+		Host:         host,
+		PathPattern:  pathPattern,
+		Priority:     req.Priority,
+		IsPrimary:    req.IsPrimary,
+		Description:  strings.TrimSpace(req.Description),
+		Status:       status,
+		Meta:         models.MetaJSON(req.Meta),
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -1148,15 +1148,15 @@ func (s *service) SaveMenuSpaceEntryBinding(appKey string, req *SaveMenuSpaceEnt
 				return err
 			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
-				"space_key":    binding.SpaceKey,
-				"match_type":   binding.MatchType,
-				"host":         binding.Host,
-				"path_pattern": binding.PathPattern,
-				"priority":     binding.Priority,
-				"is_primary":   binding.IsPrimary,
-				"description":  binding.Description,
-				"status":       binding.Status,
-				"meta":         binding.Meta,
+				"menu_space_key": binding.MenuSpaceKey,
+				"match_type":     binding.MatchType,
+				"host":           binding.Host,
+				"path_pattern":   binding.PathPattern,
+				"priority":       binding.Priority,
+				"is_primary":     binding.IsPrimary,
+				"description":    binding.Description,
+				"status":         binding.Status,
+				"meta":           binding.Meta,
 			}).Error; updateErr != nil {
 				return updateErr
 			}
@@ -1197,19 +1197,19 @@ func (s *service) DeleteMenuSpaceEntryBinding(appKey, id string) error {
 
 func ensureSpaceExistsForApp(db *gorm.DB, appKey string, spaceKey string) error {
 	normalizedAppKey := NormalizeAppKey(appKey)
-	normalizedSpaceKey := spacepkg.NormalizeSpaceKey(spaceKey)
+	normalizedMenuSpaceKey := spacepkg.NormalizeMenuSpaceKey(spaceKey)
 	if normalizedAppKey == "" {
 		return errors.New("app_key 不能为空")
 	}
-	if normalizedSpaceKey == "" {
-		return errors.New("default_space_key 不能为空")
+	if normalizedMenuSpaceKey == "" {
+		return errors.New("default_menu_space_key 不能为空")
 	}
-	if normalizedSpaceKey == models.DefaultMenuSpaceKey {
+	if normalizedMenuSpaceKey == models.DefaultMenuSpaceKey {
 		return spacepkg.EnsureDefaultMenuSpace(db, normalizedAppKey)
 	}
 	var count int64
 	if err := db.Model(&models.MenuSpace{}).
-		Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", normalizedAppKey, normalizedSpaceKey).
+		Where("app_key = ? AND menu_space_key = ? AND deleted_at IS NULL", normalizedAppKey, normalizedMenuSpaceKey).
 		Count(&count).Error; err != nil {
 		return err
 	}
@@ -1243,31 +1243,31 @@ func ensureDefaultApp(db *gorm.DB) error {
 	switch {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
-			"name":               models.DefaultAppName,
-			"space_mode":         "multi",
-			"default_space_key":  models.DefaultMenuSpaceKey,
-			"status":             "normal",
-			"frontend_entry_url": "/",
-			"backend_entry_url":  "",
-			"health_check_url":   "/health",
-			"capabilities":       models.DefaultPlatformAdminCapabilities(),
-			"is_default":         true,
+			"name":                   models.DefaultAppName,
+			"space_mode":             "multi",
+			"default_menu_space_key": models.DefaultMenuSpaceKey,
+			"status":                 "normal",
+			"frontend_entry_url":     "/",
+			"backend_entry_url":      "",
+			"health_check_url":       "/health",
+			"capabilities":           models.DefaultPlatformAdminCapabilities(),
+			"is_default":             true,
 		}).Error
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return db.Create(&models.App{
-			AppKey:           models.DefaultAppKey,
-			Name:             models.DefaultAppName,
-			Description:      "当前内置管理员后台应用",
-			SpaceMode:        "multi",
-			DefaultSpaceKey:  models.DefaultMenuSpaceKey,
-			AuthMode:         "inherit_host",
-			FrontendEntryURL: "/",
-			BackendEntryURL:  "",
-			HealthCheckURL:   "/health",
-			Status:           "normal",
-			IsDefault:        true,
-			Capabilities:     models.DefaultPlatformAdminCapabilities(),
-			Meta:             models.MetaJSON{},
+			AppKey:              models.DefaultAppKey,
+			Name:                models.DefaultAppName,
+			Description:         "当前内置管理员后台应用",
+			SpaceMode:           "multi",
+			DefaultMenuSpaceKey: models.DefaultMenuSpaceKey,
+			AuthMode:            "inherit_host",
+			FrontendEntryURL:    "/",
+			BackendEntryURL:     "",
+			HealthCheckURL:      "/health",
+			Status:              "normal",
+			IsDefault:           true,
+			Capabilities:        models.DefaultPlatformAdminCapabilities(),
+			Meta:                models.MetaJSON{},
 		}).Error
 	default:
 		return err
@@ -1740,4 +1740,3 @@ func loadStringCountAndHosts(db *gorm.DB, model interface{}, keyColumn string, h
 	}
 	return counts, hosts, nil
 }
-
