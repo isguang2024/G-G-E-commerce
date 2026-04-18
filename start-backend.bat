@@ -16,6 +16,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
+if not exist "api\\gen\\oas_server_gen.go" (
+  echo Missing generated backend OpenAPI files: backend\\api\\gen\\oas_server_gen.go
+  echo Run backend\\update-openapi.bat first, then start the backend again.
+  pause
+  exit /b 1
+)
+
 echo Starting backend in debug mode...
 echo URL: http://localhost:8080
 echo.

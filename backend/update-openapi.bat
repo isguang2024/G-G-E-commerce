@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableExtensions
+set "RC=0"
 
 chcp 65001 >nul
 cd /d "%~dp0"
@@ -13,11 +14,11 @@ rem   - If DB schema/default data also changed: run cmd/migrate first, then this
 rem   - Fresh database: cmd/migrate first, then this script
 
 echo [api] bundling spec...
-npx --yes @redocly/cli bundle api/openapi/openapi.root.yaml -o api/openapi/dist/openapi.yaml --ext yaml
+call npx --yes @redocly/cli bundle api/openapi/openapi.root.yaml -o api/openapi/dist/openapi.yaml --ext yaml
 if errorlevel 1 goto :fail
 
 echo [api] linting spec...
-npx --yes @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml
+call npx --yes @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml
 if errorlevel 1 goto :fail
 
 echo [api] running ogen...
@@ -32,11 +33,11 @@ echo Done.
 goto :pause
 
 :fail
+set "RC=%errorlevel%"
 echo.
 echo Failed. Check the output above.
 
 :pause
 echo Press any key to close this window.
 pause >nul
-endlocal
-exit /b %errorlevel%
+endlocal & exit /b %RC%
